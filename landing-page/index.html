@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareNest — Yên tâm khi xa nhà</title>
+  <meta name="description" content="Ứng dụng theo dõi sức khỏe người cao tuổi, kết nối gia đình từ xa. Nhắc thuốc, cảnh báo SOS, AI đồng hành." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2E7D9A',
+            'primary-light': '#5BA3C9',
+            'primary-dark': '#1A5570',
+            secondary: '#4CAF82',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    .gradient-hero {
+      background: linear-gradient(135deg, #e8f4f8 0%, #f0faf5 100%);
+    }
+    .card-hover {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(46, 125, 154, 0.15);
+    }
+    .fade-in {
+      animation: fadeIn 0.6s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body class="font-sans text-gray-800 bg-white">
+
+  <!-- NAV -->
+  <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-sm border-b border-gray-100 z-50">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🏥</span>
+        <span class="text-xl font-bold text-primary">CareNest</span>
+      </div>
+      <a href="#signup"
+        class="bg-primary text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-primary-dark transition-colors">
+        Đăng ký sớm
+      </a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="gradient-hero pt-32 pb-24 px-6">
+    <div class="max-w-3xl mx-auto text-center fade-in">
+      <span class="inline-block bg-secondary/10 text-secondary text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+        🚀 Sắp ra mắt — Đăng ký nhận thông báo
+      </span>
+      <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
+        Yên tâm khi xa nhà,<br />
+        <span class="text-primary">ba mẹ luôn được chăm sóc</span>
+      </h1>
+      <p class="text-lg text-gray-500 mb-10 max-w-xl mx-auto leading-relaxed">
+        CareNest giúp gia đình theo dõi sức khỏe người cao tuổi từ xa — nhắc thuốc, cảnh báo khẩn cấp, và AI đồng hành mọi lúc.
+      </p>
+      <a href="#signup"
+        class="inline-block bg-primary text-white px-8 py-4 rounded-full text-base font-bold hover:bg-primary-dark transition-colors shadow-lg hover:shadow-xl">
+        Nhận thông báo khi ra mắt →
+      </a>
+      <p class="mt-4 text-sm text-gray-400">Hoàn toàn miễn phí • Không spam</p>
+    </div>
+  </section>
+
+  <!-- PAIN POINTS -->
+  <section class="py-20 px-6 bg-white">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-4">
+        Bạn có đang gặp những điều này?
+      </h2>
+      <p class="text-center text-gray-500 mb-12">Hàng triệu gia đình Việt đang đối mặt mỗi ngày</p>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="bg-red-50 rounded-2xl p-6 card-hover">
+          <div class="text-3xl mb-4">😰</div>
+          <h3 class="font-bold text-gray-800 mb-2">Không biết ba mẹ uống thuốc chưa</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Bận công việc, không thể gọi điện nhắc từng bữa thuốc. Lo lắng mà không làm được gì.
+          </p>
+        </div>
+        <div class="bg-orange-50 rounded-2xl p-6 card-hover">
+          <div class="text-3xl mb-4">🚨</div>
+          <h3 class="font-bold text-gray-800 mb-2">Khi có khẩn cấp, biết tin quá muộn</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Ngã, đột quỵ, hay chỉ đơn giản là không khỏe — nhưng không ai biết để ứng cứu kịp thời.
+          </p>
+        </div>
+        <div class="bg-blue-50 rounded-2xl p-6 card-hover">
+          <div class="text-3xl mb-4">📊</div>
+          <h3 class="font-bold text-gray-800 mb-2">Không theo dõi được sức khỏe từ xa</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Huyết áp, đường huyết, nhịp tim — những chỉ số quan trọng mà con cái không nắm được.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="py-20 px-6 bg-gray-50">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-4">
+        CareNest giải quyết tất cả
+      </h2>
+      <p class="text-center text-gray-500 mb-14">Một app, đầy đủ mọi thứ gia đình cần</p>
+
+      <div class="grid md:grid-cols-2 gap-6">
+
+        <div class="bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="bg-primary/10 rounded-xl p-3 text-2xl flex-shrink-0">💊</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">Nhắc uống thuốc thông minh</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Lập lịch thuốc cho ba mẹ từ xa. Hệ thống tự nhắc đúng giờ — nếu quên, gia đình nhận cảnh báo ngay lập tức.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="bg-secondary/10 rounded-xl p-3 text-2xl flex-shrink-0">📈</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">Theo dõi sức khỏe liên tục</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Huyết áp, đường huyết, nhịp tim — AI phân tích xu hướng và cảnh báo khi có bất thường. Kết nối cả smartwatch.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="bg-red-50 rounded-xl p-3 text-2xl flex-shrink-0">🆘</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">Nút SOS khẩn cấp</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Một chạm — toàn bộ gia đình nhận thông báo kèm vị trí GPS ngay lập tức qua app, Zalo và SMS.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="bg-purple-50 rounded-xl p-3 text-2xl flex-shrink-0">🤖</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">AI đồng hành giảm cô đơn</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Chatbot AI thân thiện trò chuyện, nhắc lịch hẹn, trả lời câu hỏi sức khỏe. Có thể nói chuyện bằng giọng nói.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="py-20 px-6 bg-white">
+    <div class="max-w-3xl mx-auto text-center">
+      <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Dành cho cả gia đình</h2>
+      <p class="text-gray-500 mb-12">Hai vai trò, một ứng dụng</p>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="text-left bg-primary/5 rounded-2xl p-8">
+          <div class="text-4xl mb-4">👴👵</div>
+          <h3 class="font-bold text-lg text-gray-900 mb-3">Dành cho người cao tuổi</h3>
+          <ul class="space-y-2 text-gray-600 text-sm">
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Nhận nhắc thuốc đơn giản</li>
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Bấm SOS khi cần giúp đỡ</li>
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Chat với AI bằng giọng nói</li>
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Ghi chỉ số sức khỏe hàng ngày</li>
+          </ul>
+        </div>
+        <div class="text-left bg-secondary/5 rounded-2xl p-8">
+          <div class="text-4xl mb-4">👨‍💼👩‍💼</div>
+          <h3 class="font-bold text-lg text-gray-900 mb-3">Dành cho con cái</h3>
+          <ul class="space-y-2 text-gray-600 text-sm">
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Dashboard theo dõi từ xa</li>
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Cảnh báo thời gian thực</li>
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Đặt lịch thuốc và tái khám</li>
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Báo cáo sức khỏe hàng tuần từ AI</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNUP FORM -->
+  <section id="signup" class="py-24 px-6 bg-primary">
+    <div class="max-w-xl mx-auto text-center">
+      <h2 class="text-3xl font-extrabold text-white mb-4">
+        Nhận thông báo khi CareNest ra mắt
+      </h2>
+      <p class="text-primary-light text-base mb-10">
+        Đăng ký ngay hôm nay để trở thành người đầu tiên trải nghiệm CareNest miễn phí.
+      </p>
+
+      <!-- Thay YOUR_FORM_ID bằng form ID từ formspree.io -->
+      <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" class="space-y-4">
+        <input
+          type="text"
+          name="name"
+          placeholder="Họ và tên"
+          required
+          class="w-full px-5 py-4 rounded-xl text-gray-800 text-base outline-none focus:ring-2 focus:ring-white/50"
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Địa chỉ email"
+          required
+          class="w-full px-5 py-4 rounded-xl text-gray-800 text-base outline-none focus:ring-2 focus:ring-white/50"
+        />
+        <input type="hidden" name="_subject" value="CareNest — Đăng ký nhận thông báo" />
+        <input type="hidden" name="_next" value="https://phanhhhhhhh.github.io/carenest-mobile/landing-page/thank-you.html" />
+        <button
+          type="submit"
+          class="w-full bg-white text-primary font-bold py-4 rounded-xl text-base hover:bg-gray-100 transition-colors shadow-lg">
+          Đăng ký ngay — Miễn phí 🎉
+        </button>
+      </form>
+
+      <p class="mt-6 text-primary-light text-sm opacity-75">
+        Chúng tôi không gửi spam. Chỉ thông báo khi app sẵn sàng.
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-10 px-6 bg-gray-900 text-gray-400 text-center text-sm">
+    <div class="flex items-center justify-center gap-2 mb-3">
+      <span class="text-xl">🏥</span>
+      <span class="text-white font-bold text-base">CareNest</span>
+    </div>
+    <p>© 2026 CareNest · Nhóm Vela · FPT University</p>
+    <p class="mt-1 text-xs text-gray-600">Yên tâm khi xa nhà</p>
+  </footer>
+
+</body>
+</html>
