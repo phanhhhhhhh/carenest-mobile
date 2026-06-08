@@ -1,3 +1,6 @@
+# Claude Code local config
+.omc/
+
 # Miscellaneous
 *.class
 *.log
