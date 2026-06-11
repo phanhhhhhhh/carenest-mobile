@@ -1,0 +1,72 @@
+package com.carenest.backend.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+
+@Entity
+@Table(name = "health_metrics")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString(exclude = {"elderly", "createdAt", "updatedAt", "deletedAt"})
+public class HealthMetric {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "elderly_id", nullable = false)
+    private User elderly;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private HealthMetricType type;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal value;
+
+    @Column(name = "value_secondary", precision = 10, scale = 2)
+    private BigDecimal valueSecondary;
+
+    @Column(nullable = false, length = 20)
+    private String unit;
+
+    @Column(name = "recorded_at", nullable = false)
+    private OffsetDateTime recordedAt;
+
+    private String notes;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+}
