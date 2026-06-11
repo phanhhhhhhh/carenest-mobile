@@ -1,0 +1,23 @@
+# Normalize line endings
+* text=auto
+
+# Java / backend — LF
+backend/**/*.java text eol=lf
+backend/**/*.xml  text eol=lf
+backend/**/*.sql  text eol=lf
+backend/**/*.properties text eol=lf
+backend/**/*.md   text eol=lf
+
+# Dart / Flutter — LF
+*.dart text eol=lf
+pubspec.yaml text eol=lf
+
+# Windows scripts — CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary — không đụng vào
+*.png binary
+*.jpg binary
+*.ico binary
+*.jar binary
