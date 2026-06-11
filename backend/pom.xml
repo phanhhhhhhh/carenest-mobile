@@ -66,13 +66,6 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Hypersistence Utils for JSONB -->
-        <dependency>
-            <groupId>io.hypersistence</groupId>
-            <artifactId>hypersistence-utils-hibernate-63</artifactId>
-            <version>3.7.3</version>
-        </dependency>
-
         <!-- Jackson for JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
