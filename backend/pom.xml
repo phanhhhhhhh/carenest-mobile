@@ -54,11 +54,6 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-        </dependency>
-
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -72,8 +67,30 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
-        <!-- TODO [Auth Module]: Thêm lại khi bắt đầu làm UC-01 (Authentication) -->
-        <!-- spring-boot-starter-security + jjwt-api/impl/jackson 0.12.5 -->
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.5</version>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- Actuator — /actuator/health cho Uptime Robot ping -->
         <dependency>
@@ -88,8 +105,12 @@
             <version>2.3.0</version>
         </dependency>
 
-        <!-- TODO [FCM Module]: Thêm lại khi có serviceAccountKey.json từ Firebase Console -->
-        <!-- firebase-admin 9.2.0 -->
+        <!-- Firebase Admin SDK — verify Firebase ID Token -->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.2.0</version>
+        </dependency>
 
         <!-- Test -->
         <dependency>
