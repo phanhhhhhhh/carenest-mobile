@@ -1,0 +1,20 @@
+# Copy file này thành application-local.properties rồi điền giá trị thực
+# cp application-local.properties.example application-local.properties
+# File application-local.properties đã có trong .gitignore — KHÔNG commit
+
+# -----------------------------------------------------------------------
+# JWT secret — chuỗi random >= 32 ký tự, tự tạo tùy ý
+# -----------------------------------------------------------------------
+jwt.secret=replace-this-with-a-random-string-at-least-32-chars
+
+# -----------------------------------------------------------------------
+# Firebase Admin SDK — path đến file key JSON (lưu NGOÀI thư mục project)
+# Liên hệ trưởng nhóm để nhận file key
+# Để trống nếu chưa có → app vẫn chạy, dùng DEV_PHONE: prefix để test
+# -----------------------------------------------------------------------
+firebase.credentials-path=
+
+# -----------------------------------------------------------------------
+# DB — chỉ cần uncomment nếu bạn KHÔNG dùng Docker (port khác mặc định 5433)
+# -----------------------------------------------------------------------
+# spring.datasource.url=jdbc:postgresql://localhost:5433/carenest
