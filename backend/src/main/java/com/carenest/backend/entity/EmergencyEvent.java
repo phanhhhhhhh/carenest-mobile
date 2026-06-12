@@ -2,12 +2,14 @@ package com.carenest.backend.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,38 +18,49 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "elderly_profiles")
+@Table(name = "emergency_events")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"user", "createdAt", "updatedAt", "deletedAt"})
-public class ElderlyProfile {
+@ToString(exclude = {"elderly"})
+public class EmergencyEvent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "elderly_id", nullable = false)
+    private User elderly;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "health_conditions", columnDefinition = "jsonb")
-    private List<String> healthConditions;
+    @Column(precision = 10, scale = 7)
+    private BigDecimal latitude;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "emergency_contacts", columnDefinition = "jsonb")
-    private List<EmergencyContact> emergencyContacts;
+    @Column(precision = 10, scale = 7)
+    private BigDecimal longitude;
+
+    @Column(columnDefinition = "TEXT")
+    private String address;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private EmergencyStatus status = EmergencyStatus.ACTIVE;
+
+    @Column(name = "triggered_at", nullable = false)
+    @Builder.Default
+    private OffsetDateTime triggeredAt = OffsetDateTime.now();
+
+    @Column(name = "resolved_at")
+    private OffsetDateTime resolvedAt;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
@@ -59,7 +72,4 @@ public class ElderlyProfile {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private OffsetDateTime deletedAt;
 }

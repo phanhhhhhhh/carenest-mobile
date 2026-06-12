@@ -2,12 +2,14 @@ package com.carenest.backend.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,49 +19,48 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
-import java.util.List;
+import java.util.Map;
 
 @Entity
-@Table(name = "elderly_profiles")
+@Table(name = "notifications")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"user", "createdAt", "updatedAt", "deletedAt"})
-public class ElderlyProfile {
+@ToString(exclude = {"user"})
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "health_conditions", columnDefinition = "jsonb")
-    private List<String> healthConditions;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private NotificationType type;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "emergency_contacts", columnDefinition = "jsonb")
-    private List<EmergencyContact> emergencyContacts;
+    @Column(nullable = false, length = 255)
+    private String title;
 
     @Column(columnDefinition = "TEXT")
-    private String notes;
+    private String body;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private Map<String, Object> data = java.util.Collections.emptyMap();
+
+    @Column(name = "read_at")
+    private OffsetDateTime readAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
-
-    @Column(name = "deleted_at")
-    private OffsetDateTime deletedAt;
 }
