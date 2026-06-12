@@ -1,65 +1,96 @@
-# CareNest — Setup Guide
+# CareNest — Hướng dẫn cài đặt môi trường
 
 > **Nhóm Vela | EXE101 — FPT University**  
-> Hướng dẫn cài đặt môi trường dev cho cả Frontend (Flutter) và Backend (Spring Boot).
+> Đọc hết trước khi bắt đầu cài. Mỗi bước quan trọng đều có lý do.
 
 ---
 
-## Mục lục
+## Bạn cần làm gì?
 
-- [Frontend — Flutter](#frontend--flutter)
-- [Backend — Spring Boot](#backend--spring-boot)
-
----
-
-# Frontend — Flutter
-
-## Yêu cầu cài đặt
-
-| Tool | Version | Tải về |
-|------|---------|--------|
-| Flutter SDK | **3.x (stable)** | [flutter.dev/docs/get-started/install](https://docs.flutter.dev/get-started/install) |
-| Dart | Đi kèm Flutter | — |
-| Android Studio | Mới nhất | [developer.android.com/studio](https://developer.android.com/studio) |
-| VS Code (tùy chọn) | Mới nhất | [code.visualstudio.com](https://code.visualstudio.com/) |
-| Git | Mới nhất | [git-scm.com](https://git-scm.com/) |
-
-> **Lưu ý Android:** Cần cài Android SDK và tạo Android Emulator trong Android Studio (AVD Manager).
+| Bạn là | Đọc phần |
+|--------|----------|
+| Dev Flutter (mobile) | [Phần 1 — Flutter](#phần-1--flutter) |
+| Dev Backend (Spring Boot) | [Phần 2 — Backend](#phần-2--backend) |
+| Trưởng nhóm / cả hai | Đọc cả hai |
 
 ---
 
-## Setup lần đầu (4 bước)
+# Phần 1 — Flutter
 
-### Bước 1 — Clone project
+## Bước 1 — Cài đặt công cụ
 
+Cài đúng thứ tự sau:
+
+### 1.1 Git
+Tải tại: https://git-scm.com/downloads  
+Sau khi cài, mở terminal kiểm tra:
 ```bash
-git clone <repo-url>
-cd carenest_mobile
+git --version
+# Kết quả mong đợi: git version 2.x.x
 ```
 
-### Bước 2 — Cài dependencies
+### 1.2 Flutter SDK
+Tải tại: https://docs.flutter.dev/get-started/install  
+Chọn đúng hệ điều hành của máy (Windows / macOS / Linux).
+
+Sau khi giải nén, thêm `flutter/bin` vào biến môi trường PATH.
+
+Kiểm tra:
+```bash
+flutter --version
+# Kết quả mong đợi: Flutter 3.x.x
+```
+
+### 1.3 Android Studio
+Tải tại: https://developer.android.com/studio  
+
+Sau khi cài xong, mở Android Studio và:
+1. **SDK Manager** → cài **Android SDK** (mới nhất)
+2. **AVD Manager** → tạo 1 emulator (Pixel 6, API 33 trở lên)
+
+### 1.4 VS Code (tùy chọn nhưng khuyến nghị)
+Tải tại: https://code.visualstudio.com  
+
+Sau khi cài, mở VS Code → Extensions → tìm và cài:
+- **Flutter** (by Dart Code)
+- **Dart** (by Dart Code)
+
+---
+
+## Bước 2 — Clone project
+
+```bash
+git clone https://github.com/phanhhhhhhh/carenest-mobile.git
+cd carenest-mobile
+```
+
+---
+
+## Bước 3 — Cài dependencies Flutter
 
 ```bash
 flutter pub get
 ```
 
-### Bước 3 — Cấu hình editor
+---
 
-**VS Code:**
-1. Cài extension **Flutter** + **Dart** từ Extensions tab
-2. Reload VS Code
-
-**Android Studio:**
-1. **Plugins** → tìm "Flutter" → Install → Restart
-2. Dart plugin sẽ tự cài theo
-
-### Bước 4 — Chạy app
+## Bước 4 — Kiểm tra môi trường
 
 ```bash
-# Kiểm tra thiết bị/emulator đang kết nối
+flutter doctor
+```
+
+Mục tiêu: tất cả ✅. Nếu còn ⚠️ thì xem lỗi thường gặp bên dưới.
+
+---
+
+## Bước 5 — Chạy app
+
+```bash
+# Kiểm tra emulator/device đang kết nối
 flutter devices
 
-# Chạy app (debug mode)
+# Chạy app
 flutter run
 ```
 
@@ -67,152 +98,179 @@ Hoặc trong VS Code: nhấn **F5** → chọn device.
 
 ---
 
-## Kiểm tra hoạt động
-
-```bash
-flutter doctor
-```
-
-Tất cả dấu ✅ là OK. Dấu ⚠️ xem hướng dẫn fix bên dưới.
-
----
-
-## Cấu trúc project Flutter
-
-```
-lib/
-├── main.dart                  ← Entry point
-├── app.dart                   ← MaterialApp + routing
-├── core/
-│   ├── constants/             ← Colors, strings, dimensions
-│   └── theme/                 ← AppTheme — font size lớn cho elderly
-├── data/
-│   ├── models/                ← Data classes (JSON serializable)
-│   ├── repositories/          ← Giao tiếp với API
-│   └── datasources/           ← HTTP client, local storage
-├── presentation/
-│   ├── screens/               ← UI screens
-│   └── widgets/               ← Reusable components
-└── providers/                 ← Riverpod providers
-```
-
----
-
 ## Lỗi thường gặp (Flutter)
 
-**`flutter: command not found`**
-→ Chưa thêm Flutter vào PATH. Xem lại bước cài Flutter SDK và thêm `flutter/bin` vào biến môi trường PATH.
+**`flutter: command not found`**  
+→ Chưa thêm Flutter vào PATH. Thêm đường dẫn `flutter/bin` vào biến môi trường PATH rồi mở lại terminal.
 
-**`No devices found`**
-→ Mở Android Studio → AVD Manager → Start emulator. Hoặc cắm điện thoại thật và bật USB Debugging.
+**`No devices found`**  
+→ Mở Android Studio → AVD Manager → Start emulator. Hoặc cắm điện thoại và bật USB Debugging.
 
-**`Gradle build failed`**
+**`Gradle build failed`**  
 → Chạy `flutter clean` rồi `flutter pub get` lại.
 
-**`Bad state: No element` hoặc lỗi Riverpod**
-→ Kiểm tra `ProviderScope` đã bọc `runApp()` trong `main.dart` chưa.
-
 ---
 
-# Backend — Spring Boot
+# Phần 2 — Backend
 
-## Yêu cầu cài đặt
+## Bước 1 — Cài đặt công cụ
 
-| Tool | Version | Tải về |
-|------|---------|--------|
-| JDK | **21** (bắt buộc đúng version) | [Adoptium Temurin 21](https://adoptium.net/) |
-| Maven | 3.9+ | [maven.apache.org](https://maven.apache.org/download.cgi) |
-| Docker Desktop | Mới nhất | [docker.com](https://www.docker.com/products/docker-desktop/) |
-| IntelliJ IDEA | Community hoặc Ultimate | [jetbrains.com](https://www.jetbrains.com/idea/) |
+### 1.1 JDK 21 (bắt buộc đúng version)
+Tải tại: https://adoptium.net/ → chọn **Temurin 21**
 
-> **Lưu ý Java:** Phải dùng đúng **Java 21**, không phải 17 hay 11.  
-> Kiểm tra: `java -version` → phải thấy `21.x.x`
-
----
-
-## Setup lần đầu (5 bước)
-
-### Bước 1 — Clone project (nếu chưa có)
-
+Kiểm tra sau khi cài:
 ```bash
-git clone <repo-url>
-cd carenest_mobile/backend
+java -version
+# Kết quả mong đợi: openjdk version "21.x.x"
 ```
 
-### Bước 2 — Tạo file `.env` và khởi động PostgreSQL
+> Nếu máy đang có Java 17 hoặc 11 — vẫn phải cài thêm Java 21. Dự án dùng Virtual Threads chỉ có từ Java 21.
+
+### 1.2 Docker Desktop
+Tải tại: https://www.docker.com/products/docker-desktop  
+
+Sau khi cài, mở Docker Desktop và đợi đến khi thấy **"Engine running"** ở góc dưới trái.
+
+Kiểm tra:
+```bash
+docker --version
+# Kết quả mong đợi: Docker version 24.x.x
+```
+
+> Docker dùng để chạy PostgreSQL local — không cần cài PostgreSQL riêng.
+
+### 1.3 IntelliJ IDEA
+Tải tại: https://www.jetbrains.com/idea/download  
+Bản **Community** (miễn phí) là đủ dùng.
+
+---
+
+## Bước 2 — Clone project (nếu chưa có)
 
 ```bash
-# Đứng ở thư mục gốc carenest_mobile (không phải trong backend/)
+git clone https://github.com/phanhhhhhhh/carenest-mobile.git
+cd carenest-mobile
+```
+
+---
+
+## Bước 3 — Khởi động database (Docker)
+
+Chạy từ thư mục gốc `carenest-mobile/` (không phải trong `backend/`):
+
+```bash
+# Windows PowerShell
 cp .env.example .env
 docker-compose up -d
 ```
 
-Kiểm tra đang chạy:
+```bash
+# macOS / Linux
+cp .env.example .env
+docker-compose up -d
+```
+
+Kiểm tra database đang chạy:
 ```bash
 docker ps
-# Phải thấy container "carenest_db" với STATUS "healthy"
+```
+Phải thấy container `carenest_db` với STATUS `healthy`. Nếu thấy `starting` thì đợi thêm 10-15 giây rồi kiểm tra lại.
+
+> **Lần sau:** chỉ cần `docker-compose up -d` — data được giữ nguyên trong volume `carenest_pgdata`.
+
+---
+
+## Bước 4 — Mở project trong IntelliJ
+
+1. Mở IntelliJ → **Open** → chọn thư mục **`backend`** (không phải thư mục gốc)
+2. IntelliJ tự detect Maven và tải dependencies — chờ khoảng 2-5 phút lần đầu
+3. **File → Project Structure → SDK** → chọn **Java 21**
+
+---
+
+## Bước 5 — Cài Lombok plugin
+
+1. **File → Settings → Plugins** → tìm **"Lombok"** → Install → Restart IntelliJ
+2. **File → Settings → Build, Execution, Deployment → Compiler → Annotation Processors**  
+   → tick **Enable annotation processing** → OK
+
+> Nếu bỏ qua bước này, IntelliJ sẽ báo đỏ khắp nơi dù code vẫn chạy được.
+
+---
+
+## Bước 6 — Tạo file `application-local.properties`
+
+File này chứa secrets của máy bạn và **không được commit lên Git**.
+
+Tạo file tại đường dẫn:  
+`backend/src/main/resources/application-local.properties`
+
+Copy nội dung từ file mẫu đã có sẵn trong repo:
+```bash
+# Từ trong thư mục backend/src/main/resources/
+cp application-local.properties.example application-local.properties
 ```
 
-> Lần sau chỉ cần `docker-compose up -d` — data được giữ nguyên trong volume `carenest_pgdata`.
-
-### Bước 3 — Mở project trong IntelliJ
-
-1. Mở IntelliJ → **Open** → chọn thư mục `backend`
-2. IntelliJ tự detect Maven project và tải dependencies (~2-3 phút lần đầu)
-3. **File → Project Structure → Project SDK** → chọn Java 21
-
-### Bước 4 — Cấu hình Lombok
-
-1. **File → Settings → Plugins** → tìm "Lombok" → Install → Restart
-2. **File → Settings → Build → Compiler → Annotation Processors** → tick **Enable annotation processing**
-
-### Bước 5 — Tạo file `application-local.properties`
-
-File này chứa secrets riêng của máy bạn — **không được commit**, đã có trong `.gitignore`.
-
-Tạo file tại `backend/src/main/resources/application-local.properties`:
+Sau đó mở file vừa tạo và điền:
 
 ```properties
-# JWT secret cho local (chuỗi random >= 32 ký tự, thay thế chuỗi bên dưới)
+# JWT secret — thay chuỗi bên dưới bằng chuỗi random bất kỳ >= 32 ký tự
 jwt.secret=local-dev-secret-replace-this-with-something-random
 
-# Firebase credentials (xem Bước 6 bên dưới)
-# firebase.credentials-path=C:/path/to/carenest-firebase-adminsdk-xxxxx.json
+# Firebase credentials — để trống nếu chưa có (xem Bước 7)
+firebase.credentials-path=
 ```
 
-> **Nếu chưa có Firebase key:** Bỏ trống `firebase.credentials-path` — app vẫn chạy được, dùng `DEV_PHONE:` prefix để test (xem phần Test API).
+---
 
-### Bước 6 — Firebase credentials (tùy chọn, cần để test OTP thật)
+## Bước 7 — Firebase credentials (tùy chọn)
+
+Cần có để test luồng OTP thật. Nếu chưa có, bỏ qua — app vẫn chạy bình thường.
 
 1. Liên hệ **trưởng nhóm** để nhận file `carenest-firebase-adminsdk-xxxxx.json`
-2. Lưu file **ngoài thư mục project** (ví dụ: `C:/Keys/carenest-firebase-adminsdk-xxxxx.json`)
+2. Lưu file **ngoài thư mục project** — ví dụ:
+   - Windows: `C:\Keys\carenest-firebase-adminsdk-xxxxx.json`
+   - macOS/Linux: `/Users/yourname/keys/carenest-firebase-adminsdk-xxxxx.json`
 3. Điền path vào `application-local.properties`:
    ```properties
    firebase.credentials-path=C:/Keys/carenest-firebase-adminsdk-xxxxx.json
    ```
 
-> **QUAN TRỌNG:** Không được lưu file key trong thư mục project hoặc commit lên Git.
+> **QUAN TRỌNG:** Tuyệt đối không lưu file key trong thư mục project và không commit lên Git.
 
-### Bước 7 — Cấu hình IntelliJ Run Config
+---
 
-1. **Run → Edit Configurations** → chọn `CareNestBackendApplication`
-2. Mục **VM options** thêm: `-Dspring.profiles.active=local`
-3. Click **OK** → Run (▶)
+## Bước 8 — Cấu hình IntelliJ Run Config
 
-Hoặc terminal:
+1. Menu **Run → Edit Configurations**
+2. Chọn `CareNestBackendApplication` (nếu chưa có thì mở file `CareNestBackendApplication.java` → click **Run** một lần để IntelliJ tự tạo)
+3. Tìm mục **VM options** (hoặc **Add VM options** nếu chưa hiện) → điền:
+   ```
+   -Dspring.profiles.active=local
+   ```
+4. Click **OK**
+
+---
+
+## Bước 9 — Chạy ứng dụng
+
+Click **Run** (▶) trong IntelliJ, hoặc terminal:
+
 ```bash
 cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Chạy thành công khi thấy:
+Chạy thành công khi log xuất hiện:
 ```
 The following 1 profile is active: "local"
+...
+Flyway: Successfully validated 15 migrations
 ...
 Started CareNestBackendApplication in X.XXX seconds
 ```
 
-**Flyway tự tạo toàn bộ bảng** (V1–V15, 13 bảng) khi khởi động lần đầu.
+**Flyway tự tạo toàn bộ 13 bảng** (V1–V15) khi khởi động lần đầu — không cần chạy SQL thủ công.
 
 ---
 
@@ -221,13 +279,15 @@ Started CareNestBackendApplication in X.XXX seconds
 | URL | Kết quả mong đợi |
 |-----|-----------------|
 | `http://localhost:8080/actuator/health` | `{"status":"UP"}` |
-| `http://localhost:8080/swagger-ui.html` | Swagger UI — danh sách API |
+| `http://localhost:8080/swagger-ui.html` | Swagger UI hiển thị danh sách API |
+
+---
 
 ## Test Auth API (không cần Firebase)
 
-Dùng `DEV_PHONE:` prefix để bypass Firebase hoàn toàn khi test local:
+Dùng `DEV_PHONE:` prefix để bypass Firebase khi test local:
 
-**Register:**
+**Register tài khoản mới:**
 ```powershell
 Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" -Method POST -ContentType "application/json" -Body '{"firebaseToken":"DEV_PHONE:+84901234567","name":"Test User","role":"ELDERLY"}'
 ```
@@ -239,23 +299,39 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method POST -Cont
 
 Kết quả mong đợi: JSON có `accessToken`, `refreshToken`, `user`.
 
-> `DEV_PHONE:` chỉ hoạt động khi `firebase.credentials-path` để trống (dev mode). Trên production sẽ bị từ chối.
+> `DEV_PHONE:` chỉ hoạt động khi `firebase.credentials-path` để trống. Trên production sẽ bị từ chối.
 
 ---
 
-## Chạy test
+## Lỗi thường gặp (Backend)
 
-> **Yêu cầu:** Docker phải đang chạy (Testcontainers tự tạo PostgreSQL tạm)
+**`java -version` hiển thị 17 hoặc 11`**  
+→ Cài JDK 21 rồi set lại JAVA_HOME trỏ vào JDK 21. Kiểm tra lại với `java -version`.
 
-```bash
-mvn test
-```
+**`Cannot connect to database` hoặc `Connection refused`**  
+→ Docker chưa chạy. Mở Docker Desktop → đợi "Engine running" → rồi `docker-compose up -d` từ thư mục gốc.
 
-Lần đầu tải image `postgres:16-alpine` (~100MB), các lần sau nhanh hơn.
+**`docker ps` không thấy `carenest_db`**  
+→ Chạy `docker-compose up -d` từ thư mục `carenest-mobile/` (không phải trong `backend/`).
+
+**`Flyway checksum mismatch`**  
+→ Ai đó đã sửa file migration cũ. Không được sửa file V đã commit — phải tạo file V mới.
+
+**`Annotation processor not found` hoặc Lombok báo lỗi**  
+→ Kiểm tra lại Bước 5: cài Lombok plugin và bật Annotation Processing.
+
+**IntelliJ báo đỏ "Cannot resolve symbol" nhưng `mvn compile` vẫn OK**  
+→ Chỉ là cache IntelliJ. Fix: **Maven → Reload Project**, sau đó **File → Invalidate Caches → Invalidate and Restart**.
+
+**`400 Bad Request` khi gọi `/api/auth/register`**  
+→ Kiểm tra field names: `firebaseToken` (không phải `firebaseIdToken`), `name` (không phải `fullName`).
+
+**`Số điện thoại đã được đăng ký`**  
+→ Số đó đã register rồi. Dùng `/api/auth/login` hoặc đổi số khác khi test.
 
 ---
 
-## Cấu trúc project Backend
+## Cấu trúc thư mục Backend
 
 ```
 backend/
@@ -263,63 +339,36 @@ backend/
 │   ├── CareNestBackendApplication.java   ← Entry point
 │   ├── entity/                           ← JPA entities (13 bảng)
 │   ├── repository/                       ← Spring Data JPA repositories
-│   ├── service/                          ← Business logic (AuthService, JwtService, FirebaseService, ...)
-│   ├── controller/                       ← REST controllers (AuthController, ...)
+│   ├── service/                          ← Business logic
+│   ├── controller/                       ← REST controllers
 │   ├── dto/                              ← Request/Response DTOs
-│   ├── security/                         ← JwtAuthenticationFilter
+│   ├── security/                         ← JWT filter
 │   ├── config/                           ← SecurityConfig, FirebaseConfig
 │   └── exception/                        ← GlobalExceptionHandler
 │
 ├── src/main/resources/
-│   ├── application.properties              ← Config chung (commit được)
-│   ├── application-local.properties        ← Secrets local — KHÔNG commit (gitignored)
-│   └── db/
-│       ├── migration/                      ← Flyway SQL (V1–V15, 13 bảng)
-│       └── rollback/                       ← Script rollback thủ công (R1–R15)
-│
-└── src/test/                             ← Integration tests (Testcontainers)
+│   ├── application.properties                  ← Config chung (committed)
+│   ├── application-local.properties            ← Secrets local — KHÔNG commit
+│   ├── application-local.properties.example   ← Template — committed, cập nhật khi có key mới
+│   └── db/migration/                           ← Flyway SQL (V1–V15)
 ```
 
 ---
 
-## Quy tắc migration (QUAN TRỌNG)
+## Quy tắc migration (quan trọng)
 
-- **KHÔNG bao giờ sửa file migration đã có** — Flyway báo lỗi checksum ngay.
-- Cần thêm cột/bảng → tạo file mới với số tiếp theo (hiện tại đang ở **V15**, tạo tiếp **V16__...sql**).
-- Tên file đúng format: `V{số}__{mô_tả}.sql` (2 dấu gạch dưới ở giữa)
-
----
-
-## Lỗi thường gặp (Backend)
-
-**`Cannot connect to database`**
-→ Docker chưa chạy. Kiểm tra: `docker ps` → nếu không thấy `carenest_db` thì `docker-compose up -d` (chạy từ thư mục gốc `carenest_mobile/`)
-
-**`Flyway checksum mismatch`**
-→ Ai đó sửa file migration cũ. Không được sửa file V đã có — phải tạo file V mới.
-
-**`Annotation processor not found` (Lombok không hoạt động)**
-→ Kiểm tra lại bước cài Lombok plugin và bật Annotation Processing trong IntelliJ.
-
-**`Test failed: Could not find a valid Docker environment`**
-→ Docker Desktop chưa mở. Mở lên rồi chạy test lại.
-
-**`400 Bad Request` khi gọi `/api/auth/register`**
-→ Kiểm tra field names: `firebaseToken` (không phải `firebaseIdToken`), `name` (không phải `fullName`).
-
-**`Số điện thoại đã được đăng ký`**
-→ Số đó đã register rồi. Dùng `/api/auth/login` hoặc đổi số khác khi test.
-
-**`IntelliJ báo "Cannot resolve symbol"` cho một số class**
-→ Chỉ là cache IntelliJ, không ảnh hưởng build. Fix: **Maven → Reload Project**, sau đó **File → Invalidate Caches → Invalidate and Restart**. `mvn compile` vẫn chạy đúng.
+- **Không bao giờ sửa** file migration đã commit — Flyway kiểm tra checksum, sửa là lỗi ngay.
+- Cần thêm cột/bảng → tạo file mới với số tiếp theo.
+- Hiện tại đang ở **V15** → migration tiếp theo là **`V16__mô_tả.sql`**.
+- Tên file: `V{số}__{mô_tả}.sql` (2 dấu gạch dưới ở giữa, chữ V hoa).
 
 ---
 
 ## Render PostgreSQL — ⚠️ Expire sau 90 ngày
 
 Free tier của Render **tự xóa toàn bộ data sau 90 ngày**.  
-→ Set nhắc lịch ở ngày thứ 80 sau khi tạo DB để upgrade lên $7/tháng.
+→ Nhắc lịch ở ngày thứ 80 sau khi tạo DB để gia hạn.
 
 ---
 
-*Vela Team | EXE101 — FPT University | Cập nhật: 12/06/2026 — UC-01 Auth done*
+*Vela Team | EXE101 — FPT University | Cập nhật: 12/06/2026*
