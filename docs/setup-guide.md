@@ -139,24 +139,21 @@ git clone <repo-url>
 cd carenest_mobile/backend
 ```
 
-### Bước 2 — Khởi động PostgreSQL bằng Docker
+### Bước 2 — Tạo file `.env` và khởi động PostgreSQL
 
 ```bash
-docker run -d --name carenest-postgres \
-  -e POSTGRES_DB=carenest_dev \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -p 5432:5432 \
-  postgres:15
+# Đứng ở thư mục gốc carenest_mobile (không phải trong backend/)
+cp .env.example .env
+docker-compose up -d
 ```
 
 Kiểm tra đang chạy:
 ```bash
 docker ps
-# Phải thấy container "carenest-postgres" với STATUS "Up"
+# Phải thấy container "carenest_db" với STATUS "healthy"
 ```
 
-> Lần sau chỉ cần `docker start carenest-postgres` — không cần chạy lại lệnh dài trên.
+> Lần sau chỉ cần `docker-compose up -d` — data được giữ nguyên trong volume `carenest_pgdata`.
 
 ### Bước 3 — Mở project trong IntelliJ
 
@@ -183,7 +180,7 @@ Chạy thành công khi thấy:
 Started CareNestBackendApplication in X.XXX seconds
 ```
 
-**Flyway tự tạo toàn bộ bảng** (V1–V10) khi khởi động lần đầu.  
+**Flyway tự tạo toàn bộ bảng** (V1–V15, 13 bảng) khi khởi động lần đầu.  
 **Seed data tự load** (5 elderly mẫu, 10 gia đình, thuốc, chỉ số sức khỏe).
 
 ---
@@ -205,7 +202,7 @@ Started CareNestBackendApplication in X.XXX seconds
 mvn test
 ```
 
-Lần đầu tải image `postgres:15` (~200MB), các lần sau nhanh hơn.
+Lần đầu tải image `postgres:16-alpine` (~100MB), các lần sau nhanh hơn.
 
 ---
 
@@ -224,8 +221,8 @@ backend/
 │   ├── application.properties            ← Config chung
 │   ├── application-dev.properties        ← Config local dev
 │   └── db/
-│       ├── migration/                    ← Flyway SQL (V1–V10)
-│       └── rollback/                     ← Script rollback thủ công (R1–R8)
+│       ├── migration/                    ← Flyway SQL (V1–V15, 13 bảng)
+│       └── rollback/                     ← Script rollback thủ công (R1–R15)
 │
 └── src/test/                             ← Integration tests (Testcontainers)
 ```
@@ -234,8 +231,8 @@ backend/
 
 ## Quy tắc migration (QUAN TRỌNG)
 
-- **KHÔNG bao giờ sửa file V1–V10** đã có — Flyway báo lỗi checksum ngay.
-- Cần thêm cột/bảng → tạo file **V11__...sql**, **V12__...sql** mới.
+- **KHÔNG bao giờ sửa file migration đã có** — Flyway báo lỗi checksum ngay.
+- Cần thêm cột/bảng → tạo file mới với số tiếp theo (hiện tại đang ở **V15**, tạo tiếp **V16__...sql**).
 - Tên file đúng format: `V{số}__{mô_tả}.sql` (2 dấu gạch dưới ở giữa)
 
 ---
@@ -243,7 +240,7 @@ backend/
 ## Lỗi thường gặp (Backend)
 
 **`Cannot connect to database`**
-→ Docker chưa chạy. Kiểm tra: `docker ps` → nếu không thấy `carenest-postgres` thì `docker start carenest-postgres`
+→ Docker chưa chạy. Kiểm tra: `docker ps` → nếu không thấy `carenest_db` thì `docker-compose up -d` (chạy từ thư mục gốc)
 
 **`Flyway checksum mismatch`**
 → Ai đó sửa file migration cũ. Không được sửa file V đã có — phải tạo file V mới.
@@ -260,8 +257,8 @@ backend/
 
 | Dependency | Khi nào thêm |
 |---|---|
-| `spring-boot-starter-security` + JWT | Khi build **UC-01 Auth module** |
-| `firebase-admin` | Khi có `serviceAccountKey.json` từ Firebase Console |
+| `spring-boot-starter-security` + JWT | Khi build **UC-01 Auth module** — entity `RefreshToken` đã sẵn sàng |
+| `firebase-admin` | Khi có `serviceAccountKey.json` từ Firebase Console — **KHÔNG commit file này** |
 
 ---
 
@@ -272,4 +269,4 @@ Free tier của Render **tự xóa toàn bộ data sau 90 ngày**.
 
 ---
 
-*Vela Team | EXE101 — FPT University | Cập nhật: 11/06/2026*
+*Vela Team | EXE101 — FPT University | Cập nhật: 12/06/2026*

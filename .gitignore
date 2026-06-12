@@ -4,6 +4,25 @@
 # Sensitive docs (keep local only)
 backend/docs/database-schema.md
 
+# Environment & secrets — NEVER commit these
+.env
+.env.*
+*.env
+!.env.example
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.properties
+backend/src/main/resources/application-prod.yml
+backend/src/main/resources/application-prod.properties
+backend/src/main/resources/application-secret*.yml
+backend/src/main/resources/application-secret*.properties
+
+# Firebase config (contains API keys)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Backend build output
+backend/target/
+
 # Miscellaneous
 *.class
 *.log
