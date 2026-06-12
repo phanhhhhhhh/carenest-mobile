@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cảm ơn bạn! — CareNest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { primary: '#2E7D9A', 'primary-dark': '#1A5570', secondary: '#4CAF82' }, fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    }
+  </script>
+  <style>
+    .pop-in { opacity: 0; transform: scale(.5); animation: popIn .7s cubic-bezier(.34,1.56,.64,1) forwards; }
+    .pop-in-1 { animation-delay: .1s; }
+    .pop-in-2 { animation-delay: .3s; }
+    .pop-in-3 { animation-delay: .5s; }
+    .pop-in-4 { animation-delay: .7s; }
+    @keyframes popIn { to { opacity: 1; transform: scale(1); } }
+
+    .confetti {
+      position: fixed;
+      top: -16px;
+      font-size: 1.25rem;
+      pointer-events: none;
+      animation: fall linear forwards;
+    }
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    .bounce-emoji { display: inline-block; animation: bounce 1.4s ease-in-out .9s infinite; }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+  </style>
+</head>
+<body class="font-sans min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center px-6">
+  <div class="text-center max-w-md">
+    <div class="pop-in pop-in-1 text-7xl mb-6"><span class="bounce-emoji">🎉</span></div>
+    <h1 class="pop-in pop-in-2 text-3xl md:text-4xl font-black text-gray-900 mb-4">Đăng ký thành công!</h1>
+    <p class="pop-in pop-in-3 text-gray-500 mb-8 leading-relaxed">
+      Cảm ơn bạn đã quan tâm đến CareNest. Chúng tôi sẽ thông báo ngay khi app sẵn sàng ra mắt.
+    </p>
+    <a href="index.html" class="pop-in pop-in-4 inline-block bg-primary text-white px-8 py-3 rounded-full font-semibold hover:bg-primary-dark transition-all hover:scale-105 active:scale-95 shadow-lg">
+      ← Quay về trang chủ
+    </a>
+  </div>
+
+  <script>
+    // Confetti rain
+    const emojis = ['🎉', '🎊', '💙', '💚', '✨', '🥳'];
+    for (let i = 0; i < 40; i++) {
+      const el = document.createElement('span');
+      el.className = 'confetti';
+      el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.animationDuration = (2.5 + Math.random() * 3) + 's';
+      el.style.animationDelay = Math.random() * 1.5 + 's';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 7000);
+    }
+  </script>
+</body>
+</html>
