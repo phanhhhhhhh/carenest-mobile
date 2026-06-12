@@ -240,6 +240,21 @@ Cần có để test luồng OTP thật. Nếu chưa có, bỏ qua — app vẫn
 
 ---
 
+## Giải thích: profile là gì?
+
+Spring Boot dùng "profile" để biết đang chạy ở môi trường nào — mỗi môi trường có config khác nhau.
+
+| Profile | Dùng khi | File config tương ứng |
+|---------|----------|----------------------|
+| `local` | Dev chạy trên máy cá nhân | `application-local.properties` (gitignored, bạn tự tạo) |
+| *(không có)* | Chạy trên Render (production) | Chỉ dùng `application.properties` + biến môi trường |
+
+**Tại sao cần `local` riêng?** Vì mỗi dev có path Firebase key khác nhau, JWT secret khác nhau — không thể commit chung lên Git. File `application-local.properties` chứa những thứ đó và chỉ tồn tại trên máy của bạn.
+
+> Bạn sẽ thấy log `The following 1 profile is active: "local"` khi khởi động đúng cách.
+
+---
+
 ## Bước 8 — Cấu hình IntelliJ Run Config
 
 1. Menu **Run → Edit Configurations**
@@ -280,6 +295,10 @@ Started CareNestBackendApplication in X.XXX seconds
 |-----|-----------------|
 | `http://localhost:8080/actuator/health` | `{"status":"UP"}` |
 | `http://localhost:8080/swagger-ui.html` | Swagger UI hiển thị danh sách API |
+
+> **Chưa có giao diện Flutter?** Đó là bình thường — backend và frontend được phát triển song song.  
+> Dùng **Swagger UI** (`/swagger-ui.html`) để test API trực tiếp trên trình duyệt, không cần Flutter.  
+> Swagger cho phép gọi thử từng endpoint, điền request body và xem response ngay trên web.
 
 ---
 
