@@ -1,6 +1,9 @@
 # Claude Code local config
 .omc/
 
+# Sensitive docs (keep local only)
+backend/docs/database-schema.md
+
 # Miscellaneous
 *.class
 *.log
