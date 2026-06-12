@@ -60,6 +60,8 @@
 - [ ] Review lại toàn bộ task tuần trước: xong chưa, còn gì dở
 - [ ] Merge develop vào branch cá nhân (nếu chưa làm)
 - [ ] Xóa branch đã merge xong (dọn dẹp)
+- [ ] Kiểm tra Docker đang chạy: `docker ps` → thấy `carenest_db` STATUS `healthy`
+- [ ] Nếu Docker không chạy: `docker-compose up -d` (từ thư mục gốc project)
 - [ ] Kiểm tra Render backend còn up không: `GET /actuator/health`
 - [ ] Kiểm tra PostgreSQL Render còn bao nhiêu ngày trước khi expire
 
@@ -345,8 +347,13 @@ family_links
 medications
 medication_logs
 health_metrics
+health_metric_thresholds
 appointments
 emergency_events
+otp_verifications
+refresh_tokens
+notifications
+reminders
 
 -- ❌
 User
@@ -396,7 +403,7 @@ Format: `V{số}__{mô_tả}.sql` (2 dấu gạch dưới)
 -- ✅
 V1__create_users.sql
 V2__create_elderly_profiles.sql
-V11__add_appointment_type_column.sql
+V16__add_appointment_type_column.sql   ← tiếp theo sau V15
 
 -- ❌
 V1_create_users.sql          ← thiếu 1 dấu gạch dưới
@@ -404,7 +411,8 @@ v1__create_users.sql         ← chữ v thường
 V01__create_users.sql        ← không dùng số 0 đầu
 ```
 
-> **Quy tắc số:** Dùng số nguyên tăng dần — `V11`, `V12`, không phải `V1.1` hay `V01`.
+> **Quy tắc số:** Dùng số nguyên tăng dần — hiện tại đang ở **V15**, migration tiếp theo là **V16**.  
+> **KHÔNG bao giờ sửa file migration đã commit** — Flyway kiểm tra checksum, sửa là lỗi ngay.
 
 ---
 
@@ -467,8 +475,9 @@ POST /api/medication/add
 
 - [ ] Code compile được (`mvn compile` không lỗi)
 - [ ] Không để `System.out.println()` debug — dùng `log.info()` / `log.debug()`
-- [ ] Không commit file `.env`, `serviceAccountKey.json`, hoặc password thật
-- [ ] Nếu thêm migration mới: tên file đúng format `V{n}__...sql`, số tiếp theo
+- [ ] **KHÔNG commit** file `.env`, `application-prod.yml`, `serviceAccountKey.json`, hoặc bất kỳ file chứa password/secret
+- [ ] Chỉ commit `.env.example` — không bao giờ commit `.env`
+- [ ] Nếu thêm migration mới: tên file đúng format `V{n}__...sql`, số tiếp theo (hiện tại V15 → dùng V16)
 
 ### Git chung
 
@@ -479,4 +488,4 @@ POST /api/medication/add
 
 ---
 
-*Vela Team | EXE101 — FPT University | Cập nhật: 11/06/2026*
+*Vela Team | EXE101 — FPT University | Cập nhật: 12/06/2026*
