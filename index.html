@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareNest — Yên tâm khi xa nhà</title>
+  <meta name="description" content="Ứng dụng theo dõi sức khỏe người cao tuổi, kết nối gia đình từ xa. Nhắc thuốc, cảnh báo SOS, AI đồng hành." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2E7D9A',
+            'primary-light': '#5BA3C9',
+            'primary-dark': '#1A5570',
+            secondary: '#4CAF82',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    body { overflow-x: hidden; }
+
+    /* ---------- Animated gradient blobs ---------- */
+    .blob {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(80px);
+      opacity: .45;
+      pointer-events: none;
+      animation: blobFloat 14s ease-in-out infinite;
+    }
+    @keyframes blobFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%      { transform: translate(40px, -30px) scale(1.1); }
+      66%      { transform: translate(-30px, 25px) scale(.95); }
+    }
+
+    /* ---------- Scroll reveal ---------- */
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity .7s cubic-bezier(.22,.61,.36,1), transform .7s cubic-bezier(.22,.61,.36,1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-left  { opacity: 0; transform: translateX(-40px); transition: all .7s cubic-bezier(.22,.61,.36,1); }
+    .reveal-right { opacity: 0; transform: translateX(40px);  transition: all .7s cubic-bezier(.22,.61,.36,1); }
+    .reveal-left.visible, .reveal-right.visible { opacity: 1; transform: translateX(0); }
+    .reveal-scale { opacity: 0; transform: scale(.92); transition: all .6s cubic-bezier(.34,1.56,.64,1); }
+    .reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+    /* stagger children */
+    .stagger > * { transition-delay: 0ms; }
+    .stagger.visible > *:nth-child(1) { transition-delay: 0ms; }
+    .stagger.visible > *:nth-child(2) { transition-delay: 120ms; }
+    .stagger.visible > *:nth-child(3) { transition-delay: 240ms; }
+    .stagger.visible > *:nth-child(4) { transition-delay: 360ms; }
+
+    /* ---------- Hero entrance ---------- */
+    .hero-in { opacity: 0; transform: translateY(24px); animation: heroIn .8s cubic-bezier(.22,.61,.36,1) forwards; }
+    .hero-in-1 { animation-delay: .1s; }
+    .hero-in-2 { animation-delay: .25s; }
+    .hero-in-3 { animation-delay: .4s; }
+    .hero-in-4 { animation-delay: .55s; }
+    .hero-in-5 { animation-delay: .7s; }
+    @keyframes heroIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---------- Floating icons ---------- */
+    .float-slow { animation: floatY 5s ease-in-out infinite; }
+    .float-mid  { animation: floatY 4s ease-in-out .8s infinite; }
+    .float-fast { animation: floatY 3.2s ease-in-out .4s infinite; }
+    @keyframes floatY {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-14px); }
+    }
+
+    /* ---------- Card hover ---------- */
+    .card-hover {
+      transition: transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 48px rgba(46, 125, 154, .18);
+    }
+
+    /* icon bounce on card hover */
+    .card-hover:hover .card-icon { animation: iconPop .45s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes iconPop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.25) rotate(-6deg); }
+      100% { transform: scale(1); }
+    }
+
+    /* ---------- Pulse SOS ---------- */
+    .sos-pulse { position: relative; }
+    .sos-pulse::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 16px;
+      border: 2px solid rgba(239, 68, 68, .5);
+      animation: sosPing 2s cubic-bezier(0,0,.2,1) infinite;
+    }
+    @keyframes sosPing {
+      0%   { transform: scale(.9); opacity: 1; }
+      80%, 100% { transform: scale(1.25); opacity: 0; }
+    }
+
+    /* ---------- CTA shimmer ---------- */
+    .btn-shine { position: relative; overflow: hidden; }
+    .btn-shine::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -75%;
+      width: 50%; height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,.35), transparent);
+      transform: skewX(-20deg);
+      animation: shine 3.5s ease-in-out infinite;
+    }
+    @keyframes shine {
+      0%, 60% { left: -75%; }
+      100%    { left: 125%; }
+    }
+
+    /* ---------- Gradient text ---------- */
+    .text-gradient {
+      background: linear-gradient(100deg, #2E7D9A 10%, #4CAF82 60%, #2E7D9A 95%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: gradientSlide 5s linear infinite;
+    }
+    @keyframes gradientSlide {
+      to { background-position: 200% center; }
+    }
+
+    /* ---------- Badge wiggle ---------- */
+    .badge-pop { animation: badgePop .6s cubic-bezier(.34,1.56,.64,1) .9s both; }
+    @keyframes badgePop {
+      from { opacity: 0; transform: scale(.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ---------- Heartbeat ---------- */
+    .heartbeat { display: inline-block; animation: heartbeat 1.6s ease-in-out infinite; }
+    @keyframes heartbeat {
+      0%, 28%, 100% { transform: scale(1); }
+      14%  { transform: scale(1.22); }
+      42%  { transform: scale(1.12); }
+    }
+
+    /* ---------- Nav scrolled ---------- */
+    #nav { transition: box-shadow .3s ease, background-color .3s ease; }
+    #nav.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,.07); }
+
+    /* ---------- Wave divider ---------- */
+    .wave { display: block; width: 100%; height: 70px; }
+
+    /* ---------- Step line ---------- */
+    .step-num {
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1), background-color .3s ease, color .3s ease;
+    }
+    .step-card:hover .step-num {
+      transform: scale(1.15) rotate(8deg);
+    }
+
+    /* ---------- Form focus glow ---------- */
+    .input-glow { transition: box-shadow .25s ease, transform .25s ease; }
+    .input-glow:focus { box-shadow: 0 0 0 4px rgba(255,255,255,.35); transform: scale(1.015); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+
+<body class="font-sans text-gray-800 bg-white">
+
+  <!-- NAV -->
+  <nav id="nav" class="fixed top-0 w-full bg-white/85 backdrop-blur-md border-b border-gray-100 z-50">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl heartbeat">🏥</span>
+        <span class="text-xl font-extrabold text-primary tracking-tight">CareNest</span>
+      </div>
+      <a href="#signup"
+        class="btn-shine bg-primary text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-primary-dark transition-colors">
+        Đăng ký sớm
+      </a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="relative pt-36 pb-28 px-6 overflow-hidden" style="background: linear-gradient(135deg, #e8f4f8 0%, #f0faf5 100%);">
+    <!-- animated blobs -->
+    <div class="blob w-96 h-96 bg-primary-light/60 -top-20 -left-24"></div>
+    <div class="blob w-80 h-80 bg-secondary/50 top-32 -right-20" style="animation-delay: -5s;"></div>
+    <div class="blob w-72 h-72 bg-primary/40 bottom-0 left-1/3" style="animation-delay: -9s;"></div>
+
+    <!-- floating emoji decorations -->
+    <div class="hidden md:block absolute top-40 left-[8%] text-4xl float-slow select-none" aria-hidden="true">💊</div>
+    <div class="hidden md:block absolute top-64 right-[10%] text-4xl float-mid select-none" aria-hidden="true">❤️</div>
+    <div class="hidden md:block absolute bottom-24 left-[14%] text-3xl float-fast select-none" aria-hidden="true">📱</div>
+    <div class="hidden md:block absolute bottom-36 right-[16%] text-3xl float-slow select-none" aria-hidden="true">🩺</div>
+
+    <div class="relative max-w-3xl mx-auto text-center">
+      <span class="hero-in hero-in-1 badge-pop inline-block bg-secondary/10 text-secondary text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
+        🚀 Sắp ra mắt — Đăng ký nhận thông báo
+      </span>
+      <h1 class="hero-in hero-in-2 text-4xl md:text-6xl font-black text-gray-900 leading-tight mb-6 tracking-tight">
+        Yên tâm khi xa nhà,<br />
+        <span class="text-gradient">ba mẹ luôn được chăm sóc</span>
+      </h1>
+      <p class="hero-in hero-in-3 text-lg text-gray-500 mb-10 max-w-xl mx-auto leading-relaxed">
+        CareNest giúp gia đình theo dõi sức khỏe người cao tuổi từ xa — nhắc thuốc, cảnh báo khẩn cấp, và AI đồng hành mọi lúc.
+      </p>
+      <div class="hero-in hero-in-4">
+        <a href="#signup"
+          class="btn-shine inline-block bg-primary text-white px-9 py-4 rounded-full text-base font-bold hover:bg-primary-dark transition-all shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95">
+          Nhận thông báo khi ra mắt →
+        </a>
+      </div>
+      <p class="hero-in hero-in-5 mt-4 text-sm text-gray-400">Hoàn toàn miễn phí • Không spam</p>
+    </div>
+
+    <!-- wave divider -->
+    <svg class="wave absolute bottom-0 left-0" viewBox="0 0 1440 70" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,40 C240,70 480,0 720,25 C960,50 1200,15 1440,40 L1440,70 L0,70 Z" fill="#ffffff"></path>
+    </svg>
+  </section>
+
+  <!-- PAIN POINTS -->
+  <section class="py-20 px-6 bg-white">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="reveal text-2xl md:text-3xl font-extrabold text-center text-gray-900 mb-4">
+        Bạn có đang gặp những điều này?
+      </h2>
+      <p class="reveal text-center text-gray-500 mb-12">Hàng triệu gia đình Việt đang đối mặt mỗi ngày</p>
+
+      <div class="reveal stagger grid md:grid-cols-3 gap-6">
+        <div class="reveal bg-red-50 rounded-2xl p-6 card-hover">
+          <div class="card-icon text-3xl mb-4 inline-block">😰</div>
+          <h3 class="font-bold text-gray-800 mb-2">Không biết ba mẹ uống thuốc chưa</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Bận công việc, không thể gọi điện nhắc từng bữa thuốc. Lo lắng mà không làm được gì.
+          </p>
+        </div>
+        <div class="reveal bg-orange-50 rounded-2xl p-6 card-hover">
+          <div class="card-icon text-3xl mb-4 inline-block">🚨</div>
+          <h3 class="font-bold text-gray-800 mb-2">Khi có khẩn cấp, biết tin quá muộn</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Ngã, đột quỵ, hay chỉ đơn giản là không khỏe — nhưng không ai biết để ứng cứu kịp thời.
+          </p>
+        </div>
+        <div class="reveal bg-blue-50 rounded-2xl p-6 card-hover">
+          <div class="card-icon text-3xl mb-4 inline-block">📊</div>
+          <h3 class="font-bold text-gray-800 mb-2">Không theo dõi được sức khỏe từ xa</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">
+            Huyết áp, đường huyết, nhịp tim — những chỉ số quan trọng mà con cái không nắm được.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="relative py-20 px-6 bg-gray-50 overflow-hidden">
+    <div class="blob w-80 h-80 bg-secondary/30 -bottom-20 -left-24" style="animation-delay: -3s;"></div>
+    <div class="relative max-w-5xl mx-auto">
+      <h2 class="reveal text-2xl md:text-3xl font-extrabold text-center text-gray-900 mb-4">
+        CareNest giải quyết <span class="text-gradient">tất cả</span>
+      </h2>
+      <p class="reveal text-center text-gray-500 mb-14">Một app, đầy đủ mọi thứ gia đình cần</p>
+
+      <div class="grid md:grid-cols-2 gap-6">
+
+        <div class="reveal-left bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="card-icon bg-primary/10 rounded-xl p-3 text-2xl flex-shrink-0">💊</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">Nhắc uống thuốc thông minh</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Lập lịch thuốc cho ba mẹ từ xa. Hệ thống tự nhắc đúng giờ — nếu quên, gia đình nhận cảnh báo ngay lập tức.
+            </p>
+          </div>
+        </div>
+
+        <div class="reveal-right bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="card-icon bg-secondary/10 rounded-xl p-3 text-2xl flex-shrink-0">📈</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">Theo dõi sức khỏe liên tục</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Huyết áp, đường huyết, nhịp tim — AI phân tích xu hướng và cảnh báo khi có bất thường. Kết nối cả smartwatch.
+            </p>
+          </div>
+        </div>
+
+        <div class="reveal-left bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="card-icon sos-pulse bg-red-50 rounded-xl p-3 text-2xl flex-shrink-0">🆘</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">Nút SOS khẩn cấp</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Một chạm — toàn bộ gia đình nhận thông báo kèm vị trí GPS ngay lập tức qua app, Zalo và SMS.
+            </p>
+          </div>
+        </div>
+
+        <div class="reveal-right bg-white rounded-2xl p-7 card-hover flex gap-5 items-start">
+          <div class="card-icon bg-purple-50 rounded-xl p-3 text-2xl flex-shrink-0">🤖</div>
+          <div>
+            <h3 class="font-bold text-gray-900 mb-2">AI đồng hành giảm cô đơn</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">
+              Chatbot AI thân thiện trò chuyện, nhắc lịch hẹn, trả lời câu hỏi sức khỏe. Có thể nói chuyện bằng giọng nói.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS — 3 STEPS -->
+  <section class="py-20 px-6 bg-white">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="reveal text-2xl md:text-3xl font-extrabold text-center text-gray-900 mb-4">Bắt đầu chỉ với 3 bước</h2>
+      <p class="reveal text-center text-gray-500 mb-14">Đơn giản đến mức ông bà cũng tự dùng được</p>
+
+      <div class="reveal stagger grid md:grid-cols-3 gap-8">
+        <div class="reveal step-card text-center px-4">
+          <div class="step-num w-14 h-14 mx-auto mb-5 rounded-2xl bg-primary/10 text-primary text-xl font-black flex items-center justify-center">1</div>
+          <h3 class="font-bold text-gray-900 mb-2">Tải app & đăng ký</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Đăng ký bằng số điện thoại, xác thực OTP trong 30 giây.</p>
+        </div>
+        <div class="reveal step-card text-center px-4">
+          <div class="step-num w-14 h-14 mx-auto mb-5 rounded-2xl bg-secondary/10 text-secondary text-xl font-black flex items-center justify-center">2</div>
+          <h3 class="font-bold text-gray-900 mb-2">Kết nối gia đình</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Con cái quét mã liên kết với tài khoản của ba mẹ — xong ngay.</p>
+        </div>
+        <div class="reveal step-card text-center px-4">
+          <div class="step-num w-14 h-14 mx-auto mb-5 rounded-2xl bg-primary/10 text-primary text-xl font-black flex items-center justify-center">3</div>
+          <h3 class="font-bold text-gray-900 mb-2">Yên tâm mỗi ngày</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Nhắc thuốc, theo dõi chỉ số, cảnh báo khẩn cấp — tất cả tự động.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO ROLES -->
+  <section class="relative py-20 px-6 bg-gray-50 overflow-hidden">
+    <div class="blob w-72 h-72 bg-primary-light/40 -top-16 -right-20" style="animation-delay: -7s;"></div>
+    <div class="relative max-w-3xl mx-auto text-center">
+      <h2 class="reveal text-2xl md:text-3xl font-extrabold text-gray-900 mb-4">Dành cho cả gia đình</h2>
+      <p class="reveal text-gray-500 mb-12">Hai vai trò, một ứng dụng</p>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="reveal-left text-left bg-white rounded-2xl p-8 card-hover">
+          <div class="card-icon text-4xl mb-4 inline-block">👴👵</div>
+          <h3 class="font-bold text-lg text-gray-900 mb-3">Dành cho người cao tuổi</h3>
+          <ul class="space-y-2 text-gray-600 text-sm">
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Nhận nhắc thuốc đơn giản</li>
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Bấm SOS khi cần giúp đỡ</li>
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Chat với AI bằng giọng nói</li>
+            <li class="flex gap-2"><span class="text-secondary font-bold">✓</span> Ghi chỉ số sức khỏe hàng ngày</li>
+          </ul>
+        </div>
+        <div class="reveal-right text-left bg-white rounded-2xl p-8 card-hover">
+          <div class="card-icon text-4xl mb-4 inline-block">👨‍💼👩‍💼</div>
+          <h3 class="font-bold text-lg text-gray-900 mb-3">Dành cho con cái</h3>
+          <ul class="space-y-2 text-gray-600 text-sm">
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Dashboard theo dõi từ xa</li>
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Cảnh báo thời gian thực</li>
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Đặt lịch thuốc và tái khám</li>
+            <li class="flex gap-2"><span class="text-primary font-bold">✓</span> Báo cáo sức khỏe hàng tuần từ AI</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNUP FORM -->
+  <section id="signup" class="relative py-24 px-6 overflow-hidden" style="background: linear-gradient(135deg, #1A5570 0%, #2E7D9A 55%, #357d63 100%);">
+    <div class="blob w-96 h-96 bg-white/20 -top-24 -right-28"></div>
+    <div class="blob w-72 h-72 bg-secondary/40 -bottom-16 -left-16" style="animation-delay: -6s;"></div>
+
+    <div class="relative max-w-xl mx-auto text-center">
+      <div class="reveal-scale">
+        <div class="text-5xl mb-5 heartbeat inline-block">💙</div>
+        <h2 class="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">
+          Nhận thông báo khi CareNest ra mắt
+        </h2>
+        <p class="text-white/70 text-base mb-10">
+          Đăng ký ngay hôm nay để trở thành người đầu tiên trải nghiệm CareNest miễn phí.
+        </p>
+      </div>
+
+      <form action="https://formspree.io/f/mdavepgv" method="POST" class="reveal space-y-4">
+        <input
+          type="text"
+          name="name"
+          placeholder="Họ và tên"
+          required
+          class="input-glow w-full px-5 py-4 rounded-xl text-gray-800 text-base outline-none"
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Địa chỉ email"
+          required
+          class="input-glow w-full px-5 py-4 rounded-xl text-gray-800 text-base outline-none"
+        />
+        <input type="hidden" name="_subject" value="CareNest — Đăng ký nhận thông báo" />
+        <input type="hidden" name="_next" value="https://phanhhhhhhh.github.io/carenest-mobile/thank-you.html" />
+        <button
+          type="submit"
+          class="btn-shine w-full bg-white text-primary font-bold py-4 rounded-xl text-base hover:bg-gray-100 transition-all shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-95">
+          Đăng ký ngay — Miễn phí 🎉
+        </button>
+      </form>
+
+      <p class="reveal mt-6 text-white/50 text-sm">
+        Chúng tôi không gửi spam. Chỉ thông báo khi app sẵn sàng.
+      </p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-10 px-6 bg-gray-900 text-gray-400 text-center text-sm">
+    <div class="flex items-center justify-center gap-2 mb-3">
+      <span class="text-xl">🏥</span>
+      <span class="text-white font-bold text-base">CareNest</span>
+    </div>
+    <p>© 2026 CareNest · Nhóm Vela · FPT University</p>
+    <p class="mt-1 text-xs text-gray-600">Yên tâm khi xa nhà</p>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale')
+      .forEach((el) => observer.observe(el));
+
+    // Nav shadow on scroll
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 10);
+    }, { passive: true });
+  </script>
+
+</body>
+</html>
