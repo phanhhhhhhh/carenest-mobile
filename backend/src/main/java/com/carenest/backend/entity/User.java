@@ -15,7 +15,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -48,6 +50,11 @@ public class User {
 
     @Column(name = "fcm_token", length = 255)
     private String fcmToken;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "notification_preferences", columnDefinition = "jsonb")
+    @Builder.Default
+    private NotificationPreferences notificationPreferences = new NotificationPreferences();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
