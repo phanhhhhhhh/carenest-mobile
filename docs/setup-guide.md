@@ -166,22 +166,53 @@ docker ps
 1. **File → Settings → Plugins** → tìm "Lombok" → Install → Restart
 2. **File → Settings → Build → Compiler → Annotation Processors** → tick **Enable annotation processing**
 
-### Bước 5 — Chạy ứng dụng (dev profile)
+### Bước 5 — Tạo file `application-local.properties`
 
-Trong IntelliJ, mở `CareNestBackendApplication.java` → click **Run** (▶)
+File này chứa secrets riêng của máy bạn — **không được commit**, đã có trong `.gitignore`.
+
+Tạo file tại `backend/src/main/resources/application-local.properties`:
+
+```properties
+# JWT secret cho local (chuỗi random >= 32 ký tự, thay thế chuỗi bên dưới)
+jwt.secret=local-dev-secret-replace-this-with-something-random
+
+# Firebase credentials (xem Bước 6 bên dưới)
+# firebase.credentials-path=C:/path/to/carenest-firebase-adminsdk-xxxxx.json
+```
+
+> **Nếu chưa có Firebase key:** Bỏ trống `firebase.credentials-path` — app vẫn chạy được, dùng `DEV_PHONE:` prefix để test (xem phần Test API).
+
+### Bước 6 — Firebase credentials (tùy chọn, cần để test OTP thật)
+
+1. Liên hệ **trưởng nhóm** để nhận file `carenest-firebase-adminsdk-xxxxx.json`
+2. Lưu file **ngoài thư mục project** (ví dụ: `C:/Keys/carenest-firebase-adminsdk-xxxxx.json`)
+3. Điền path vào `application-local.properties`:
+   ```properties
+   firebase.credentials-path=C:/Keys/carenest-firebase-adminsdk-xxxxx.json
+   ```
+
+> **QUAN TRỌNG:** Không được lưu file key trong thư mục project hoặc commit lên Git.
+
+### Bước 7 — Cấu hình IntelliJ Run Config
+
+1. **Run → Edit Configurations** → chọn `CareNestBackendApplication`
+2. Mục **VM options** thêm: `-Dspring.profiles.active=local`
+3. Click **OK** → Run (▶)
 
 Hoặc terminal:
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
+cd backend
+mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 Chạy thành công khi thấy:
 ```
+The following 1 profile is active: "local"
+...
 Started CareNestBackendApplication in X.XXX seconds
 ```
 
-**Flyway tự tạo toàn bộ bảng** (V1–V15, 13 bảng) khi khởi động lần đầu.  
-**Seed data tự load** (5 elderly mẫu, 10 gia đình, thuốc, chỉ số sức khỏe).
+**Flyway tự tạo toàn bộ bảng** (V1–V15, 13 bảng) khi khởi động lần đầu.
 
 ---
 
@@ -191,6 +222,24 @@ Started CareNestBackendApplication in X.XXX seconds
 |-----|-----------------|
 | `http://localhost:8080/actuator/health` | `{"status":"UP"}` |
 | `http://localhost:8080/swagger-ui.html` | Swagger UI — danh sách API |
+
+## Test Auth API (không cần Firebase)
+
+Dùng `DEV_PHONE:` prefix để bypass Firebase hoàn toàn khi test local:
+
+**Register:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" -Method POST -ContentType "application/json" -Body '{"firebaseToken":"DEV_PHONE:+84901234567","name":"Test User","role":"ELDERLY"}'
+```
+
+**Login:**
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method POST -ContentType "application/json" -Body '{"firebaseToken":"DEV_PHONE:+84901234567"}'
+```
+
+Kết quả mong đợi: JSON có `accessToken`, `refreshToken`, `user`.
+
+> `DEV_PHONE:` chỉ hoạt động khi `firebase.credentials-path` để trống (dev mode). Trên production sẽ bị từ chối.
 
 ---
 
@@ -212,17 +261,21 @@ Lần đầu tải image `postgres:16-alpine` (~100MB), các lần sau nhanh hơ
 backend/
 ├── src/main/java/com/carenest/backend/
 │   ├── CareNestBackendApplication.java   ← Entry point
-│   ├── entity/                           ← JPA entities (User, Medication, ...)
+│   ├── entity/                           ← JPA entities (13 bảng)
 │   ├── repository/                       ← Spring Data JPA repositories
-│   ├── seeder/                           ← DataSeeder (chỉ chạy khi profile=dev)
-│   └── config/                           ← Config classes (thêm dần theo module)
+│   ├── service/                          ← Business logic (AuthService, JwtService, FirebaseService, ...)
+│   ├── controller/                       ← REST controllers (AuthController, ...)
+│   ├── dto/                              ← Request/Response DTOs
+│   ├── security/                         ← JwtAuthenticationFilter
+│   ├── config/                           ← SecurityConfig, FirebaseConfig
+│   └── exception/                        ← GlobalExceptionHandler
 │
 ├── src/main/resources/
-│   ├── application.properties            ← Config chung
-│   ├── application-dev.properties        ← Config local dev
+│   ├── application.properties              ← Config chung (commit được)
+│   ├── application-local.properties        ← Secrets local — KHÔNG commit (gitignored)
 │   └── db/
-│       ├── migration/                    ← Flyway SQL (V1–V15, 13 bảng)
-│       └── rollback/                     ← Script rollback thủ công (R1–R15)
+│       ├── migration/                      ← Flyway SQL (V1–V15, 13 bảng)
+│       └── rollback/                       ← Script rollback thủ công (R1–R15)
 │
 └── src/test/                             ← Integration tests (Testcontainers)
 ```
@@ -240,7 +293,7 @@ backend/
 ## Lỗi thường gặp (Backend)
 
 **`Cannot connect to database`**
-→ Docker chưa chạy. Kiểm tra: `docker ps` → nếu không thấy `carenest_db` thì `docker-compose up -d` (chạy từ thư mục gốc)
+→ Docker chưa chạy. Kiểm tra: `docker ps` → nếu không thấy `carenest_db` thì `docker-compose up -d` (chạy từ thư mục gốc `carenest_mobile/`)
 
 **`Flyway checksum mismatch`**
 → Ai đó sửa file migration cũ. Không được sửa file V đã có — phải tạo file V mới.
@@ -251,14 +304,14 @@ backend/
 **`Test failed: Could not find a valid Docker environment`**
 → Docker Desktop chưa mở. Mở lên rồi chạy test lại.
 
----
+**`400 Bad Request` khi gọi `/api/auth/register`**
+→ Kiểm tra field names: `firebaseToken` (không phải `firebaseIdToken`), `name` (không phải `fullName`).
 
-## Dependencies sẽ thêm sau
+**`Số điện thoại đã được đăng ký`**
+→ Số đó đã register rồi. Dùng `/api/auth/login` hoặc đổi số khác khi test.
 
-| Dependency | Khi nào thêm |
-|---|---|
-| `spring-boot-starter-security` + JWT | Khi build **UC-01 Auth module** — entity `RefreshToken` đã sẵn sàng |
-| `firebase-admin` | Khi có `serviceAccountKey.json` từ Firebase Console — **KHÔNG commit file này** |
+**`IntelliJ báo "Cannot resolve symbol"` cho một số class**
+→ Chỉ là cache IntelliJ, không ảnh hưởng build. Fix: **Maven → Reload Project**, sau đó **File → Invalidate Caches → Invalidate and Restart**. `mvn compile` vẫn chạy đúng.
 
 ---
 
@@ -269,4 +322,4 @@ Free tier của Render **tự xóa toàn bộ data sau 90 ngày**.
 
 ---
 
-*Vela Team | EXE101 — FPT University | Cập nhật: 12/06/2026*
+*Vela Team | EXE101 — FPT University | Cập nhật: 12/06/2026 — UC-01 Auth done*

@@ -2,7 +2,7 @@
 
 > **Dự án:** CareNest — Ứng dụng chăm sóc sức khỏe người cao tuổi  
 > **Nhóm:** Vela | **Môn:** EXE101 — FPT University  
-> **Phiên bản:** 2.0 (reviewed 08/06/2026) | Cập nhật sau phân tích tech stack
+> **Phiên bản:** 3.0 (reviewed 12/06/2026) | Schema đầy đủ 13 bảng — sẵn sàng code
 
 ---
 
@@ -38,6 +38,14 @@
                   │ Flash (AI)   │  │  (Storage)   │
                   └──────────────┘  └──────────────┘
 ```
+
+**Thay đổi so với v2.0:**
+- ✅ Gemini 1.5 Flash → **Gemini 2.5 Flash** (model mới nhất, vẫn free)
+- ✅ Schema đầy đủ **V1–V15 (13 bảng)** — entity + repository toàn bộ đã build
+- ✅ `hypersistence-utils` bỏ → dùng Hibernate 6 built-in `@JdbcTypeCode`
+- ✅ Docker Compose + `.env.example` — DB local đồng bộ toàn team
+- ⏳ Spring Security + JWT — chưa thêm, implement khi build UC-01 (`RefreshToken` entity sẵn sàng)
+- ⏳ Firebase Admin SDK — chưa thêm, cần `serviceAccountKey.json` từ Firebase Console
 
 **Thay đổi so với v1.0:**
 - ✅ Firebase Auth thêm vào → thay Zalo OA làm **primary OTP**
@@ -102,7 +110,7 @@ Team có nền Java từ PRO192, PRO202. Spring Boot là framework Java phổ bi
 | Ưu điểm | Áp dụng vào CareNest |
 |---|---|
 | Team đã biết Java | Không mất thời gian học framework từ đầu |
-| Spring Security | JWT + role-based auth (Elderly / Family / Admin) out-of-the-box |
+| Spring Security | JWT + role-based auth (Elderly / Family / Admin) — **thêm vào khi build UC-01** |
 | Spring Data JPA | ORM tự động — không viết SQL cho CRUD cơ bản |
 | `@Scheduled` | Nhắc thuốc theo giờ, anomaly detection cron — 10 dòng code |
 | OpenAPI/Swagger | Auto-generate API docs — team Flutter không cần hỏi backend |
@@ -153,16 +161,33 @@ Data sức khỏe có schema rõ ràng (chỉ số, thuốc, lịch hẹn) — S
 | JPA tự map | Không cần migration tay cho CRUD cơ bản |
 | 1GB free | Với 500 users + health data ~30 ngày: ước tính dùng 100-300MB |
 
-### Schema chính
+### Schema đầy đủ (V1–V15, 13 bảng — đã build xong)
 ```sql
-Users (id, role, phone, name, dob, fcm_token)
-ElderlyProfiles (user_id, health_conditions, emergency_contacts)
-FamilyLinks (elderly_id, family_id, relationship)
-Medications (id, elderly_id, name, dosage, schedule, next_dose_time)
-MedicationLogs (medication_id, taken_at, status, notes)
-HealthMetrics (elderly_id, type, value, unit, recorded_at)
-Appointments (elderly_id, doctor, datetime, location, notes)
+-- Core
+Users (id, role, phone, name, dob, fcm_token, notification_preferences JSONB)
+ElderlyProfiles (user_id, health_conditions JSONB, emergency_contacts JSONB)
+FamilyLinks (elderly_id, family_id, relationship, status)
+
+-- Medication
+Medications (id, elderly_id, name, dosage, schedule JSONB, next_dose_time)
+MedicationLogs (medication_id, taken_at, status)       -- append-only
+
+-- Health
+HealthMetrics (elderly_id, type, value, value_secondary, unit, recorded_at)
+HealthMetricThresholds (elderly_id, metric_type, min/max_value, alert_family)
+
+-- Care
+Appointments (elderly_id, doctor, datetime, location, status)
+EmergencyEvents (elderly_id, latitude, longitude, status, triggered_at)  -- SOS
+Reminders (elderly_id, created_by, title, remind_at, repeat_rule)
+
+-- Auth & Notifications
+OtpVerifications (phone, otp_code, expires_at, attempts)
+RefreshTokens (user_id, token_hash, device_info, expires_at)
+Notifications (user_id, type, title, body, data JSONB, read_at)
 ```
+
+> Migration V1–V15 dùng Flyway — **không sửa file V đã có**, migration tiếp theo là **V16**.
 
 ### ⚠️ Rủi ro quan trọng nhất
 Render PostgreSQL **free tier expire sau 90 ngày** — toàn bộ data bị xóa nếu không upgrade.
@@ -235,12 +260,14 @@ Spring Boot (@Scheduled) → Firebase Admin SDK → FCM Server
 
 ---
 
-## 6. Gemini 1.5 Flash — AI Engine
+## 6. Gemini 2.5 Flash — AI Engine
 
-**Verdict: ✅ Giữ nguyên**
+**Verdict: ✅ Nâng lên model mới nhất**
 
 ### Tại sao chọn
-Google cung cấp **Gemini API miễn phí** với quota đủ cho MVP (60 req/phút, 1.500 req/ngày). GPT-4 tính tiền từ request đầu tiên. Gemini 1.5 Flash hỗ trợ tiếng Việt tốt và context window 1M token — đủ để đưa cả lịch sử sức khỏe vào prompt.
+Google cung cấp **Gemini API miễn phí** với quota đủ cho MVP (60 req/phút, 1.500 req/ngày). GPT-4 tính tiền từ request đầu tiên. Gemini 2.5 Flash là model mới nhất (2025), hỗ trợ tiếng Việt tốt hơn 1.5 Flash và context window 1M token — đủ để đưa cả lịch sử sức khỏe vào prompt.
+
+> **Cách đổi model:** Chỉ cần thay model name trong API call: `gemini-1.5-flash` → `gemini-2.5-flash`. Google giữ free tier cho các model mới.
 
 ### Ưu điểm
 
@@ -399,7 +426,7 @@ Nếu nhóm tìm được đối tác hoặc mentor hỗ trợ đăng ký OA:
 | Render PostgreSQL | **$7/tháng** sau 90 ngày | Upgrade bắt buộc trước khi có real users |
 | Firebase Auth | Miễn phí | Free 10K SMS OTP/tháng |
 | Firebase FCM | Miễn phí | Không giới hạn |
-| Gemini 1.5 Flash | Miễn phí | 1.500 req/ngày |
+| Gemini 2.5 Flash | Miễn phí | 1.500 req/ngày |
 | Cloudinary | Miễn phí | 25GB storage |
 | Uptime Robot | Miễn phí | 50 monitors |
 | Zalo OA | Phase 2 | — |

@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-carenest}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carenest}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - carenest_pgdata:/var/lib/postgresql/data
     healthcheck:
