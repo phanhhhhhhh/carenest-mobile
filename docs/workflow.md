@@ -475,8 +475,8 @@ POST /api/medication/add
 
 - [ ] Code compile được (`mvn compile` không lỗi)
 - [ ] Không để `System.out.println()` debug — dùng `log.info()` / `log.debug()`
-- [ ] **KHÔNG commit** file `.env`, `application-prod.yml`, `serviceAccountKey.json`, hoặc bất kỳ file chứa password/secret
-- [ ] Chỉ commit `.env.example` — không bao giờ commit `.env`
+- [ ] **KHÔNG commit** `.env`, `application-local.properties`, Firebase key JSON, hoặc bất kỳ file chứa secret
+- [ ] Nếu thêm key mới vào `application-local.properties` → cập nhật luôn `application-local.properties.example` trong cùng commit
 - [ ] Nếu thêm migration mới: tên file đúng format `V{n}__...sql`, số tiếp theo (hiện tại V15 → dùng V16)
 
 ### Git chung
