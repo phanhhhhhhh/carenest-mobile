@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
 class CareNestApp extends StatelessWidget {
@@ -6,15 +7,11 @@ class CareNestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'CareNest',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const Scaffold(
-        body: Center(
-          child: Text('CareNest — Coming Soon'),
-        ),
-      ),
+      routerConfig: appRouter,
     );
   }
 }
