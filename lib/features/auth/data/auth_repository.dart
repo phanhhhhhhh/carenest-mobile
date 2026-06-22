@@ -1,21 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../core/storage/secure_storage.dart';
 
 class UserNotFoundException implements Exception {}
 
 class AuthRepository {
   final Dio _dio;
-  final FirebaseAuth _firebaseAuth;
+  FirebaseAuth? get _firebaseAuth => kIsWeb ? null : FirebaseAuth.instance;
 
-  AuthRepository(this._dio) : _firebaseAuth = FirebaseAuth.instance;
+  AuthRepository(this._dio);
 
   Future<void> sendOtp({
     required String phoneNumber,
     required void Function(String verificationId) onCodeSent,
     required void Function(String error) onError,
   }) async {
-    await _firebaseAuth.verifyPhoneNumber(
+    await _firebaseAuth!.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: (credential) async {
         await signInWithCredential(credential);
@@ -26,7 +27,6 @@ class AuthRepository {
     );
   }
 
-  /// Returns firebase ID token after OTP verified (caller decides login vs register)
   Future<String> verifyOtp({
     required String verificationId,
     required String smsCode,
@@ -39,7 +39,7 @@ class AuthRepository {
   }
 
   Future<String> signInWithCredential(PhoneAuthCredential credential) async {
-    final result = await _firebaseAuth.signInWithCredential(credential);
+    final result = await _firebaseAuth!.signInWithCredential(credential);
     return await result.user!.getIdToken() ?? '';
   }
 
@@ -89,7 +89,7 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    await _firebaseAuth.signOut();
+    await _firebaseAuth?.signOut();
     await SecureStorage.clearAll();
   }
 }
