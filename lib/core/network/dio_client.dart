@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../storage/secure_storage.dart';
 
 class DioClient {
-  static const _baseUrl = 'http://10.0.2.2:8080/api';
+  static String get _baseUrl => kIsWeb
+      ? 'http://localhost:8080/api'
+      : 'http://10.0.2.2:8080/api';
 
   static Dio create() {
     final dio = Dio(BaseOptions(
