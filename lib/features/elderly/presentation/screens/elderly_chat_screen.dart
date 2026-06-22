@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/config/app_config.dart';
+import '../../../../core/services/gemini_service.dart';
 
 class ElderlyChatScreen extends StatefulWidget {
   const ElderlyChatScreen({super.key});
@@ -11,24 +13,25 @@ class ElderlyChatScreen extends StatefulWidget {
 class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  late final GeminiService? _gemini;
+  bool _isTyping = false;
 
   final List<_ChatMessage> _messages = [
     _ChatMessage(
-      text: 'Chào buổi sáng! Hôm nay bạn cảm thấy thế nào? Tôi có thể giúp bạn kiểm tra chỉ số sức khỏe, nhắc nhở thuốc, hoặc chỉ đơn giản là trò chuyện.',
+      text:
+          'Chào buổi sáng! Hôm nay bạn cảm thấy thế nào? Tôi có thể giúp bạn kiểm tra chỉ số sức khỏe, nhắc nhở thuốc, hoặc chỉ đơn giản là trò chuyện.',
       isAi: true,
       time: '08:00',
     ),
-    _ChatMessage(
-      text: 'Huyết áp của tôi hôm nay có bình thường không?',
-      isAi: false,
-      time: '08:05',
-    ),
-    _ChatMessage(
-      text: 'Chỉ số huyết áp của bạn hôm nay là 120/80 mmHg — hoàn toàn bình thường! Chỉ số này rất tốt cho người ở độ tuổi của bạn. Tiếp tục duy trì chế độ ăn ít muối và uống đủ nước nhé.',
-      isAi: true,
-      time: '08:05',
-    ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _gemini = AppConfig.geminiApiKey != 'YOUR_GEMINI_API_KEY'
+        ? GeminiService()
+        : null;
+  }
 
   @override
   void dispose() {
@@ -37,32 +40,50 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     super.dispose();
   }
 
-  void _sendMessage() {
+  Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isTyping) return;
 
     setState(() {
-      _messages.add(_ChatMessage(
-        text: text,
-        isAi: false,
-        time: _timeNow(),
-      ));
+      _messages.add(_ChatMessage(text: text, isAi: false, time: _timeNow()));
+      _isTyping = true;
     });
     _controller.clear();
-
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() {
-        _messages.add(_ChatMessage(
-          text: 'Cảm ơn bạn đã chia sẻ! Tôi đang xử lý câu hỏi của bạn...',
-          isAi: true,
-          time: _timeNow(),
-        ));
-      });
-      _scrollToBottom();
-    });
-
     _scrollToBottom();
+
+    String reply;
+    final gemini = _gemini;
+    if (gemini != null) {
+      try {
+        reply = await gemini.sendMessage(text);
+      } catch (_) {
+        reply = 'Xin lỗi, tôi không thể kết nối lúc này. Vui lòng thử lại.';
+      }
+    } else {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      reply = _fakeReply(text);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isTyping = false;
+      _messages.add(_ChatMessage(text: reply, isAi: true, time: _timeNow()));
+    });
+    _scrollToBottom();
+  }
+
+  String _fakeReply(String question) {
+    final q = question.toLowerCase();
+    if (q.contains('huyết áp')) {
+      return 'Chỉ số huyết áp 120/80 mmHg của bạn hoàn toàn bình thường. Tiếp tục duy trì chế độ ăn ít muối và uống đủ nước nhé!';
+    }
+    if (q.contains('thuốc') || q.contains('uống')) {
+      return 'Hôm nay bạn còn 2 liều thuốc cần uống: Metformin 500mg lúc 12:00 và Atorvastatin 20mg lúc 21:00. Đừng quên nhé!';
+    }
+    if (q.contains('đau') || q.contains('mệt') || q.contains('khó chịu')) {
+      return 'Bạn đang không khỏe à? Hãy nghỉ ngơi và uống đủ nước. Nếu triệu chứng kéo dài hoặc nghiêm trọng hơn, hãy liên hệ bác sĩ hoặc nhờ người thân đưa đi khám nhé.';
+    }
+    return 'Cảm ơn bạn đã chia sẻ! Tôi luôn ở đây để hỗ trợ bạn. Bạn có muốn tôi kiểm tra lịch thuốc hoặc chỉ số sức khỏe hôm nay không?';
   }
 
   void _scrollToBottom() {
@@ -96,16 +117,25 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
                 color: AppColors.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
+              child: const Icon(Icons.auto_awesome,
+                  color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 10),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('CareNest AI',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                Text('Luôn sẵn sàng hỗ trợ',
-                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                const Text('CareNest AI',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                Text(
+                  _gemini != null ? 'Trực tuyến' : 'Chế độ offline',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: _gemini != null
+                        ? AppColors.success
+                        : AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ],
@@ -120,8 +150,11 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (ctx, i) => _BubbleWidget(message: _messages[i]),
+              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              itemBuilder: (ctx, i) {
+                if (i == _messages.length) return const _TypingIndicator();
+                return _BubbleWidget(message: _messages[i]);
+              },
             ),
           ),
           _buildQuickReplies(),
@@ -177,6 +210,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
               controller: _controller,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendMessage(),
+              enabled: !_isTyping,
               decoration: InputDecoration(
                 hintText: 'Nhập tin nhắn...',
                 hintStyle: const TextStyle(color: AppColors.textHint),
@@ -193,13 +227,15 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
           ),
           const SizedBox(width: 8),
           InkWell(
-            onTap: _sendMessage,
+            onTap: _isTyping ? null : _sendMessage,
             borderRadius: BorderRadius.circular(24),
             child: Container(
               width: 44,
               height: 44,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
+              decoration: BoxDecoration(
+                color: _isTyping
+                    ? AppColors.textHint
+                    : AppColors.primary,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.send, color: Colors.white, size: 20),
@@ -217,6 +253,103 @@ class _ChatMessage {
   final String time;
 
   _ChatMessage({required this.text, required this.isAi, required this.time});
+}
+
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child:
+                const Icon(Icons.auto_awesome, color: AppColors.primary, size: 16),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+                bottomLeft: Radius.circular(4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _Dot(delay: 0),
+                const SizedBox(width: 4),
+                _Dot(delay: 200),
+                const SizedBox(width: 4),
+                _Dot(delay: 400),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Dot extends StatefulWidget {
+  final int delay;
+  const _Dot({required this.delay});
+
+  @override
+  State<_Dot> createState() => _DotState();
+}
+
+class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _ctrl.repeat(reverse: true);
+    });
+    _anim = Tween(begin: 0.4, end: 1.0).animate(_ctrl);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _anim,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: AppColors.textHint,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
 }
 
 class _BubbleWidget extends StatelessWidget {
@@ -241,8 +374,8 @@ class _BubbleWidget extends StatelessWidget {
                 color: AppColors.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child:
-                  const Icon(Icons.auto_awesome, color: AppColors.primary, size: 16),
+              child: const Icon(Icons.auto_awesome,
+                  color: AppColors.primary, size: 16),
             ),
             const SizedBox(width: 8),
           ],
@@ -253,9 +386,12 @@ class _BubbleWidget extends StatelessWidget {
                   : CrossAxisAlignment.end,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: message.isAi ? AppColors.surface : AppColors.primary,
+                    color: message.isAi
+                        ? AppColors.surface
+                        : AppColors.primary,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -275,7 +411,9 @@ class _BubbleWidget extends StatelessWidget {
                   child: Text(
                     message.text,
                     style: TextStyle(
-                      color: message.isAi ? AppColors.textPrimary : Colors.white,
+                      color: message.isAi
+                          ? AppColors.textPrimary
+                          : Colors.white,
                       fontSize: 14,
                       height: 1.4,
                     ),
@@ -284,7 +422,8 @@ class _BubbleWidget extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   message.time,
-                  style: const TextStyle(color: AppColors.textHint, fontSize: 11),
+                  style: const TextStyle(
+                      color: AppColors.textHint, fontSize: 11),
                 ),
               ],
             ),
