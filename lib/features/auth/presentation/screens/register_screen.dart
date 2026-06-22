@@ -16,7 +16,7 @@ class RegisterScreen extends ConsumerStatefulWidget {
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  String _selectedRole = 'PATIENT';
+  String _selectedRole = 'ELDERLY';
 
   @override
   void dispose() {
@@ -99,17 +99,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Row(
                   children: [
                     _RoleChip(
-                      label: 'Người dùng',
-                      value: 'PATIENT',
-                      selected: _selectedRole == 'PATIENT',
-                      onTap: () => setState(() => _selectedRole = 'PATIENT'),
+                      label: 'Người cao tuổi',
+                      icon: Icons.elderly,
+                      value: 'ELDERLY',
+                      selected: _selectedRole == 'ELDERLY',
+                      onTap: () => setState(() => _selectedRole = 'ELDERLY'),
                     ),
                     const SizedBox(width: 12),
                     _RoleChip(
-                      label: 'Người chăm sóc',
-                      value: 'DOCTOR',
-                      selected: _selectedRole == 'DOCTOR',
-                      onTap: () => setState(() => _selectedRole = 'DOCTOR'),
+                      label: 'Người thân / Gia đình',
+                      icon: Icons.family_restroom,
+                      value: 'FAMILY',
+                      selected: _selectedRole == 'FAMILY',
+                      onTap: () => setState(() => _selectedRole = 'FAMILY'),
                     ),
                   ],
                 ),
@@ -160,12 +162,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 class _RoleChip extends StatelessWidget {
   final String label;
+  final IconData icon;
   final String value;
   final bool selected;
   final VoidCallback onTap;
 
   const _RoleChip({
     required this.label,
+    required this.icon,
     required this.value,
     required this.selected,
     required this.onTap,
@@ -173,24 +177,36 @@ class _RoleChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.textHint,
-            width: selected ? 2 : 1,
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? AppColors.primary : AppColors.textHint,
+              width: selected ? 2 : 1,
+            ),
           ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: selected ? Colors.white : AppColors.textSecondary,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          child: Column(
+            children: [
+              Icon(icon,
+                  color: selected ? Colors.white : AppColors.textSecondary,
+                  size: 28),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: selected ? Colors.white : AppColors.textSecondary,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
         ),
       ),
