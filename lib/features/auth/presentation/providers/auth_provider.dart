@@ -39,6 +39,22 @@ class PhoneNotifier extends StateNotifier<PhoneState> {
       onError: (e) => state = state.copyWith(isLoading: false, error: e),
     );
   }
+
+  /// Chrome/web only: bypass Firebase OTP, call backend directly
+  Future<void> loginDev(String phoneNumber) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repo.loginDev(phoneNumber);
+      state = state.copyWith(isLoading: false, verificationId: '__dev_done__');
+    } on UserNotFoundException {
+      state = state.copyWith(
+        isLoading: false,
+        verificationId: '__dev_register__:$phoneNumber',
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: 'Không thể kết nối backend');
+    }
+  }
 }
 
 final phoneProvider = StateNotifierProvider.autoDispose<PhoneNotifier, PhoneState>(

@@ -83,6 +83,11 @@ class AuthRepository {
     await SecureStorage.saveName(name);
   }
 
+  /// Dùng trên Chrome/web: bypass Firebase, gọi thẳng backend với DEV_PHONE: prefix
+  Future<bool> loginDev(String phoneNumber) async {
+    return login('DEV_PHONE:$phoneNumber');
+  }
+
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
     await SecureStorage.clearAll();
