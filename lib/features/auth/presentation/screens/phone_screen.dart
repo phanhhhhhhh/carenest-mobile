@@ -26,6 +26,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     final phone = '+84${_phoneController.text.replaceFirst(RegExp(r'^0'), '')}';
+    SecureStorage.savePhone(phone);
     ref.read(phoneProvider.notifier).sendOtp(phone);
   }
 

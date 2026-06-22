@@ -2,13 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-class FamilyDashboardScreen extends ConsumerWidget {
+class FamilyDashboardScreen extends ConsumerStatefulWidget {
   const FamilyDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FamilyDashboardScreen> createState() =>
+      _FamilyDashboardScreenState();
+}
+
+class _FamilyDashboardScreenState
+    extends ConsumerState<FamilyDashboardScreen> {
+  String _name = '';
+
+  @override
+  void initState() {
+    super.initState();
+    SecureStorage.getName().then((v) {
+      if (mounted) setState(() => _name = v ?? 'bạn');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -17,7 +35,7 @@ class FamilyDashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, ref),
+              _buildHeader(context),
               const SizedBox(height: 20),
               _buildElderlyCard(),
               const SizedBox(height: 20),
@@ -31,17 +49,17 @@ class FamilyDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref) {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Tổng quan',
-                style: TextStyle(
-                  fontSize: 24,
+              Text(
+                'Xin chào, $_name!',
+                style: const TextStyle(
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),

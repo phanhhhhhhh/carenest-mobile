@@ -49,6 +49,9 @@ dependencies:
   # Storage
   flutter_secure_storage: ^9.2.4
 
+  # AI
+  google_generative_ai: ^0.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
