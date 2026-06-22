@@ -30,13 +30,11 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
     ref.read(phoneProvider.notifier).sendOtp(phone);
   }
 
-  Future<void> _enterDemo(String role) async {
-    await SecureStorage.saveToken('demo_token');
-    await SecureStorage.saveRole(role);
-    await SecureStorage.saveName(role == 'ELDERLY' ? 'Nguyễn Văn An' : 'Nguyễn Thị Lan');
-    if (mounted) {
-      context.go(role == 'ELDERLY' ? '/elderly/home' : '/family/dashboard');
-    }
+  void _submitDev() {
+    if (!_formKey.currentState!.validate()) return;
+    final phone = '+84${_phoneController.text.replaceFirst(RegExp(r'^0'), '')}';
+    SecureStorage.savePhone(phone);
+    ref.read(phoneProvider.notifier).loginDev(phone);
   }
 
   @override
@@ -44,7 +42,12 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
     final state = ref.watch(phoneProvider);
 
     ref.listen(phoneProvider, (_, next) {
-      if (next.verificationId != null) {
+      if (next.verificationId == '__dev_done__') {
+        context.go('/home');
+      } else if (next.verificationId?.startsWith('__dev_register__:') == true) {
+        final phone = next.verificationId!.replaceFirst('__dev_register__:', '');
+        context.pushReplacement('/register', extra: 'DEV_PHONE:$phone');
+      } else if (next.verificationId != null) {
         context.push('/otp', extra: next.verificationId);
       }
     });
@@ -148,46 +151,37 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Chế độ Demo (không cần OTP)',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF8E1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                    ),
+                    child: const Text(
+                      '🛠 Dev Mode — Nhập SĐT rồi bấm nút dưới để đăng nhập thẳng vào backend (không cần OTP). Backend phải đang chạy tại localhost:8080.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF795548)),
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _enterDemo('ELDERLY'),
-                          icon: const Icon(Icons.elderly, size: 18),
-                          label: const Text('Người cao tuổi'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            side: const BorderSide(color: AppColors.primary),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: state.isLoading ? null : _submitDev,
+                      icon: const Icon(Icons.developer_mode, size: 18),
+                      label: const Text(
+                        'Đăng nhập Dev (bypass OTP)',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.warning,
+                        side: const BorderSide(color: AppColors.warning),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _enterDemo('FAMILY'),
-                          icon: const Icon(Icons.family_restroom, size: 18),
-                          label: const Text('Gia đình'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.secondary,
-                            side: const BorderSide(color: AppColors.secondary),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ],
