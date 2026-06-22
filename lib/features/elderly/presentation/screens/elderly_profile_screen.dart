@@ -2,13 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-class ElderlyProfileScreen extends ConsumerWidget {
+class ElderlyProfileScreen extends ConsumerStatefulWidget {
   const ElderlyProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ElderlyProfileScreen> createState() =>
+      _ElderlyProfileScreenState();
+}
+
+class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
+  String _name = '';
+  String _phone = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final name = await SecureStorage.getName();
+    final phone = await SecureStorage.getPhone();
+    if (mounted) {
+      setState(() {
+        _name = name ?? 'Người dùng';
+        _phone = phone ?? '';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -20,7 +47,7 @@ class ElderlyProfileScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               _buildHealthProfile(),
               const SizedBox(height: 16),
-              _buildSettingsSection(context, ref),
+              _buildSettingsSection(context),
             ],
           ),
         ),
@@ -37,19 +64,21 @@ class ElderlyProfileScreen extends ConsumerWidget {
           child: const Icon(Icons.person, size: 48, color: AppColors.primary),
         ),
         const SizedBox(height: 12),
-        const Text(
-          'Nguyễn Văn An',
-          style: TextStyle(
+        Text(
+          _name,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          '0901234567',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-        ),
+        if (_phone.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            _phone,
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          ),
+        ],
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -82,10 +111,10 @@ class ElderlyProfileScreen extends ConsumerWidget {
               offset: const Offset(0, 2)),
         ],
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.health_and_safety, color: AppColors.primary, size: 20),
               SizedBox(width: 8),
@@ -98,8 +127,7 @@ class ElderlyProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const Divider(height: 20),
-          _InfoRow('Tuổi', '72 tuổi'),
+          Divider(height: 20),
           _InfoRow('Nhóm máu', 'A+'),
           _InfoRow('Chiều cao', '168 cm'),
           _InfoRow('Cân nặng', '65 kg'),
@@ -110,7 +138,7 @@ class ElderlyProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSettingsSection(BuildContext context, WidgetRef ref) {
+  Widget _buildSettingsSection(BuildContext context) {
     final items = [
       (Icons.edit, 'Chỉnh sửa hồ sơ', AppColors.primary, () {}),
       (Icons.notifications, 'Cài đặt thông báo', AppColors.secondary, () {}),
@@ -133,8 +161,8 @@ class ElderlyProfileScreen extends ConsumerWidget {
         children: [
           ...items.map((item) => _SettingsTile(
                 icon: item.$1,
-                iconColor: item.$2,
-                label: item.$3,
+                iconColor: item.$3,
+                label: item.$2,
                 onTap: item.$4,
               )),
           const Divider(height: 1),
