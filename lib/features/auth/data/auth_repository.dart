@@ -51,6 +51,10 @@ class AuthRepository {
         data: {'firebaseToken': firebaseToken},
       );
       await SecureStorage.saveToken(response.data['accessToken'] as String);
+      final role = response.data['role'] as String?;
+      if (role != null) await SecureStorage.saveRole(role);
+      final name = response.data['name'] as String?;
+      if (name != null) await SecureStorage.saveName(name);
       return true;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
@@ -75,10 +79,12 @@ class AuthRepository {
 
     final response = await _dio.post('/auth/register', data: body);
     await SecureStorage.saveToken(response.data['accessToken'] as String);
+    await SecureStorage.saveRole(role);
+    await SecureStorage.saveName(name);
   }
 
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
-    await SecureStorage.deleteToken();
+    await SecureStorage.clearAll();
   }
 }

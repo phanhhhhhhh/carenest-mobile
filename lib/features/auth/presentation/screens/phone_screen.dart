@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/storage/secure_storage.dart';
 import '../providers/auth_provider.dart';
 
 class PhoneScreen extends ConsumerStatefulWidget {
@@ -25,6 +27,15 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
     if (!_formKey.currentState!.validate()) return;
     final phone = '+84${_phoneController.text.replaceFirst(RegExp(r'^0'), '')}';
     ref.read(phoneProvider.notifier).sendOtp(phone);
+  }
+
+  Future<void> _enterDemo(String role) async {
+    await SecureStorage.saveToken('demo_token');
+    await SecureStorage.saveRole(role);
+    await SecureStorage.saveName(role == 'ELDERLY' ? 'Nguyễn Văn An' : 'Nguyễn Thị Lan');
+    if (mounted) {
+      context.go(role == 'ELDERLY' ? '/elderly/home' : '/family/dashboard');
+    }
   }
 
   @override
@@ -123,6 +134,61 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                           ),
                   ),
                 ),
+                if (kIsWeb) ...[
+                  const SizedBox(height: 24),
+                  const Row(
+                    children: [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('hoặc', style: TextStyle(color: AppColors.textHint)),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Chế độ Demo (không cần OTP)',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _enterDemo('ELDERLY'),
+                          icon: const Icon(Icons.elderly, size: 18),
+                          label: const Text('Người cao tuổi'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _enterDemo('FAMILY'),
+                          icon: const Icon(Icons.family_restroom, size: 18),
+                          label: const Text('Gia đình'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.secondary,
+                            side: const BorderSide(color: AppColors.secondary),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
