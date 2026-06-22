@@ -90,11 +90,50 @@ Mục tiêu: tất cả ✅. Nếu còn ⚠️ thì xem lỗi thường gặp b�
 # Kiểm tra emulator/device đang kết nối
 flutter devices
 
-# Chạy app
+# Chạy app trên emulator/điện thoại
 flutter run
+
+# Chạy app trên Chrome (không cần điện thoại — xem hướng dẫn bên dưới)
+flutter run -d chrome
 ```
 
 Hoặc trong VS Code: nhấn **F5** → chọn device.
+
+---
+
+## Test trên Chrome (không cần điện thoại)
+
+Dùng khi chưa có thiết bị Android hoặc muốn demo nhanh trên máy tính.
+
+### Yêu cầu
+- Backend đang chạy tại `localhost:8080`
+- Chrome đã cài sẵn (thường có rồi)
+
+### Cách chạy
+
+**Terminal 1 — Backend:**
+```powershell
+cd backend
+mvn spring-boot:run "-Dspring-boot.run.profiles=local"
+```
+> ⚠️ Trên PowerShell phải có dấu nháy `"..."` quanh `-Dspring-boot.run.profiles=local`, nếu không sẽ báo lỗi.
+
+**Terminal 2 — Flutter Web:**
+```bash
+flutter run -d chrome
+```
+
+### Đăng nhập Dev (bypass OTP)
+
+Vì Chrome không nhận OTP qua SMS, app có nút đặc biệt trên web:
+
+1. Nhập số điện thoại bất kỳ (ví dụ: `0901234567`)
+2. Bấm **"Đăng nhập Dev (bypass OTP)"** — màu vàng, phía dưới
+3. App gọi thẳng backend với `DEV_PHONE:+84xxx` — không cần OTP
+4. **Lần đầu** (chưa có tài khoản) → tự chuyển sang màn hình đăng ký
+5. **Lần sau** → vào thẳng app
+
+> `DEV_PHONE:` chỉ hoạt động khi `firebase.credentials-path` để trống trong `application-local.properties`. Trên production sẽ bị từ chối tự động.
 
 ---
 
@@ -271,9 +310,9 @@ Spring Boot dùng "profile" để biết đang chạy ở môi trường nào �
 
 Click **Run** (▶) trong IntelliJ, hoặc terminal:
 
-```bash
+```powershell
 cd backend
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+mvn spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
 Chạy thành công khi log xuất hiện:
