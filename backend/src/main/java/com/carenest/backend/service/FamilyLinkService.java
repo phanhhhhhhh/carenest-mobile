@@ -1,0 +1,71 @@
+package com.carenest.backend.service;
+
+import com.carenest.backend.dto.family.FamilyLinkRequest;
+import com.carenest.backend.dto.family.FamilyLinkResponse;
+import com.carenest.backend.entity.FamilyLink;
+import com.carenest.backend.entity.FamilyLinkStatus;
+import com.carenest.backend.entity.User;
+import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.repository.FamilyLinkRepository;
+import com.carenest.backend.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class FamilyLinkService {
+
+    private final FamilyLinkRepository familyLinkRepository;
+    private final UserRepository userRepository;
+
+    public FamilyLinkResponse create(FamilyLinkRequest request) {
+        User elderly = userRepository.findById(request.getElderlyId())
+            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
+
+        User family = userRepository.findById(request.getFamilyId())
+            .orElseThrow(() -> new NotFoundException("User (family) không tồn tại: " + request.getFamilyId()));
+
+        FamilyLink link = FamilyLink.builder()
+            .elderly(elderly)
+            .family(family)
+            .relationship(request.getRelationship())
+            .status(FamilyLinkStatus.PENDING)
+            .build();
+
+        return toResponse(familyLinkRepository.save(link));
+    }
+
+    @Transactional(readOnly = true)
+    public List<FamilyLinkResponse> getFamilyByElderlyId(Long elderlyId) {
+        return familyLinkRepository.findByElderlyIdAndDeletedAtIsNull(elderlyId)
+            .stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
+    }
+
+    public FamilyLinkResponse updateStatus(Long id, FamilyLinkStatus status) {
+        FamilyLink link = familyLinkRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new NotFoundException("FamilyLink không tồn tại: " + id));
+
+        link.setStatus(status);
+        return toResponse(familyLinkRepository.save(link));
+    }
+
+    private FamilyLinkResponse toResponse(FamilyLink fl) {
+        return FamilyLinkResponse.builder()
+            .id(fl.getId())
+            .elderlyId(fl.getElderly().getId())
+            .elderlyName(fl.getElderly().getName())
+            .familyId(fl.getFamily().getId())
+            .familyName(fl.getFamily().getName())
+            .relationship(fl.getRelationship())
+            .status(fl.getStatus())
+            .createdAt(fl.getCreatedAt())
+            .build();
+    }
+}
