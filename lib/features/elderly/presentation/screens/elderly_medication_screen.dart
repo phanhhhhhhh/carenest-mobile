@@ -1,44 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../providers/medication_provider.dart';
 
-class ElderlyMedicationScreen extends StatefulWidget {
+class ElderlyMedicationScreen extends ConsumerStatefulWidget {
   const ElderlyMedicationScreen({super.key});
 
   @override
-  State<ElderlyMedicationScreen> createState() =>
+  ConsumerState<ElderlyMedicationScreen> createState() =>
       _ElderlyMedicationScreenState();
 }
 
-class _ElderlyMedicationScreenState extends State<ElderlyMedicationScreen> {
-  final _meds = [
-    _MedData('Amlodipine', '5mg', ['07:00', '19:00'], 'Cao huyết áp',
-        Icons.favorite, AppColors.error),
-    _MedData('Metformin', '500mg', ['08:00', '12:00', '18:00'], 'Tiểu đường',
-        Icons.water_drop, const Color(0xFF1565C0)),
-    _MedData('Atorvastatin', '20mg', ['21:00'], 'Mỡ máu', Icons.biotech,
-        AppColors.warning),
-  ];
-
-  // key: "MedName|HH:mm" → taken
-  final Set<String> _taken = {};
-
-  int get _totalDoses =>
-      _meds.fold(0, (sum, m) => sum + m.times.length);
-
-  int get _takenDoses => _taken.length;
-
-  void _toggle(String key) {
-    setState(() {
-      if (_taken.contains(key)) {
-        _taken.remove(key);
-      } else {
-        _taken.add(key);
-      }
-    });
+class _ElderlyMedicationScreenState
+    extends ConsumerState<ElderlyMedicationScreen> {
+  void _showAddDialog() {
+    final nameCtrl = TextEditingController();
+    final dosageCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Thêm thuốc'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Tên thuốc'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: dosageCtrl,
+              decoration:
+                  const InputDecoration(labelText: 'Liều lượng (vd: 5mg)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameCtrl.text.trim().isNotEmpty &&
+                  dosageCtrl.text.trim().isNotEmpty) {
+                ref.read(medicationListProvider.notifier).addMedication(
+                      name: nameCtrl.text.trim(),
+                      dosage: dosageCtrl.text.trim(),
+                    );
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Thêm'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final medState = ref.watch(medicationListProvider);
+    final items = medState.items;
+    final takenCount = items.where((m) => m.taken).length;
+    final totalCount = items.length;
+    final progress = totalCount == 0 ? 0.0 : takenCount / totalCount;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -47,29 +74,68 @@ class _ElderlyMedicationScreenState extends State<ElderlyMedicationScreen> {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildTodayProgress(),
-          const SizedBox(height: 16),
-          const Text(
-            'Danh sách thuốc',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ..._meds.map((m) => _MedCard(
-                data: m,
-                taken: _taken,
-                onToggle: _toggle,
-              )),
-        ],
-      ),
+      body: medState.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : medState.error != null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        medState.error!,
+                        style:
+                            const TextStyle(color: AppColors.error, fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () =>
+                            ref.read(medicationListProvider.notifier).load(),
+                        child: const Text('Thử lại'),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _buildTodayProgress(takenCount, totalCount, progress),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Danh sách thuốc',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (items.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 32),
+                        child: Center(
+                          child: Text(
+                            'Chưa có thuốc nào. Nhấn + để thêm.',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      ...items.map(
+                        (m) => _MedCard(
+                          item: m,
+                          onToggle: () => ref
+                              .read(medicationListProvider.notifier)
+                              .toggleTaken(m.id),
+                        ),
+                      ),
+                  ],
+                ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: _showAddDialog,
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
@@ -78,9 +144,7 @@ class _ElderlyMedicationScreenState extends State<ElderlyMedicationScreen> {
     );
   }
 
-  Widget _buildTodayProgress() {
-    final progress =
-        _totalDoses == 0 ? 0.0 : _takenDoses / _totalDoses;
+  Widget _buildTodayProgress(int taken, int total, double progress) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -94,7 +158,7 @@ class _ElderlyMedicationScreenState extends State<ElderlyMedicationScreen> {
               style: TextStyle(color: Colors.white70, fontSize: 13)),
           const SizedBox(height: 4),
           Text(
-            'Đã uống $_takenDoses/$_totalDoses liều',
+            'Đã uống $taken/$total liều',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -117,28 +181,12 @@ class _ElderlyMedicationScreenState extends State<ElderlyMedicationScreen> {
   }
 }
 
-class _MedData {
-  final String name;
-  final String dose;
-  final List<String> times;
-  final String purpose;
-  final IconData icon;
-  final Color color;
-
-  _MedData(this.name, this.dose, this.times, this.purpose, this.icon,
-      this.color);
-
-  String get schedule => times.join(' & ');
-}
-
 class _MedCard extends StatelessWidget {
-  final _MedData data;
-  final Set<String> taken;
-  final void Function(String key) onToggle;
+  final MedicationItem item;
+  final VoidCallback onToggle;
 
   const _MedCard({
-    required this.data,
-    required this.taken,
+    required this.item,
     required this.onToggle,
   });
 
@@ -152,7 +200,7 @@ class _MedCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -166,10 +214,11 @@ class _MedCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: data.color.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(data.icon, color: data.color, size: 24),
+                child: const Icon(Icons.medication,
+                    color: AppColors.primary, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -177,60 +226,62 @@ class _MedCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${data.name} ${data.dose}',
+                      '${item.name} ${item.dosage}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(data.purpose,
+                    if (item.instructions != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        item.instructions!,
                         style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time,
-                            size: 12, color: AppColors.textHint),
-                        const SizedBox(width: 4),
-                        Text(data.schedule,
+                            color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                    ],
+                    if (item.nextDoseTime != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time,
+                              size: 12, color: AppColors.textHint),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatTime(item.nextDoseTime!),
                             style: const TextStyle(
-                                color: AppColors.textSecondary, fontSize: 12)),
-                      ],
-                    ),
+                                color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
+              _DoseChip(
+                taken: item.taken,
+                onTap: onToggle,
+              ),
             ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
-          Row(
-            children: data.times
-                .map((time) => _DoseChip(
-                      time: time,
-                      taken: taken.contains('${data.name}|$time'),
-                      onTap: () => onToggle('${data.name}|$time'),
-                    ))
-                .expand((w) => [w, const SizedBox(width: 8)])
-                .toList()
-              ..removeLast(),
           ),
         ],
       ),
     );
   }
+
+  String _formatTime(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
 }
 
 class _DoseChip extends StatelessWidget {
-  final String time;
   final bool taken;
   final VoidCallback onTap;
 
   const _DoseChip({
-    required this.time,
     required this.taken,
     required this.onTap,
   });
@@ -241,11 +292,11 @@ class _DoseChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color:
-              taken ? AppColors.success.withOpacity(0.1) : AppColors.background,
+          color: taken
+              ? AppColors.success.withValues(alpha: 0.1)
+              : AppColors.background,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: taken ? AppColors.success : AppColors.textHint,
@@ -261,7 +312,7 @@ class _DoseChip extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              time,
+              taken ? 'Đã uống' : 'Chưa uống',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
