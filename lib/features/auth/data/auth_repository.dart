@@ -59,10 +59,15 @@ class AuthRepository {
         data: {'firebaseToken': firebaseToken},
       );
       await SecureStorage.saveToken(response.data['accessToken'] as String);
-      final role = response.data['role'] as String?;
-      if (role != null) await SecureStorage.saveRole(role);
-      final name = response.data['name'] as String?;
-      if (name != null) await SecureStorage.saveName(name);
+      final user = response.data['user'] as Map<String, dynamic>?;
+      if (user != null) {
+        final role = user['role'] as String?;
+        if (role != null) await SecureStorage.saveRole(role);
+        final name = user['name'] as String?;
+        if (name != null) await SecureStorage.saveName(name);
+        final id = user['id'];
+        if (id != null) await SecureStorage.saveUserId(id.toString());
+      }
       return true;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
@@ -89,6 +94,9 @@ class AuthRepository {
     await SecureStorage.saveToken(response.data['accessToken'] as String);
     await SecureStorage.saveRole(role);
     await SecureStorage.saveName(name);
+    final user = response.data['user'] as Map<String, dynamic>?;
+    final id = user?['id'];
+    if (id != null) await SecureStorage.saveUserId(id.toString());
   }
 
   /// Dùng trên Chrome/web: bypass Firebase, gọi thẳng backend với DEV_PHONE: prefix
