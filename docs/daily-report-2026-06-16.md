@@ -29,6 +29,37 @@ Ngày 16/06 là ngày đột phá đầu tiên cho Flutter: toàn bộ skeleton 
   - PR đầu tiên chính thức của dự án được merge
   - Đánh dấu UC-01 hoàn chỉnh trên cả backend lẫn Flutter
 
+## Cần cập nhật — Dev khác đọc trước
+
+> Nếu bạn pull code từ ngày này, cần làm các bước sau trước khi chạy app:
+
+### Flutter — Dependencies mới (pubspec.yaml)
+
+Chạy `flutter pub get` để cài 24 packages mới, bao gồm:
+
+| Package | Dùng để làm gì |
+|---------|---------------|
+| `firebase_auth` | Phone OTP authentication |
+| `firebase_core` | Khởi tạo Firebase SDK |
+| `dio` | HTTP client gọi backend API |
+| `flutter_riverpod` | State management |
+| `go_router` | Navigation/routing |
+| `flutter_secure_storage` | Lưu JWT token an toàn (iOS Keychain, Android Keystore) |
+
+### Firebase — Setup cần thiết
+
+1. Cần file `google-services.json` (Android) và `GoogleService-Info.plist` (iOS) — lấy từ Firebase Console project CareNest
+2. Cả 2 file này **không được commit** vào git (đã có trong `.gitignore`)
+3. Liên hệ trưởng nhóm để lấy file cấu hình nếu chưa có
+
+### flutter_secure_storage — Platform config
+
+- **Android:** `minSdkVersion` phải ≥ 18 trong `android/app/build.gradle`
+- **iOS:** keychain sharing không cần cấu hình thêm
+- **Web:** không hỗ trợ `flutter_secure_storage` — web dùng path khác (xem báo cáo 22/06)
+
+---
+
 ## Vấn đề gặp phải
 
 - Phải cài đặt nhiều dependency cùng lúc (24 packages) — dễ xảy ra version conflict, cần kiểm tra compatibility kỹ
