@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 
 class ElderlyHomeScreen extends ConsumerStatefulWidget {
   const ElderlyHomeScreen({super.key});
@@ -51,17 +52,44 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
     }
     if (!mounted || !_sosCountdown) return;
     setState(() => _sosCountdown = false);
-    _sendSos();
+    await _sendSos();
   }
 
-  void _sendSos() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã gửi tín hiệu SOS đến gia đình!'),
-        backgroundColor: AppColors.sosPrimary,
-        duration: Duration(seconds: 3),
-      ),
-    );
+  Future<void> _sendSos() async {
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.post('/emergency-events', data: {
+        'type': 'SOS',
+        'description': 'Người dùng nhấn nút SOS',
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã gửi tín hiệu SOS! Gia đình sẽ được thông báo.'),
+            backgroundColor: AppColors.sosPrimary,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi gửi SOS: ${e.message}'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi gửi SOS: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   void _cancelSos() => setState(() => _sosCountdown = false);
