@@ -156,7 +156,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF8E1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
                     ),
                     child: const Text(
                       '🛠 Dev Mode — Nhập SĐT rồi bấm nút dưới để đăng nhập thẳng vào backend (không cần OTP). Backend phải đang chạy tại localhost:8080.',
