@@ -76,6 +76,58 @@ Sprint nặng: security hardening toàn diện (7 issues fixed), implement backe
 
 ---
 
+## Cần cập nhật — Dev khác đọc trước
+
+> Nếu bạn pull code từ ngày này, cần làm các bước sau trước khi chạy app hoặc chạy test:
+
+### Backend — File `application-local.properties` (BẮT BUỘC)
+
+File này **không được commit** (gitignore). Mỗi dev tạo thủ công tại `backend/src/main/resources/application-local.properties`:
+
+```properties
+# DB local của bạn
+spring.datasource.url=jdbc:postgresql://localhost:5433/carenest
+spring.datasource.username=carenest
+spring.datasource.password=carenest
+
+# JWT secret — phải ≥ 32 ký tự, không được là default value
+jwt.secret=your-local-secret-key-min-32-characters-here
+
+# Firebase credentials
+firebase.credentials-path=path/to/your/serviceAccountKey.json
+```
+
+> **Lưu ý quan trọng:** `JwtService` giờ có `@PostConstruct` check — nếu JWT secret còn là default hoặc < 32 ký tự, **app sẽ không khởi động**.
+
+### Backend — Database `carenest_test` cho Integration Tests
+
+Integration tests (`AuthIntegrationTest`) dùng profile `itest` — cần database `carenest_test` tồn tại trên Docker container:
+
+```bash
+# Chạy một lần duy nhất trên máy của bạn
+docker exec -it carenest_db psql -U carenest -c "CREATE DATABASE carenest_test;"
+```
+
+Sau đó chạy test bằng:
+```bash
+cd backend
+.\mvnw test -Dspring.profiles.active=itest
+```
+
+> **Lý do:** Testcontainers không chạy được trên Windows Docker Desktop (API version mismatch). Thay vào đó dùng direct connection tới DB local.
+
+### Backend — Firebase credentials path
+
+- File `serviceAccountKey.json` **không được commit** vào git
+- Đường dẫn trong `application-local.properties` phải trỏ đúng tới file của bạn
+- Nếu chạy test: `firebase.credentials-path=` (để trống) trong `application-test.properties` là đúng — Firebase được mock trong tests
+
+### Flutter — Không có thay đổi dependencies ngày này
+
+Không có package mới. Chỉ cần đảm bảo file `.env` đã có `GEMINI_API_KEY` (từ ngày 22/06).
+
+---
+
 ## Vấn đề gặp phải
 
 - **Testcontainers không chạy được trên Windows Docker Desktop** → switch sang direct DB connection với `application-itest.properties` (profile `itest`). Integration tests chạy trực tiếp trên local PostgreSQL thay vì container.
