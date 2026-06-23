@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../providers/family_provider.dart';
 
 class FamilyDashboardScreen extends ConsumerStatefulWidget {
   const FamilyDashboardScreen({super.key});
@@ -27,29 +28,37 @@ class _FamilyDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
+    final dashState = ref.watch(familyDashboardProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              const SizedBox(height: 20),
-              _buildElderlyCard(),
-              const SizedBox(height: 20),
-              _buildSummaryGrid(),
-              const SizedBox(height: 20),
-              _buildRecentActivity(),
-            ],
-          ),
-        ),
+        child: dashState.isLoading && dashState.data == null
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context, dashState),
+                    const SizedBox(height: 20),
+                    _buildElderlyCard(dashState),
+                    const SizedBox(height: 20),
+                    _buildSummaryGrid(dashState),
+                    const SizedBox(height: 20),
+                    _buildRecentActivity(),
+                    if (dashState.lastRefreshed != null) ...[
+                      const SizedBox(height: 12),
+                      _buildLastRefreshed(dashState.lastRefreshed!),
+                    ],
+                  ],
+                ),
+              ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, FamilyDashboardState dashState) {
     return Row(
       children: [
         Expanded(
@@ -70,6 +79,16 @@ class _FamilyDashboardScreenState
               ),
             ],
           ),
+        ),
+        IconButton(
+          onPressed: () => ref.read(familyDashboardProvider.notifier).refresh(),
+          icon: dashState.isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh, color: AppColors.textSecondary),
         ),
         Stack(
           children: [
@@ -102,7 +121,12 @@ class _FamilyDashboardScreenState
     );
   }
 
-  Widget _buildElderlyCard() {
+  Widget _buildElderlyCard(FamilyDashboardState dashState) {
+    final elderlyName = dashState.data?.elderlyName ?? 'Nguyễn Văn An';
+    final healthConditions = dashState.data?.healthConditions.isNotEmpty == true
+        ? dashState.data!.healthConditions.join(', ')
+        : 'Cao huyết áp, Tiểu đường';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -121,25 +145,25 @@ class _FamilyDashboardScreenState
             child: const Icon(Icons.elderly, size: 34, color: Colors.white),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Nguyễn Văn An',
-                  style: TextStyle(
+                  elderlyName,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  '72 tuổi • Cao huyết áp, Tiểu đường',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  healthConditions,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
-                SizedBox(height: 8),
-                Row(
+                const SizedBox(height: 8),
+                const Row(
                   children: [
                     _StatusDot(color: AppColors.success),
                     SizedBox(width: 6),
@@ -158,7 +182,12 @@ class _FamilyDashboardScreenState
     );
   }
 
-  Widget _buildSummaryGrid() {
+  Widget _buildSummaryGrid(FamilyDashboardState dashState) {
+    final total = dashState.data?.totalMedications ?? 5;
+    final taken = dashState.data?.takenMedications ?? 1;
+    final medValue = '$taken/$total liều';
+    final medProgress = total > 0 ? taken / total : 0.2;
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -166,30 +195,30 @@ class _FamilyDashboardScreenState
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       childAspectRatio: 1.4,
-      children: const [
+      children: [
         _SummaryCard(
           icon: Icons.medication,
           iconColor: AppColors.primary,
           title: 'Uống thuốc',
-          value: '1/5 liều',
+          value: medValue,
           subtitle: 'Hôm nay',
-          progress: 0.2,
+          progress: medProgress.toDouble(),
         ),
-        _SummaryCard(
+        const _SummaryCard(
           icon: Icons.favorite,
           iconColor: AppColors.error,
           title: 'Huyết áp',
           value: '120/80',
           subtitle: 'mmHg • Bình thường',
         ),
-        _SummaryCard(
+        const _SummaryCard(
           icon: Icons.water_drop,
           iconColor: Color(0xFF1565C0),
           title: 'Đường huyết',
           value: '5.5',
           subtitle: 'mmol/L • Ổn định',
         ),
-        _SummaryCard(
+        const _SummaryCard(
           icon: Icons.warning_amber,
           iconColor: AppColors.warning,
           title: 'Cảnh báo',
@@ -237,6 +266,18 @@ class _FamilyDashboardScreenState
         const SizedBox(height: 12),
         ...activities.map((a) => _ActivityTile(activity: a)),
       ],
+    );
+  }
+
+  Widget _buildLastRefreshed(DateTime lastRefreshed) {
+    final h = lastRefreshed.hour.toString().padLeft(2, '0');
+    final m = lastRefreshed.minute.toString().padLeft(2, '0');
+    final s = lastRefreshed.second.toString().padLeft(2, '0');
+    return Center(
+      child: Text(
+        'Cập nhật lúc $h:$m:$s',
+        style: const TextStyle(fontSize: 11, color: AppColors.textHint),
+      ),
     );
   }
 
