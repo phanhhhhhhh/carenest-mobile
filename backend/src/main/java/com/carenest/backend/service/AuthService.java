@@ -80,11 +80,9 @@ public class AuthService {
 
         User user = stored.getUser();
 
-        // Revoke the old refresh token (rotation)
         stored.setRevokedAt(OffsetDateTime.now());
         refreshTokenRepository.save(stored);
 
-        // Issue a new access token + new refresh token
         return buildAuthResponse(user, stored.getDeviceInfo());
     }
 
