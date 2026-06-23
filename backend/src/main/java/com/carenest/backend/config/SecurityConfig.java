@@ -1,6 +1,7 @@
 package com.carenest.backend.config;
 
 import com.carenest.backend.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +32,7 @@ public class SecurityConfig {
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) ->
-                    response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
