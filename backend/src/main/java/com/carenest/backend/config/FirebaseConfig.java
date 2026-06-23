@@ -34,6 +34,7 @@ public class FirebaseConfig {
             }
         } catch (IOException e) {
             log.error("Failed to initialize Firebase Admin SDK: {}", e.getMessage());
+            throw new RuntimeException("Failed to initialize Firebase Admin SDK from path: " + credentialsPath, e);
         }
     }
 }
