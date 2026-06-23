@@ -16,6 +16,10 @@ class AuthRepository {
     required void Function(String verificationId) onCodeSent,
     required void Function(String error) onError,
   }) async {
+    if (kIsWeb) {
+      onError('Firebase Phone Auth không hỗ trợ trên web. Dùng DEV mode.');
+      return;
+    }
     await _firebaseAuth!.verifyPhoneNumber(
       phoneNumber: phoneNumber,
       verificationCompleted: (credential) async {
@@ -39,7 +43,10 @@ class AuthRepository {
   }
 
   Future<String> signInWithCredential(PhoneAuthCredential credential) async {
-    final result = await _firebaseAuth!.signInWithCredential(credential);
+    if (_firebaseAuth == null) {
+      throw UnsupportedError('Firebase Auth không khả dụng trên platform này');
+    }
+    final result = await _firebaseAuth.signInWithCredential(credential);
     return await result.user!.getIdToken() ?? '';
   }
 
