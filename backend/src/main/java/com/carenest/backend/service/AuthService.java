@@ -6,6 +6,7 @@ import com.carenest.backend.dto.auth.RefreshRequest;
 import com.carenest.backend.dto.auth.RegisterRequest;
 import com.carenest.backend.entity.RefreshToken;
 import com.carenest.backend.entity.User;
+import com.carenest.backend.exception.ConflictException;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.exception.UnauthorizedException;
 import com.carenest.backend.repository.RefreshTokenRepository;
@@ -39,7 +40,7 @@ public class AuthService {
         String phone = firebaseService.verifyAndGetPhone(request.getFirebaseToken());
 
         if (userRepository.existsByPhoneAndDeletedAtIsNull(phone)) {
-            throw new IllegalArgumentException("Số điện thoại đã được đăng ký: " + phone);
+            throw new ConflictException("Số điện thoại đã được đăng ký: " + phone);
         }
 
         User user = User.builder()
