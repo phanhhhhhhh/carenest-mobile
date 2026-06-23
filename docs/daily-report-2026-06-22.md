@@ -29,6 +29,36 @@ Ngày 22/06 tập trung vào hai mảng chính: thiết lập Chrome web testing
 
 - Đồng bộ nhánh `develop` với `main` để giữ lịch sử commit nhất quán.
 
+## Cần cập nhật — Dev khác đọc trước
+
+> Nếu bạn pull code từ ngày này, cần làm các bước sau trước khi chạy app:
+
+### Flutter — Dependencies mới (pubspec.yaml)
+
+Chạy `flutter pub get` để cài 2 packages mới:
+
+| Package | Dùng để làm gì |
+|---------|---------------|
+| `google_generative_ai` | Gemini AI chat SDK |
+| `flutter_dotenv` | Đọc API key từ file `.env` |
+
+### File `.env` — BẮT BUỘC phải tạo thủ công
+
+File `.env` **không được commit** vào git. Cần tạo file này ở root project (`carenest_mobile/.env`):
+
+```
+GEMINI_API_KEY=your_actual_key_here
+```
+
+- Lấy API key tại [Google AI Studio](https://aistudio.google.com/app/apikey)
+- Nếu không có key thực, Gemini chat feature sẽ không hoạt động (app vẫn chạy được, chỉ chat bị lỗi)
+
+### Backend — DEV_PHONE bypass (web testing)
+
+Commit này thêm DEV_PHONE bypass vào `FirebaseService.java` — **lưu ý:** bypass này chưa có profile guard (sẽ fix ngày 23). Hiện tại **không dùng** trên môi trường prod.
+
+---
+
 ## Vấn đề gặp phải
 
 - **Security issue (critical):** DEV_PHONE bypass không có production guard — bất kỳ request nào dùng prefix `DEV_PHONE:` đều được chấp nhận kể cả trên môi trường production. Sẽ được fix ngày 23.
