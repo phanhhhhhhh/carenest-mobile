@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../providers/elderly_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 
@@ -119,6 +120,8 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
   }
 
   Widget _buildHeader() {
+    final profileName = ref.watch(elderlyProfileProvider).profile?.name;
+    final displayName = (profileName != null && profileName.isNotEmpty) ? profileName : _name;
     return Row(
       children: [
         Expanded(
@@ -126,7 +129,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$_greeting, $_name!',
+                '$_greeting, $displayName!',
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -288,11 +291,31 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
   }
 
   Widget _buildTodayMedications() {
-    final meds = [
-      _MedItem('Amlodipine 5mg', '07:00', true),
-      _MedItem('Metformin 500mg', '12:00', false),
-      _MedItem('Atorvastatin 20mg', '21:00', false),
-    ];
+    final medsState = ref.watch(medicationsProvider);
+
+    Widget content;
+    if (medsState.isLoading) {
+      content = const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    } else if (medsState.medications.isEmpty) {
+      content = const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Chưa có thuốc nào',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+      );
+    } else {
+      content = Column(
+        children: medsState.medications
+            .map((med) => _MedicationTile(medication: med))
+            .toList(),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,7 +329,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        ...meds.map((m) => _MedicationTile(item: m)),
+        content,
       ],
     );
   }
@@ -374,20 +397,22 @@ class _HealthCard extends StatelessWidget {
   }
 }
 
-class _MedItem {
-  final String name;
-  final String time;
-  final bool taken;
-  _MedItem(this.name, this.time, this.taken);
-}
-
 class _MedicationTile extends StatelessWidget {
-  final _MedItem item;
+  final MedicationData medication;
 
-  const _MedicationTile({required this.item});
+  const _MedicationTile({required this.medication});
+
+  String _formatNextDose() {
+    final dt = medication.nextDoseTime;
+    if (dt == null) return '';
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final timeLabel = _formatNextDose();
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -395,36 +420,49 @@ class _MedicationTile extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: item.taken ? AppColors.success.withOpacity(0.3) : AppColors.textHint.withOpacity(0.3),
+          color: AppColors.textHint.withOpacity(0.3),
         ),
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.medication,
-            color: item.taken ? AppColors.success : AppColors.textHint,
+            color: AppColors.textHint,
             size: 24,
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              item.name,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: item.taken ? AppColors.textSecondary : AppColors.textPrimary,
-                decoration: item.taken ? TextDecoration.lineThrough : null,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${medication.name} ${medication.dosage}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (medication.instructions != null &&
+                    medication.instructions!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    medication.instructions!,
+                    style: const TextStyle(
+                        color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                ],
+              ],
             ),
           ),
-          Text(
-            item.time,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-          ),
-          const SizedBox(width: 8),
-          if (item.taken)
-            const Icon(Icons.check_circle, color: AppColors.success, size: 20)
-          else
-            const Icon(Icons.circle_outlined, color: AppColors.textHint, size: 20),
+          if (timeLabel.isNotEmpty) ...[
+            Text(
+              timeLabel,
+              style:
+                  const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(width: 8),
+          ],
+          const Icon(Icons.circle_outlined, color: AppColors.textHint, size: 20),
         ],
       ),
     );
