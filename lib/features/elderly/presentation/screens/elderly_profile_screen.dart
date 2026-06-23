@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../providers/elderly_provider.dart';
 
 class ElderlyProfileScreen extends ConsumerStatefulWidget {
   const ElderlyProfileScreen({super.key});
@@ -99,6 +100,47 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
   }
 
   Widget _buildHealthProfile() {
+    final profileState = ref.watch(elderlyProfileProvider);
+
+    Widget profileContent;
+    if (profileState.isLoading) {
+      profileContent = const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    } else if (profileState.error != null) {
+      profileContent = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          profileState.error!,
+          style: const TextStyle(color: AppColors.error, fontSize: 14),
+        ),
+      );
+    } else if (profileState.profile == null) {
+      profileContent = const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          'Hồ sơ chưa được tạo',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+      );
+    } else {
+      final profile = profileState.profile!;
+      final conditionsText = profile.healthConditions.isNotEmpty
+          ? profile.healthConditions.join(', ')
+          : 'Chưa có thông tin';
+      profileContent = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _InfoRow('Bệnh mãn tính', conditionsText),
+          if (profile.notes != null && profile.notes!.isNotEmpty)
+            _InfoRow('Ghi chú', profile.notes!),
+        ],
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -111,10 +153,10 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
               offset: const Offset(0, 2)),
         ],
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(Icons.health_and_safety, color: AppColors.primary, size: 20),
               SizedBox(width: 8),
@@ -127,12 +169,8 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
               ),
             ],
           ),
-          Divider(height: 20),
-          _InfoRow('Nhóm máu', 'A+'),
-          _InfoRow('Chiều cao', '168 cm'),
-          _InfoRow('Cân nặng', '65 kg'),
-          _InfoRow('Bệnh mãn tính', 'Cao huyết áp, Tiểu đường type 2'),
-          _InfoRow('Dị ứng thuốc', 'Penicillin'),
+          const Divider(height: 20),
+          profileContent,
         ],
       ),
     );
