@@ -24,4 +24,8 @@ public interface FamilyLinkRepository extends JpaRepository<FamilyLink, Long> {
     Optional<FamilyLink> findByElderlyIdAndFamilyIdAndDeletedAtIsNull(Long elderlyId, Long familyId);
 
     boolean existsByElderlyIdAndFamilyIdAndStatusAndDeletedAtIsNull(Long elderlyId, Long familyId, FamilyLinkStatus status);
+
+    List<FamilyLink> findByElderlyIdAndDeletedAtIsNull(Long elderlyId);
+
+    Optional<FamilyLink> findByIdAndDeletedAtIsNull(Long id);
 }

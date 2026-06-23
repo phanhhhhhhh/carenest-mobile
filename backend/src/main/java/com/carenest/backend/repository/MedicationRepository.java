@@ -8,11 +8,16 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MedicationRepository extends JpaRepository<Medication, Long> {
 
     List<Medication> findAllByElderlyIdAndDeletedAtIsNull(Long elderlyId);
+
+    List<Medication> findByElderlyIdAndDeletedAtIsNull(Long elderlyId);
+
+    Optional<Medication> findByIdAndDeletedAtIsNull(Long id);
 
     // Critical for medication reminder scheduler: find all active medications with overdue dose time
     @Query("SELECT m FROM Medication m JOIN FETCH m.elderly WHERE m.nextDoseTime <= :now AND m.deletedAt IS NULL ORDER BY m.nextDoseTime ASC")
