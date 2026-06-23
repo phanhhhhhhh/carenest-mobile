@@ -94,7 +94,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
         'elderlyId': int.tryParse(userId),
         'name': name,
         'dosage': dosage,
-        if (instructions != null) 'instructions': instructions,
+        'instructions': instructions,
       });
       await load(); // refresh list
     } catch (_) {}
