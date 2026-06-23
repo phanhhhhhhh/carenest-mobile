@@ -43,10 +43,11 @@ class AuthRepository {
   }
 
   Future<String> signInWithCredential(PhoneAuthCredential credential) async {
-    if (_firebaseAuth == null) {
+    final auth = _firebaseAuth;
+    if (auth == null) {
       throw UnsupportedError('Firebase Auth không khả dụng trên platform này');
     }
-    final result = await _firebaseAuth.signInWithCredential(credential);
+    final result = await auth.signInWithCredential(credential);
     return await result.user!.getIdToken() ?? '';
   }
 
