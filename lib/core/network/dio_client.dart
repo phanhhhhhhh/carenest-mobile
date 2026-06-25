@@ -55,8 +55,7 @@ class DioClient {
             await SecureStorage.saveToken(newAccess);
             await SecureStorage.saveRefreshToken(newRefresh);
 
-            // Retry the original request. The onRequest interceptor will inject
-            // the new token. _retryHeader prevents a second refresh attempt.
+            // _retryHeader prevents a second refresh attempt on this retry.
             request.headers[_retryHeader] = 'true';
             final retryResponse = await dio.fetch(request);
             return handler.resolve(retryResponse);
