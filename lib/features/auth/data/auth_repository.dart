@@ -59,6 +59,8 @@ class AuthRepository {
         data: {'firebaseToken': firebaseToken},
       );
       await SecureStorage.saveToken(response.data['accessToken'] as String);
+      final refreshToken = response.data['refreshToken'] as String?;
+      if (refreshToken != null) await SecureStorage.saveRefreshToken(refreshToken);
       final user = response.data['user'] as Map<String, dynamic>?;
       if (user != null) {
         final role = user['role'] as String?;
@@ -92,6 +94,8 @@ class AuthRepository {
 
     final response = await _dio.post('/auth/register', data: body);
     await SecureStorage.saveToken(response.data['accessToken'] as String);
+    final refreshToken = response.data['refreshToken'] as String?;
+    if (refreshToken != null) await SecureStorage.saveRefreshToken(refreshToken);
     await SecureStorage.saveRole(role);
     await SecureStorage.saveName(name);
     final user = response.data['user'] as Map<String, dynamic>?;
