@@ -1,6 +1,6 @@
 # CareNest — Architecture Overview
 
-**Last updated:** 2026-06-25
+**Last updated:** 2026-06-25 (auth security hardening complete)
 
 ---
 
@@ -80,9 +80,71 @@ Refresh Token: 7 days (configurable via JWT_REFRESH_EXPIRATION_MS)
 Storage:       refresh_tokens table (hashed with SHA-256)
 Rotation:      Each refresh call revokes old token, issues new pair
 Revocation:    POST /api/auth/logout revokes all user's refresh tokens
+```
 
-⚠️ Known gap: Flutter does not yet call POST /api/auth/refresh
-   when access token expires. Implement in DioClient error interceptor.
+### Flutter 401 Auto-Refresh Flow
+
+```
+API call → 401 response
+     │
+     ▼
+DioClient.onError interceptor
+     │ is401 && !isRefreshPath && !isRetry?
+     ▼
+SecureStorage.getRefreshToken()
+     │ refreshToken found?
+     ├── NO → clearAll() → TokenNotifier.onSessionExpired()
+     │              → GoRouter re-evaluates redirect → /phone
+     │
+     └── YES → POST /api/auth/refresh { refreshToken }
+                    │ 200 OK?
+                    ├── YES → saveToken(newAccess) + saveRefreshToken(newRefresh)
+                    │         mark request with x-retry-after-refresh
+                    │         dio.fetch(originalRequest)  ← onRequest injects new token
+                    │         handler.resolve(retryResponse)
+                    │
+                    └── NO  → clearAll() → TokenNotifier.onSessionExpired() → /phone
+```
+
+### Resource-Level Authorization (Backend)
+
+```
+Every protected endpoint uses @PreAuthorize with AuthorizationService ("authz" bean):
+
+POST /api/elderly-profiles
+  → #request.userId == authentication.principal
+    (elderly can only create a profile for themselves)
+
+GET  /api/elderly-profiles/{id}
+PUT  /api/elderly-profiles/{id}
+  → @authz.canAccessElderlyProfile(principal, profileId)
+    (owner OR ACTIVE-linked family member)
+
+POST /api/family-links
+  → #request.familyId == authentication.principal
+    (only you can initiate a link as yourself)
+
+GET  /api/elderly/{elderlyId}/family
+  → @authz.isOwnerOrLinkedFamily(principal, elderlyId)
+
+PATCH /api/family-links/{id}/status
+  → @authz.isFamilyLinkParticipant(principal, linkId)
+    (either the elderly or the family member in the link)
+
+POST /api/medications
+  → @authz.isOwnerOrLinkedFamily(principal, request.elderlyId)
+
+GET  /api/users/{userId}/medications
+  → @authz.isOwnerOrLinkedFamily(principal, userId)
+
+PATCH /api/medications/{id}
+DELETE /api/medications/{id}
+  → @authz.canAccessMedication(principal, medicationId)
+    (resolves medication → elderlyId → isOwnerOrLinkedFamily)
+
+authentication.principal = Long userId set by JwtAuthenticationFilter
+Unauthenticated requests → 401 (authenticationEntryPoint, before @PreAuthorize)
+Authenticated but unauthorized → 403 (Spring Security AccessDeniedException)
 ```
 
 ---
