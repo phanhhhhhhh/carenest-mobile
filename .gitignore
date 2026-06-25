@@ -1,7 +1,8 @@
 # Claude Code local config
 .omc/
 
-# Sensitive docs (keep local only)
+# Docs — keep local only, not pushed to remote
+docs/
 backend/docs/database-schema.md
 
 # Environment & secrets — NEVER commit these
