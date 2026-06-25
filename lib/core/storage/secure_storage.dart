@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class SecureStorage {
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'jwt_token';
+  static const _refreshTokenKey = 'jwt_refresh_token';
   static const _roleKey = 'user_role';
   static const _nameKey = 'user_name';
   static const _phoneKey = 'user_phone';
@@ -12,6 +13,12 @@ class SecureStorage {
       _storage.write(key: _tokenKey, value: token);
 
   static Future<String?> getToken() => _storage.read(key: _tokenKey);
+
+  static Future<void> saveRefreshToken(String token) =>
+      _storage.write(key: _refreshTokenKey, value: token);
+
+  static Future<String?> getRefreshToken() =>
+      _storage.read(key: _refreshTokenKey);
 
   static Future<void> saveRole(String role) =>
       _storage.write(key: _roleKey, value: role);
