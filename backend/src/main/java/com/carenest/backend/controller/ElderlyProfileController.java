@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ public class ElderlyProfileController {
     private final ElderlyProfileService elderlyProfileService;
 
     @PostMapping
+    @PreAuthorize("#request.userId == authentication.principal")
     public ResponseEntity<ElderlyProfileResponse> create(
         @Valid @RequestBody ElderlyProfileRequest request
     ) {
@@ -30,11 +32,13 @@ public class ElderlyProfileController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@authz.canAccessElderlyProfile(authentication.principal, #id)")
     public ResponseEntity<ElderlyProfileResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(elderlyProfileService.getById(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@authz.canAccessElderlyProfile(authentication.principal, #id)")
     public ResponseEntity<ElderlyProfileResponse> update(
         @PathVariable Long id,
         @Valid @RequestBody ElderlyProfileRequest request
