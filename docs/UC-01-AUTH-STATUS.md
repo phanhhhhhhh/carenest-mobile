@@ -1,7 +1,7 @@
 # UC-01 Auth — Status Report
 
 **Last updated:** 2026-06-25  
-**Status:** ✅ Complete for demo | ⚠️ Partial for production
+**Status:** ✅ Complete for demo | ✅ Production security issues resolved
 
 ---
 
@@ -16,8 +16,9 @@
 | `lib/features/auth/presentation/screens/phone_screen.dart` | ✅ KEEP | Production-ready; dev mode shown only on kIsWeb |
 | `lib/features/auth/presentation/screens/otp_screen.dart` | ⚠️ REFACTOR | Missing: resend OTP, countdown timer |
 | `lib/features/auth/presentation/screens/register_screen.dart` | ⚠️ REFACTOR | Missing: DOB input field |
-| `lib/core/storage/secure_storage.dart` | ✅ KEEP | Correct flutter_secure_storage usage |
-| `lib/core/network/dio_client.dart` | ⚠️ REFACTOR | Hardcoded localhost; no 401/refresh interceptor |
+| `lib/core/storage/secure_storage.dart` | ✅ KEEP | Correct flutter_secure_storage usage; refreshToken key added |
+| `lib/core/auth/token_notifier.dart` | ✅ NEW | ChangeNotifier singleton; triggers GoRouter redirect on session expiry |
+| `lib/core/network/dio_client.dart` | ✅ FIXED | 401 interceptor: auto-refresh → retry; refresh failure → logout + redirect |
 | `lib/core/router/app_router.dart` | ✅ KEEP | Role-based routing correct |
 | `lib/presentation/screens/auth/.gitkeep` | ❌ REMOVE | Empty dead folder |
 
@@ -29,7 +30,8 @@
 | `service/AuthService.java` | ✅ KEEP | Firebase verify → DB create/lookup → JWT issue |
 | `service/JwtService.java` | ✅ KEEP | HS256, expiry guard, role claim |
 | `service/FirebaseService.java` | ✅ KEEP | Profile-gated dev bypass |
-| `config/SecurityConfig.java` | ⚠️ REFACTOR | No @EnableMethodSecurity; CORS too permissive |
+| `config/SecurityConfig.java` | ✅ FIXED | @EnableMethodSecurity added; CORS still too permissive (issue #5) |
+| `security/AuthorizationService.java` | ✅ NEW | @Service("authz") — ownership checks used by @PreAuthorize SpEL |
 | `config/FirebaseConfig.java` | ✅ KEEP | Graceful skip when no credentials |
 | `security/JwtAuthenticationFilter.java` | ✅ KEEP | Sets userId + role as principal |
 | `exception/GlobalExceptionHandler.java` | ⚠️ REFACTOR | Missing AccessDeniedException handler |
@@ -68,12 +70,12 @@ Send `firebaseToken: "DEV_PHONE:+84912345678"` to `/api/auth/login` or `/api/aut
 
 ### HIGH Severity
 
-| # | Issue | Fix |
-|---|-------|-----|
-| 1 | Flutter has no 401 interceptor — JWT expiry silently breaks API | Add `onError` in `DioClient` to detect 401, call `POST /auth/refresh`, retry |
-| 2 | Flutter never calls `POST /api/auth/refresh` | Implement refresh flow in `auth_repository.dart` |
-| 3 | `SecurityConfig` missing `@EnableMethodSecurity` — any authenticated user can access any endpoint | Add `@EnableMethodSecurity` to `SecurityConfig`, add `@PreAuthorize` to all controllers |
-| 4 | JWT secret has weak fallback in `application.properties` | Change `jwt.secret=${JWT_SECRET:...}` to `jwt.secret=${JWT_SECRET}` (no fallback) |
+| # | Issue | Status | Fix |
+|---|-------|--------|-----|
+| 1 | Flutter had no 401 interceptor — JWT expiry silently broke API | ✅ **FIXED** | `DioClient` now detects 401, calls `POST /auth/refresh`, retries; on failure clears storage and triggers router redirect |
+| 2 | Flutter never called `POST /api/auth/refresh` | ✅ **FIXED** | `SecureStorage` now stores `refreshToken`; `auth_repository.dart` saves it on login/register; `DioClient` uses it in the interceptor |
+| 3 | `SecurityConfig` missing `@EnableMethodSecurity` — any authenticated user could access any endpoint | ✅ **FIXED** | `@EnableMethodSecurity` added; `@PreAuthorize` added to all 3 controllers via `AuthorizationService` SpEL |
+| 4 | JWT secret has weak fallback in `application.properties` | ⚠️ OPEN | Change `jwt.secret=${JWT_SECRET:...}` to `jwt.secret=${JWT_SECRET}` (no fallback) |
 
 ### MEDIUM Severity
 
