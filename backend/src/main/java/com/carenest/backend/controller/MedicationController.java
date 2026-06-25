@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +25,7 @@ public class MedicationController {
     private final MedicationService medicationService;
 
     @PostMapping("/api/medications")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #request.elderlyId)")
     public ResponseEntity<MedicationResponse> create(
         @Valid @RequestBody MedicationRequest request
     ) {
@@ -31,6 +33,7 @@ public class MedicationController {
     }
 
     @GetMapping("/api/users/{userId}/medications")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<List<MedicationResponse>> getByElderlyId(
         @PathVariable Long userId
     ) {
@@ -38,6 +41,7 @@ public class MedicationController {
     }
 
     @PatchMapping("/api/medications/{id}")
+    @PreAuthorize("@authz.canAccessMedication(authentication.principal, #id)")
     public ResponseEntity<MedicationResponse> update(
         @PathVariable Long id,
         @RequestBody MedicationRequest request
@@ -46,6 +50,7 @@ public class MedicationController {
     }
 
     @DeleteMapping("/api/medications/{id}")
+    @PreAuthorize("@authz.canAccessMedication(authentication.principal, #id)")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         medicationService.delete(id);
         return ResponseEntity.noContent().build();

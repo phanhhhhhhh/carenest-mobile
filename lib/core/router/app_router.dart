@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import '../auth/token_notifier.dart';
 import '../navigation/elderly_shell.dart';
 import '../navigation/family_shell.dart';
 import '../storage/secure_storage.dart';
@@ -18,6 +19,7 @@ import '../../features/family/presentation/screens/family_profile_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/phone',
+  refreshListenable: TokenNotifier.instance,
   redirect: (context, state) async {
     final token = await SecureStorage.getToken();
     final isAuth = token != null;
