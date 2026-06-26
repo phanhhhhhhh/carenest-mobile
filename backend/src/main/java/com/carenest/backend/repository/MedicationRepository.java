@@ -13,8 +13,6 @@ import java.util.Optional;
 @Repository
 public interface MedicationRepository extends JpaRepository<Medication, Long> {
 
-    List<Medication> findAllByElderlyIdAndDeletedAtIsNull(Long elderlyId);
-
     List<Medication> findByElderlyIdAndDeletedAtIsNull(Long elderlyId);
 
     Optional<Medication> findByIdAndDeletedAtIsNull(Long id);
