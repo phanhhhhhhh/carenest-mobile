@@ -14,25 +14,27 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class FamilyLinkController {
 
     private final FamilyLinkService familyLinkService;
 
-    @PostMapping("/api/family-links")
-    @PreAuthorize("#request.familyId == authentication.principal")
+    @PostMapping("/family-links")
+    @PreAuthorize("hasRole('FAMILY') and #request.familyId == authentication.principal")
     public ResponseEntity<FamilyLinkResponse> create(
         @Valid @RequestBody FamilyLinkRequest request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(familyLinkService.create(request));
     }
 
-    @GetMapping("/api/elderly/{elderlyId}/family")
+    @GetMapping("/elderly/{elderlyId}/family")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
     public ResponseEntity<List<FamilyLinkResponse>> getFamilyByElderlyId(
         @PathVariable Long elderlyId
@@ -40,7 +42,7 @@ public class FamilyLinkController {
         return ResponseEntity.ok(familyLinkService.getFamilyByElderlyId(elderlyId));
     }
 
-    @PatchMapping("/api/family-links/{id}/status")
+    @PatchMapping("/family-links/{id}/status")
     @PreAuthorize("@authz.isFamilyLinkParticipant(authentication.principal, #id)")
     public ResponseEntity<FamilyLinkResponse> updateStatus(
         @PathVariable Long id,
