@@ -1,5 +1,6 @@
 # Claude Code local config
 .omc/
+.claude/
 
 # Docs — keep local only, not pushed to remote
 docs/
