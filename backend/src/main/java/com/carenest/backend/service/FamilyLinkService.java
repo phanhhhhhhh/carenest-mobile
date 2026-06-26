@@ -5,6 +5,8 @@ import com.carenest.backend.dto.family.FamilyLinkResponse;
 import com.carenest.backend.entity.FamilyLink;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.User;
+import com.carenest.backend.entity.UserRole;
+import com.carenest.backend.exception.ConflictException;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.UserRepository;
@@ -27,8 +29,21 @@ public class FamilyLinkService {
         User elderly = userRepository.findById(request.getElderlyId())
             .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
 
+        if (elderly.getRole() != UserRole.ELDERLY) {
+            throw new IllegalArgumentException("elderlyId phải là user có role ELDERLY");
+        }
+
         User family = userRepository.findById(request.getFamilyId())
             .orElseThrow(() -> new NotFoundException("User (family) không tồn tại: " + request.getFamilyId()));
+
+        if (family.getRole() != UserRole.FAMILY) {
+            throw new IllegalArgumentException("familyId phải là user có role FAMILY");
+        }
+
+        if (familyLinkRepository.findByElderlyIdAndFamilyIdAndDeletedAtIsNull(
+                request.getElderlyId(), request.getFamilyId()).isPresent()) {
+            throw new ConflictException("Liên kết giữa elderly và family đã tồn tại");
+        }
 
         FamilyLink link = FamilyLink.builder()
             .elderly(elderly)
@@ -42,7 +57,7 @@ public class FamilyLinkService {
 
     @Transactional(readOnly = true)
     public List<FamilyLinkResponse> getFamilyByElderlyId(Long elderlyId) {
-        return familyLinkRepository.findByElderlyIdAndDeletedAtIsNull(elderlyId)
+        return familyLinkRepository.findAllFamilyByElderlyIdAndStatus(elderlyId, FamilyLinkStatus.ACTIVE)
             .stream()
             .map(this::toResponse)
             .collect(Collectors.toList());

@@ -14,17 +14,19 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class MedicationController {
 
     private final MedicationService medicationService;
 
-    @PostMapping("/api/medications")
+    @PostMapping("/medications")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #request.elderlyId)")
     public ResponseEntity<MedicationResponse> create(
         @Valid @RequestBody MedicationRequest request
@@ -32,7 +34,7 @@ public class MedicationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(medicationService.create(request));
     }
 
-    @GetMapping("/api/users/{userId}/medications")
+    @GetMapping("/users/{userId}/medications")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<List<MedicationResponse>> getByElderlyId(
         @PathVariable Long userId
@@ -40,16 +42,16 @@ public class MedicationController {
         return ResponseEntity.ok(medicationService.getByElderlyId(userId));
     }
 
-    @PatchMapping("/api/medications/{id}")
+    @PatchMapping("/medications/{id}")
     @PreAuthorize("@authz.canAccessMedication(authentication.principal, #id)")
     public ResponseEntity<MedicationResponse> update(
         @PathVariable Long id,
-        @RequestBody MedicationRequest request
+        @Valid @RequestBody MedicationRequest request
     ) {
         return ResponseEntity.ok(medicationService.update(id, request));
     }
 
-    @DeleteMapping("/api/medications/{id}")
+    @DeleteMapping("/medications/{id}")
     @PreAuthorize("@authz.canAccessMedication(authentication.principal, #id)")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         medicationService.delete(id);
