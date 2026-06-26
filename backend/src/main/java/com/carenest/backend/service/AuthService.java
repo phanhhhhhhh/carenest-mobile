@@ -39,6 +39,10 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request, String deviceInfo) {
         String phone = firebaseService.verifyAndGetPhone(request.getFirebaseToken());
 
+        if (request.getRole() == com.carenest.backend.entity.UserRole.ADMIN) {
+            throw new UnauthorizedException("Không thể tự đăng ký role ADMIN");
+        }
+
         if (userRepository.existsByPhoneAndDeletedAtIsNull(phone)) {
             throw new ConflictException("Số điện thoại đã được đăng ký: " + phone);
         }
