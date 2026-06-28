@@ -64,10 +64,10 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
     load();
   }
 
-  Future<void> load() async {
+  Future<void> load({String? elderlyId}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final userId = await SecureStorage.getUserId();
+      final userId = elderlyId ?? await SecureStorage.getUserId();
       if (userId == null) {
         state = state.copyWith(isLoading: false);
         return;
@@ -86,9 +86,10 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
     required String name,
     required String dosage,
     String? instructions,
+    String? elderlyId,
   }) async {
     try {
-      final userId = await SecureStorage.getUserId();
+      final userId = elderlyId ?? await SecureStorage.getUserId();
       if (userId == null) return;
       await _dio.post('/medications', data: {
         'elderlyId': int.tryParse(userId),
@@ -122,7 +123,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
   }
 }
 
-final medicationListProvider =
+final medicationsProvider =
     StateNotifierProvider<MedicationListNotifier, MedicationListState>(
   (ref) => MedicationListNotifier(ref.watch(dioProvider)),
 );
