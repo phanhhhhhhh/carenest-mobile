@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/elderly_provider.dart';
+import '../providers/medication_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 
@@ -301,7 +302,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
       );
-    } else if (medsState.medications.isEmpty) {
+    } else if (medsState.items.isEmpty) {
       content = const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Text(
@@ -311,7 +312,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
       );
     } else {
       content = Column(
-        children: medsState.medications
+        children: medsState.items
             .map((med) => _MedicationTile(medication: med))
             .toList(),
       );
@@ -398,7 +399,7 @@ class _HealthCard extends StatelessWidget {
 }
 
 class _MedicationTile extends StatelessWidget {
-  final MedicationData medication;
+  final MedicationItem medication;
 
   const _MedicationTile({required this.medication});
 
