@@ -1,5 +1,6 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.dto.family.FamilyElderlyResponse;
 import com.carenest.backend.dto.family.FamilyLinkRequest;
 import com.carenest.backend.dto.family.FamilyLinkResponse;
 import com.carenest.backend.entity.FamilyLink;
@@ -63,12 +64,32 @@ public class FamilyLinkService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<FamilyElderlyResponse> getElderlyByFamilyId(Long familyId) {
+        return familyLinkRepository.findAllElderlyByFamilyIdAndStatus(familyId, FamilyLinkStatus.ACTIVE)
+            .stream()
+            .map(this::toElderlyResponse)
+            .collect(Collectors.toList());
+    }
+
     public FamilyLinkResponse updateStatus(Long id, FamilyLinkStatus status) {
         FamilyLink link = familyLinkRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow(() -> new NotFoundException("FamilyLink không tồn tại: " + id));
 
         link.setStatus(status);
         return toResponse(familyLinkRepository.save(link));
+    }
+
+    private FamilyElderlyResponse toElderlyResponse(FamilyLink fl) {
+        return FamilyElderlyResponse.builder()
+            .linkId(fl.getId())
+            .elderlyId(fl.getElderly().getId())
+            .elderlyName(fl.getElderly().getName())
+            .elderlyPhone(fl.getElderly().getPhone())
+            .relationship(fl.getRelationship())
+            .status(fl.getStatus())
+            .createdAt(fl.getCreatedAt())
+            .build();
     }
 
     private FamilyLinkResponse toResponse(FamilyLink fl) {
