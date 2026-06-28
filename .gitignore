@@ -1,6 +1,8 @@
-# Claude Code local config
-.omc/
+# Claude Code / OMC local config — NEVER commit session state
 .claude/
+**/.claude/
+.omc/
+**/.omc/
 
 # Docs — keep local only, not pushed to remote
 docs/
