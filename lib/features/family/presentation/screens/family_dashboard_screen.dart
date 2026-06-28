@@ -122,10 +122,10 @@ class _FamilyDashboardScreenState
   }
 
   Widget _buildElderlyCard(FamilyDashboardState dashState) {
-    final elderlyName = dashState.data?.elderlyName ?? 'Nguyễn Văn An';
+    final elderlyName = dashState.data?.elderlyName;
     final healthConditions = dashState.data?.healthConditions.isNotEmpty == true
         ? dashState.data!.healthConditions.join(', ')
-        : 'Cao huyết áp, Tiểu đường';
+        : null;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -150,18 +150,20 @@ class _FamilyDashboardScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  elderlyName,
+                  elderlyName ?? 'Chưa liên kết',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  healthConditions,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
+                if (healthConditions != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    healthConditions,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 const Row(
                   children: [
@@ -183,10 +185,10 @@ class _FamilyDashboardScreenState
   }
 
   Widget _buildSummaryGrid(FamilyDashboardState dashState) {
-    final total = dashState.data?.totalMedications ?? 5;
-    final taken = dashState.data?.takenMedications ?? 1;
-    final medValue = '$taken/$total liều';
-    final medProgress = total > 0 ? taken / total : 0.2;
+    final total = dashState.data?.totalMedications ?? 0;
+    final taken = dashState.data?.takenMedications ?? 0;
+    final medValue = total > 0 ? '$taken/$total liều' : '--';
+    final medProgress = total > 0 ? taken / total : 0.0;
 
     return GridView.count(
       crossAxisCount: 2,
@@ -208,50 +210,28 @@ class _FamilyDashboardScreenState
           icon: Icons.favorite,
           iconColor: AppColors.error,
           title: 'Huyết áp',
-          value: '120/80',
-          subtitle: 'mmHg • Bình thường',
+          value: '--',
+          subtitle: 'mmHg',
         ),
         const _SummaryCard(
           icon: Icons.water_drop,
           iconColor: Color(0xFF1565C0),
           title: 'Đường huyết',
-          value: '5.5',
-          subtitle: 'mmol/L • Ổn định',
+          value: '--',
+          subtitle: 'mmol/L',
         ),
         const _SummaryCard(
           icon: Icons.warning_amber,
           iconColor: AppColors.warning,
           title: 'Cảnh báo',
-          value: '1',
-          subtitle: 'Cần xem',
-          hasAlert: true,
+          value: '--',
+          subtitle: '',
         ),
       ],
     );
   }
 
   Widget _buildRecentActivity() {
-    final activities = [
-      _Activity(
-        icon: Icons.check_circle,
-        iconColor: AppColors.success,
-        title: 'Đã uống Amlodipine 5mg',
-        subtitle: '07:05 hôm nay',
-      ),
-      _Activity(
-        icon: Icons.favorite,
-        iconColor: AppColors.error,
-        title: 'Nhập huyết áp: 120/80 mmHg',
-        subtitle: '08:30 hôm nay',
-      ),
-      _Activity(
-        icon: Icons.warning,
-        iconColor: AppColors.warning,
-        title: 'Chưa uống Metformin 12:00',
-        subtitle: '12:30 hôm nay',
-      ),
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -264,7 +244,15 @@ class _FamilyDashboardScreenState
           ),
         ),
         const SizedBox(height: 12),
-        ...activities.map((a) => _ActivityTile(activity: a)),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'Chưa có hoạt động gần đây',
+              style: const TextStyle(color: AppColors.textHint, fontSize: 14),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -379,59 +367,6 @@ class _SummaryCard extends StatelessWidget {
           ],
           Text(subtitle,
               style: const TextStyle(color: AppColors.textHint, fontSize: 11)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Activity {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-
-  _Activity({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-  });
-}
-
-class _ActivityTile extends StatelessWidget {
-  final _Activity activity;
-
-  const _ActivityTile({required this.activity});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(activity.icon, color: activity.iconColor, size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(activity.title,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary)),
-                Text(activity.subtitle,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textSecondary)),
-              ],
-            ),
-          ),
         ],
       ),
     );
