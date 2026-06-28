@@ -17,4 +17,10 @@ public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, 
 
     // Lịch sử SOS của một elderly
     List<EmergencyEvent> findByElderlyIdOrderByTriggeredAtDesc(Long elderlyId);
+
+    // Lịch sử SOS của một elderly theo status
+    List<EmergencyEvent> findByElderlyIdAndStatusOrderByTriggeredAtDesc(Long elderlyId, EmergencyStatus status);
+
+    // Soft-delete-aware single lookup — no deletedAt on this entity, but keep convention
+    Optional<EmergencyEvent> findById(Long id);
 }
