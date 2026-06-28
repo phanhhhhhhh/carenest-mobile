@@ -44,7 +44,7 @@ class _ElderlyMedicationScreenState
             onPressed: () {
               if (nameCtrl.text.trim().isNotEmpty &&
                   dosageCtrl.text.trim().isNotEmpty) {
-                ref.read(medicationListProvider.notifier).addMedication(
+                ref.read(medicationsProvider.notifier).addMedication(
                       name: nameCtrl.text.trim(),
                       dosage: dosageCtrl.text.trim(),
                     );
@@ -60,7 +60,7 @@ class _ElderlyMedicationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final medState = ref.watch(medicationListProvider);
+    final medState = ref.watch(medicationsProvider);
     final items = medState.items;
     final takenCount = items.where((m) => m.taken).length;
     final totalCount = items.length;
@@ -90,7 +90,7 @@ class _ElderlyMedicationScreenState
                       const SizedBox(height: 12),
                       ElevatedButton(
                         onPressed: () =>
-                            ref.read(medicationListProvider.notifier).load(),
+                            ref.read(medicationsProvider.notifier).load(),
                         child: const Text('Thử lại'),
                       ),
                     ],
@@ -128,7 +128,7 @@ class _ElderlyMedicationScreenState
                         (m) => _MedCard(
                           item: m,
                           onToggle: () => ref
-                              .read(medicationListProvider.notifier)
+                              .read(medicationsProvider.notifier)
                               .toggleTaken(m.id),
                         ),
                       ),
