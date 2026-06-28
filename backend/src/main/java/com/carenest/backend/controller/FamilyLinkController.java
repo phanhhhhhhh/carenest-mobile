@@ -1,5 +1,6 @@
 package com.carenest.backend.controller;
 
+import com.carenest.backend.dto.family.FamilyElderlyResponse;
 import com.carenest.backend.dto.family.FamilyLinkRequest;
 import com.carenest.backend.dto.family.FamilyLinkResponse;
 import com.carenest.backend.dto.family.FamilyLinkStatusRequest;
@@ -40,6 +41,14 @@ public class FamilyLinkController {
         @PathVariable Long elderlyId
     ) {
         return ResponseEntity.ok(familyLinkService.getFamilyByElderlyId(elderlyId));
+    }
+
+    @GetMapping("/family/{familyId}/elderly")
+    @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN') and (#familyId == authentication.principal or hasRole('ADMIN'))")
+    public ResponseEntity<List<FamilyElderlyResponse>> getElderlyByFamilyId(
+        @PathVariable Long familyId
+    ) {
+        return ResponseEntity.ok(familyLinkService.getElderlyByFamilyId(familyId));
     }
 
     @PatchMapping("/family-links/{id}/status")
