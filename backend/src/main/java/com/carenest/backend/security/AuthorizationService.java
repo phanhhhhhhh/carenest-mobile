@@ -2,6 +2,7 @@ package com.carenest.backend.security;
 
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.repository.ElderlyProfileRepository;
+import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
 import com.carenest.backend.repository.MedicationRepository;
@@ -16,6 +17,7 @@ public class AuthorizationService {
     private final FamilyLinkRepository familyLinkRepository;
     private final MedicationRepository medicationRepository;
     private final HealthMetricRepository healthMetricRepository;
+    private final EmergencyEventRepository emergencyEventRepository;
 
     public boolean isOwnerOrLinkedFamily(Long principalId, Long elderlyId) {
         if (principalId == null || elderlyId == null) return false;
@@ -50,6 +52,13 @@ public class AuthorizationService {
         if (principalId == null || metricId == null) return false;
         return healthMetricRepository.findByIdAndDeletedAtIsNull(metricId)
             .map(m -> isOwnerOrLinkedFamily(principalId, m.getElderly().getId()))
+            .orElse(false);
+    }
+
+    public boolean canAccessEmergencyEvent(Long principalId, Long eventId) {
+        if (principalId == null || eventId == null) return false;
+        return emergencyEventRepository.findById(eventId)
+            .map(e -> isOwnerOrLinkedFamily(principalId, e.getElderly().getId()))
             .orElse(false);
     }
 }
