@@ -5,12 +5,14 @@ import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class FamilyDashboardData {
+  final String? elderlyId;
   final String? elderlyName;
   final List<String> healthConditions;
   final int totalMedications;
   final int takenMedications;
 
   const FamilyDashboardData({
+    this.elderlyId,
     this.elderlyName,
     this.healthConditions = const [],
     this.totalMedications = 0,
@@ -63,25 +65,49 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
         state = state.copyWith(isLoading: false, error: 'Chưa đăng nhập');
         return;
       }
-      // Thử load medications dùng userId hiện tại làm fallback
-      // Khi API /api/family/{familyId}/elderly có, thay thế logic này
-      final resp = await _dio.get('/users/$userId/medications');
-      final meds = resp.data as List<dynamic>;
+
+      // 1. Get linked elderly from /family/{userId}/elderly
+      String? elderlyId;
+      String? elderlyName;
+      List<String> healthConditions = [];
+      try {
+        final familyResp = await _dio.get('/family/$userId/elderly');
+        final elderlyList = familyResp.data as List<dynamic>;
+        if (elderlyList.isNotEmpty) {
+          final first = elderlyList[0] as Map<String, dynamic>;
+          elderlyId = first['id'].toString();
+          elderlyName = first['userName'] as String?;
+          final rawConditions = first['healthConditions'];
+          if (rawConditions is List) {
+            healthConditions = rawConditions.cast<String>();
+          }
+        }
+      } on DioException {
+        // Family member may not have linked elderly yet — continue gracefully
+      }
+
+      // 2. Get medication count for the elderly (if found)
+      int totalMeds = 0;
+      if (elderlyId != null) {
+        try {
+          final medResp = await _dio.get('/users/$elderlyId/medications');
+          final meds = medResp.data as List<dynamic>;
+          totalMeds = meds.length;
+        } on DioException {
+          // Medications endpoint may not be ready
+        }
+      }
+
       state = state.copyWith(
         isLoading: false,
         lastRefreshed: DateTime.now(),
         data: FamilyDashboardData(
-          elderlyName: null, // chưa có API lấy elderly name qua family
-          totalMedications: meds.length,
-          takenMedications: 0, // medication log chưa available
+          elderlyId: elderlyId,
+          elderlyName: elderlyName,
+          healthConditions: healthConditions,
+          totalMedications: totalMeds,
+          takenMedications: 0,
         ),
-      );
-    } on DioException {
-      // API not ready yet — show empty state without crashing
-      state = state.copyWith(
-        isLoading: false,
-        lastRefreshed: DateTime.now(),
-        data: const FamilyDashboardData(),
       );
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
