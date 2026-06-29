@@ -1,7 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConfig {
-  // Lấy API key tại https://aistudio.google.com/ rồi đặt vào .env: GEMINI_API_KEY=...
   static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
 
   static const geminiSystemPrompt =

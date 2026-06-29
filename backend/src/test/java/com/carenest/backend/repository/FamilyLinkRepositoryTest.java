@@ -23,10 +23,6 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
     private User createElderlyUser(String phone) {
         return userRepository.save(User.builder()
                 .role(UserRole.ELDERLY)
@@ -51,10 +47,6 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
                 .status(status)
                 .build());
     }
-
-    // -----------------------------------------------------------------------
-    // findAllFamilyByElderlyIdAndStatus
-    // -----------------------------------------------------------------------
 
     @Test
     void findAllFamilyByElderlyIdAndStatus_returnsActiveFamilyMembers() {
@@ -101,10 +93,6 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
         assertThat(results).isEmpty();
     }
 
-    // -----------------------------------------------------------------------
-    // findAllElderlyByFamilyIdAndStatus
-    // -----------------------------------------------------------------------
-
     @Test
     void findAllElderlyByFamilyIdAndStatus_returnsLinkedElderly() {
         User elderly1 = createElderlyUser("0904000008");
@@ -135,10 +123,6 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
         assertThat(results).isEmpty();
     }
 
-    // -----------------------------------------------------------------------
-    // UNIQUE constraint: (elderly_id, family_id)
-    // -----------------------------------------------------------------------
-
     @Test
     void saveFamilyLink_throwsOnDuplicateElderlyFamilyPair() {
         User elderly = createElderlyUser("0904000013");
@@ -159,10 +143,6 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
             familyLinkRepository.flush();
         }).isInstanceOf(DataIntegrityViolationException.class);
     }
-
-    // -----------------------------------------------------------------------
-    // Cascade delete: deleting elderly user removes family_links
-    // -----------------------------------------------------------------------
 
     @Test
     void deleteElderlyUser_cascadeDeletesFamilyLinks() {

@@ -10,5 +10,5 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
 public abstract class BaseRepositoryTest {
-    // Shared test base — Testcontainers + DataJpaTest setup
+
 }

@@ -51,7 +51,6 @@ class AuthRepository {
     return await result.user!.getIdToken() ?? '';
   }
 
-  /// Returns true nếu login thành công, throws UserNotFoundException nếu chưa đăng ký
   Future<bool> login(String firebaseToken) async {
     try {
       final response = await _dio.post(
@@ -103,7 +102,6 @@ class AuthRepository {
     if (id != null) await SecureStorage.saveUserId(id.toString());
   }
 
-  /// Dùng trên Chrome/web: bypass Firebase, gọi thẳng backend với DEV_PHONE: prefix
   Future<bool> loginDev(String phoneNumber) async {
     return login('DEV_PHONE:$phoneNumber');
   }
