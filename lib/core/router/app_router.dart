@@ -60,7 +60,6 @@ final appRouter = GoRouter(
       return role == 'ELDERLY' ? '/elderly/home' : '/family/dashboard';
     }),
 
-    // --- Elderly shell ---
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => ElderlyShell(shell: shell),
       branches: [
@@ -97,7 +96,6 @@ final appRouter = GoRouter(
       ],
     ),
 
-    // --- Family shell ---
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => FamilyShell(shell: shell),
       branches: [
