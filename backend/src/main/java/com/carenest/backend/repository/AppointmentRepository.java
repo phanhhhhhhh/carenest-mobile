@@ -19,7 +19,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByElderlyIdAndStatusAndDeletedAtIsNullOrderByDatetimeAsc(
         Long elderlyId, AppointmentStatus status);
 
-    // Upcoming appointments for a family member's linked elderly (for family view)
     @Query("""
         SELECT a FROM Appointment a
         JOIN FamilyLink fl ON fl.elderly.id = a.elderly.id

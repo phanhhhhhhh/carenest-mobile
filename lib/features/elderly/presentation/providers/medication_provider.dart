@@ -9,7 +9,7 @@ class MedicationItem {
   final String dosage;
   final String? instructions;
   final DateTime? nextDoseTime;
-  final bool taken; // local state only
+  final bool taken;
   const MedicationItem({
     required this.id,
     required this.name,
@@ -97,18 +97,16 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
         'dosage': dosage,
         'instructions': instructions,
       });
-      await load(); // refresh list
+      await load();
     } catch (_) {}
   }
 
   void toggleTaken(String medicationId) {
-    // Optimistic update local only (medication-logs API may not exist yet)
     final idx = state.items.indexWhere((m) => m.id == medicationId);
     if (idx < 0) return;
     final updated = List<MedicationItem>.from(state.items);
     updated[idx] = updated[idx].copyWith(taken: !updated[idx].taken);
     state = state.copyWith(items: updated);
-    // Fire-and-forget to backend (silently ignore error)
     _logDose(medicationId, updated[idx].taken);
   }
 
@@ -119,7 +117,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
         'status': taken ? 'TAKEN' : 'SKIPPED',
         'takenAt': DateTime.now().toIso8601String(),
       });
-    } catch (_) {} // silently ignore — logs are best-effort
+    } catch (_) {}
   }
 }
 

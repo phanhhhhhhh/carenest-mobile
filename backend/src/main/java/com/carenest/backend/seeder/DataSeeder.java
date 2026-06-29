@@ -52,7 +52,6 @@ public class DataSeeder implements CommandLineRunner {
     private final HealthMetricRepository healthMetricRepository;
     private final AppointmentRepository appointmentRepository;
 
-    // Seeded entity references — populated as we go
     private final List<User> elderlyUsers = new ArrayList<>();
     private final List<User> familyUsers = new ArrayList<>();
     private final List<Medication> medications = new ArrayList<>();
@@ -78,14 +77,9 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Seed data created successfully.");
     }
 
-    // -------------------------------------------------------------------------
-    // Users + Profiles + FamilyLinks
-    // -------------------------------------------------------------------------
-
     private void seedUsers() {
         log.info("Seeding users...");
 
-        // --- 5 Elderly users ---
         User e1 = saveUser("Nguyễn Văn An",  "0912345001", LocalDate.of(1948, 3, 15),  UserRole.ELDERLY);
         User e2 = saveUser("Trần Thị Bình",   "0912345002", LocalDate.of(1945, 7, 22),  UserRole.ELDERLY);
         User e3 = saveUser("Lê Văn Cường",    "0912345003", LocalDate.of(1950, 11, 8),  UserRole.ELDERLY);
@@ -94,7 +88,6 @@ public class DataSeeder implements CommandLineRunner {
 
         elderlyUsers.addAll(List.of(e1, e2, e3, e4, e5));
 
-        // Elderly profiles
         saveElderlyProfile(e1,
             List.of("Tiểu đường type 2", "Tăng huyết áp"),
             List.of(EmergencyContact.builder()
@@ -120,7 +113,6 @@ public class DataSeeder implements CommandLineRunner {
             List.of(EmergencyContact.builder()
                 .name("Hoàng Thị Phương").phone("0912111005").relationship("Con gái").build()));
 
-        // --- 10 Family users ---
         User f1  = saveUser("Nguyễn Thị Lan",  "0918111001", null, UserRole.FAMILY);
         User f2  = saveUser("Trần Văn Minh",    "0918111002", null, UserRole.FAMILY);
         User f3  = saveUser("Lê Thị Hoa",       "0918111003", null, UserRole.FAMILY);
@@ -134,14 +126,12 @@ public class DataSeeder implements CommandLineRunner {
 
         familyUsers.addAll(List.of(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10));
 
-        // Primary links (family 1-5 → elderly 1-5)
         saveFamilyLink(e1, f1, "Con gái");
         saveFamilyLink(e2, f2, "Con trai");
         saveFamilyLink(e3, f3, "Vợ");
         saveFamilyLink(e4, f4, "Con trai");
         saveFamilyLink(e5, f5, "Con gái");
 
-        // Additional links (family 6-10 → elderly 1 and 2)
         saveFamilyLink(e1, f6,  "Người thân");
         saveFamilyLink(e1, f7,  "Người thân");
         saveFamilyLink(e1, f8,  "Người thân");
@@ -180,20 +170,15 @@ public class DataSeeder implements CommandLineRunner {
         familyLinkRepository.save(link);
     }
 
-    // -------------------------------------------------------------------------
-    // Medications
-    // -------------------------------------------------------------------------
-
     private void seedMedications() {
         log.info("Seeding medications...");
 
-        User e1 = elderlyUsers.get(0); // Nguyễn Văn An — tiểu đường + tăng huyết áp
-        User e2 = elderlyUsers.get(1); // Trần Thị Bình — suy tim
-        User e3 = elderlyUsers.get(2); // Lê Văn Cường — COPD
+        User e1 = elderlyUsers.get(0);
+        User e2 = elderlyUsers.get(1);
+        User e3 = elderlyUsers.get(2);
 
         OffsetDateTime now = OffsetDateTime.now();
 
-        // Elderly 1 medications
         medications.add(saveMedication(e1, "Metformin", "500mg",
             schedule("TWICE_DAILY", "07:30", "19:30"), "Uống sau ăn",
             nextDoseFromNow(now, 12)));
@@ -206,7 +191,6 @@ public class DataSeeder implements CommandLineRunner {
             schedule("DAILY", "08:00"), "Uống sau ăn sáng",
             nextDoseFromNow(now, 24)));
 
-        // Elderly 2 medications
         medications.add(saveMedication(e2, "Furosemide", "40mg",
             schedule("DAILY", "07:00"), "Theo dõi phù chi",
             nextDoseFromNow(now, 24)));
@@ -219,7 +203,6 @@ public class DataSeeder implements CommandLineRunner {
             schedule("DAILY", "18:00"), "Theo dõi INR định kỳ",
             nextDoseFromNow(now, 8)));
 
-        // Elderly 3 medications
         medications.add(saveMedication(e3, "Salbutamol inhaler", "100mcg/liều",
             scheduleAsNeeded(), "Dùng khi khó thở",
             null));
@@ -263,16 +246,6 @@ public class DataSeeder implements CommandLineRunner {
         return medicationRepository.save(med);
     }
 
-    // -------------------------------------------------------------------------
-    // Medication Logs — 30 days history for elderly 1 and 2
-    // -------------------------------------------------------------------------
-
-    /**
-     * Status pattern (deterministic, 20-entry cycle):
-     *   indices  0-16 (17 entries) → TAKEN   (85 %)
-     *   indices 17-18  (2 entries) → MISSED  (10 %)
-     *   index   19     (1 entry)   → SKIPPED  (5 %)
-     */
     private MedicationLogStatus logStatus(int index) {
         int mod = index % 20;
         if (mod <= 16) return MedicationLogStatus.TAKEN;
@@ -283,8 +256,6 @@ public class DataSeeder implements CommandLineRunner {
     private void seedMedicationLogs() {
         log.info("Seeding medication logs (30 days)...");
 
-        // Medications 0-2 belong to elderly 1; medications 3-5 belong to elderly 2.
-        // Elderly 3's medications (indices 6-7) are excluded per spec.
         List<Medication> loggableMeds = medications.subList(0, 6);
 
         OffsetDateTime reference = OffsetDateTime.now();
@@ -292,7 +263,7 @@ public class DataSeeder implements CommandLineRunner {
         int globalIndex = 0;
         for (Medication med : loggableMeds) {
             List<String> times = med.getSchedule().getTimes();
-            if (times == null || times.isEmpty()) continue; // AS_NEEDED — skip
+            if (times == null || times.isEmpty()) continue;
 
             for (int day = 29; day >= 0; day--) {
                 OffsetDateTime dayBase = reference.minusDays(day);
@@ -320,10 +291,6 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Medication logs seeded.");
     }
 
-    // -------------------------------------------------------------------------
-    // Health Metrics — 30 days, twice daily, for elderly 1 and 2
-    // -------------------------------------------------------------------------
-
     private void seedHealthMetrics() {
         log.info("Seeding health metrics (30 days, twice daily)...");
 
@@ -335,44 +302,32 @@ public class DataSeeder implements CommandLineRunner {
         for (int day = 29; day >= 0; day--) {
             OffsetDateTime dayBase = reference.minusDays(day).withSecond(0).withNano(0);
 
-            // Morning session — 08:00, evening session — 20:00
             for (int session = 0; session < 2; session++) {
                 int hour = (session == 0) ? 8 : 20;
                 OffsetDateTime recordedAt = dayBase.withHour(hour).withMinute(0);
 
-                int d = day; // alias for readability in formulas below
+                int d = day;
 
-                // --- Elderly 1: BLOOD_PRESSURE ---
-                // systolic 130-145: base=130, step=1, oscillates over 5
                 double systolic1 = 130.0 + (d % 5) * 1.0 + (session * 2);
-                // diastolic 80-90: base=80, step=0.5
+
                 double diastolic1 = 80.0 + (d % 5) * 0.5 + (session * 1);
                 saveHealthMetric(e1, HealthMetricType.BLOOD_PRESSURE,
                     bd(systolic1), bd(diastolic1), "mmHg", recordedAt);
 
-                // --- Elderly 1: HEART_RATE ---
-                // 68-82 bpm: base=68, range=14, step=1 over 7-day cycle
                 double hr1 = 68.0 + (d % 7) * 2.0 + (session * 1);
                 saveHealthMetric(e1, HealthMetricType.HEART_RATE,
                     bd(hr1), null, "bpm", recordedAt);
 
-                // --- Elderly 1: BLOOD_GLUCOSE ---
-                // 7.2-11.5 mmol/L: base=7.2, range=4.3 over 10-day cycle
-                // morning slightly higher (postprandial), evening lower
                 double glucose = 7.2 + (d % 10) * 0.43 + (session == 0 ? 1.5 : 0.0);
                 saveHealthMetric(e1, HealthMetricType.BLOOD_GLUCOSE,
                     bd(glucose), null, "mmol/L", recordedAt);
 
-                // --- Elderly 2: BLOOD_PRESSURE ---
-                // systolic 115-125: base=115, step=0.5
                 double systolic2 = 115.0 + (d % 5) * 0.5 + (session * 1);
-                // diastolic 72-80: base=72, step=0.4
+
                 double diastolic2 = 72.0 + (d % 5) * 0.4 + (session * 0.8);
                 saveHealthMetric(e2, HealthMetricType.BLOOD_PRESSURE,
                     bd(systolic2), bd(diastolic2), "mmHg", recordedAt);
 
-                // --- Elderly 2: HEART_RATE ---
-                // 58-75 bpm: base=58, range=17 over 9-day cycle
                 double hr2 = 58.0 + (d % 9) * 1.0 + (session * 1);
                 saveHealthMetric(e2, HealthMetricType.HEART_RATE,
                     bd(hr2), null, "bpm", recordedAt);
@@ -396,14 +351,9 @@ public class DataSeeder implements CommandLineRunner {
         healthMetricRepository.save(metric);
     }
 
-    /** Round a double to 2 decimal places as BigDecimal. */
     private BigDecimal bd(double value) {
         return BigDecimal.valueOf(Math.round(value * 100.0) / 100.0);
     }
-
-    // -------------------------------------------------------------------------
-    // Appointments — 2 months ahead for each elderly
-    // -------------------------------------------------------------------------
 
     private void seedAppointments() {
         log.info("Seeding appointments...");
@@ -411,7 +361,7 @@ public class DataSeeder implements CommandLineRunner {
         OffsetDateTime now = OffsetDateTime.now();
 
         for (User elderly : elderlyUsers) {
-            // Appointment 1 — 2 weeks from now, 09:00
+
             saveAppointment(elderly,
                 "Tái khám Nội tiết",
                 "BS. Nguyễn Minh Hoàng",
@@ -419,7 +369,6 @@ public class DataSeeder implements CommandLineRunner {
                 "Bệnh viện Chợ Rẫy",
                 now.plusWeeks(2).withHour(9).withMinute(0).withSecond(0).withNano(0));
 
-            // Appointment 2 — 3 weeks from now, 07:30
             saveAppointment(elderly,
                 "Xét nghiệm máu định kỳ",
                 "BS. Trần Thị Hương",
@@ -427,7 +376,6 @@ public class DataSeeder implements CommandLineRunner {
                 "Lab Medlatec",
                 now.plusWeeks(3).withHour(7).withMinute(30).withSecond(0).withNano(0));
 
-            // Appointment 3 — 6 weeks from now, 10:00
             saveAppointment(elderly,
                 "Khám tim mạch",
                 "BS. Lê Văn Phúc",
