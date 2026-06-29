@@ -19,10 +19,6 @@ public class FirebaseService {
 
     private final Environment environment;
 
-    /**
-     * Verifies a Firebase ID Token and returns the user's phone number.
-     * In dev mode (no Firebase credentials), accepts "DEV_PHONE:+84xxx" as a valid token.
-     */
     public String verifyAndGetPhone(String idToken) {
         if (idToken.startsWith(DEV_PREFIX)) {
             if (!environment.matchesProfiles("local") && !environment.matchesProfiles("dev")) {

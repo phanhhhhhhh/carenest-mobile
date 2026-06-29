@@ -8,8 +8,6 @@ class DioClient {
       ? 'http://localhost:8080/api'
       : 'http://10.0.2.2:8080/api';
 
-  // Marks a request as already retried once after a token refresh.
-  // Prevents the error interceptor from entering the refresh loop again.
   static const _retryHeader = 'x-retry-after-refresh';
 
   static Dio create() {
@@ -43,7 +41,6 @@ class DioClient {
               return handler.next(error);
             }
 
-            // Use a fresh Dio without interceptors to avoid re-entering this handler.
             final refreshDio = Dio(BaseOptions(baseUrl: _baseUrl));
             final refreshRes = await refreshDio.post(
               '/auth/refresh',
@@ -55,7 +52,6 @@ class DioClient {
             await SecureStorage.saveToken(newAccess);
             await SecureStorage.saveRefreshToken(newRefresh);
 
-            // _retryHeader prevents a second refresh attempt on this retry.
             request.headers[_retryHeader] = 'true';
             final retryResponse = await dio.fetch(request);
             return handler.resolve(retryResponse);

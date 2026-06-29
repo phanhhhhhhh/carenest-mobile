@@ -22,10 +22,6 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
     private User createElderlyUser(String phone) {
         return userRepository.save(User.builder()
                 .role(UserRole.ELDERLY)
@@ -44,18 +40,13 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
                 .build());
     }
 
-    // -----------------------------------------------------------------------
-    // findAllOverdueMedications
-    // -----------------------------------------------------------------------
-
     @Test
     void findAllOverdueMedications_returnsOnlyOverdueAndNotDeleted() {
         User elderly = createElderlyUser("0902000001");
         OffsetDateTime now = OffsetDateTime.now();
 
-        // Overdue — should appear
         Medication overdue = createMedication(elderly, now.minusHours(1));
-        // Future — should NOT appear
+
         createMedication(elderly, now.plusHours(1));
 
         List<Medication> results = medicationRepository.findAllOverdueMedications(now);
@@ -84,17 +75,12 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
         User elderly = createElderlyUser("0902000003");
         OffsetDateTime now = OffsetDateTime.now();
 
-        // Only future medication
         createMedication(elderly, now.plusHours(3));
 
         List<Medication> results = medicationRepository.findAllOverdueMedications(now);
 
         assertThat(results).isEmpty();
     }
-
-    // -----------------------------------------------------------------------
-    // findUpcomingByElderlyId
-    // -----------------------------------------------------------------------
 
     @Test
     void findUpcomingByElderlyId_returnsOnlyWithinTimeWindow() {
@@ -103,11 +89,10 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
         OffsetDateTime from = now.minusMinutes(10);
         OffsetDateTime to = now.plusHours(2);
 
-        // Inside window — should appear
         Medication inside = createMedication(elderly, now.plusHours(1));
-        // Outside window — should NOT appear
+
         createMedication(elderly, now.plusHours(5));
-        // Past — should NOT appear
+
         createMedication(elderly, now.minusHours(1));
 
         List<Medication> results = medicationRepository.findUpcomingByElderlyId(elderly.getId(), from, to);
@@ -128,10 +113,6 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
 
         assertThat(results).isEmpty();
     }
-
-    // -----------------------------------------------------------------------
-    // JSONB schedule field serialization
-    // -----------------------------------------------------------------------
 
     @Test
     void schedule_jsonbSerializesAndDeserializesCorrectly() {

@@ -70,7 +70,6 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
   }
 
   Widget _buildBody(String? elderlyId) {
-    // ── No linked elderly ──────────────────────────────────────────────
     if (elderlyId == null) {
       return const Center(
         child: Text(
@@ -82,12 +81,10 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
 
     final healthState = ref.watch(healthMetricProvider(elderlyId));
 
-    // ── Loading ────────────────────────────────────────────────────────
     if (healthState.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // ── Error ──────────────────────────────────────────────────────────
     if (healthState.error != null) {
       return Center(
         child: Padding(
@@ -119,7 +116,6 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
       );
     }
 
-    // ── Empty ──────────────────────────────────────────────────────────
     if (healthState.latestByType.isEmpty) {
       return const Center(
         child: Column(
@@ -136,7 +132,6 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
       );
     }
 
-    // ── Data ───────────────────────────────────────────────────────────
     const order = ['BLOOD_PRESSURE', 'BLOOD_SUGAR', 'HEART_RATE', 'WEIGHT'];
 
     return ListView(
@@ -152,9 +147,9 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Metric display configuration per type
-// ═══════════════════════════════════════════════════════════════════════════════
+
+
+
 
 class _MetricConfig {
   final String title;
@@ -197,9 +192,9 @@ const _metricConfigs = <String, _MetricConfig>{
   ),
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Status derivation
-// ═══════════════════════════════════════════════════════════════════════════════
+
+
+
 
 class _StatusInfo {
   final String label;
@@ -207,9 +202,9 @@ class _StatusInfo {
   const _StatusInfo(this.label, this.color);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Individual health-metric card
-// ═══════════════════════════════════════════════════════════════════════════════
+
+
+
 
 class _HealthMetricSection extends StatelessWidget {
   final HealthMetricData data;
@@ -218,7 +213,6 @@ class _HealthMetricSection extends StatelessWidget {
 
   _MetricConfig get _config => _metricConfigs[data.type]!;
 
-  // ── Format latest value ──────────────────────────────────────────────
 
   String get _latestValue {
     final unitStr = data.unit ?? _config.unit;
@@ -228,7 +222,6 @@ class _HealthMetricSection extends StatelessWidget {
     return '${data.value} $unitStr';
   }
 
-  // ── Format recorded time ─────────────────────────────────────────────
 
   String _formatTime(DateTime dt) {
     final now = DateTime.now();
@@ -246,7 +239,6 @@ class _HealthMetricSection extends StatelessWidget {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
-  // ── Derive status label / color from value ───────────────────────────
 
   _StatusInfo _deriveStatus() {
     switch (data.type) {
@@ -300,16 +292,13 @@ class _HealthMetricSection extends StatelessWidget {
     }
   }
 
-  // ── Average value (from valueSecondary, except for BP) ───────────────
 
   String? get _avgValue {
-    // For blood pressure, valueSecondary is the diastolic — already shown
     if (data.type == 'BLOOD_PRESSURE') return null;
     if (data.valueSecondary == null) return null;
     return 'TB: ${data.valueSecondary}';
   }
 
-  // ── Build ────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -333,7 +322,6 @@ class _HealthMetricSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header row: icon, title, status badge ──
           Row(
             children: [
               Icon(config.icon, color: config.iconColor, size: 18),
@@ -367,7 +355,6 @@ class _HealthMetricSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── Value row: latest reading + average ──
           Row(
             children: [
               Expanded(
@@ -425,7 +412,6 @@ class _HealthMetricSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // ── Mini chart placeholder ──
           _buildMiniChart(config.iconColor),
         ],
       ),
