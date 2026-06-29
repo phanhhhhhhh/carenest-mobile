@@ -19,10 +19,6 @@ class UserRepositoryTest extends BaseRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
     private User createUser(String phone, UserRole role) {
         return userRepository.save(User.builder()
                 .role(role)
@@ -34,10 +30,6 @@ class UserRepositoryTest extends BaseRepositoryTest {
     private User createElderlyUser(String phone) {
         return createUser(phone, UserRole.ELDERLY);
     }
-
-    // -----------------------------------------------------------------------
-    // findByPhoneAndDeletedAtIsNull
-    // -----------------------------------------------------------------------
 
     @Test
     void findByPhoneAndDeletedAtIsNull_foundWhenNotDeleted() {
@@ -68,10 +60,6 @@ class UserRepositoryTest extends BaseRepositoryTest {
         assertThat(result).isEmpty();
     }
 
-    // -----------------------------------------------------------------------
-    // existsByPhoneAndDeletedAtIsNull
-    // -----------------------------------------------------------------------
-
     @Test
     void existsByPhoneAndDeletedAtIsNull_returnsTrueWhenActive() {
         createElderlyUser("0901000003");
@@ -99,10 +87,6 @@ class UserRepositoryTest extends BaseRepositoryTest {
 
         assertThat(exists).isFalse();
     }
-
-    // -----------------------------------------------------------------------
-    // Phone uniqueness constraint
-    // -----------------------------------------------------------------------
 
     @Test
     void saveUser_throwsOnDuplicatePhone() {

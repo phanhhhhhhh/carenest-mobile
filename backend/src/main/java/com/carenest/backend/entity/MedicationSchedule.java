@@ -15,12 +15,9 @@ import java.util.List;
 @AllArgsConstructor
 public class MedicationSchedule {
 
-    /** e.g. "DAILY", "TWICE_DAILY", "WEEKLY" */
     private String frequency;
 
-    /** e.g. ["08:00", "20:00"] */
     private List<String> times;
 
-    /** 1–7, null for daily schedules */
     private List<Integer> daysOfWeek;
 }
