@@ -27,10 +27,6 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
     @Autowired
     private FamilyLinkRepository familyLinkRepository;
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
     private User createElderlyUser(String phone) {
         return userRepository.save(User.builder()
                 .role(UserRole.ELDERLY)
@@ -67,10 +63,6 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
                 .build());
     }
 
-    // -----------------------------------------------------------------------
-    // findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc
-    // -----------------------------------------------------------------------
-
     @Test
     void findByElderlyIdAndDatetimeBetween_returnsCorrectRecordsOrderedAsc() {
         User elderly = createElderlyUser("0905000001");
@@ -79,7 +71,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
         Appointment first  = createAppointment(elderly, base.plusHours(1));
         Appointment second = createAppointment(elderly, base.plusHours(3));
         Appointment third  = createAppointment(elderly, base.plusHours(5));
-        // Outside window — should NOT appear
+
         createAppointment(elderly, base.plusDays(10));
 
         List<Appointment> results = appointmentRepository
@@ -122,10 +114,6 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
         assertThat(results).extracting(Appointment::getId).doesNotContain(appointment.getId());
     }
 
-    // -----------------------------------------------------------------------
-    // findUpcomingForFamilyMember
-    // -----------------------------------------------------------------------
-
     @Test
     void findUpcomingForFamilyMember_returnsAppointmentsForLinkedElderly() {
         User elderly = createElderlyUser("0905000005");
@@ -135,7 +123,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
 
         OffsetDateTime now = OffsetDateTime.now();
         Appointment upcoming = createAppointment(elderly, now.plusHours(2));
-        // Past — should NOT appear
+
         createAppointment(elderly, now.minusHours(1));
 
         List<Appointment> results = appointmentRepository
@@ -168,7 +156,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
     void findUpcomingForFamilyMember_returnsEmptyWhenNotLinked() {
         User elderly = createElderlyUser("0905000009");
         User family = createFamilyUser("0905000010");
-        // Deliberately NOT linking family to elderly
+
         OffsetDateTime now = OffsetDateTime.now();
 
         createAppointment(elderly, now.plusHours(1));

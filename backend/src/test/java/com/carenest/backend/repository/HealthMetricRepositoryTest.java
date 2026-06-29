@@ -24,10 +24,6 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
     private User createElderlyUser(String phone) {
         return userRepository.save(User.builder()
                 .role(UserRole.ELDERLY)
@@ -47,10 +43,6 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
                 .build());
     }
 
-    // -----------------------------------------------------------------------
-    // findByElderlyIdAndTypeAndRecordedAtBetweenAndDeletedAtIsNullOrderByRecordedAtDesc
-    // -----------------------------------------------------------------------
-
     @Test
     void findByElderlyIdAndTypeAndRange_returnsCorrectRecordsOrderedDesc() {
         User elderly = createElderlyUser("0903000001");
@@ -62,7 +54,7 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
                 BigDecimal.valueOf(75), base);
         HealthMetric late = createMetric(elderly, HealthMetricType.HEART_RATE,
                 BigDecimal.valueOf(80), base.plusHours(2));
-        // Outside range — should NOT appear
+
         createMetric(elderly, HealthMetricType.HEART_RATE,
                 BigDecimal.valueOf(90), base.plusDays(5));
 
@@ -108,10 +100,6 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
 
         assertThat(results).extracting(HealthMetric::getId).doesNotContain(metric.getId());
     }
-
-    // -----------------------------------------------------------------------
-    // findLatestByElderlyIdAndType
-    // -----------------------------------------------------------------------
 
     @Test
     void findLatestByElderlyIdAndType_returnsTheMostRecentRecord() {
@@ -160,10 +148,6 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
         assertThat(result.get().getId()).isEqualTo(older.getId());
     }
 
-    // -----------------------------------------------------------------------
-    // BigDecimal precision preserved on save/reload
-    // -----------------------------------------------------------------------
-
     @Test
     void bigDecimalValue_precisionPreservedOnSaveAndReload() {
         User elderly = createElderlyUser("0903000007");
@@ -181,8 +165,6 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
 
         HealthMetric reloaded = healthMetricRepository.findById(saved.getId()).orElseThrow();
 
-        // compareTo ignores scale differences (98.60 == 98.6), but we want to confirm
-        // the stored value rounds to the same 2-decimal-place value
         assertThat(reloaded.getValue().compareTo(precise)).isEqualTo(0);
     }
 }

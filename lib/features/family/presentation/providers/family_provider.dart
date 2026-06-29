@@ -66,7 +66,6 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
         return;
       }
 
-      // 1. Get linked elderly from /family/{userId}/elderly
       String? elderlyId;
       String? elderlyName;
       List<String> healthConditions = [];
@@ -83,10 +82,8 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
           }
         }
       } on DioException {
-        // Family member may not have linked elderly yet — continue gracefully
       }
 
-      // 2. Get medication count for the elderly (if found)
       int totalMeds = 0;
       if (elderlyId != null) {
         try {
@@ -94,7 +91,6 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
           final meds = medResp.data as List<dynamic>;
           totalMeds = meds.length;
         } on DioException {
-          // Medications endpoint may not be ready
         }
       }
 

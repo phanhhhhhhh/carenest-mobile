@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-// --- Models ---
+
 
 class ElderlyProfileData {
   final String id;
@@ -28,7 +28,7 @@ class ElderlyProfileData {
       );
 }
 
-// --- ElderlyProfile State + Notifier ---
+
 
 class ElderlyProfileState {
   final bool isLoading;
@@ -74,7 +74,6 @@ class ElderlyProfileNotifier extends StateNotifier<ElderlyProfileState> {
         profile: ElderlyProfileData.fromJson(resp.data as Map<String, dynamic>),
       );
     } on DioException catch (e) {
-      // 404 means profile not created yet — not an error to show
       state = state.copyWith(
         isLoading: false,
         error: e.response?.statusCode == 404 ? null : 'Lỗi tải hồ sơ',

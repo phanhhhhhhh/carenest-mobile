@@ -96,7 +96,6 @@ class _FamilyMedicationScreenState
 
   @override
   Widget build(BuildContext context) {
-    // Listen for elderlyId changes from the family dashboard
     ref.listen<FamilyDashboardState>(familyDashboardProvider, (_, next) {
       final nextId = next.data?.elderlyId;
       if (nextId != null && nextId != _lastLoadedElderlyId) {
@@ -109,7 +108,6 @@ class _FamilyMedicationScreenState
     final medState = ref.watch(medicationsProvider);
     final elderlyId = dashState.data?.elderlyId;
 
-    // Dashboard still loading and no elderly info yet
     if (dashState.isLoading && elderlyId == null) {
       return _buildScaffold(
         body: const Center(
@@ -128,7 +126,6 @@ class _FamilyMedicationScreenState
       );
     }
 
-    // No elderly linked to this family account
     if (elderlyId == null) {
       return _buildScaffold(
         body: Center(
@@ -150,14 +147,12 @@ class _FamilyMedicationScreenState
       );
     }
 
-    // Loading medications for the linked elderly
     if (medState.isLoading) {
       return _buildScaffold(
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
-    // Error loading medications
     if (medState.error != null) {
       return _buildScaffold(
         body: Center(
@@ -187,14 +182,12 @@ class _FamilyMedicationScreenState
       );
     }
 
-    // --- Real data ---
     final items = medState.items;
     final total = items.length;
     final takenCount = items.where((m) => m.taken).length;
     final complianceValue = total > 0 ? takenCount / total : 0.0;
     final compliancePercent = (complianceValue * 100).round();
 
-    // Sort schedule items by nextDoseTime
     final scheduleItems = List<MedicationItem>.from(items)
       ..sort((a, b) {
         if (a.nextDoseTime == null && b.nextDoseTime == null) return 0;
@@ -203,7 +196,6 @@ class _FamilyMedicationScreenState
         return a.nextDoseTime!.compareTo(b.nextDoseTime!);
       });
 
-    // Group medications by name+dosage for the medication list
     final Map<String, List<MedicationItem>> grouped = {};
     for (final item in items) {
       final key = '${item.name}_${item.dosage}';

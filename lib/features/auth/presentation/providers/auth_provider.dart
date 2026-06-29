@@ -9,7 +9,7 @@ final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepository(ref.watch(dioProvider)),
 );
 
-// --- Phone step ---
+
 
 class PhoneState {
   final bool isLoading;
@@ -40,7 +40,6 @@ class PhoneNotifier extends StateNotifier<PhoneState> {
     );
   }
 
-  /// Chrome/web only: bypass Firebase OTP, call backend directly
   Future<void> loginDev(String phoneNumber) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -61,7 +60,7 @@ final phoneProvider = StateNotifierProvider.autoDispose<PhoneNotifier, PhoneStat
   (ref) => PhoneNotifier(ref.watch(authRepositoryProvider)),
 );
 
-// --- OTP step ---
+
 
 sealed class OtpResult {
   const OtpResult();
@@ -124,7 +123,7 @@ final otpProvider =
       OtpNotifier(ref.watch(authRepositoryProvider), verificationId),
 );
 
-// --- Register step ---
+
 
 class RegisterState {
   final bool isLoading;
