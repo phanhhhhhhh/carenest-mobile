@@ -80,11 +80,11 @@ public class DataSeeder implements CommandLineRunner {
     private void seedUsers() {
         log.info("Seeding users...");
 
-        User e1 = saveUser("Nguyễn Văn An",  "0912345001", LocalDate.of(1948, 3, 15),  UserRole.ELDERLY);
-        User e2 = saveUser("Trần Thị Bình",   "0912345002", LocalDate.of(1945, 7, 22),  UserRole.ELDERLY);
-        User e3 = saveUser("Lê Văn Cường",    "0912345003", LocalDate.of(1950, 11, 8),  UserRole.ELDERLY);
-        User e4 = saveUser("Phạm Thị Dung",   "0912345004", LocalDate.of(1943, 1, 30),  UserRole.ELDERLY);
-        User e5 = saveUser("Hoàng Văn Em",    "0912345005", LocalDate.of(1952, 9, 12),  UserRole.ELDERLY);
+        User e1 = saveUser("Nguyễn Văn An",  "+84912345001", LocalDate.of(1948, 3, 15),  UserRole.ELDERLY);
+        User e2 = saveUser("Trần Thị Bình",   "+84912345002", LocalDate.of(1945, 7, 22),  UserRole.ELDERLY);
+        User e3 = saveUser("Lê Văn Cường",    "+84912345003", LocalDate.of(1950, 11, 8),  UserRole.ELDERLY);
+        User e4 = saveUser("Phạm Thị Dung",   "+84912345004", LocalDate.of(1943, 1, 30),  UserRole.ELDERLY);
+        User e5 = saveUser("Hoàng Văn Em",    "+84912345005", LocalDate.of(1952, 9, 12),  UserRole.ELDERLY);
 
         elderlyUsers.addAll(List.of(e1, e2, e3, e4, e5));
 
@@ -113,16 +113,16 @@ public class DataSeeder implements CommandLineRunner {
             List.of(EmergencyContact.builder()
                 .name("Hoàng Thị Phương").phone("0912111005").relationship("Con gái").build()));
 
-        User f1  = saveUser("Nguyễn Thị Lan",  "0918111001", null, UserRole.FAMILY);
-        User f2  = saveUser("Trần Văn Minh",    "0918111002", null, UserRole.FAMILY);
-        User f3  = saveUser("Lê Thị Hoa",       "0918111003", null, UserRole.FAMILY);
-        User f4  = saveUser("Phạm Văn Đức",     "0918111004", null, UserRole.FAMILY);
-        User f5  = saveUser("Hoàng Thị Phương", "0918111005", null, UserRole.FAMILY);
-        User f6  = saveUser("Vũ Thị Mai",       "0918111006", null, UserRole.FAMILY);
-        User f7  = saveUser("Đặng Văn Nam",     "0918111007", null, UserRole.FAMILY);
-        User f8  = saveUser("Bùi Thị Oanh",     "0918111008", null, UserRole.FAMILY);
-        User f9  = saveUser("Đỗ Văn Phong",     "0918111009", null, UserRole.FAMILY);
-        User f10 = saveUser("Ngô Thị Quỳnh",    "0918111010", null, UserRole.FAMILY);
+        User f1  = saveUser("Nguyễn Thị Lan",  "+84918111001", null, UserRole.FAMILY);
+        User f2  = saveUser("Trần Văn Minh",    "+84918111002", null, UserRole.FAMILY);
+        User f3  = saveUser("Lê Thị Hoa",       "+84918111003", null, UserRole.FAMILY);
+        User f4  = saveUser("Phạm Văn Đức",     "+84918111004", null, UserRole.FAMILY);
+        User f5  = saveUser("Hoàng Thị Phương", "+84918111005", null, UserRole.FAMILY);
+        User f6  = saveUser("Vũ Thị Mai",       "+84918111006", null, UserRole.FAMILY);
+        User f7  = saveUser("Đặng Văn Nam",     "+84918111007", null, UserRole.FAMILY);
+        User f8  = saveUser("Bùi Thị Oanh",     "+84918111008", null, UserRole.FAMILY);
+        User f9  = saveUser("Đỗ Văn Phong",     "+84918111009", null, UserRole.FAMILY);
+        User f10 = saveUser("Ngô Thị Quỳnh",    "+84918111010", null, UserRole.FAMILY);
 
         familyUsers.addAll(List.of(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10));
 
