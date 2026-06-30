@@ -16,44 +16,108 @@ class _ElderlyMedicationScreenState
   void _showAddDialog() {
     final nameCtrl = TextEditingController();
     final dosageCtrl = TextEditingController();
-    showDialog(
+    final instructionsCtrl = TextEditingController();
+    showModalBottomSheet(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Thêm thuốc'),
-        content: Column(
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Center(
+              child: SizedBox(
+                width: 40,
+                child: Divider(thickness: 3, color: AppColors.textHint),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Thêm thuốc mới',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Tên thuốc'),
+              decoration: InputDecoration(
+                labelText: 'Tên thuốc',
+                hintText: 'Ví dụ: Metformin',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.medication, color: AppColors.primary),
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
             TextField(
               controller: dosageCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'Liều lượng (vd: 5mg)'),
+              decoration: InputDecoration(
+                labelText: 'Liều lượng',
+                hintText: 'Ví dụ: 500mg',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.scale, color: AppColors.primary),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: instructionsCtrl,
+              decoration: InputDecoration(
+                labelText: 'Hướng dẫn (tùy chọn)',
+                hintText: 'Ví dụ: Uống sau khi ăn',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon:
+                    const Icon(Icons.info_outline, color: AppColors.primary),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () {
+                  if (nameCtrl.text.trim().isNotEmpty &&
+                      dosageCtrl.text.trim().isNotEmpty) {
+                    ref.read(medicationsProvider.notifier).addMedication(
+                          name: nameCtrl.text.trim(),
+                          dosage: dosageCtrl.text.trim(),
+                          instructions: instructionsCtrl.text.trim().isNotEmpty
+                              ? instructionsCtrl.text.trim()
+                              : null,
+                        );
+                    Navigator.pop(ctx);
+                  }
+                },
+                child: const Text('Thêm thuốc',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameCtrl.text.trim().isNotEmpty &&
-                  dosageCtrl.text.trim().isNotEmpty) {
-                ref.read(medicationsProvider.notifier).addMedication(
-                      name: nameCtrl.text.trim(),
-                      dosage: dosageCtrl.text.trim(),
-                    );
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Thêm'),
-          ),
-        ],
       ),
     );
   }
@@ -69,22 +133,31 @@ class _ElderlyMedicationScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Thuốc của tôi'),
+        title: const Text(
+          'Thuốc của tôi',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
-      body: medState.isLoading
+      body: medState.isLoading && items.isEmpty
           ? const Center(child: CircularProgressIndicator())
-          : medState.error != null
+          : medState.error != null && items.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      const Icon(Icons.error_outline,
+                          color: AppColors.textHint, size: 48),
+                      const SizedBox(height: 12),
                       Text(
                         medState.error!,
-                        style:
-                            const TextStyle(color: AppColors.error, fontSize: 14),
+                        style: const TextStyle(
+                            color: AppColors.textSecondary, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
@@ -100,27 +173,56 @@ class _ElderlyMedicationScreenState
                   padding: const EdgeInsets.all(16),
                   children: [
                     _buildTodayProgress(takenCount, totalCount, progress),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Danh sách thuốc',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (items.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 32),
-                        child: Center(
-                          child: Text(
-                            'Chưa có thuốc nào. Nhấn + để thêm.',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                            ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Danh sách thuốc',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
                           ),
+                        ),
+                        Text(
+                          '$takenCount/$totalCount đã uống',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    if (items.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Column(
+                          children: [
+                            Icon(Icons.medication_outlined,
+                                color: AppColors.textHint, size: 48),
+                            SizedBox(height: 12),
+                            Text(
+                              'Chưa có thuốc nào',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Nhấn + để thêm thuốc',
+                              style: TextStyle(
+                                color: AppColors.textHint,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     else
@@ -134,45 +236,94 @@ class _ElderlyMedicationScreenState
                       ),
                   ],
                 ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _showAddDialog,
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Thêm thuốc'),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
   Widget _buildTodayProgress(int taken, int total, double progress) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E7D9A), Color(0xFF1A5570)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Hôm nay',
-              style: TextStyle(color: Colors.white70, fontSize: 13)),
-          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Hôm nay',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${(progress * 100).toInt()}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Text(
-            'Đã uống $taken/$total liều',
+            'Đã uống $taken / $total liều',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 8,
-              backgroundColor: Colors.white24,
-              valueColor: const AlwaysStoppedAnimation(Colors.white),
+              minHeight: 10,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            total == 0
+                ? 'Thêm thuốc để bắt đầu theo dõi'
+                : taken == total
+                    ? '🎉 Tuyệt vời! Bạn đã uống đủ thuốc hôm nay'
+                    : 'Còn ${total - taken} liều cần uống',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 13,
             ),
           ),
         ],
@@ -185,142 +336,141 @@ class _MedCard extends StatelessWidget {
   final MedicationItem item;
   final VoidCallback onToggle;
 
-  const _MedCard({
-    required this.item,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.medication,
-                    color: AppColors.primary, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${item.name} ${item.dosage}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    if (item.instructions != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        item.instructions!,
-                        style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 12),
-                      ),
-                    ],
-                    if (item.nextDoseTime != null) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time,
-                              size: 12, color: AppColors.textHint),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatTime(item.nextDoseTime!),
-                            style: const TextStyle(
-                                color: AppColors.textSecondary, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              _DoseChip(
-                taken: item.taken,
-                onTap: onToggle,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  const _MedCard({required this.item, required this.onToggle});
 
   String _formatTime(DateTime dt) {
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
-}
-
-class _DoseChip extends StatelessWidget {
-  final bool taken;
-  final VoidCallback onTap;
-
-  const _DoseChip({
-    required this.taken,
-    required this.onTap,
-  });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: taken
-              ? AppColors.success.withValues(alpha: 0.1)
-              : AppColors.background,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: taken ? AppColors.success : AppColors.textHint,
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: item.taken
+              ? AppColors.success.withOpacity(0.3)
+              : AppColors.textHint.withOpacity(0.15),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              taken ? Icons.check_circle : Icons.circle_outlined,
-              size: 14,
-              color: taken ? AppColors.success : AppColors.textHint,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: item.taken
+                  ? AppColors.success.withOpacity(0.1)
+                  : AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
             ),
-            const SizedBox(width: 4),
-            Text(
-              taken ? 'Đã uống' : 'Chưa uống',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: taken ? AppColors.success : AppColors.textSecondary,
+            child: Icon(
+              Icons.medication,
+              color: item.taken ? AppColors.success : AppColors.primary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                    decoration:
+                        item.taken ? TextDecoration.lineThrough : null,
+                    decorationColor: AppColors.textHint,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Text(
+                      item.dosage,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    if (item.instructions != null &&
+                        item.instructions!.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          color: AppColors.textHint,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          item.instructions!,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (item.nextDoseTime != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _formatTime(item.nextDoseTime!),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
+            const SizedBox(width: 12),
           ],
-        ),
+          GestureDetector(
+            onTap: onToggle,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: item.taken
+                    ? AppColors.success
+                    : Colors.transparent,
+                border: Border.all(
+                  color: item.taken
+                      ? AppColors.success
+                      : AppColors.textHint.withOpacity(0.5),
+                  width: 2,
+                ),
+              ),
+              child: item.taken
+                  ? const Icon(Icons.check, color: Colors.white, size: 16)
+                  : null,
+            ),
+          ),
+        ],
       ),
     );
   }
