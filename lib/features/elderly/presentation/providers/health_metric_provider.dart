@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
-import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class HealthMetricData {
@@ -14,14 +13,18 @@ class HealthMetricData {
     required this.id, required this.type, required this.value,
     this.valueSecondary, this.unit, required this.recordedAt,
   });
-  factory HealthMetricData.fromJson(Map<String, dynamic> j) => HealthMetricData(
-    id: j['id'].toString(),
-    type: j['type'] as String? ?? '',
-    value: j['value'] as String? ?? '',
-    valueSecondary: j['valueSecondary'] as String?,
-    unit: j['unit'] as String?,
-    recordedAt: DateTime.tryParse(j['recordedAt'] as String? ?? '') ?? DateTime.now(),
-  );
+  factory HealthMetricData.fromJson(Map<String, dynamic> j) {
+    final rawValue = j['value'];
+    final rawSecondary = j['valueSecondary'];
+    return HealthMetricData(
+      id: j['id'].toString(),
+      type: j['type'] as String? ?? '',
+      value: rawValue != null ? rawValue.toString() : '',
+      valueSecondary: rawSecondary != null ? rawSecondary.toString() : null,
+      unit: j['unit'] as String?,
+      recordedAt: DateTime.tryParse(j['recordedAt'] as String? ?? '') ?? DateTime.now(),
+    );
+  }
 }
 
 class HealthMetricState {

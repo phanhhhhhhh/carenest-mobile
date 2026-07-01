@@ -3,9 +3,14 @@ import '../auth/token_notifier.dart';
 import '../navigation/elderly_shell.dart';
 import '../navigation/family_shell.dart';
 import '../storage/secure_storage.dart';
+import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/phone_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_phone_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_otp_screen.dart';
+import '../../features/auth/presentation/screens/new_password_screen.dart';
+import '../../features/auth/presentation/screens/password_reset_success_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_home_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_medication_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_health_screen.dart';
@@ -16,20 +21,26 @@ import '../../features/family/presentation/screens/family_medication_screen.dart
 import '../../features/family/presentation/screens/family_health_screen.dart';
 import '../../features/family/presentation/screens/family_alerts_screen.dart';
 import '../../features/family/presentation/screens/family_profile_screen.dart';
+import '../../features/elderly/presentation/screens/elderly_edit_profile_screen.dart';
+import '../../features/elderly/presentation/screens/elderly_emergency_contacts_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/phone',
+  initialLocation: '/welcome',
   refreshListenable: TokenNotifier.instance,
   redirect: (context, state) async {
     final token = await SecureStorage.getToken();
     final isAuth = token != null;
     final loc = state.matchedLocation;
 
-    final isOnAuth = loc == '/phone' ||
+    final isOnAuth = loc == '/welcome' ||
+        loc == '/phone' ||
         loc.startsWith('/otp') ||
-        loc == '/register';
+        loc == '/register' ||
+        loc.startsWith('/forgot-password') ||
+        loc == '/new-password' ||
+        loc == '/password-reset-success';
 
-    if (!isAuth && !isOnAuth) return '/phone';
+    if (!isAuth && !isOnAuth) return '/welcome';
 
     if (isAuth && (isOnAuth || loc == '/home')) {
       final role = await SecureStorage.getRole();
@@ -39,6 +50,13 @@ final appRouter = GoRouter(
     return null;
   },
   routes: [
+    // Welcome / Onboarding
+    GoRoute(
+      path: '/welcome',
+      builder: (context, state) => const WelcomeScreen(),
+    ),
+
+    // Auth
     GoRoute(
       path: '/phone',
       builder: (context, state) => const PhoneScreen(),
@@ -55,11 +73,41 @@ final appRouter = GoRouter(
         firebaseToken: state.extra as String,
       ),
     ),
+
+    // Forgot Password flow
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordPhoneScreen(),
+    ),
+    GoRoute(
+      path: '/forgot-password/otp',
+      builder: (context, state) => const ForgotPasswordOtpScreen(),
+    ),
+    GoRoute(
+      path: '/new-password',
+      builder: (context, state) => const NewPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/password-reset-success',
+      builder: (context, state) => const PasswordResetSuccessScreen(),
+    ),
+
     GoRoute(path: '/home', redirect: (_, __) async {
       final role = await SecureStorage.getRole();
       return role == 'ELDERLY' ? '/elderly/home' : '/family/dashboard';
     }),
 
+    // Profile & Settings (auth required)
+    GoRoute(
+      path: '/elderly/edit-profile',
+      builder: (context, state) => const ElderlyEditProfileScreen(),
+    ),
+    GoRoute(
+      path: '/elderly/emergency-contacts',
+      builder: (context, state) => const ElderlyEmergencyContactsScreen(),
+    ),
+
+    // Elderly shell
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => ElderlyShell(shell: shell),
       branches: [
@@ -96,6 +144,7 @@ final appRouter = GoRouter(
       ],
     ),
 
+    // Family shell
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => FamilyShell(shell: shell),
       branches: [

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/family_provider.dart';
+import '../providers/emergency_event_provider.dart';
 
 class FamilyDashboardScreen extends ConsumerStatefulWidget {
   const FamilyDashboardScreen({super.key});
@@ -14,51 +14,56 @@ class FamilyDashboardScreen extends ConsumerStatefulWidget {
       _FamilyDashboardScreenState();
 }
 
-class _FamilyDashboardScreenState
-    extends ConsumerState<FamilyDashboardScreen> {
+class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
   String _name = '';
 
   @override
   void initState() {
     super.initState();
-    SecureStorage.getName().then((v) {
-      if (mounted) setState(() => _name = v ?? 'bạn');
-    });
+    _loadName();
+  }
+
+  Future<void> _loadName() async {
+    final name = await SecureStorage.getName();
+    if (mounted) setState(() => _name = name ?? 'bạn');
+  }
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Chào buổi sáng';
+    if (hour < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
   }
 
   @override
   Widget build(BuildContext context) {
     final dashState = ref.watch(familyDashboardProvider);
+    final data = dashState.data;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: dashState.isLoading && dashState.data == null
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context, dashState),
-                    const SizedBox(height: 20),
-                    _buildElderlyCard(dashState),
-                    const SizedBox(height: 20),
-                    _buildSummaryGrid(dashState),
-                    const SizedBox(height: 20),
-                    _buildRecentActivity(),
-                    if (dashState.lastRefreshed != null) ...[
-                      const SizedBox(height: 12),
-                      _buildLastRefreshed(dashState.lastRefreshed!),
-                    ],
-                  ],
-                ),
-              ),
+        child: RefreshIndicator(
+          onRefresh: () async =>
+              ref.read(familyDashboardProvider.notifier).refresh(),
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 24),
+              _buildElderlyCard(data),
+              const SizedBox(height: 20),
+              _buildSummaryGrid(data),
+              const SizedBox(height: 24),
+              _buildRecentActivity(),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, FamilyDashboardState dashState) {
+  Widget _buildHeader() {
     return Row(
       children: [
         Expanded(
@@ -66,166 +71,203 @@ class _FamilyDashboardScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Xin chào, $_name!',
+                '$_greeting, $_name!',
                 style: const TextStyle(
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              Text(
-                _formatDate(),
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-              ),
             ],
           ),
-        ),
-        IconButton(
-          onPressed: () => ref.read(familyDashboardProvider.notifier).refresh(),
-          icon: dashState.isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.refresh, color: AppColors.textSecondary),
         ),
         Stack(
           children: [
             IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+              onPressed: () => context.go('/family/alerts'),
+              icon: const Icon(Icons.notifications_outlined,
+                  color: AppColors.textPrimary, size: 26),
             ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  color: AppColors.error,
-                  shape: BoxShape.circle,
+            // Check for active alerts
+            Builder(builder: (context) {
+              final elderlyId = ref.watch(familyDashboardProvider).data?.elderlyId;
+              if (elderlyId == null) return const SizedBox.shrink();
+              final alertState = ref.watch(emergencyEventProvider(elderlyId));
+              if (alertState.activeCount == 0) return const SizedBox.shrink();
+              return Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  width: 18,
+                  height: 18,
+                  decoration: const BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${alertState.activeCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            }),
           ],
-        ),
-        IconButton(
-          onPressed: () async {
-            await ref.read(authRepositoryProvider).signOut();
-            if (context.mounted) context.go('/phone');
-          },
-          icon: const Icon(Icons.logout, color: AppColors.textSecondary),
         ),
       ],
     );
   }
 
-  Widget _buildElderlyCard(FamilyDashboardState dashState) {
-    final elderlyName = dashState.data?.elderlyName;
-    final healthConditions = dashState.data?.healthConditions.isNotEmpty == true
-        ? dashState.data!.healthConditions.join(', ')
-        : null;
+  Widget _buildElderlyCard(dynamic data) {
+    final hasElderly = data?.elderlyName != null && data!.elderlyName!.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryLight],
+          colors: [AppColors.primary, Color(0xFF1A5570)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white.withValues(alpha: 0.2),
-            child: const Icon(Icons.elderly, size: 34, color: Colors.white),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  elderlyName ?? 'Chưa liên kết',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
                 ),
-                if (healthConditions != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    healthConditions,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                const Row(
+                child: const Icon(Icons.elderly, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _StatusDot(color: AppColors.success),
-                    SizedBox(width: 6),
+                    const Text(
+                      'Người thân của bạn',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
                     Text(
-                      'Tình trạng bình thường',
-                      style: TextStyle(color: Colors.white, fontSize: 13),
+                      hasElderly ? data!.elderlyName! : 'Chưa liên kết',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: hasElderly ? AppColors.success : AppColors.textHint,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                ),
+              ),
+            ],
           ),
-          const Icon(Icons.chevron_right, color: Colors.white70),
+          if (hasElderly && data!.healthConditions.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: data.healthConditions
+                  .map((c) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          c,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildSummaryGrid(FamilyDashboardState dashState) {
-    final total = dashState.data?.totalMedications ?? 0;
-    final taken = dashState.data?.takenMedications ?? 0;
-    final medValue = total > 0 ? '$taken/$total liều' : '--';
-    final medProgress = total > 0 ? taken / total : 0.0;
+  Widget _buildSummaryGrid(dynamic data) {
+    final totalMeds = data?.totalMedications ?? 0;
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.4,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SummaryCard(
-          icon: Icons.medication,
-          iconColor: AppColors.primary,
-          title: 'Uống thuốc',
-          value: medValue,
-          subtitle: 'Hôm nay',
-          progress: medProgress.toDouble(),
+        const Text(
+          'Tổng quan',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
         ),
-        const _SummaryCard(
-          icon: Icons.favorite,
-          iconColor: AppColors.error,
-          title: 'Huyết áp',
-          value: '--',
-          subtitle: 'mmHg',
-        ),
-        const _SummaryCard(
-          icon: Icons.water_drop,
-          iconColor: Color(0xFF1565C0),
-          title: 'Đường huyết',
-          value: '--',
-          subtitle: 'mmol/L',
-        ),
-        const _SummaryCard(
-          icon: Icons.warning_amber,
-          iconColor: AppColors.warning,
-          title: 'Cảnh báo',
-          value: '--',
-          subtitle: '',
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            _SummaryCard(
+              icon: Icons.medication,
+              iconColor: AppColors.primary,
+              iconBgColor: AppColors.primary.withOpacity(0.08),
+              label: 'Thuốc',
+              value: '$totalMeds',
+              subtitle: 'đang dùng',
+              onTap: () => context.go('/family/medication'),
+            ),
+            const SizedBox(width: 10),
+            _SummaryCard(
+              icon: Icons.favorite,
+              iconColor: AppColors.error,
+              iconBgColor: const Color(0xFFFFEBEE),
+              label: 'Huyết áp',
+              value: '--',
+              subtitle: 'Cập nhật',
+              onTap: () => context.go('/family/health'),
+            ),
+            const SizedBox(width: 10),
+            _SummaryCard(
+              icon: Icons.notifications_active,
+              iconColor: AppColors.warning,
+              iconBgColor: const Color(0xFFFFF3E0),
+              label: 'Cảnh báo',
+              value: '0',
+              subtitle: 'đang active',
+              onTap: () => context.go('/family/alerts'),
+            ),
+          ],
         ),
       ],
     );
@@ -238,55 +280,55 @@ class _FamilyDashboardScreenState
         const Text(
           'Hoạt động gần đây',
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 12),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(
-              'Chưa có hoạt động gần đây',
-              style: const TextStyle(color: AppColors.textHint, fontSize: 14),
-            ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              _ActivityItem(
+                icon: Icons.medication,
+                iconColor: AppColors.primary,
+                title: 'Nhắc nhở thuốc',
+                subtitle: 'Metformin 500mg lúc 12:00',
+                time: 'Hôm nay',
+              ),
+              const Divider(height: 20),
+              _ActivityItem(
+                icon: Icons.monitor_heart,
+                iconColor: AppColors.success,
+                title: 'Chỉ số sức khỏe',
+                subtitle: 'Huyết áp 120/80 mmHg',
+                time: 'Hôm qua',
+              ),
+              const Divider(height: 20),
+              _ActivityItem(
+                icon: Icons.event,
+                iconColor: AppColors.warning,
+                title: 'Lịch khám',
+                subtitle: 'BS. Nguyễn - 15:00 Thứ 6',
+                time: 'Sắp tới',
+              ),
+            ],
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildLastRefreshed(DateTime lastRefreshed) {
-    final h = lastRefreshed.hour.toString().padLeft(2, '0');
-    final m = lastRefreshed.minute.toString().padLeft(2, '0');
-    final s = lastRefreshed.second.toString().padLeft(2, '0');
-    return Center(
-      child: Text(
-        'Cập nhật lúc $h:$m:$s',
-        style: const TextStyle(fontSize: 11, color: AppColors.textHint),
-      ),
-    );
-  }
-
-  String _formatDate() {
-    final now = DateTime.now();
-    const days = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
-    return '${days[now.weekday - 1]}, ${now.day}/${now.month}/${now.year}';
-  }
-}
-
-class _StatusDot extends StatelessWidget {
-  final Color color;
-
-  const _StatusDot({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 8,
-      height: 8,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -294,81 +336,141 @@ class _StatusDot extends StatelessWidget {
 class _SummaryCard extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
-  final String title;
+  final Color iconBgColor;
+  final String label;
   final String value;
   final String subtitle;
-  final double? progress;
-  final bool hasAlert;
+  final VoidCallback onTap;
 
   const _SummaryCard({
     required this.icon,
     required this.iconColor,
-    required this.title,
+    required this.iconBgColor,
+    required this.label,
     required this.value,
     required this.subtitle,
-    this.progress,
-    this.hasAlert = false,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: iconColor, size: 18),
-              const Spacer(),
-              if (hasAlert)
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                      color: AppColors.error, shape: BoxShape.circle),
-                ),
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
-          const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(title,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 11)),
-          if (progress != null) ...[
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 4,
-                backgroundColor: AppColors.background,
-                valueColor: AlwaysStoppedAnimation(iconColor),
+          child: Column(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
-            ),
-          ],
-          Text(subtitle,
-              style: const TextStyle(color: AppColors.textHint, fontSize: 11)),
-        ],
+              const SizedBox(height: 10),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textHint,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+}
+
+class _ActivityItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final String time;
+
+  const _ActivityItem({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          time,
+          style: const TextStyle(
+            color: AppColors.textHint,
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }
