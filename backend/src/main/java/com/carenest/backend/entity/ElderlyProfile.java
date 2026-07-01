@@ -50,6 +50,18 @@ public class ElderlyProfile {
     private List<EmergencyContact> emergencyContacts;
 
     @Column(columnDefinition = "TEXT")
+    private String allergies;
+
+    @Column(name = "blood_type", length = 10)
+    private String bloodType;
+
+    @Column(name = "weight_kg", precision = 5, scale = 2)
+    private java.math.BigDecimal weightKg;
+
+    @Column(name = "height_cm", precision = 5, scale = 1)
+    private java.math.BigDecimal heightCm;
+
+    @Column(columnDefinition = "TEXT")
     private String notes;
 
     @CreationTimestamp
