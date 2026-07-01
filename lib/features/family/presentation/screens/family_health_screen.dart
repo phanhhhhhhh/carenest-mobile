@@ -13,57 +13,24 @@ class FamilyHealthScreen extends ConsumerStatefulWidget {
 }
 
 class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
-  String _selectedPeriod = '7';
+  String _period = 'week';
 
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(familyDashboardProvider);
     final elderlyId = dashboardState.data?.elderlyId;
+    final elderlyName = dashboardState.data?.elderlyName ?? 'Người thân';
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Sức khỏe'),
+        title: Text(
+          'Sức khỏe — $elderlyName',
+          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+        ),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) => setState(() => _selectedPeriod = value),
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: '7',
-                child: Text(
-                  '7 ngày qua',
-                  style: TextStyle(
-                    fontWeight: _selectedPeriod == '7'
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-              const PopupMenuItem(
-                value: '30',
-                child: Text('30 ngày qua'),
-              ),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Text(
-                    _selectedPeriod == '7' ? '7 ngày' : '30 ngày',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
       body: _buildBody(elderlyId),
     );
@@ -72,43 +39,40 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
   Widget _buildBody(String? elderlyId) {
     if (elderlyId == null) {
       return const Center(
-        child: Text(
-          'Chưa có người cao tuổi được liên kết',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.people_outline, size: 56, color: AppColors.textHint),
+            SizedBox(height: 16),
+            Text('Chưa có người cao tuổi được liên kết',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+          ],
         ),
       );
     }
 
     final healthState = ref.watch(healthMetricProvider(elderlyId));
 
-    if (healthState.isLoading) {
+    if (healthState.isLoading && healthState.latestByType.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (healthState.error != null) {
+    if (healthState.error != null && healthState.latestByType.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.error_outline, color: AppColors.error, size: 48),
               const SizedBox(height: 16),
-              Text(
-                healthState.error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.error, fontSize: 14),
-              ),
+              Text(healthState.error!, textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.error, fontSize: 14)),
               const SizedBox(height: 16),
               ElevatedButton.icon(
-                onPressed: () =>
-                    ref.invalidate(healthMetricProvider(elderlyId)),
+                onPressed: () => ref.invalidate(healthMetricProvider(elderlyId)),
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Thử lại'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
               ),
             ],
           ),
@@ -121,190 +85,54 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.health_and_safety, size: 48, color: AppColors.textHint),
+            Icon(Icons.health_and_safety, size: 56, color: AppColors.textHint),
             SizedBox(height: 16),
-            Text(
-              'Chưa có dữ liệu sức khỏe',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
-            ),
+            Text('Chưa có dữ liệu sức khỏe',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
           ],
         ),
       );
     }
 
-    const order = ['BLOOD_PRESSURE', 'BLOOD_SUGAR', 'HEART_RATE', 'WEIGHT'];
+    const order = ['BLOOD_PRESSURE', 'BLOOD_GLUCOSE', 'HEART_RATE', 'WEIGHT'];
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _buildPeriodSelector(),
+        const SizedBox(height: 16),
         for (final type in order)
           if (healthState.latestByType.containsKey(type)) ...[
-            _HealthMetricSection(data: healthState.latestByType[type]!),
+            _buildMetricSection(type, healthState.latestByType[type]!,
+                healthState.metrics.where((m) => m.type == type).toList()),
             const SizedBox(height: 12),
           ],
+        const SizedBox(height: 20),
       ],
     );
   }
-}
 
-
-
-
-
-class _MetricConfig {
-  final String title;
-  final IconData icon;
-  final Color iconColor;
-  final String unit;
-
-  const _MetricConfig({
-    required this.title,
-    required this.icon,
-    required this.iconColor,
-    required this.unit,
-  });
-}
-
-const _metricConfigs = <String, _MetricConfig>{
-  'BLOOD_PRESSURE': _MetricConfig(
-    title: 'Huyết áp',
-    icon: Icons.favorite,
-    iconColor: AppColors.error,
-    unit: 'mmHg',
-  ),
-  'BLOOD_SUGAR': _MetricConfig(
-    title: 'Đường huyết',
-    icon: Icons.water_drop,
-    iconColor: Color(0xFF1565C0),
-    unit: 'mmol/L',
-  ),
-  'HEART_RATE': _MetricConfig(
-    title: 'Nhịp tim',
-    icon: Icons.monitor_heart,
-    iconColor: AppColors.secondary,
-    unit: 'bpm',
-  ),
-  'WEIGHT': _MetricConfig(
-    title: 'Cân nặng',
-    icon: Icons.monitor_weight,
-    iconColor: AppColors.warning,
-    unit: 'kg',
-  ),
-};
-
-
-
-
-
-class _StatusInfo {
-  final String label;
-  final Color color;
-  const _StatusInfo(this.label, this.color);
-}
-
-
-
-
-
-class _HealthMetricSection extends StatelessWidget {
-  final HealthMetricData data;
-
-  const _HealthMetricSection({required this.data});
-
-  _MetricConfig get _config => _metricConfigs[data.type]!;
-
-
-  String get _latestValue {
-    final unitStr = data.unit ?? _config.unit;
-    if (data.type == 'BLOOD_PRESSURE' && data.valueSecondary != null) {
-      return '${data.value}/${data.valueSecondary} $unitStr';
-    }
-    return '${data.value} $unitStr';
+  Widget _buildPeriodSelector() {
+    return Row(
+      children: [
+        _PeriodChip(label: '7 ngày', selected: _period == 'week',
+            onTap: () => setState(() => _period = 'week')),
+        const SizedBox(width: 8),
+        _PeriodChip(label: '30 ngày', selected: _period == 'month',
+            onTap: () => setState(() => _period = 'month')),
+      ],
+    );
   }
 
-
-  String _formatTime(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final date = DateTime(dt.year, dt.month, dt.day);
-
-    if (date == today) {
-      return '${dt.hour.toString().padLeft(2, '0')}'
-          ':${dt.minute.toString().padLeft(2, '0')} hôm nay';
-    }
-    if (date == today.subtract(const Duration(days: 1))) {
-      return 'Hôm qua ${dt.hour.toString().padLeft(2, '0')}'
-          ':${dt.minute.toString().padLeft(2, '0')}';
-    }
-    return '${dt.day}/${dt.month}/${dt.year}';
-  }
-
-
-  _StatusInfo _deriveStatus() {
-    switch (data.type) {
-      case 'BLOOD_PRESSURE':
-        final sys = double.tryParse(data.value);
-        final dia = data.valueSecondary != null
-            ? double.tryParse(data.valueSecondary!)
-            : null;
-        if (sys != null && dia != null) {
-          if (sys < 130 && dia < 85) {
-            return const _StatusInfo('Bình thường', AppColors.success);
-          }
-          if (sys < 140 && dia < 90) {
-            return const _StatusInfo('Cao nhẹ', AppColors.warning);
-          }
-          return const _StatusInfo('Cao', AppColors.error);
-        }
-        return const _StatusInfo('Cần theo dõi', AppColors.warning);
-
-      case 'BLOOD_SUGAR':
-        final v = double.tryParse(data.value);
-        if (v != null) {
-          if (v < 7.0) {
-            return const _StatusInfo('Bình thường', AppColors.success);
-          }
-          if (v < 11.1) {
-            return const _StatusInfo('Cao', AppColors.warning);
-          }
-          return const _StatusInfo('Rất cao', AppColors.error);
-        }
-        return const _StatusInfo('Cần theo dõi', AppColors.warning);
-
-      case 'HEART_RATE':
-        final v = double.tryParse(data.value);
-        if (v != null) {
-          if (v >= 60 && v <= 100) {
-            return const _StatusInfo('Bình thường', AppColors.success);
-          }
-          if (v > 100) {
-            return const _StatusInfo('Nhanh', AppColors.warning);
-          }
-          return const _StatusInfo('Chậm', AppColors.warning);
-        }
-        return const _StatusInfo('Cần theo dõi', AppColors.warning);
-
-      case 'WEIGHT':
-        return const _StatusInfo('Ghi nhận', AppColors.success);
-
-      default:
-        return const _StatusInfo('Bình thường', AppColors.success);
-    }
-  }
-
-
-  String? get _avgValue {
-    if (data.type == 'BLOOD_PRESSURE') return null;
-    if (data.valueSecondary == null) return null;
-    return 'TB: ${data.valueSecondary}';
-  }
-
-
-  @override
-  Widget build(BuildContext context) {
-    final config = _config;
-    final statusInfo = _deriveStatus();
-    final avgValue = _avgValue;
+  Widget _buildMetricSection(
+      String type, HealthMetricData latest, List<HealthMetricData> all) {
+    final config = _metricDefs[type]!;
+    final displayValue = type == 'BLOOD_PRESSURE' && latest.valueSecondary != null
+        ? '${latest.value}/${latest.valueSecondary}'
+        : latest.value;
+    final unitLabel = latest.unit ?? config.unit;
+    final status = _deriveStatus(type, latest);
+    final timeLabel = _formatTime(latest.recordedAt);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -313,10 +141,9 @@ class _HealthMetricSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -324,113 +151,221 @@ class _HealthMetricSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(config.icon, color: config.iconColor, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                config.title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: statusInfo.color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
+                  color: config.iconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  statusInfo.label,
-                  style: TextStyle(
-                    color: statusInfo.color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Icon(config.icon, color: config.iconColor, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(config.title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: status.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Text(status.label,
+                    style: TextStyle(color: status.color, fontSize: 12,
+                        fontWeight: FontWeight.w600)),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
+          const SizedBox(height: 16),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _latestValue,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      _formatTime(data.recordedAt),
-                      style: const TextStyle(
-                        color: AppColors.textHint,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+              Text(displayValue,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary)),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(unitLabel,
+                    style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
               ),
-              if (avgValue != null) ...[
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Container(
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.show_chart,
-                              color: config.iconColor, size: 20),
-                          const SizedBox(height: 2),
-                          Text(
-                            avgValue,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+              if (timeLabel.isNotEmpty) ...[
+                const SizedBox(width: 10),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text('• $timeLabel',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textHint)),
                 ),
               ],
             ],
           ),
-          const SizedBox(height: 12),
-
-          _buildMiniChart(config.iconColor),
+          const SizedBox(height: 14),
+          _buildMiniChart(all, config.iconColor),
         ],
       ),
     );
   }
 
-  Widget _buildMiniChart(Color color) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: Text(
-          'Biểu đồ 7 ngày (fl_chart)',
-          style: TextStyle(color: color.withOpacity(0.5), fontSize: 11),
+  Widget _buildMiniChart(List<HealthMetricData> metrics, Color color) {
+    if (metrics.length < 2) {
+      return Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(10),
         ),
+        child: const Center(
+          child: Text('Cần thêm dữ liệu',
+              style: TextStyle(color: AppColors.textHint, fontSize: 12)),
+        ),
+      );
+    }
+
+    final sorted = List<HealthMetricData>.from(metrics)
+      ..sort((a, b) => a.recordedAt.compareTo(b.recordedAt));
+    final values = sorted.map((m) => double.tryParse(m.value) ?? 0.0).toList();
+    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final minVal = values.reduce((a, b) => a < b ? a : b);
+    final range = (maxVal - minVal).clamp(1, double.infinity);
+
+    return SizedBox(
+      height: 50,
+      child: CustomPaint(
+        size: const Size(double.infinity, 50),
+        painter: _LineChart(values: values, minVal: minVal.toDouble(), range: range.toDouble(), color: color),
       ),
     );
   }
+
+  String _formatTime(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Vừa xong';
+    if (diff.inHours < 1) return '${diff.inMinutes}m trước';
+    if (diff.inDays == 0) return '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    if (diff.inDays == 1) return 'Hôm qua';
+    return '${dt.day}/${dt.month}';
+  }
+
+  _Status _deriveStatus(String type, HealthMetricData data) {
+    switch (type) {
+      case 'BLOOD_PRESSURE':
+        final sys = double.tryParse(data.value);
+        if (sys != null && sys < 130) return _Status('Bình thường', AppColors.success);
+        if (sys != null && sys < 140) return _Status('Cao nhẹ', AppColors.warning);
+        return _Status('Cao', AppColors.error);
+      case 'BLOOD_GLUCOSE':
+        final v = double.tryParse(data.value);
+        if (v != null && v < 7.0) return _Status('Bình thường', AppColors.success);
+        if (v != null && v < 11.1) return _Status('Cao', AppColors.warning);
+        return _Status('Rất cao', AppColors.error);
+      case 'HEART_RATE':
+        final v = double.tryParse(data.value);
+        if (v != null && v >= 60 && v <= 100) return _Status('Bình thường', AppColors.success);
+        return _Status('Bất thường', AppColors.warning);
+      default:
+        return _Status('Ghi nhận', AppColors.success);
+    }
+  }
+}
+
+class _Status {
+  final String label;
+  final Color color;
+  const _Status(this.label, this.color);
+}
+
+class _MetricDef {
+  final String title;
+  final IconData icon;
+  final Color iconColor;
+  final String unit;
+  const _MetricDef(this.title, this.icon, this.iconColor, this.unit);
+}
+
+const _metricDefs = <String, _MetricDef>{
+  'BLOOD_PRESSURE': _MetricDef('Huyết áp', Icons.favorite, AppColors.error, 'mmHg'),
+  'BLOOD_GLUCOSE': _MetricDef('Đường huyết', Icons.water_drop, Color(0xFF1565C0), 'mmol/L'),
+  'HEART_RATE': _MetricDef('Nhịp tim', Icons.monitor_heart, AppColors.secondary, 'bpm'),
+  'WEIGHT': _MetricDef('Cân nặng', Icons.monitor_weight, AppColors.warning, 'kg'),
+};
+
+class _PeriodChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _PeriodChip({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: selected ? AppColors.primary : AppColors.textHint.withOpacity(0.3)),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                color: selected ? Colors.white : AppColors.textSecondary,
+                fontSize: 13, fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+}
+
+class _LineChart extends CustomPainter {
+  final List<double> values;
+  final double minVal;
+  final double range;
+  final Color color;
+  _LineChart({required this.values, required this.minVal, required this.range, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty) return;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [color.withOpacity(0.3), color.withOpacity(0.02)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path = Path();
+    final fillPath = Path();
+    final stepX = size.width / (values.length - 1);
+
+    for (int i = 0; i < values.length; i++) {
+      final x = i * stepX;
+      final y = size.height - ((values[i] - minVal) / range * size.height * 0.8) - size.height * 0.1;
+      if (i == 0) {
+        path.moveTo(x, y);
+        fillPath.moveTo(x, size.height);
+        fillPath.lineTo(x, y);
+      } else {
+        path.lineTo(x, y);
+        fillPath.lineTo(x, y);
+      }
+    }
+    fillPath.lineTo((values.length - 1) * stepX, size.height);
+    fillPath.close();
+
+    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(path, paint);
+    final lx = (values.length - 1) * stepX;
+    final ly = size.height - ((values.last - minVal) / range * size.height * 0.8) - size.height * 0.1;
+    canvas.drawCircle(Offset(lx, ly), 3.5, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineChart old) => true;
 }
