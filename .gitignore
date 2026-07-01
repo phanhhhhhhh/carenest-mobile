@@ -4,6 +4,9 @@
 .omc/
 **/.omc/
 
+# Design assets — keep local only, not pushed to remote
+assets/
+
 # Docs — keep local only, not pushed to remote
 docs/
 backend/docs/database-schema.md
