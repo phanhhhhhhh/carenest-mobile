@@ -35,6 +35,86 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
     }
   }
 
+  void _showAddFamilyDialog() {
+    final phoneCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Thêm người thân'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Nhập số điện thoại của người cao tuổi để gửi yêu cầu kết nối.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'Số điện thoại',
+                hintText: 'Ví dụ: 0912345678',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon:
+                    const Icon(Icons.phone, color: AppColors.primary),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
+          Consumer(
+            builder: (context, ref, _) {
+              final linkState = ref.watch(familyLinkProvider);
+              return ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: linkState.isLoading
+                    ? null
+                    : () async {
+                        final phone = phoneCtrl.text.trim();
+                        if (phone.isEmpty) return;
+                        final ok = await ref
+                            .read(familyLinkProvider.notifier)
+                            .sendLinkRequest(phone);
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ok
+                                  ? 'Đã gửi yêu cầu kết nối!'
+                                  : linkState.error ??
+                                      'Không thể gửi yêu cầu'),
+                              backgroundColor:
+                                  ok ? AppColors.success : AppColors.error,
+                            ),
+                          );
+                          if (ok) {
+                            ref
+                                .read(familyDashboardProvider.notifier)
+                                .refresh();
+                          }
+                        }
+                      },
+                child: Text(
+                    linkState.isLoading ? 'Đang gửi...' : 'Gửi yêu cầu'),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dash = ref.watch(familyDashboardProvider);
@@ -52,9 +132,12 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
               _buildAvatar(),
               const SizedBox(height: 28),
               if (elderlyName != null) ...[
-                _buildConnectedElderly(elderlyName, healthConditions, totalMeds),
+                _buildConnectedElderly(
+                    elderlyName, healthConditions, totalMeds),
                 const SizedBox(height: 20),
               ],
+              _buildAddFamilyCard(),
+              const SizedBox(height: 20),
               _buildSettings(context),
               const SizedBox(height: 20),
             ],
@@ -72,30 +155,37 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
             CircleAvatar(
               radius: 50,
               backgroundColor: AppColors.secondary.withOpacity(0.1),
-              child: const Icon(Icons.person, size: 56, color: AppColors.secondary),
+              child: const Icon(Icons.person,
+                  size: 56, color: AppColors.secondary),
             ),
             Positioned(
-              right: 0, bottom: 0,
+              right: 0,
+              bottom: 0,
               child: Container(
-                width: 32, height: 32,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: AppColors.secondary,
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.surface, width: 3),
                 ),
-                child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                child: const Icon(Icons.camera_alt,
+                    color: Colors.white, size: 16),
               ),
             ),
           ],
         ),
         const SizedBox(height: 14),
         Text(_name,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold,
+            style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary)),
         if (_phone.isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(_phone,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 14)),
         ],
         const SizedBox(height: 10),
         Container(
@@ -105,7 +195,9 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text('Người thân / Gia đình',
-              style: TextStyle(color: AppColors.secondary, fontSize: 13,
+              style: TextStyle(
+                  color: AppColors.secondary,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600)),
         ),
       ],
@@ -123,7 +215,8 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 8, offset: const Offset(0, 2)),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -134,7 +227,9 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
               Icon(Icons.people, color: AppColors.primary, size: 22),
               SizedBox(width: 10),
               Text('Người thân đã kết nối',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary)),
             ],
           ),
@@ -144,52 +239,129 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
             leading: CircleAvatar(
               radius: 24,
               backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: const Icon(Icons.elderly, color: AppColors.primary, size: 28),
+              child: const Icon(Icons.elderly,
+                  color: AppColors.primary, size: 28),
             ),
             title: Text(name,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, fontSize: 15)),
             subtitle: Row(
               children: [
                 if (conditions.isNotEmpty)
                   Text(conditions.first,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 12)),
                 if (totalMeds > 0) ...[
                   if (conditions.isNotEmpty) const Text(' • '),
                   Text('$totalMeds thuốc',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 12)),
                 ],
               ],
             ),
             trailing: Container(
-              width: 10, height: 10,
+              width: 10,
+              height: 10,
               decoration: const BoxDecoration(
                   color: AppColors.success, shape: BoxShape.circle),
             ),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.primary.withOpacity(0.06),
-              child: const Icon(Icons.add, color: AppColors.primary, size: 24),
-            ),
-            title: const Text('Thêm người thân',
-                style: TextStyle(color: AppColors.primary, fontSize: 14,
-                    fontWeight: FontWeight.w500)),
-            onTap: () {},
           ),
         ],
       ),
     );
   }
 
+  Widget _buildAddFamilyCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+      ),
+      child: InkWell(
+        onTap: _showAddFamilyDialog,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.person_add,
+                    color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Thêm người thân',
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600)),
+                    SizedBox(height: 2),
+                    Text('Kết nối với tài khoản người cao tuổi để theo dõi sức khỏe',
+                        style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right,
+                  color: AppColors.primary, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSettings(BuildContext context) {
     final items = [
-      (Icons.edit, 'Chỉnh sửa hồ sơ', AppColors.primary, AppColors.primary.withOpacity(0.08), () {}),
-      (Icons.notifications_outlined, 'Cài đặt thông báo', AppColors.secondary, AppColors.secondary.withOpacity(0.08), () {}),
-      (Icons.workspace_premium_outlined, 'Nâng cấp Premium', AppColors.warning, AppColors.warning.withOpacity(0.08), () {}),
-      (Icons.help_outline, 'Trợ giúp & Hỗ trợ', AppColors.textSecondary, AppColors.textHint.withOpacity(0.08), () {}),
+      (
+        Icons.edit,
+        'Chỉnh sửa hồ sơ',
+        AppColors.primary,
+        AppColors.primary.withOpacity(0.08),
+        () {}
+      ),
+      (
+        Icons.notifications_outlined,
+        'Cài đặt thông báo',
+        AppColors.secondary,
+        AppColors.secondary.withOpacity(0.08),
+        () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tính năng đang phát triển')),
+          );
+        }
+      ),
+      (
+        Icons.workspace_premium_outlined,
+        'Nâng cấp Premium',
+        AppColors.warning,
+        AppColors.warning.withOpacity(0.08),
+        () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tính năng đang phát triển')),
+          );
+        }
+      ),
+      (
+        Icons.help_outline,
+        'Trợ giúp & Hỗ trợ',
+        AppColors.textSecondary,
+        AppColors.textHint.withOpacity(0.08),
+        () {}
+      ),
     ];
 
     return Container(
@@ -199,7 +371,8 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 8, offset: const Offset(0, 2)),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -208,7 +381,8 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                 children: [
                   ListTile(
                     leading: Container(
-                      width: 40, height: 40,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: item.$4,
                         borderRadius: BorderRadius.circular(12),
@@ -216,8 +390,10 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                       child: Icon(item.$1, color: item.$3, size: 20),
                     ),
                     title: Text(item.$2,
-                        style: const TextStyle(color: AppColors.textPrimary,
-                            fontSize: 15, fontWeight: FontWeight.w500)),
+                        style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500)),
                     trailing: const Icon(Icons.chevron_right,
                         color: AppColors.textHint, size: 20),
                     onTap: item.$5,
@@ -227,15 +403,19 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
               )),
           ListTile(
             leading: Container(
-              width: 40, height: 40,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: AppColors.error.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.logout, color: AppColors.error, size: 20),
+              child: const Icon(Icons.logout,
+                  color: AppColors.error, size: 20),
             ),
             title: const Text('Đăng xuất',
-                style: TextStyle(color: AppColors.error, fontSize: 15,
+                style: TextStyle(
+                    color: AppColors.error,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500)),
             trailing: const Icon(Icons.chevron_right,
                 color: AppColors.textHint, size: 20),

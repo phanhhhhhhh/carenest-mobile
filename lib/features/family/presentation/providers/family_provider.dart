@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
+// ── Family Dashboard ──────────────────────────────────────────────
+
 class FamilyDashboardData {
   final String? elderlyId;
   final String? elderlyName;
@@ -82,6 +84,7 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
           }
         }
       } on DioException {
+        // family chưa link ai — không phải lỗi
       }
 
       int totalMeds = 0;
@@ -91,6 +94,7 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
           final meds = medResp.data as List<dynamic>;
           totalMeds = meds.length;
         } on DioException {
+          // bỏ qua
         }
       }
 
@@ -122,4 +126,142 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
 final familyDashboardProvider =
     StateNotifierProvider<FamilyDashboardNotifier, FamilyDashboardState>(
   (ref) => FamilyDashboardNotifier(ref.watch(dioProvider)),
+);
+
+// ── Family Link operations ────────────────────────────────────────
+
+class FamilyLinkRequestState {
+  final bool isLoading;
+  final String? error;
+  final bool success;
+
+  const FamilyLinkRequestState({
+    this.isLoading = false,
+    this.error,
+    this.success = false,
+  });
+
+  FamilyLinkRequestState copyWith({
+    bool? isLoading,
+    String? error,
+    bool? success,
+  }) =>
+      FamilyLinkRequestState(
+        isLoading: isLoading ?? this.isLoading,
+        error: error,
+        success: success ?? this.success,
+      );
+}
+
+class FamilyLinkNotifier extends StateNotifier<FamilyLinkRequestState> {
+  final Dio _dio;
+  FamilyLinkNotifier(this._dio) : super(const FamilyLinkRequestState());
+
+  Future<bool> sendLinkRequest(String elderlyPhone) async {
+    state = state.copyWith(isLoading: true, error: null, success: false);
+    try {
+      final familyId = await SecureStorage.getUserId();
+      if (familyId == null) {
+        state = state.copyWith(
+            isLoading: false, error: 'Chưa đăng nhập');
+        return false;
+      }
+      await _dio.post('/family-links', data: {
+        'familyId': int.parse(familyId),
+        'elderlyPhone': elderlyPhone,
+      });
+      state = state.copyWith(isLoading: false, success: true);
+      return true;
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Không thể gửi yêu cầu')
+          : 'Không thể gửi yêu cầu kết nối';
+      state = state.copyWith(isLoading: false, error: msg.toString());
+      return false;
+    } catch (_) {
+      state = state.copyWith(
+          isLoading: false, error: 'Lỗi kết nối');
+      return false;
+    }
+  }
+}
+
+final familyLinkProvider =
+    StateNotifierProvider.autoDispose<FamilyLinkNotifier, FamilyLinkRequestState>(
+  (ref) => FamilyLinkNotifier(ref.watch(dioProvider)),
+);
+
+// ── Elderly-side linked family list ────────────────────────────────
+
+class LinkedFamilyMember {
+  final String id;
+  final String name;
+  final String phone;
+
+  const LinkedFamilyMember({
+    required this.id,
+    required this.name,
+    required this.phone,
+  });
+
+  factory LinkedFamilyMember.fromJson(Map<String, dynamic> j) =>
+      LinkedFamilyMember(
+        id: j['id'].toString(),
+        name: j['userName'] as String? ?? '',
+        phone: j['phoneNumber'] as String? ?? '',
+      );
+}
+
+class LinkedFamilyState {
+  final bool isLoading;
+  final String? error;
+  final List<LinkedFamilyMember> members;
+
+  const LinkedFamilyState({
+    this.isLoading = false,
+    this.error,
+    this.members = const [],
+  });
+
+  LinkedFamilyState copyWith({
+    bool? isLoading,
+    String? error,
+    List<LinkedFamilyMember>? members,
+  }) =>
+      LinkedFamilyState(
+        isLoading: isLoading ?? this.isLoading,
+        error: error,
+        members: members ?? this.members,
+      );
+}
+
+class LinkedFamilyNotifier extends StateNotifier<LinkedFamilyState> {
+  final Dio _dio;
+  LinkedFamilyNotifier(this._dio) : super(const LinkedFamilyState()) {
+    load();
+  }
+
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final userId = await SecureStorage.getUserId();
+      if (userId == null) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+      final resp = await _dio.get('/elderly/$userId/family');
+      final members = (resp.data as List<dynamic>)
+          .map((e) => LinkedFamilyMember.fromJson(e as Map<String, dynamic>))
+          .toList();
+      state = state.copyWith(isLoading: false, members: members);
+    } on DioException catch (e) {
+      state = state.copyWith(
+          isLoading: false, error: 'Lỗi tải danh sách: ${e.message}');
+    }
+  }
+}
+
+final linkedFamilyProvider =
+    StateNotifierProvider<LinkedFamilyNotifier, LinkedFamilyState>(
+  (ref) => LinkedFamilyNotifier(ref.watch(dioProvider)),
 );
