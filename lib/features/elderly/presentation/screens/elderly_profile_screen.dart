@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../family/presentation/providers/family_provider.dart';
 import '../providers/elderly_provider.dart';
 
 class ElderlyProfileScreen extends ConsumerStatefulWidget {
@@ -200,9 +201,25 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
             )
           else ...[
             _buildConditionTags(profileState.profile?.healthConditions ?? []),
+            if (profileState.profile?.bloodType?.isNotEmpty == true) ...[
+              const SizedBox(height: 14),
+              _InfoRow('Nhóm máu', profileState.profile!.bloodType!),
+            ],
+            if (profileState.profile?.weight != null) ...[
+              const SizedBox(height: 8),
+              _InfoRow('Cân nặng', '${profileState.profile!.weight} kg'),
+            ],
+            if (profileState.profile?.height != null) ...[
+              const SizedBox(height: 8),
+              _InfoRow('Chiều cao', '${profileState.profile!.height} cm'),
+            ],
+            if ((profileState.profile?.allergies ?? []).isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _buildAllergyTags(profileState.profile!.allergies),
+            ],
             if (profileState.profile?.notes?.isNotEmpty == true) ...[
               const SizedBox(height: 14),
-              _InfoRow('Ghi chú', profileState.profile!.notes!),
+              _InfoRow('Ghi chú', profileState.profile!.notes ?? ''),
             ],
           ],
         ],
@@ -254,7 +271,46 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
     );
   }
 
+  Widget _buildAllergyTags(List<String> allergies) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Dị ứng thuốc',
+            style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: allergies.map((a) {
+            return Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+              ),
+              child: Text(
+                a,
+                style: const TextStyle(
+                  color: AppColors.error,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
   Widget _buildConnectedFamily() {
+    final familyState = ref.watch(linkedFamilyProvider);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -287,46 +343,49 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
             ],
           ),
           const Divider(height: 24),
-          // TODO: Wire to real family link API
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.secondary.withOpacity(0.1),
-              child: const Icon(Icons.person,
-                  color: AppColors.secondary, size: 24),
-            ),
-            title: const Text('Đang tải...',
-                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-            subtitle: const Text('Kết nối gia đình',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-            trailing: Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: AppColors.textHint,
-                shape: BoxShape.circle,
+          if (familyState.isLoading && familyState.members.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
-            ),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.primary.withOpacity(0.06),
-              child:
-                  const Icon(Icons.add, color: AppColors.primary, size: 22),
-            ),
-            title: const Text('Thêm người thân',
+            )
+          else if (familyState.members.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Chưa có người thân nào được kết nối.\nYêu cầu thành viên gia đình thêm bạn qua số điện thoại.',
                 style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500)),
-            onTap: () {
-              // TODO: navigate to add family member
-            },
-          ),
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            ...familyState.members.map((m) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: AppColors.secondary.withOpacity(0.1),
+                    child: const Icon(Icons.person,
+                        color: AppColors.secondary, size: 24),
+                  ),
+                  title: Text(m.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w500, fontSize: 14)),
+                  subtitle: Text(m.phone,
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 12)),
+                  trailing: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                )),
         ],
       ),
     );
@@ -353,14 +412,24 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         'Cài đặt thông báo',
         AppColors.secondary,
         AppColors.secondary.withOpacity(0.08),
-        () {}
+        () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Tính năng đang phát triển')),
+          );
+        }
       ),
       (
         Icons.workspace_premium_outlined,
         'Nâng cấp Premium',
         AppColors.warning,
         AppColors.warning.withOpacity(0.08),
-        () {}
+        () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Tính năng đang phát triển')),
+          );
+        }
       ),
       (
         Icons.help_outline,
@@ -395,8 +464,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
                         color: item.$4,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child:
-                          Icon(item.$1, color: item.$3, size: 20),
+                      child: Icon(item.$1, color: item.$3, size: 20),
                     ),
                     title: Text(
                       item.$2,
@@ -421,7 +489,8 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
                 color: AppColors.error.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.logout, color: AppColors.error, size: 20),
+              child: const Icon(Icons.logout,
+                  color: AppColors.error, size: 20),
             ),
             title: const Text(
               'Đăng xuất',
@@ -431,8 +500,8 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            trailing:
-                const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
+            trailing: const Icon(Icons.chevron_right,
+                color: AppColors.textHint, size: 20),
             onTap: () async {
               await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/phone');

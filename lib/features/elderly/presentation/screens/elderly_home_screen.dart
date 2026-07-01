@@ -68,25 +68,43 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
   Future<void> _sendSos() async {
     try {
       final dio = ref.read(dioProvider);
-      await dio.post('/emergency-events', data: {
+      final elderlyId = _elderlyId;
+      if (elderlyId == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Không thể gửi SOS: chưa xác định được tài khoản'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+      // POST /api/elderly/{elderlyId}/emergency-events (backend pending)
+      await dio.post('/elderly/$elderlyId/emergency-events', data: {
         'type': 'SOS',
-        'description': 'Người dùng nhấn nút SOS',
+        'description': 'Người dùng nhấn nút SOS khẩn cấp',
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Đã gửi tín hiệu SOS! Gia đình sẽ được thông báo.'),
+            content: Text(
+                '🚨 Đã gửi tín hiệu SOS! Tất cả thành viên gia đình đã được thông báo.'),
             backgroundColor: AppColors.sosPrimary,
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 4),
           ),
         );
       }
     } on DioException catch (e) {
       if (mounted) {
+        final msg = e.response?.statusCode == 404
+            ? 'Tính năng SOS đang được hoàn thiện. Vui lòng gọi trực tiếp cho gia đình trong trường hợp khẩn cấp.'
+            : 'Lỗi kết nối: ${e.message}. Hãy gọi trực tiếp cho gia đình!';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi gửi SOS: ${e.message}'),
+            content: Text(msg),
             backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -94,8 +112,10 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi gửi SOS: $e'),
+            content: const Text(
+                'Không thể gửi SOS. Hãy gọi trực tiếp cho gia đình trong trường hợp khẩn cấp!'),
             backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
