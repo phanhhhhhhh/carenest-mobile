@@ -1,0 +1,1 @@
+ALTER TABLE medications ADD COLUMN IF NOT EXISTS photo_url VARCHAR(512);
