@@ -5,11 +5,14 @@ import com.carenest.backend.dto.family.FamilyLinkRequest;
 import com.carenest.backend.dto.family.FamilyLinkResponse;
 import com.carenest.backend.entity.FamilyLink;
 import com.carenest.backend.entity.FamilyLinkStatus;
+import com.carenest.backend.entity.Notification;
+import com.carenest.backend.entity.NotificationType;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.exception.ConflictException;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.FamilyLinkRepository;
+import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ public class FamilyLinkService {
 
     private final FamilyLinkRepository familyLinkRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     public FamilyLinkResponse create(FamilyLinkRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
@@ -53,7 +57,24 @@ public class FamilyLinkService {
             .status(FamilyLinkStatus.PENDING)
             .build();
 
-        return toResponse(familyLinkRepository.save(link));
+        FamilyLink saved = familyLinkRepository.save(link);
+
+        // UC-04: System sends a link request notification to Elderly
+        Notification notification = Notification.builder()
+            .user(elderly)
+            .type(NotificationType.FAMILY_LINK_REQUEST)
+            .title("Yêu cầu liên kết gia đình")
+            .body(family.getName() + " muốn liên kết để theo dõi sức khỏe của bạn")
+            .data(java.util.Map.of(
+                "linkId", saved.getId(),
+                "familyId", family.getId(),
+                "familyName", family.getName(),
+                "relationship", request.getRelationship()
+            ))
+            .build();
+        notificationRepository.save(notification);
+
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)

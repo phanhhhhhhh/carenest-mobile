@@ -62,6 +62,12 @@ public class EmergencyEvent {
     @Column(name = "resolved_at")
     private OffsetDateTime resolvedAt;
 
+    @Column(name = "acknowledged_at")
+    private OffsetDateTime acknowledgedAt;
+
+    @Column(name = "acknowledged_by")
+    private Long acknowledgedBy;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 
