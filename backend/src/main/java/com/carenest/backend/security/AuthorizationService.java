@@ -5,6 +5,7 @@ import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
+import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.MedicationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class AuthorizationService {
     private final MedicationRepository medicationRepository;
     private final HealthMetricRepository healthMetricRepository;
     private final EmergencyEventRepository emergencyEventRepository;
+    private final MedicationLogRepository medicationLogRepository;
 
     public boolean isOwnerOrLinkedFamily(Long principalId, Long elderlyId) {
         if (principalId == null || elderlyId == null) return false;
@@ -59,6 +61,13 @@ public class AuthorizationService {
         if (principalId == null || eventId == null) return false;
         return emergencyEventRepository.findById(eventId)
             .map(e -> isOwnerOrLinkedFamily(principalId, e.getElderly().getId()))
+            .orElse(false);
+    }
+
+    public boolean canAccessMedicationLog(Long principalId, Long logId) {
+        if (principalId == null || logId == null) return false;
+        return medicationLogRepository.findById(logId)
+            .map(log -> isOwnerOrLinkedFamily(principalId, log.getMedication().getElderly().getId()))
             .orElse(false);
     }
 }

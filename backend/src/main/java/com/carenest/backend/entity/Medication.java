@@ -56,6 +56,9 @@ public class Medication {
     @Column(columnDefinition = "TEXT")
     private String instructions;
 
+    @Column(name = "photo_url", length = 512)
+    private String photoUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

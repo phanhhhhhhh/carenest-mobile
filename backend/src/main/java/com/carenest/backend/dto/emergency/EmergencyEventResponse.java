@@ -20,6 +20,9 @@ public class EmergencyEventResponse {
     private EmergencyStatus status;
     private OffsetDateTime triggeredAt;
     private OffsetDateTime resolvedAt;
+    private OffsetDateTime acknowledgedAt;
+    private Long acknowledgedBy;
+    private String acknowledgedByName;
     private String notes;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
