@@ -3,6 +3,7 @@ package com.carenest.backend.dto.elderly;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -15,6 +16,10 @@ public class ElderlyProfileResponse {
     private String userName;
     private List<String> healthConditions;
     private List<EmergencyContactDto> emergencyContacts;
+    private String allergies;
+    private String bloodType;
+    private BigDecimal weightKg;
+    private BigDecimal heightCm;
     private String notes;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;

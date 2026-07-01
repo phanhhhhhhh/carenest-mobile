@@ -42,6 +42,10 @@ public class ElderlyProfileService {
             .user(user)
             .healthConditions(request.getHealthConditions())
             .emergencyContacts(mapContactsFromDto(request.getEmergencyContacts()))
+            .allergies(request.getAllergies())
+            .bloodType(request.getBloodType())
+            .weightKg(request.getWeightKg())
+            .heightCm(request.getHeightCm())
             .notes(request.getNotes())
             .build();
 
@@ -61,6 +65,18 @@ public class ElderlyProfileService {
         }
         if (request.getEmergencyContacts() != null) {
             profile.setEmergencyContacts(mapContactsFromDto(request.getEmergencyContacts()));
+        }
+        if (request.getAllergies() != null) {
+            profile.setAllergies(request.getAllergies());
+        }
+        if (request.getBloodType() != null) {
+            profile.setBloodType(request.getBloodType());
+        }
+        if (request.getWeightKg() != null) {
+            profile.setWeightKg(request.getWeightKg());
+        }
+        if (request.getHeightCm() != null) {
+            profile.setHeightCm(request.getHeightCm());
         }
         if (request.getNotes() != null) {
             profile.setNotes(request.getNotes());
@@ -103,6 +119,10 @@ public class ElderlyProfileService {
             .userName(p.getUser().getName())
             .healthConditions(p.getHealthConditions())
             .emergencyContacts(mapContactsToDto(p.getEmergencyContacts()))
+            .allergies(p.getAllergies())
+            .bloodType(p.getBloodType())
+            .weightKg(p.getWeightKg())
+            .heightCm(p.getHeightCm())
             .notes(p.getNotes())
             .createdAt(p.getCreatedAt())
             .updatedAt(p.getUpdatedAt())
