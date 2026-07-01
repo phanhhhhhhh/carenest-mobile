@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../providers/family_provider.dart';
 
 class FamilyProfileScreen extends ConsumerStatefulWidget {
   const FamilyProfileScreen({super.key});
@@ -36,6 +37,11 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dash = ref.watch(familyDashboardProvider);
+    final elderlyName = dash.data?.elderlyName;
+    final healthConditions = dash.data?.healthConditions ?? [];
+    final totalMeds = dash.data?.totalMedications ?? 0;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -44,10 +50,13 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
           child: Column(
             children: [
               _buildAvatar(),
-              const SizedBox(height: 24),
-              _buildConnectedElderly(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 28),
+              if (elderlyName != null) ...[
+                _buildConnectedElderly(elderlyName, healthConditions, totalMeds),
+                const SizedBox(height: 20),
+              ],
               _buildSettings(context),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -58,60 +67,63 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
   Widget _buildAvatar() {
     return Column(
       children: [
-        CircleAvatar(
-          radius: 44,
-          backgroundColor: AppColors.secondary.withOpacity(0.15),
-          child:
-              const Icon(Icons.person, size: 48, color: AppColors.secondary),
+        Stack(
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: AppColors.secondary.withOpacity(0.1),
+              child: const Icon(Icons.person, size: 56, color: AppColors.secondary),
+            ),
+            Positioned(
+              right: 0, bottom: 0,
+              child: Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.secondary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 3),
+                ),
+                child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        Text(
-          _name,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        const SizedBox(height: 14),
+        Text(_name,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary)),
         if (_phone.isNotEmpty) ...[
           const SizedBox(height: 4),
-          Text(
-            _phone,
-            style: const TextStyle(
-                color: AppColors.textSecondary, fontSize: 14),
-          ),
+          Text(_phone,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: AppColors.secondary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Text(
-            'Người thân / Gia đình',
-            style: TextStyle(
-                color: AppColors.secondary,
-                fontSize: 12,
-                fontWeight: FontWeight.w500),
-          ),
+          child: const Text('Người thân / Gia đình',
+              style: TextStyle(color: AppColors.secondary, fontSize: 13,
+                  fontWeight: FontWeight.w600)),
         ),
       ],
     );
   }
 
-  Widget _buildConnectedElderly() {
+  Widget _buildConnectedElderly(
+      String name, List<String> conditions, int totalMeds) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+              blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -119,34 +131,37 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         children: [
           const Row(
             children: [
-              Icon(Icons.people, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Người thân đã kết nối',
-                style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary),
-              ),
+              Icon(Icons.people, color: AppColors.primary, size: 22),
+              SizedBox(width: 10),
+              Text('Người thân đã kết nối',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary)),
             ],
           ),
-          const Divider(height: 20),
+          const Divider(height: 24),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
-              radius: 22,
+              radius: 24,
               backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: const Icon(Icons.elderly, color: AppColors.primary),
+              child: const Icon(Icons.elderly, color: AppColors.primary, size: 28),
             ),
-            title: const Text('Nguyễn Văn An',
-                style: TextStyle(
-                    fontWeight: FontWeight.w500, fontSize: 14)),
-            subtitle: const Text('72 tuổi • Bố',
-                style: TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12)),
+            title: Text(name,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            subtitle: Row(
+              children: [
+                if (conditions.isNotEmpty)
+                  Text(conditions.first,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                if (totalMeds > 0) ...[
+                  if (conditions.isNotEmpty) const Text(' • '),
+                  Text('$totalMeds thuốc',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                ],
+              ],
+            ),
             trailing: Container(
-              width: 10,
-              height: 10,
+              width: 10, height: 10,
               decoration: const BoxDecoration(
                   color: AppColors.success, shape: BoxShape.circle),
             ),
@@ -155,14 +170,12 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.primary.withOpacity(0.05),
-              child: const Icon(Icons.add, color: AppColors.textHint),
+              radius: 24,
+              backgroundColor: AppColors.primary.withOpacity(0.06),
+              child: const Icon(Icons.add, color: AppColors.primary, size: 24),
             ),
             title: const Text('Thêm người thân',
-                style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 14,
+                style: TextStyle(color: AppColors.primary, fontSize: 14,
                     fontWeight: FontWeight.w500)),
             onTap: () {},
           ),
@@ -173,21 +186,20 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
 
   Widget _buildSettings(BuildContext context) {
     final items = [
-      (Icons.edit, 'Chỉnh sửa hồ sơ', AppColors.primary, () {}),
-      (Icons.notifications, 'Cài đặt thông báo', AppColors.secondary, () {}),
-      (Icons.workspace_premium, 'Nâng cấp Premium', AppColors.warning, () {}),
-      (Icons.help_outline, 'Trợ giúp', AppColors.textSecondary, () {}),
+      (Icons.edit, 'Chỉnh sửa hồ sơ', AppColors.primary, AppColors.primary.withOpacity(0.08), () {}),
+      (Icons.notifications_outlined, 'Cài đặt thông báo', AppColors.secondary, AppColors.secondary.withOpacity(0.08), () {}),
+      (Icons.workspace_premium_outlined, 'Nâng cấp Premium', AppColors.warning, AppColors.warning.withOpacity(0.08), () {}),
+      (Icons.help_outline, 'Trợ giúp & Hỗ trợ', AppColors.textSecondary, AppColors.textHint.withOpacity(0.08), () {}),
     ];
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+              blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -195,29 +207,38 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
           ...items.map((item) => Column(
                 children: [
                   ListTile(
-                    leading: Icon(item.$1, color: item.$3, size: 22),
+                    leading: Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: item.$4,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(item.$1, color: item.$3, size: 20),
+                    ),
                     title: Text(item.$2,
-                        style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500)),
+                        style: const TextStyle(color: AppColors.textPrimary,
+                            fontSize: 15, fontWeight: FontWeight.w500)),
                     trailing: const Icon(Icons.chevron_right,
-                        color: AppColors.textHint),
-                    onTap: item.$4,
+                        color: AppColors.textHint, size: 20),
+                    onTap: item.$5,
                   ),
-                  const Divider(height: 1, indent: 16),
+                  const Divider(height: 1, indent: 72),
                 ],
               )),
           ListTile(
-            leading:
-                const Icon(Icons.logout, color: AppColors.error, size: 22),
+            leading: Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.logout, color: AppColors.error, size: 20),
+            ),
             title: const Text('Đăng xuất',
-                style: TextStyle(
-                    color: AppColors.error,
-                    fontSize: 14,
+                style: TextStyle(color: AppColors.error, fontSize: 15,
                     fontWeight: FontWeight.w500)),
             trailing: const Icon(Icons.chevron_right,
-                color: AppColors.textHint),
+                color: AppColors.textHint, size: 20),
             onTap: () async {
               await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/phone');

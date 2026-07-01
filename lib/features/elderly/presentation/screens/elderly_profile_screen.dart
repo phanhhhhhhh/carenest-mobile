@@ -17,6 +17,7 @@ class ElderlyProfileScreen extends ConsumerStatefulWidget {
 class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
   String _name = '';
   String _phone = '';
+  String _role = '';
 
   @override
   void initState() {
@@ -27,10 +28,12 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
   Future<void> _load() async {
     final name = await SecureStorage.getName();
     final phone = await SecureStorage.getPhone();
+    final role = await SecureStorage.getRole();
     if (mounted) {
       setState(() {
         _name = name ?? 'Người dùng';
         _phone = phone ?? '';
+        _role = role ?? 'ELDERLY';
       });
     }
   }
@@ -45,10 +48,13 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
           child: Column(
             children: [
               _buildAvatar(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               _buildHealthProfile(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              _buildConnectedFamily(),
+              const SizedBox(height: 20),
               _buildSettingsSection(context),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -59,16 +65,36 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
   Widget _buildAvatar() {
     return Column(
       children: [
-        CircleAvatar(
-          radius: 44,
-          backgroundColor: AppColors.primary.withOpacity(0.1),
-          child: const Icon(Icons.person, size: 48, color: AppColors.primary),
+        Stack(
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: const Icon(Icons.person,
+                  size: 56, color: AppColors.primary),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 3),
+                ),
+                child: const Icon(Icons.camera_alt,
+                    color: Colors.white, size: 16),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Text(
           _name,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           ),
@@ -77,22 +103,30 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
           const SizedBox(height: 4),
           Text(
             _phone,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
           ),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: _role == 'ELDERLY'
+                ? AppColors.primary.withOpacity(0.1)
+                : AppColors.secondary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Text(
-            'Người cao tuổi',
+          child: Text(
+            _role == 'ELDERLY' ? 'Người cao tuổi' : 'Người thân',
             style: TextStyle(
-                color: AppColors.primary,
-                fontSize: 12,
-                fontWeight: FontWeight.w500),
+              color: _role == 'ELDERLY'
+                  ? AppColors.primary
+                  : AppColors.secondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -102,55 +136,18 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
   Widget _buildHealthProfile() {
     final profileState = ref.watch(elderlyProfileProvider);
 
-    Widget profileContent;
-    if (profileState.isLoading) {
-      profileContent = const Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
-    } else if (profileState.error != null) {
-      profileContent = Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Text(
-          profileState.error!,
-          style: const TextStyle(color: AppColors.error, fontSize: 14),
-        ),
-      );
-    } else if (profileState.profile == null) {
-      profileContent = const Padding(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text(
-          'Hồ sơ chưa được tạo',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-        ),
-      );
-    } else {
-      final profile = profileState.profile!;
-      final conditionsText = profile.healthConditions.isNotEmpty
-          ? profile.healthConditions.join(', ')
-          : 'Chưa có thông tin';
-      profileContent = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _InfoRow('Bệnh mãn tính', conditionsText),
-          if (profile.notes != null && profile.notes!.isNotEmpty)
-            _InfoRow('Ghi chú', profile.notes!),
-        ],
-      );
-    }
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -158,19 +155,178 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         children: [
           const Row(
             children: [
-              Icon(Icons.health_and_safety, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
+              Icon(Icons.health_and_safety,
+                  color: AppColors.primary, size: 22),
+              SizedBox(width: 10),
               Text(
                 'Hồ sơ sức khỏe',
                 style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ],
           ),
-          const Divider(height: 20),
-          profileContent,
+          const Divider(height: 24),
+          if (profileState.isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (profileState.error != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  children: [
+                    Text(
+                      profileState.error!,
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => ref
+                          .read(elderlyProfileProvider.notifier)
+                          .load(),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else ...[
+            _buildConditionTags(profileState.profile?.healthConditions ?? []),
+            if (profileState.profile?.notes?.isNotEmpty == true) ...[
+              const SizedBox(height: 14),
+              _InfoRow('Ghi chú', profileState.profile!.notes!),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConditionTags(List<String> conditions) {
+    if (conditions.isEmpty) {
+      return const Text(
+        'Chưa có thông tin bệnh lý',
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: conditions.map((c) {
+        Color tagColor;
+        switch (c.toLowerCase()) {
+          case 'diabetes':
+          case 'tiểu đường':
+            tagColor = AppColors.warning;
+            break;
+          case 'hypertension':
+          case 'cao huyết áp':
+            tagColor = AppColors.error;
+            break;
+          default:
+            tagColor = AppColors.primary;
+        }
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: tagColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: tagColor.withOpacity(0.3)),
+          ),
+          child: Text(
+            c,
+            style: TextStyle(
+              color: tagColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildConnectedFamily() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.people, color: AppColors.secondary, size: 22),
+              SizedBox(width: 10),
+              Text(
+                'Người thân đã kết nối',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          // TODO: Wire to real family link API
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              radius: 22,
+              backgroundColor: AppColors.secondary.withOpacity(0.1),
+              child: const Icon(Icons.person,
+                  color: AppColors.secondary, size: 24),
+            ),
+            title: const Text('Đang tải...',
+                style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+            subtitle: const Text('Kết nối gia đình',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            trailing: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: AppColors.textHint,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              radius: 22,
+              backgroundColor: AppColors.primary.withOpacity(0.06),
+              child:
+                  const Icon(Icons.add, color: AppColors.primary, size: 22),
+            ),
+            title: const Text('Thêm người thân',
+                style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500)),
+            onTap: () {
+              // TODO: navigate to add family member
+            },
+          ),
         ],
       ),
     );
@@ -178,41 +334,109 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
 
   Widget _buildSettingsSection(BuildContext context) {
     final items = [
-      (Icons.edit, 'Chỉnh sửa hồ sơ', AppColors.primary, () {}),
-      (Icons.notifications, 'Cài đặt thông báo', AppColors.secondary, () {}),
-      (Icons.people, 'Gia đình đã kết nối', AppColors.warning, () {}),
-      (Icons.help_outline, 'Trợ giúp', AppColors.textSecondary, () {}),
+      (
+        Icons.edit,
+        'Chỉnh sửa hồ sơ',
+        AppColors.primary,
+        AppColors.primary.withOpacity(0.08),
+        () => context.go('/elderly/edit-profile'),
+      ),
+      (
+        Icons.contact_emergency,
+        'Liên hệ khẩn cấp',
+        AppColors.sosPrimary,
+        AppColors.sosPrimary.withOpacity(0.08),
+        () => context.go('/elderly/emergency-contacts'),
+      ),
+      (
+        Icons.notifications_outlined,
+        'Cài đặt thông báo',
+        AppColors.secondary,
+        AppColors.secondary.withOpacity(0.08),
+        () {}
+      ),
+      (
+        Icons.workspace_premium_outlined,
+        'Nâng cấp Premium',
+        AppColors.warning,
+        AppColors.warning.withOpacity(0.08),
+        () {}
+      ),
+      (
+        Icons.help_outline,
+        'Trợ giúp & Hỗ trợ',
+        AppColors.textSecondary,
+        AppColors.textHint.withOpacity(0.08),
+        () {}
+      ),
     ];
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         children: [
-          ...items.map((item) => _SettingsTile(
-                icon: item.$1,
-                iconColor: item.$3,
-                label: item.$2,
-                onTap: item.$4,
+          ...items.map((item) => Column(
+                children: [
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: item.$4,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child:
+                          Icon(item.$1, color: item.$3, size: 20),
+                    ),
+                    title: Text(
+                      item.$2,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right,
+                        color: AppColors.textHint, size: 20),
+                    onTap: item.$5,
+                  ),
+                  const Divider(height: 1, indent: 72),
+                ],
               )),
-          const Divider(height: 1),
-          _SettingsTile(
-            icon: Icons.logout,
-            iconColor: AppColors.error,
-            label: 'Đăng xuất',
+          ListTile(
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.logout, color: AppColors.error, size: 20),
+            ),
+            title: const Text(
+              'Đăng xuất',
+              style: TextStyle(
+                color: AppColors.error,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            trailing:
+                const Icon(Icons.chevron_right, color: AppColors.textHint, size: 20),
             onTap: () async {
               await ref.read(authRepositoryProvider).signOut();
               if (context.mounted) context.go('/phone');
             },
-            textColor: AppColors.error,
           ),
         ],
       ),
@@ -223,63 +447,37 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-
   const _InfoRow(this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
-            child: Text(label,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 13)),
+            width: 90,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final VoidCallback onTap;
-  final Color? textColor;
-
-  const _SettingsTile({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.onTap,
-    this.textColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: iconColor, size: 22),
-      title: Text(
-        label,
-        style: TextStyle(
-            color: textColor ?? AppColors.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500),
-      ),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),
-      onTap: onTap,
     );
   }
 }
