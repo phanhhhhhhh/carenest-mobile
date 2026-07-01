@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/gemini_service.dart';
+import '../../../../core/storage/secure_storage.dart';
 
 class ElderlyChatScreen extends StatefulWidget {
   const ElderlyChatScreen({super.key});
@@ -15,15 +16,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
   final _scrollController = ScrollController();
   late final GeminiService? _gemini;
   bool _isTyping = false;
-
-  final List<_ChatMessage> _messages = [
-    _ChatMessage(
-      text:
-          'Chào buổi sáng! Hôm nay bạn cảm thấy thế nào? Tôi có thể giúp bạn kiểm tra chỉ số sức khỏe, nhắc nhở thuốc, hoặc chỉ đơn giản là trò chuyện.',
-      isAi: true,
-      time: '08:00',
-    ),
-  ];
+  String _userName = 'bạn';
 
   @override
   void initState() {
@@ -31,6 +24,32 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     _gemini = AppConfig.geminiApiKey != 'YOUR_GEMINI_API_KEY'
         ? GeminiService()
         : null;
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final name = await SecureStorage.getName();
+    if (mounted && name != null && name.isNotEmpty) {
+      setState(() => _userName = name);
+    }
+  }
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Chào buổi sáng';
+    if (hour < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
+  }
+
+  List<_ChatMessage> get _messages => _messageList;
+  final List<_ChatMessage> _messageList = [];
+
+  String get _welcomeMessage {
+    return '$_greeting $_userName! Tôi là trợ lý chăm sóc sức khỏe của bạn. '
+        'Hôm nay bạn cảm thấy thế nào? Tôi có thể giúp bạn:\n'
+        '• Kiểm tra chỉ số sức khỏe\n'
+        '• Nhắc nhở lịch uống thuốc\n'
+        '• Trò chuyện cùng bạn';
   }
 
   @override
@@ -45,7 +64,8 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     if (text.isEmpty || _isTyping) return;
 
     setState(() {
-      _messages.add(_ChatMessage(text: text, isAi: false, time: _timeNow()));
+      _messageList.add(
+          _ChatMessage(text: text, isAi: false, time: _timeNow()));
       _isTyping = true;
     });
     _controller.clear();
@@ -57,7 +77,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
       try {
         reply = await gemini.sendMessage(text);
       } catch (_) {
-        reply = 'Xin lỗi, tôi không thể kết nối lúc này. Vui lòng thử lại.';
+        reply = 'Xin lỗi $_userName, tôi không thể kết nối lúc này. Vui lòng thử lại.';
       }
     } else {
       await Future.delayed(const Duration(milliseconds: 1000));
@@ -67,7 +87,8 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     if (!mounted) return;
     setState(() {
       _isTyping = false;
-      _messages.add(_ChatMessage(text: reply, isAi: true, time: _timeNow()));
+      _messageList
+          .add(_ChatMessage(text: reply, isAi: true, time: _timeNow()));
     });
     _scrollToBottom();
   }
@@ -75,15 +96,22 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
   String _fakeReply(String question) {
     final q = question.toLowerCase();
     if (q.contains('huyết áp')) {
-      return 'Chỉ số huyết áp 120/80 mmHg của bạn hoàn toàn bình thường. Tiếp tục duy trì chế độ ăn ít muối và uống đủ nước nhé!';
+      return 'Chỉ số huyết áp gần đây của $_userName đang ở mức bình thường. '
+          'Hãy tiếp tục duy trì chế độ ăn ít muối và uống đủ nước nhé!';
     }
     if (q.contains('thuốc') || q.contains('uống')) {
-      return 'Hôm nay bạn còn 2 liều thuốc cần uống: Metformin 500mg lúc 12:00 và Atorvastatin 20mg lúc 21:00. Đừng quên nhé!';
+      return '$_userName thân mến, hãy kiểm tra mục "Thuốc của tôi" để xem lịch uống thuốc hôm nay. '
+          'Đừng quên uống đúng giờ và đủ liều nhé!';
     }
     if (q.contains('đau') || q.contains('mệt') || q.contains('khó chịu')) {
-      return 'Bạn đang không khỏe à? Hãy nghỉ ngơi và uống đủ nước. Nếu triệu chứng kéo dài hoặc nghiêm trọng hơn, hãy liên hệ bác sĩ hoặc nhờ người thân đưa đi khám nhé.';
+      return '$_userName đang không khỏe à? Hãy nghỉ ngơi và uống đủ nước. '
+          'Nếu triệu chứng kéo dài hoặc nghiêm trọng, hãy liên hệ bác sĩ hoặc nhấn nút SOS để thông báo cho gia đình.';
     }
-    return 'Cảm ơn bạn đã chia sẻ! Tôi luôn ở đây để hỗ trợ bạn. Bạn có muốn tôi kiểm tra lịch thuốc hoặc chỉ số sức khỏe hôm nay không?';
+    if (q.contains('chào') || q.contains('xin chào') || q.contains('hello')) {
+      return '$_greeting $_userName! Rất vui được trò chuyện với bạn. Tôi có thể giúp gì cho bạn hôm nay?';
+    }
+    return 'Cảm ơn $_userName đã chia sẻ! Tôi luôn ở đây để hỗ trợ bạn. '
+        'Bạn có muốn tôi kiểm tra lịch thuốc hoặc chỉ số sức khỏe hôm nay không?';
   }
 
   void _scrollToBottom() {
@@ -134,8 +162,8 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.success,
                         shape: BoxShape.circle,
-                        border:
-                            Border.all(color: AppColors.surface, width: 2),
+                        border: Border.all(
+                            color: AppColors.surface, width: 2),
                       ),
                     ),
                   ),
@@ -171,8 +199,12 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: _messages.length + (_isTyping ? 1 : 0),
+              itemCount: (_messages.isEmpty ? 1 : _messages.length) +
+                  (_isTyping ? 1 : 0),
               itemBuilder: (ctx, i) {
+                if (_messages.isEmpty) {
+                  return _WelcomeBubble(message: _welcomeMessage);
+                }
                 if (i == _messages.length) return const _TypingIndicator();
                 return _BubbleWidget(message: _messages[i]);
               },
@@ -186,7 +218,11 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
   }
 
   Widget _buildQuickReplies() {
-    final replies = ['Huyết áp hôm nay?', 'Thuốc cần uống?', 'Tôi đau đầu'];
+    final replies = [
+      'Huyết áp hôm nay?',
+      'Thuốc cần uống?',
+      'Tôi đau đầu'
+    ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -246,8 +282,8 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
               decoration: InputDecoration(
                 hintText: 'Nhập tin nhắn...',
                 hintStyle: const TextStyle(color: AppColors.textHint),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -265,12 +301,11 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: _isTyping
-                    ? AppColors.textHint
-                    : AppColors.primary,
+                color: _isTyping ? AppColors.textHint : AppColors.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send, color: Colors.white, size: 20),
+              child:
+                  const Icon(Icons.send, color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -285,6 +320,63 @@ class _ChatMessage {
   final String time;
 
   _ChatMessage({required this.text, required this.isAi, required this.time});
+}
+
+class _WelcomeBubble extends StatelessWidget {
+  final String message;
+  const _WelcomeBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.auto_awesome,
+                color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(4),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  height: 1.6,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _TypingIndicator extends StatelessWidget {
@@ -304,8 +396,8 @@ class _TypingIndicator extends StatelessWidget {
               color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child:
-                const Icon(Icons.auto_awesome, color: AppColors.primary, size: 16),
+            child: const Icon(Icons.auto_awesome,
+                color: AppColors.primary, size: 16),
           ),
           const SizedBox(width: 8),
           Container(
