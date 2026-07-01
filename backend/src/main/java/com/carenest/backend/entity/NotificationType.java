@@ -5,5 +5,6 @@ public enum NotificationType {
     HEALTH_ALERT,
     EMERGENCY,
     APPOINTMENT_REMINDER,
-    FAMILY_UPDATE
+    FAMILY_UPDATE,
+    FAMILY_LINK_REQUEST
 }
