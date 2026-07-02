@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class ElderlyEmergencyContactsScreen extends ConsumerStatefulWidget {
@@ -31,15 +32,18 @@ class _ElderlyEmergencyContactsScreenState
       if (userId == null) return;
 
       final resp = await dio.get('/elderly-profiles/$userId');
-      final data = resp.data as Map<String, dynamic>;
-      final emergencyContacts = data['emergencyContacts'] as List<dynamic>? ?? [];
+      final data = asMap(resp.data);
+      final emergencyContacts = asList(data['emergencyContacts']);
       _contacts = emergencyContacts
-          .map((c) => _Contact(
-                id: c['id']?.toString(),
-                name: c['name'] as String? ?? '',
-                phone: c['phone'] as String? ?? '',
-                relationship: c['relationship'] as String? ?? '',
-              ))
+          .map((c) {
+            final contact = asMap(c);
+            return _Contact(
+              id: contact['id']?.toString(),
+              name: contact['name'] as String? ?? '',
+              phone: contact['phone'] as String? ?? '',
+              relationship: contact['relationship'] as String? ?? '',
+            );
+          })
           .toList();
     } catch (_) {
       // If API fails, use empty list

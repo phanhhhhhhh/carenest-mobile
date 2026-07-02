@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class EmergencyEventData {
@@ -40,7 +41,7 @@ class EmergencyEventNotifier extends StateNotifier<EmergencyEventState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final resp = await _dio.get('/elderly/$elderlyId/emergency-events');
-      final list = (resp.data as List<dynamic>).map((e) => EmergencyEventData.fromJson(e as Map<String, dynamic>)).toList();
+      final list = asListOfMaps(resp.data).map((e) => EmergencyEventData.fromJson(e)).toList();
       state = state.copyWith(isLoading: false, events: list);
     } on DioException catch (e) {
       state = state.copyWith(isLoading: false, error: 'Lỗi: ${e.message}');

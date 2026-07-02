@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 // ── Family Dashboard ──────────────────────────────────────────────
@@ -73,25 +74,39 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
       List<String> healthConditions = [];
       try {
         final familyResp = await _dio.get('/family/$userId/elderly');
-        final elderlyList = familyResp.data as List<dynamic>;
+        final dynamic raw = familyResp.data;
+        // Convert JS interop types to native Dart types (web compatibility)
+        final List<dynamic> elderlyList = raw is List<dynamic>
+            ? List<dynamic>.from(raw)
+            : [];
         if (elderlyList.isNotEmpty) {
-          final first = elderlyList[0] as Map<String, dynamic>;
-          elderlyId = first['id'].toString();
-          elderlyName = first['userName'] as String?;
+          final dynamic firstRaw = elderlyList[0];
+          final Map<String, dynamic> first = firstRaw is Map<String, dynamic>
+              ? Map<String, dynamic>.from(firstRaw)
+              : firstRaw as Map<String, dynamic>;
+          elderlyId = first['elderlyId']?.toString();
+          elderlyName = first['elderlyName'] as String?;
           final rawConditions = first['healthConditions'];
           if (rawConditions is List) {
-            healthConditions = rawConditions.cast<String>();
+            healthConditions = List<String>.from(rawConditions.map((e) => e.toString()));
           }
         }
-      } on DioException {
-        // family chưa link ai — không phải lỗi
+      } on DioException catch (e) {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'API error: ${e.response?.statusCode} ${e.message}',
+        );
+        return;
       }
 
       int totalMeds = 0;
       if (elderlyId != null) {
         try {
           final medResp = await _dio.get('/users/$elderlyId/medications');
-          final meds = medResp.data as List<dynamic>;
+          final dynamic medsRaw = medResp.data;
+          final meds = medsRaw is List<dynamic>
+              ? List<dynamic>.from(medsRaw)
+              : <dynamic>[];
           totalMeds = meds.length;
         } on DioException {
           // bỏ qua
@@ -250,8 +265,8 @@ class LinkedFamilyNotifier extends StateNotifier<LinkedFamilyState> {
         return;
       }
       final resp = await _dio.get('/elderly/$userId/family');
-      final members = (resp.data as List<dynamic>)
-          .map((e) => LinkedFamilyMember.fromJson(e as Map<String, dynamic>))
+      final members = asListOfMaps(resp.data)
+          .map((e) => LinkedFamilyMember.fromJson(e))
           .toList();
       state = state.copyWith(isLoading: false, members: members);
     } on DioException catch (e) {
