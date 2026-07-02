@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class MedicationItem {
@@ -95,8 +96,8 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
         return;
       }
       final resp = await _dio.get('/users/$userId/medications');
-      final items = (resp.data as List<dynamic>)
-          .map((e) => MedicationItem.fromJson(e as Map<String, dynamic>))
+      final items = asListOfMaps(resp.data)
+          .map((e) => MedicationItem.fromJson(e))
           .toList();
       state = state.copyWith(isLoading: false, items: items);
     } on DioException catch (e) {
