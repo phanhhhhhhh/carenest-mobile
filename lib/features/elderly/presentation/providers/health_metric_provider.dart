@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class HealthMetricData {
@@ -46,7 +47,7 @@ class HealthMetricNotifier extends StateNotifier<HealthMetricState> {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final resp = await _dio.get('/elderly/$elderlyId/health-metrics');
-      final list = (resp.data as List<dynamic>).map((e) => HealthMetricData.fromJson(e as Map<String, dynamic>)).toList();
+      final list = asListOfMaps(resp.data).map((e) => HealthMetricData.fromJson(e)).toList();
       final latest = <String, HealthMetricData>{};
       for (final m in list) {
         if (!latest.containsKey(m.type) || m.recordedAt.isAfter(latest[m.type]!.recordedAt)) latest[m.type] = m;
