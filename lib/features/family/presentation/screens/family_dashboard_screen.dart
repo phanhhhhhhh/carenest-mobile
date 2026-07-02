@@ -197,7 +197,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children: data.healthConditions
+              children: List<Widget>.from(data.healthConditions
                   .map((c) => Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
@@ -212,8 +212,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
                             fontSize: 12,
                           ),
                         ),
-                      ))
-                  .toList(),
+                      ))),
             ),
           ],
         ],
