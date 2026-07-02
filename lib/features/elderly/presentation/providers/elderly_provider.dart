@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class ElderlyProfileData {
@@ -84,7 +85,7 @@ class ElderlyProfileNotifier extends StateNotifier<ElderlyProfileState> {
       state = state.copyWith(
         isLoading: false,
         profile:
-            ElderlyProfileData.fromJson(resp.data as Map<String, dynamic>),
+            ElderlyProfileData.fromJson(asMap(resp.data)),
       );
     } on DioException catch (e) {
       state = state.copyWith(

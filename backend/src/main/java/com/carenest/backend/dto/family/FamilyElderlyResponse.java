@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -17,4 +18,5 @@ public class FamilyElderlyResponse {
     private String relationship;
     private FamilyLinkStatus status;
     private OffsetDateTime createdAt;
+    private List<String> healthConditions;
 }

@@ -11,9 +11,12 @@ import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.exception.ConflictException;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.repository.UserRepository;
+
+import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class FamilyLinkService {
     private final FamilyLinkRepository familyLinkRepository;
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
+    private final ElderlyProfileRepository elderlyProfileRepository;
 
     public FamilyLinkResponse create(FamilyLinkRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
@@ -102,6 +106,13 @@ public class FamilyLinkService {
     }
 
     private FamilyElderlyResponse toElderlyResponse(FamilyLink fl) {
+        List<String> healthConditions = elderlyProfileRepository
+            .findByUserIdAndDeletedAtIsNull(fl.getElderly().getId())
+            .map(profile -> profile.getHealthConditions() != null
+                ? profile.getHealthConditions()
+                : Collections.<String>emptyList())
+            .orElse(Collections.emptyList());
+
         return FamilyElderlyResponse.builder()
             .linkId(fl.getId())
             .elderlyId(fl.getElderly().getId())
@@ -110,6 +121,7 @@ public class FamilyLinkService {
             .relationship(fl.getRelationship())
             .status(fl.getStatus())
             .createdAt(fl.getCreatedAt())
+            .healthConditions(healthConditions)
             .build();
     }
 
