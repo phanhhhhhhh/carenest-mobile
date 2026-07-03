@@ -113,13 +113,28 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
   }
 
   Widget _buildPeriodSelector() {
+    final dash = ref.watch(familyDashboardProvider);
     return Row(
       children: [
-        _PeriodChip(label: '7 ngày', selected: _period == 'week',
-            onTap: () => setState(() => _period = 'week')),
+        _PeriodChip(
+          label: '7 ngày',
+          selected: _period == 'week',
+          onTap: () {
+            setState(() => _period = 'week');
+            final id = dash.data?.elderlyId;
+            if (id != null) ref.read(healthMetricProvider(id).notifier).loadPeriod('week');
+          },
+        ),
         const SizedBox(width: 8),
-        _PeriodChip(label: '30 ngày', selected: _period == 'month',
-            onTap: () => setState(() => _period = 'month')),
+        _PeriodChip(
+          label: '30 ngày',
+          selected: _period == 'month',
+          onTap: () {
+            setState(() => _period = 'month');
+            final id = dash.data?.elderlyId;
+            if (id != null) ref.read(healthMetricProvider(id).notifier).loadPeriod('month');
+          },
+        ),
       ],
     );
   }
