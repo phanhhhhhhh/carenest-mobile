@@ -1,21 +1,24 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../widgets/back_button.dart' as widget;
+import '../providers/auth_provider.dart';
+import '../widgets/back_button.dart' as back_btn;
 
 /// Step 2 of Forgot Password: OTP verification.
 /// Matches Miro design: 6-digit OTP boxes, timer, resend.
-class ForgotPasswordOtpScreen extends StatefulWidget {
-  const ForgotPasswordOtpScreen({super.key});
+class ForgotPasswordOtpScreen extends ConsumerStatefulWidget {
+  final String phone;
+  const ForgotPasswordOtpScreen({super.key, required this.phone});
 
   @override
-  State<ForgotPasswordOtpScreen> createState() =>
+  ConsumerState<ForgotPasswordOtpScreen> createState() =>
       _ForgotPasswordOtpScreenState();
 }
 
-class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
+class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScreen> {
   final List<TextEditingController> _controllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
@@ -72,15 +75,29 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
-    if (_otp.length == 6) _verify();
   }
 
   void _verify() {
-    context.pushReplacement('/new-password');
+    final otp = _otp;
+    if (otp.length != 6) return;
+    ref.read(forgotPasswordOtpProvider.notifier).verifyOtp(widget.phone, otp);
   }
 
   @override
   Widget build(BuildContext context) {
+    final otpState = ref.watch(forgotPasswordOtpProvider);
+
+    ref.listen(forgotPasswordOtpProvider, (_, next) {
+      if (next.success) {
+        context.pushReplacement('/new-password', extra: {
+          'phone': widget.phone,
+          'otp': _otp,
+        });
+      }
+      if (next.error != null) {
+        setState(() => _error = next.error);
+      }
+    });
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -92,7 +109,7 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
               const SizedBox(height: 12),
 
               // Custom gray circle back button
-              widget.CircleBackButton(onPressed: () => context.pop()),
+              back_btn.CircleBackButton(onPressed: () => context.pop()),
 
               const SizedBox(height: 32),
 
@@ -181,7 +198,7 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _otp.length < 6 ? null : _verify,
+                  onPressed: (otpState.isLoading || _otp.length < 6) ? null : _verify,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -192,11 +209,17 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Xác nhận',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
+                  child: otpState.isLoading
+                      ? const SizedBox(
+                          width: 22, height: 22,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2.5),
+                        )
+                      : const Text(
+                          'Xác nhận',
+                          style:
+                              TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -210,6 +233,7 @@ class _ForgotPasswordOtpScreenState extends State<ForgotPasswordOtpScreen> {
                           }
                           _focusNodes[0].requestFocus();
                           _startTimer();
+                          ref.read(forgotPasswordPhoneProvider.notifier).sendOtp(widget.phone);
                         },
                         child: const Text(
                           'Gửi lại',
