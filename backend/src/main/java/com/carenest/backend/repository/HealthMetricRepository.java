@@ -26,4 +26,6 @@ public interface HealthMetricRepository extends JpaRepository<HealthMetric, Long
     Optional<HealthMetric> findByIdAndDeletedAtIsNull(Long id);
 
     List<HealthMetric> findByElderlyIdAndDeletedAtIsNullOrderByRecordedAtDesc(Long elderlyId);
+
+    List<HealthMetric> findByRecordedAtAfterAndDeletedAtIsNullOrderByRecordedAtDesc(OffsetDateTime since);
 }
