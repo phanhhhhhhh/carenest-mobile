@@ -44,6 +44,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     ref.read(registerProvider(widget.firebaseToken).notifier).register(
           name: _nameController.text.trim(),
           role: _selectedRole,
+          email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
+          password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
         );
   }
 
