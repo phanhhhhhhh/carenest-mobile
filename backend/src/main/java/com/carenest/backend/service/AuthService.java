@@ -96,6 +96,54 @@ public class AuthService {
             .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
     }
 
+    // ── Forgot Password Flow ──────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public void forgotPassword(String phone) {
+        userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException(
+                "Số điện thoại chưa đăng ký: " + phone));
+        // Firebase OTP is sent client-side via Firebase SDK.
+        // Backend just confirms the phone is registered.
+    }
+
+    @Transactional(readOnly = true)
+    public String verifyResetOtp(String phone, String otpToken) {
+        // otpToken is a Firebase idToken obtained after OTP verification
+        String verifiedPhone = firebaseService.verifyAndGetPhone(otpToken);
+
+        if (!verifiedPhone.equals(phone)) {
+            throw new UnauthorizedException(
+                "Số điện thoại xác thực không khớp với yêu cầu");
+        }
+
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException(
+                "Số điện thoại chưa đăng ký: " + phone));
+
+        // Return a short-lived reset token
+        return jwtService.generateAccessToken(user.getId(), user.getRole());
+    }
+
+    @Transactional
+    public AuthResponse resetPassword(String phone, String newPassword, String confirmPassword) {
+        if (newPassword != null && !newPassword.equals(confirmPassword)) {
+            throw new IllegalArgumentException(
+                "newPassword và confirmPassword không khớp");
+        }
+
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException(
+                "Số điện thoại chưa đăng ký: " + phone));
+
+        // Revoke all existing refresh tokens (force re-auth)
+        refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(user.getId())
+            .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
+
+        // Issue new tokens
+        return buildAuthResponse(user, "password-reset");
+    }
+
     private AuthResponse buildAuthResponse(User user, String deviceInfo) {
         String rawRefreshToken = UUID.randomUUID().toString();
 
