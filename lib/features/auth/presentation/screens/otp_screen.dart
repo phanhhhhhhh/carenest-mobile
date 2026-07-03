@@ -91,7 +91,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     }
     _focusNodes[0].requestFocus();
     _startTimer();
-    // TODO: call resend API
+    // Actually resend OTP via Firebase
+    if (_phoneNumber.isNotEmpty) {
+      ref.read(phoneProvider.notifier).sendOtp(_phoneNumber);
+    }
   }
 
   @override

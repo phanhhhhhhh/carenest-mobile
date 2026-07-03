@@ -217,13 +217,23 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
         _PeriodChip(
           label: '7 ngày',
           selected: _period == 'week',
-          onTap: () => setState(() => _period = 'week'),
+          onTap: () {
+            setState(() => _period = 'week');
+            if (_elderlyId.isNotEmpty) {
+              ref.read(healthMetricProvider(_elderlyId).notifier).loadPeriod('week');
+            }
+          },
         ),
         const SizedBox(width: 8),
         _PeriodChip(
           label: '30 ngày',
           selected: _period == 'month',
-          onTap: () => setState(() => _period = 'month'),
+          onTap: () {
+            setState(() => _period = 'month');
+            if (_elderlyId.isNotEmpty) {
+              ref.read(healthMetricProvider(_elderlyId).notifier).loadPeriod('month');
+            }
+          },
         ),
       ],
     );
