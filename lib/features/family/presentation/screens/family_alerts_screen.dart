@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/storage/secure_storage.dart';
 import '../providers/family_provider.dart';
 import '../providers/emergency_event_provider.dart';
 
@@ -12,6 +13,17 @@ class FamilyAlertsScreen extends ConsumerStatefulWidget {
 }
 
 class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
+  bool _markingRead = false;
+
+  Future<void> _markAllRead(String elderlyId) async {
+    setState(() => _markingRead = true);
+    final userId = await SecureStorage.getUserId();
+    if (userId != null) {
+      await ref.read(emergencyEventProvider(elderlyId).notifier).markAllRead(userId);
+    }
+    if (mounted) setState(() => _markingRead = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dash = ref.watch(familyDashboardProvider);
@@ -69,9 +81,12 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
       actions: [
         if (activeCount > 0)
           TextButton(
-            onPressed: () => ref.invalidate(emergencyEventProvider(elderlyId)),
-            child: const Text('Đánh dấu đã đọc',
-                style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w500)),
+            onPressed: _markingRead ? null : () => _markAllRead(elderlyId),
+            child: _markingRead
+                ? const SizedBox(width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Đánh dấu đã đọc',
+                    style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
       ],
     );

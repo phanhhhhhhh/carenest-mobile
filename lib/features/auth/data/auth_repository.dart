@@ -82,6 +82,8 @@ class AuthRepository {
     required String firebaseToken,
     required String name,
     required String role,
+    String? email,
+    String? password,
     String? dob,
   }) async {
     final body = <String, dynamic>{
@@ -89,6 +91,8 @@ class AuthRepository {
       'name': name,
       'role': role,
     };
+    if (email != null && email.isNotEmpty) body['email'] = email;
+    if (password != null && password.isNotEmpty) body['password'] = password;
     if (dob != null) body['dob'] = dob;
 
     final response = await _dio.post('/auth/register', data: body);
@@ -104,6 +108,25 @@ class AuthRepository {
 
   Future<bool> loginDev(String phoneNumber) async {
     return login('DEV_PHONE:$phoneNumber');
+  }
+
+  /// POST /api/auth/forgot-password — send OTP for password reset.
+  Future<void> forgotPassword(String phone) async {
+    await _dio.post('/auth/forgot-password', data: {'phone': phone});
+  }
+
+  /// POST /api/auth/verify-reset-otp — verify OTP for password reset.
+  Future<void> verifyResetOtp(String phone, String otp) async {
+    await _dio.post('/auth/verify-reset-otp', data: {'phone': phone, 'otp': otp});
+  }
+
+  /// POST /api/auth/reset-password — reset password with OTP verification.
+  Future<void> resetPassword(String phone, String otp, String newPassword) async {
+    await _dio.post('/auth/reset-password', data: {
+      'phone': phone,
+      'otp': otp,
+      'newPassword': newPassword,
+    });
   }
 
   Future<void> signOut() async {
