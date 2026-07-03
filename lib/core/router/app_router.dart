@@ -23,6 +23,7 @@ import '../../features/family/presentation/screens/family_alerts_screen.dart';
 import '../../features/family/presentation/screens/family_profile_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_edit_profile_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_emergency_contacts_screen.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/welcome',
@@ -81,11 +82,19 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/forgot-password/otp',
-      builder: (context, state) => const ForgotPasswordOtpScreen(),
+      builder: (context, state) => ForgotPasswordOtpScreen(
+        phone: state.extra as String,
+      ),
     ),
     GoRoute(
       path: '/new-password',
-      builder: (context, state) => const NewPasswordScreen(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return NewPasswordScreen(
+          phone: extra['phone'] as String,
+          otp: extra['otp'] as String,
+        );
+      },
     ),
     GoRoute(
       path: '/password-reset-success',
@@ -105,6 +114,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/elderly/emergency-contacts',
       builder: (context, state) => const ElderlyEmergencyContactsScreen(),
+    ),
+
+    // Notifications (auth required)
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
 
     // Elderly shell
