@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../widgets/back_button.dart' as widget;
+import '../providers/auth_provider.dart';
+import '../widgets/back_button.dart' as back_btn;
 
 /// Step 3 of Forgot Password: set new password.
 /// Matches Miro design: password + confirm fields with visibility toggle,
 /// strength indicator, custom back button.
-class NewPasswordScreen extends StatefulWidget {
-  const NewPasswordScreen({super.key});
+class NewPasswordScreen extends ConsumerStatefulWidget {
+  final String phone;
+  final String otp;
+  const NewPasswordScreen({super.key, required this.phone, required this.otp});
 
   @override
-  State<NewPasswordScreen> createState() => _NewPasswordScreenState();
+  ConsumerState<NewPasswordScreen> createState() => _NewPasswordScreenState();
 }
 
-class _NewPasswordScreenState extends State<NewPasswordScreen> {
+class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  bool _loading = false;
   String? _error;
 
   @override
@@ -56,21 +59,23 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       return;
     }
 
-    setState(() {
-      _error = null;
-      _loading = true;
-    });
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() => _loading = false);
-        context.pushReplacement('/password-reset-success');
-      }
-    });
+    setState(() => _error = null);
+    ref.read(resetPasswordProvider.notifier).reset(widget.phone, widget.otp, password);
   }
 
   @override
   Widget build(BuildContext context) {
+    final resetState = ref.watch(resetPasswordProvider);
     final strength = _passwordStrength(_passwordController.text);
+
+    ref.listen(resetPasswordProvider, (_, next) {
+      if (next.success) {
+        context.pushReplacement('/password-reset-success');
+      }
+      if (next.error != null) {
+        setState(() => _error = next.error);
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -85,7 +90,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                 const SizedBox(height: 12),
 
                 // Custom gray circle back button
-                widget.CircleBackButton(onPressed: () => context.pop()),
+                back_btn.CircleBackButton(onPressed: () => context.pop()),
 
                 const SizedBox(height: 32),
 
@@ -275,7 +280,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _loading ? null : _submit,
+                    onPressed: resetState.isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -286,7 +291,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: _loading
+                    child: resetState.isLoading
                         ? const SizedBox(
                             width: 22,
                             height: 22,
