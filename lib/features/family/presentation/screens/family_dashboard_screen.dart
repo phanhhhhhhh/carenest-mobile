@@ -5,6 +5,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../providers/family_provider.dart';
 import '../providers/emergency_event_provider.dart';
+import '../../../elderly/presentation/providers/health_metric_provider.dart';
+import '../../../elderly/presentation/providers/medication_provider.dart';
+import '../../../notifications/presentation/providers/notification_provider.dart';
 
 class FamilyDashboardScreen extends ConsumerStatefulWidget {
   const FamilyDashboardScreen({super.key});
@@ -55,7 +58,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
               const SizedBox(height: 20),
               _buildSummaryGrid(data),
               const SizedBox(height: 24),
-              _buildRecentActivity(),
+              _buildRecentActivity(data?.elderlyId),
             ],
           ),
         ),
@@ -81,44 +84,41 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             ],
           ),
         ),
-        Stack(
-          children: [
-            IconButton(
-              onPressed: () => context.go('/family/alerts'),
-              icon: const Icon(Icons.notifications_outlined,
-                  color: AppColors.textPrimary, size: 26),
-            ),
-            // Check for active alerts
-            Builder(builder: (context) {
-              final elderlyId = ref.watch(familyDashboardProvider).data?.elderlyId;
-              if (elderlyId == null) return const SizedBox.shrink();
-              final alertState = ref.watch(emergencyEventProvider(elderlyId));
-              if (alertState.activeCount == 0) return const SizedBox.shrink();
-              return Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
-                    color: AppColors.error,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${alertState.activeCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+        Builder(builder: (context) {
+          final notifState = ref.watch(notificationProvider);
+          final alertStateUnread = notifState.unreadCount;
+          return Stack(
+            children: [
+              IconButton(
+                onPressed: () => context.push('/notifications'),
+                icon: const Icon(Icons.notifications_outlined,
+                    color: AppColors.textPrimary, size: 26),
+              ),
+              if (alertStateUnread > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$alertStateUnread',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                 ),
-              );
-            }),
-          ],
-        ),
+            ],
+          );
+        }),
       ],
     );
   }
@@ -272,7 +272,78 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
     );
   }
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivity(String? elderlyId) {
+    final List<Widget> activityItems = [];
+
+    if (elderlyId != null) {
+      // Medications
+      final medsState = ref.watch(medicationsProvider);
+      if (!medsState.isLoading && medsState.items.isNotEmpty) {
+        for (final med in medsState.items.take(3)) {
+          final timeLabel = med.nextDoseTime != null
+              ? '${med.nextDoseTime!.hour.toString().padLeft(2, '0')}:${med.nextDoseTime!.minute.toString().padLeft(2, '0')}'
+              : '';
+          activityItems.add(_ActivityItem(
+            icon: Icons.medication,
+            iconColor: AppColors.primary,
+            title: med.name,
+            subtitle: '${med.dosage}${timeLabel.isNotEmpty ? ' lúc $timeLabel' : ''}',
+            time: med.taken ? 'Đã uống' : 'Sắp tới',
+          ));
+        }
+      }
+
+      // Health metrics
+      final healthState = ref.watch(healthMetricProvider(elderlyId));
+      if (!healthState.isLoading && healthState.latestByType.isNotEmpty) {
+        for (final entry in healthState.latestByType.entries.take(2)) {
+          final data = entry.value;
+          final typeLabel = switch (entry.key) {
+            'BLOOD_PRESSURE' => 'Huyết áp',
+            'BLOOD_GLUCOSE' => 'Đường huyết',
+            'HEART_RATE' => 'Nhịp tim',
+            _ => entry.key,
+          };
+          final valueStr = data.valueSecondary != null
+              ? '${data.value}/${data.valueSecondary}'
+              : data.value;
+          final unitStr = data.unit ?? '';
+          activityItems.add(_ActivityItem(
+            icon: Icons.monitor_heart,
+            iconColor: AppColors.success,
+            title: 'Chỉ số $typeLabel',
+            subtitle: '$valueStr $unitStr',
+            time: _formatRelative(data.recordedAt),
+          ));
+        }
+      }
+
+      // Emergency events
+      final alertState = ref.watch(emergencyEventProvider(elderlyId));
+      if (!alertState.isLoading && alertState.events.isNotEmpty) {
+        for (final event in alertState.events.where((e) => e.status == 'ACTIVE').take(1)) {
+          activityItems.add(_ActivityItem(
+            icon: Icons.warning_amber,
+            iconColor: AppColors.warning,
+            title: event.type == 'SOS' ? 'SOS khẩn cấp' : 'Cảnh báo',
+            subtitle: event.description,
+            time: _formatRelative(event.createdAt),
+          ));
+        }
+      }
+    }
+
+    // Fall back to placeholder if no data
+    if (activityItems.isEmpty) {
+      activityItems.add(const _ActivityItem(
+        icon: Icons.info_outline,
+        iconColor: AppColors.textHint,
+        title: 'Chưa có hoạt động',
+        subtitle: 'Dữ liệu sẽ xuất hiện khi có hoạt động mới',
+        time: '',
+      ));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -300,35 +371,28 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             ],
           ),
           child: Column(
-            children: [
-              _ActivityItem(
-                icon: Icons.medication,
-                iconColor: AppColors.primary,
-                title: 'Nhắc nhở thuốc',
-                subtitle: 'Metformin 500mg lúc 12:00',
-                time: 'Hôm nay',
-              ),
-              const Divider(height: 20),
-              _ActivityItem(
-                icon: Icons.monitor_heart,
-                iconColor: AppColors.success,
-                title: 'Chỉ số sức khỏe',
-                subtitle: 'Huyết áp 120/80 mmHg',
-                time: 'Hôm qua',
-              ),
-              const Divider(height: 20),
-              _ActivityItem(
-                icon: Icons.event,
-                iconColor: AppColors.warning,
-                title: 'Lịch khám',
-                subtitle: 'BS. Nguyễn - 15:00 Thứ 6',
-                time: 'Sắp tới',
-              ),
-            ],
+            children: List.generate(activityItems.length, (i) {
+              if (i < activityItems.length - 1) {
+                return Column(children: [
+                  activityItems[i],
+                  const Divider(height: 20),
+                ]);
+              }
+              return activityItems[i];
+            }),
           ),
         ),
       ],
     );
+  }
+
+  String _formatRelative(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Vừa xong';
+    if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
+    if (diff.inDays == 0) return 'Hôm nay';
+    if (diff.inDays == 1) return 'Hôm qua';
+    return '${diff.inDays} ngày trước';
   }
 }
 
