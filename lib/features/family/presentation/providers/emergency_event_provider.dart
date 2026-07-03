@@ -47,6 +47,36 @@ class EmergencyEventNotifier extends StateNotifier<EmergencyEventState> {
       state = state.copyWith(isLoading: false, error: 'Lỗi: ${e.message}');
     }
   }
+
+  /// POST /api/elderly/{elderlyId}/emergency-events — create SOS event.
+  /// Returns true on success (201), false otherwise.
+  Future<bool> createSosEvent() async {
+    try {
+      final resp = await _dio.post('/elderly/$elderlyId/emergency-events', data: {
+        'type': 'SOS',
+        'description': 'Người dùng nhấn nút SOS khẩn cấp',
+      });
+      if (resp.statusCode == 201 || resp.statusCode == 200) {
+        await load(); // refresh list after creating
+        return true;
+      }
+      return false;
+    } on DioException {
+      return false;
+    }
+  }
+
+  /// PATCH /api/users/{userId}/emergency-events/read-all — mark all alerts as read.
+  Future<bool> markAllRead(String userId) async {
+    try {
+      await _dio.patch('/users/$userId/emergency-events/read-all');
+      await load();
+      return true;
+    } on DioException {
+      return false;
+    }
+  }
+
   void refresh() => load();
 }
 

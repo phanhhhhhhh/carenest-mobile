@@ -239,7 +239,6 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
   }
 
   Widget _buildOnboardingSlide(_SlideData slide) {
-    final isActive = _slides.indexOf(slide) == _currentPage;
     final step = _slides.indexOf(slide) + 1;
 
     return Column(

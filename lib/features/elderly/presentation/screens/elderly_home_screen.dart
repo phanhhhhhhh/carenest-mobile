@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/elderly_provider.dart';
 import '../providers/medication_provider.dart';
 import '../providers/health_metric_provider.dart';
+import '../../../family/presentation/providers/emergency_event_provider.dart';
+import '../../../notifications/presentation/providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 
 class ElderlyHomeScreen extends ConsumerStatefulWidget {
   const ElderlyHomeScreen({super.key});
@@ -67,7 +67,6 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
 
   Future<void> _sendSos() async {
     try {
-      final dio = ref.read(dioProvider);
       final elderlyId = _elderlyId;
       if (elderlyId == null) {
         if (mounted) {
@@ -80,42 +79,54 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
         }
         return;
       }
-      // POST /api/elderly/{elderlyId}/emergency-events (backend pending)
-      await dio.post('/elderly/$elderlyId/emergency-events', data: {
-        'type': 'SOS',
-        'description': 'Người dùng nhấn nút SOS khẩn cấp',
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                '🚨 Đã gửi tín hiệu SOS! Tất cả thành viên gia đình đã được thông báo.'),
-            backgroundColor: AppColors.sosPrimary,
-            duration: Duration(seconds: 4),
+      final notifier = ref.read(emergencyEventProvider(elderlyId).notifier);
+      final ok = await notifier.createSosEvent();
+      if (!mounted) return;
+      if (ok) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            icon: const Icon(Icons.check_circle, color: AppColors.success, size: 56),
+            title: const Text('Đã gửi SOS',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            content: const Text(
+              'Tín hiệu khẩn cấp đã được gửi. Tất cả thành viên gia đình đã được thông báo.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            ),
+            actions: [
+              Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Đã hiểu'),
+                ),
+              ),
+            ],
           ),
         );
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        final msg = e.response?.statusCode == 404
-            ? 'Tính năng SOS đang được hoàn thiện. Vui lòng gọi trực tiếp cho gia đình trong trường hợp khẩn cấp.'
-            : 'Lỗi kết nối: ${e.message}. Hãy gọi trực tiếp cho gia đình!';
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
+          const SnackBar(
+            content: Text('Không thể gửi SOS. Hãy gọi trực tiếp cho gia đình trong trường hợp khẩn cấp!'),
             backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 5),
+            duration: Duration(seconds: 5),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-                'Không thể gửi SOS. Hãy gọi trực tiếp cho gia đình trong trường hợp khẩn cấp!'),
+          const SnackBar(
+            content: Text('Không thể gửi SOS. Hãy gọi trực tiếp cho gia đình trong trường hợp khẩn cấp!'),
             backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 5),
+            duration: Duration(seconds: 5),
           ),
         );
       }
@@ -179,30 +190,41 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
             ],
           ),
         ),
-        Stack(
-          children: [
-            IconButton(
-              onPressed: () {
-                // TODO: navigate to notifications
-              },
-              icon: const Icon(Icons.notifications_outlined,
-                  color: AppColors.textPrimary, size: 26),
-            ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: AppColors.error,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.surface, width: 2),
-                ),
+        Builder(builder: (context) {
+          final notifState = ref.watch(notificationProvider);
+          final unread = notifState.unreadCount;
+          return Stack(
+            children: [
+              IconButton(
+                onPressed: () => context.push('/notifications'),
+                icon: const Icon(Icons.notifications_outlined,
+                    color: AppColors.textPrimary, size: 26),
               ),
-            ),
-          ],
-        ),
+              if (unread > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: AppColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$unread',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        }),
       ],
     );
   }

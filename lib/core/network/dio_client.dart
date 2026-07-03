@@ -5,8 +5,8 @@ import '../auth/token_notifier.dart';
 
 class DioClient {
   static String get _baseUrl => kIsWeb
-      ? 'http://localhost:8082/api'
-      : 'http://10.0.2.2:8082/api';
+      ? 'http://localhost:8080/api'
+      : 'http://10.0.2.2:8080/api';
 
   static const _retryHeader = 'x-retry-after-refresh';
 

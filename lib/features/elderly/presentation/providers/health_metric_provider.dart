@@ -43,10 +43,21 @@ class HealthMetricNotifier extends StateNotifier<HealthMetricState> {
   final String elderlyId;
   HealthMetricNotifier(this._dio, this.elderlyId) : super(const HealthMetricState()) { load(); }
 
-  Future<void> load() async {
+  /// Load health metrics with optional date range filter.
+  /// - [fromDate]: start of range (inclusive).
+  /// - [toDate]: end of range (inclusive).  Defaults to now.
+  Future<void> load({DateTime? fromDate, DateTime? toDate}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final resp = await _dio.get('/elderly/$elderlyId/health-metrics');
+      final params = <String, dynamic>{};
+      if (fromDate != null) {
+        params['from'] = fromDate.toIso8601String().split('T')[0];
+      }
+      if (toDate != null) {
+        params['to'] = toDate.toIso8601String().split('T')[0];
+      }
+
+      final resp = await _dio.get('/elderly/$elderlyId/health-metrics', queryParameters: params.isEmpty ? null : params);
       final list = asListOfMaps(resp.data).map((e) => HealthMetricData.fromJson(e)).toList();
       final latest = <String, HealthMetricData>{};
       for (final m in list) {
@@ -56,6 +67,15 @@ class HealthMetricNotifier extends StateNotifier<HealthMetricState> {
     } on DioException catch (e) {
       state = state.copyWith(isLoading: false, error: 'Loi: ${e.message}');
     }
+  }
+
+  /// Reload with period filter: 'week' = last 7 days, 'month' = last 30 days.
+  Future<void> loadPeriod(String period) async {
+    final now = DateTime.now();
+    final from = period == 'month'
+        ? now.subtract(const Duration(days: 30))
+        : now.subtract(const Duration(days: 7));
+    await load(fromDate: from, toDate: now);
   }
 
   Future<void> addMetric({required String type, required String value, String? unit}) async {

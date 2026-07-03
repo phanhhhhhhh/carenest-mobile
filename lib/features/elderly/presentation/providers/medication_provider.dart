@@ -161,14 +161,33 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
     }
   }
 
-  void toggleTaken(String medicationId) {
+  /// POST /api/medications/{medicationId}/logs — persist taken status.
+  /// On success update local state; on failure revert toggle and report error.
+  Future<bool> toggleTaken(String medicationId, {void Function(String error)? onError}) async {
     final idx = state.items.indexWhere((m) => m.id == medicationId);
-    if (idx < 0) return;
+    if (idx < 0) return false;
+    final previousTaken = state.items[idx].taken;
+    final newTaken = !previousTaken;
+
+    // Optimistic update
     final updated = List<MedicationItem>.from(state.items);
-    updated[idx] = updated[idx].copyWith(taken: !updated[idx].taken);
+    updated[idx] = updated[idx].copyWith(taken: newTaken);
     state = state.copyWith(items: updated);
-    // Note: medication-logs endpoint chưa có trên backend
-    // Khi backend thêm POST /api/medications/{id}/log sẽ gọi ở đây
+
+    try {
+      await _dio.post('/medications/$medicationId/logs', data: {
+        'status': newTaken ? 'TAKEN' : 'MISSED',
+        'takenAt': DateTime.now().toIso8601String(),
+      });
+      return true;
+    } on DioException catch (e) {
+      // Revert on failure
+      final reverted = List<MedicationItem>.from(state.items);
+      reverted[idx] = reverted[idx].copyWith(taken: previousTaken);
+      state = state.copyWith(items: reverted);
+      onError?.call('Lỗi: ${e.message}');
+      return false;
+    }
   }
 }
 
