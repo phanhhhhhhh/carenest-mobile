@@ -115,6 +115,26 @@ public class EmergencyEventService {
         ).map(this::toResponse).orElse(null);
     }
 
+    @Transactional
+    public int acknowledgeAllForUser(Long elderlyId, Long acknowledgedBy) {
+        List<EmergencyEvent> activeEvents = emergencyEventRepository
+            .findByElderlyIdAndStatusOrderByTriggeredAtDesc(elderlyId, EmergencyStatus.ACTIVE);
+
+        OffsetDateTime now = OffsetDateTime.now();
+        int count = 0;
+        for (EmergencyEvent event : activeEvents) {
+            event.setAcknowledgedAt(now);
+            event.setAcknowledgedBy(acknowledgedBy);
+            event.setStatus(EmergencyStatus.RESOLVED);
+            event.setResolvedAt(now);
+            emergencyEventRepository.save(event);
+            count++;
+        }
+
+        log.info("Acknowledged {} active emergency events for elderlyId={}", count, elderlyId);
+        return count;
+    }
+
     private EmergencyEventResponse toResponse(EmergencyEvent e) {
         String acknowledgedByName = null;
         if (e.getAcknowledgedBy() != null) {
