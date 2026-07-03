@@ -4,18 +4,23 @@ import com.carenest.backend.dto.emergency.EmergencyEventRequest;
 import com.carenest.backend.dto.emergency.EmergencyEventResponse;
 import com.carenest.backend.entity.EmergencyEvent;
 import com.carenest.backend.entity.EmergencyStatus;
+import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.EmergencyEventRepository;
+import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -23,6 +28,8 @@ public class EmergencyEventService {
 
     private final EmergencyEventRepository emergencyEventRepository;
     private final UserRepository userRepository;
+    private final FamilyLinkRepository familyLinkRepository;
+    private final FcmService fcmService;
 
     public EmergencyEventResponse trigger(EmergencyEventRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
@@ -38,7 +45,29 @@ public class EmergencyEventService {
             .triggeredAt(OffsetDateTime.now())
             .build();
 
-        return toResponse(emergencyEventRepository.save(event));
+        EmergencyEvent saved = emergencyEventRepository.save(event);
+
+        // Send push notifications to all linked family members
+        List<Long> familyUserIds = familyLinkRepository
+            .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
+            .stream()
+            .map(fl -> fl.getFamily().getId())
+            .collect(Collectors.toList());
+
+        if (!familyUserIds.isEmpty()) {
+            fcmService.sendToUsers(familyUserIds,
+                "Cảnh báo khẩn cấp",
+                elderly.getName() + " đã kích hoạt cảnh báo khẩn cấp",
+                Map.of(
+                    "type", "EMERGENCY",
+                    "eventId", saved.getId().toString(),
+                    "elderlyId", elderly.getId().toString()
+                ));
+            log.info("Emergency push sent to {} family members for elderlyId={}",
+                familyUserIds.size(), elderly.getId());
+        }
+
+        return toResponse(saved);
     }
 
     public EmergencyEventResponse acknowledge(Long eventId, Long familyUserId) {
