@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../widgets/back_button.dart' as widget;
+import '../providers/auth_provider.dart';
+import '../widgets/back_button.dart' as back_btn;
 
 /// Step 1 of Forgot Password: enter phone number.
 /// Matches Miro design: gray circle back button, +84 prefix, title & subtitle.
-class ForgotPasswordPhoneScreen extends StatefulWidget {
+class ForgotPasswordPhoneScreen extends ConsumerStatefulWidget {
   const ForgotPasswordPhoneScreen({super.key});
 
   @override
-  State<ForgotPasswordPhoneScreen> createState() =>
+  ConsumerState<ForgotPasswordPhoneScreen> createState() =>
       _ForgotPasswordPhoneScreenState();
 }
 
 class _ForgotPasswordPhoneScreenState
-    extends State<ForgotPasswordPhoneScreen> {
+    extends ConsumerState<ForgotPasswordPhoneScreen> {
   final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _loading = false;
   String? _error;
 
   @override
@@ -31,29 +32,31 @@ class _ForgotPasswordPhoneScreenState
   }
 
   void _submit() {
-    final phone = _phoneController.text;
-    if (phone.isEmpty) {
+    final rawPhone = _phoneController.text;
+    if (rawPhone.isEmpty) {
       setState(() => _error = 'Vui lòng nhập số điện thoại');
       return;
     }
-    if (!_isValidPhone(phone)) {
+    if (!_isValidPhone(rawPhone)) {
       setState(() => _error = 'Số điện thoại không hợp lệ');
       return;
     }
-    setState(() {
-      _error = null;
-      _loading = true;
-    });
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() => _loading = false);
-        context.push('/forgot-password/otp');
-      }
-    });
+    setState(() => _error = null);
+    final phone = '+84${rawPhone.replaceFirst(RegExp(r'^0'), '')}';
+    ref.read(forgotPasswordPhoneProvider.notifier).sendOtp(phone);
   }
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(forgotPasswordPhoneProvider);
+    final rawPhone = _phoneController.text;
+    final phone = '+84${rawPhone.replaceFirst(RegExp(r'^0'), '')}';
+
+    ref.listen(forgotPasswordPhoneProvider, (_, next) {
+      if (next.success) {
+        context.push('/forgot-password/otp', extra: phone);
+      }
+    });
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -67,7 +70,7 @@ class _ForgotPasswordPhoneScreenState
                 const SizedBox(height: 12),
 
                 // Custom gray circle back button
-                widget.CircleBackButton(onPressed: () => context.pop()),
+                back_btn.CircleBackButton(onPressed: () => context.pop()),
 
                 const SizedBox(height: 32),
 
@@ -141,10 +144,10 @@ class _ForgotPasswordPhoneScreenState
                     ],
                   ),
                 ),
-                if (_error != null) ...[
+                if (_error != null || state.error != null) ...[
                   const SizedBox(height: 8),
                   Text(
-                    _error!,
+                    _error ?? state.error!,
                     style: const TextStyle(
                       color: AppColors.error,
                       fontSize: 13,
@@ -159,7 +162,7 @@ class _ForgotPasswordPhoneScreenState
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _loading ? null : _submit,
+                    onPressed: state.isLoading ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -170,7 +173,7 @@ class _ForgotPasswordPhoneScreenState
                       ),
                       elevation: 0,
                     ),
-                    child: _loading
+                    child: state.isLoading
                         ? const SizedBox(
                             width: 22,
                             height: 22,

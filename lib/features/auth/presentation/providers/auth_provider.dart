@@ -149,6 +149,8 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
   Future<void> register({
     required String name,
     required String role,
+    String? email,
+    String? password,
     String? dob,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
@@ -157,6 +159,8 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
         firebaseToken: firebaseToken,
         name: name,
         role: role,
+        email: email,
+        password: password,
         dob: dob,
       );
       state = state.copyWith(isLoading: false, success: true);
@@ -170,4 +174,108 @@ final registerProvider =
     StateNotifierProvider.autoDispose.family<RegisterNotifier, RegisterState, String>(
   (ref, firebaseToken) =>
       RegisterNotifier(ref.watch(authRepositoryProvider), firebaseToken),
+);
+
+// ── Forgot Password providers ──────────────────────────────────────
+
+class ForgotPasswordPhoneState {
+  final bool isLoading;
+  final String? error;
+  final bool success;
+  const ForgotPasswordPhoneState({this.isLoading = false, this.error, this.success = false});
+  ForgotPasswordPhoneState copyWith({bool? isLoading, String? error, bool? success}) =>
+      ForgotPasswordPhoneState(isLoading: isLoading ?? this.isLoading, error: error, success: success ?? this.success);
+}
+
+class ForgotPasswordPhoneNotifier extends StateNotifier<ForgotPasswordPhoneState> {
+  final AuthRepository _repo;
+  ForgotPasswordPhoneNotifier(this._repo) : super(const ForgotPasswordPhoneState());
+
+  Future<void> sendOtp(String phone) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repo.forgotPassword(phone);
+      state = state.copyWith(isLoading: false, success: true);
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Không thể gửi OTP')
+          : 'Không thể gửi OTP';
+      state = state.copyWith(isLoading: false, error: msg.toString());
+    } catch (_) {
+      state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
+    }
+  }
+}
+
+final forgotPasswordPhoneProvider =
+    StateNotifierProvider.autoDispose<ForgotPasswordPhoneNotifier, ForgotPasswordPhoneState>(
+  (ref) => ForgotPasswordPhoneNotifier(ref.watch(authRepositoryProvider)),
+);
+
+class ForgotPasswordOtpState {
+  final bool isLoading;
+  final String? error;
+  final bool success;
+  const ForgotPasswordOtpState({this.isLoading = false, this.error, this.success = false});
+  ForgotPasswordOtpState copyWith({bool? isLoading, String? error, bool? success}) =>
+      ForgotPasswordOtpState(isLoading: isLoading ?? this.isLoading, error: error, success: success ?? this.success);
+}
+
+class ForgotPasswordOtpNotifier extends StateNotifier<ForgotPasswordOtpState> {
+  final AuthRepository _repo;
+  ForgotPasswordOtpNotifier(this._repo) : super(const ForgotPasswordOtpState());
+
+  Future<void> verifyOtp(String phone, String otp) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repo.verifyResetOtp(phone, otp);
+      state = state.copyWith(isLoading: false, success: true);
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Mã OTP không đúng')
+          : 'Mã OTP không đúng';
+      state = state.copyWith(isLoading: false, error: msg.toString());
+    } catch (_) {
+      state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
+    }
+  }
+}
+
+final forgotPasswordOtpProvider =
+    StateNotifierProvider.autoDispose<ForgotPasswordOtpNotifier, ForgotPasswordOtpState>(
+  (ref) => ForgotPasswordOtpNotifier(ref.watch(authRepositoryProvider)),
+);
+
+class ResetPasswordState {
+  final bool isLoading;
+  final String? error;
+  final bool success;
+  const ResetPasswordState({this.isLoading = false, this.error, this.success = false});
+  ResetPasswordState copyWith({bool? isLoading, String? error, bool? success}) =>
+      ResetPasswordState(isLoading: isLoading ?? this.isLoading, error: error, success: success ?? this.success);
+}
+
+class ResetPasswordNotifier extends StateNotifier<ResetPasswordState> {
+  final AuthRepository _repo;
+  ResetPasswordNotifier(this._repo) : super(const ResetPasswordState());
+
+  Future<void> reset(String phone, String otp, String newPassword) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repo.resetPassword(phone, otp, newPassword);
+      state = state.copyWith(isLoading: false, success: true);
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Không thể đặt lại mật khẩu')
+          : 'Không thể đặt lại mật khẩu';
+      state = state.copyWith(isLoading: false, error: msg.toString());
+    } catch (_) {
+      state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
+    }
+  }
+}
+
+final resetPasswordProvider =
+    StateNotifierProvider.autoDispose<ResetPasswordNotifier, ResetPasswordState>(
+  (ref) => ResetPasswordNotifier(ref.watch(authRepositoryProvider)),
 );
