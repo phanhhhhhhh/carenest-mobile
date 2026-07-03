@@ -1,12 +1,16 @@
 package com.carenest.backend.security;
 
 import com.carenest.backend.entity.FamilyLinkStatus;
+import com.carenest.backend.repository.AppointmentRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
+import com.carenest.backend.repository.HealthMetricThresholdRepository;
 import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.MedicationRepository;
+import com.carenest.backend.repository.NotificationRepository;
+import com.carenest.backend.repository.ReminderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +24,10 @@ public class AuthorizationService {
     private final HealthMetricRepository healthMetricRepository;
     private final EmergencyEventRepository emergencyEventRepository;
     private final MedicationLogRepository medicationLogRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final NotificationRepository notificationRepository;
+    private final ReminderRepository reminderRepository;
+    private final HealthMetricThresholdRepository healthMetricThresholdRepository;
 
     public boolean isOwnerOrLinkedFamily(Long principalId, Long elderlyId) {
         if (principalId == null || elderlyId == null) return false;
@@ -68,6 +76,36 @@ public class AuthorizationService {
         if (principalId == null || logId == null) return false;
         return medicationLogRepository.findById(logId)
             .map(log -> isOwnerOrLinkedFamily(principalId, log.getMedication().getElderly().getId()))
+            .orElse(false);
+    }
+
+    public boolean canAccessAppointment(Long principalId, Long appointmentId) {
+        if (principalId == null || appointmentId == null) return false;
+        return appointmentRepository.findById(appointmentId)
+            .filter(a -> a.getDeletedAt() == null)
+            .map(a -> isOwnerOrLinkedFamily(principalId, a.getElderly().getId()))
+            .orElse(false);
+    }
+
+    public boolean canAccessNotification(Long principalId, Long notificationId) {
+        if (principalId == null || notificationId == null) return false;
+        return notificationRepository.findById(notificationId)
+            .map(n -> isOwnerOrLinkedFamily(principalId, n.getUser().getId()))
+            .orElse(false);
+    }
+
+    public boolean canAccessReminder(Long principalId, Long reminderId) {
+        if (principalId == null || reminderId == null) return false;
+        return reminderRepository.findById(reminderId)
+            .filter(r -> r.getDeletedAt() == null)
+            .map(r -> isOwnerOrLinkedFamily(principalId, r.getElderly().getId()))
+            .orElse(false);
+    }
+
+    public boolean canAccessHealthThreshold(Long principalId, Long thresholdId) {
+        if (principalId == null || thresholdId == null) return false;
+        return healthMetricThresholdRepository.findById(thresholdId)
+            .map(t -> isOwnerOrLinkedFamily(principalId, t.getElderly().getId()))
             .orElse(false);
     }
 }
