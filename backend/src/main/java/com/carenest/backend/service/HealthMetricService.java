@@ -24,6 +24,7 @@ public class HealthMetricService {
 
     private final HealthMetricRepository healthMetricRepository;
     private final UserRepository userRepository;
+    private final HealthMetricThresholdService thresholdService;
 
     public HealthMetricResponse create(HealthMetricRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
@@ -43,7 +44,12 @@ public class HealthMetricService {
             .notes(request.getNotes())
             .build();
 
-        return toResponse(healthMetricRepository.save(metric));
+        HealthMetric saved = healthMetricRepository.save(metric);
+
+        // Check thresholds and create alert if exceeded
+        thresholdService.checkAndAlert(saved);
+
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)

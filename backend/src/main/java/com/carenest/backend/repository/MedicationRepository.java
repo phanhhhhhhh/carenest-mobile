@@ -22,4 +22,9 @@ public interface MedicationRepository extends JpaRepository<Medication, Long> {
 
     @Query("SELECT m FROM Medication m WHERE m.elderly.id = :elderlyId AND m.nextDoseTime BETWEEN :from AND :to AND m.deletedAt IS NULL ORDER BY m.nextDoseTime ASC")
     List<Medication> findUpcomingByElderlyId(@Param("elderlyId") Long elderlyId, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    List<Medication> findByNextDoseTimeBetweenAndDeletedAtIsNull(OffsetDateTime from, OffsetDateTime to);
+
+    @Query("SELECT COUNT(ml) > 0 FROM MedicationLog ml WHERE ml.medication.id = :medicationId AND ml.takenAt BETWEEN :from AND :to")
+    boolean existsLogForMedicationInWindow(@Param("medicationId") Long medicationId, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 }
