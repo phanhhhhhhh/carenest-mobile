@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "phone không được để trống")
+    @NotBlank(message = "phone is required")
     private String phone;
 
     private String newPassword;

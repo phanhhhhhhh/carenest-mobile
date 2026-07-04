@@ -8,9 +8,9 @@ import lombok.Setter;
 @Setter
 public class VerifyResetOtpRequest {
 
-    @NotBlank(message = "phone không được để trống")
+    @NotBlank(message = "phone is required")
     private String phone;
 
-    @NotBlank(message = "otpToken không được để trống")
+    @NotBlank(message = "otpToken is required")
     private String otpToken;
 }

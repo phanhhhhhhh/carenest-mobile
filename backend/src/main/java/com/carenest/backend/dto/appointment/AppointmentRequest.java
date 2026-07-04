@@ -15,18 +15,18 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 public class AppointmentRequest {
 
-    @NotNull(message = "elderlyId không được để trống")
+    @NotNull(message = "elderlyId is required")
     private Long elderlyId;
 
-    @NotBlank(message = "doctor không được để trống")
+    @NotBlank(message = "doctor is required")
     private String doctor;
 
     private String specialty;
 
-    @NotBlank(message = "location không được để trống")
+    @NotBlank(message = "location is required")
     private String location;
 
-    @NotNull(message = "datetime không được để trống")
+    @NotNull(message = "datetime is required")
     private OffsetDateTime datetime;
 
     private String notes;
