@@ -29,7 +29,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
     final phone = await SecureStorage.getPhone();
     if (mounted) {
       setState(() {
-        _name = name ?? 'Người dùng';
+        _name = name ?? 'User';
         _phone = phone ?? '';
       });
     }
@@ -41,12 +41,12 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Thêm người thân'),
+        title: const Text('Add family member'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              'Nhập số điện thoại của người cao tuổi để gửi yêu cầu kết nối.',
+              'Enter the elderly person\'s phone number to send a connection request.',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -54,8 +54,8 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
               controller: phoneCtrl,
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                labelText: 'Số điện thoại',
-                hintText: 'Ví dụ: 0912345678',
+                labelText: 'Phone number',
+                hintText: 'e.g., 0912345678',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -68,7 +68,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           Consumer(
             builder: (context, ref, _) {
@@ -91,9 +91,9 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(ok
-                                  ? 'Đã gửi yêu cầu kết nối!'
+                                  ? 'Connection request sent!'
                                   : linkState.error ??
-                                      'Không thể gửi yêu cầu'),
+                                      'Could not send request'),
                               backgroundColor:
                                   ok ? AppColors.success : AppColors.error,
                             ),
@@ -106,7 +106,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                         }
                       },
                 child: Text(
-                    linkState.isLoading ? 'Đang gửi...' : 'Gửi yêu cầu'),
+                    linkState.isLoading ? 'Sending...' : 'Send request'),
               );
             },
           ),
@@ -194,7 +194,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
             color: AppColors.secondary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Text('Người thân / Gia đình',
+          child: const Text('Family / Caregiver',
               style: TextStyle(
                   color: AppColors.secondary,
                   fontSize: 13,
@@ -226,7 +226,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
             children: [
               Icon(Icons.people, color: AppColors.primary, size: 22),
               SizedBox(width: 10),
-              Text('Người thân đã kết nối',
+              Text('Connected family member',
                   style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -253,7 +253,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                           color: AppColors.textSecondary, fontSize: 12)),
                 if (totalMeds > 0) ...[
                   if (conditions.isNotEmpty) const Text(' • '),
-                  Text('$totalMeds thuốc',
+                  Text('$totalMeds medications',
                       style: const TextStyle(
                           color: AppColors.textSecondary, fontSize: 12)),
                 ],
@@ -302,13 +302,13 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Thêm người thân',
+                    Text('Add family member',
                         style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600)),
                     SizedBox(height: 2),
-                    Text('Kết nối với tài khoản người cao tuổi để theo dõi sức khỏe',
+                    Text('Connect with an elderly account to monitor health',
                         style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 12)),
@@ -328,36 +328,36 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
     final items = [
       (
         Icons.edit,
-        'Chỉnh sửa hồ sơ',
+        'Edit Profile',
         AppColors.primary,
         AppColors.primary.withOpacity(0.08),
         () {}
       ),
       (
         Icons.notifications_outlined,
-        'Cài đặt thông báo',
+        'Notification Settings',
         AppColors.secondary,
         AppColors.secondary.withOpacity(0.08),
         () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tính năng đang phát triển')),
+            const SnackBar(content: Text('Feature under development')),
           );
         }
       ),
       (
         Icons.workspace_premium_outlined,
-        'Nâng cấp Premium',
+        'Upgrade Premium',
         AppColors.warning,
         AppColors.warning.withOpacity(0.08),
         () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tính năng đang phát triển')),
+            const SnackBar(content: Text('Feature under development')),
           );
         }
       ),
       (
         Icons.help_outline,
-        'Trợ giúp & Hỗ trợ',
+        'Help & Support',
         AppColors.textSecondary,
         AppColors.textHint.withOpacity(0.08),
         () {}
@@ -412,7 +412,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
               child: const Icon(Icons.logout,
                   color: AppColors.error, size: 20),
             ),
-            title: const Text('Đăng xuất',
+            title: const Text('Log out',
                 style: TextStyle(
                     color: AppColors.error,
                     fontSize: 15,
