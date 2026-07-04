@@ -19,13 +19,13 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(familyDashboardProvider);
     final elderlyId = dashboardState.data?.elderlyId;
-    final elderlyName = dashboardState.data?.elderlyName ?? 'Người thân';
+    final elderlyName = dashboardState.data?.elderlyName ?? 'Loved one';
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          'Sức khỏe — $elderlyName',
+          'Health — $elderlyName',
           style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         backgroundColor: AppColors.surface,
@@ -44,7 +44,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
           children: [
             Icon(Icons.people_outline, size: 56, color: AppColors.textHint),
             SizedBox(height: 16),
-            Text('Chưa có người cao tuổi được liên kết',
+            Text('No elderly person linked yet',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
           ],
         ),
@@ -72,7 +72,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
               ElevatedButton.icon(
                 onPressed: () => ref.invalidate(healthMetricProvider(elderlyId)),
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Thử lại'),
+                label: const Text('Retry'),
               ),
             ],
           ),
@@ -87,7 +87,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
           children: [
             Icon(Icons.health_and_safety, size: 56, color: AppColors.textHint),
             SizedBox(height: 16),
-            Text('Chưa có dữ liệu sức khỏe',
+            Text('No health data yet',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
           ],
         ),
@@ -117,7 +117,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
     return Row(
       children: [
         _PeriodChip(
-          label: '7 ngày',
+          label: '7 days',
           selected: _period == 'week',
           onTap: () {
             setState(() => _period = 'week');
@@ -127,7 +127,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
         ),
         const SizedBox(width: 8),
         _PeriodChip(
-          label: '30 ngày',
+          label: '30 days',
           selected: _period == 'month',
           onTap: () {
             setState(() => _period = 'month');
@@ -231,7 +231,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: const Center(
-          child: Text('Cần thêm dữ liệu',
+          child: Text('Need more data',
               style: TextStyle(color: AppColors.textHint, fontSize: 12)),
         ),
       );
@@ -255,10 +255,10 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
 
   String _formatTime(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Vừa xong';
-    if (diff.inHours < 1) return '${diff.inMinutes}m trước';
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
     if (diff.inDays == 0) return '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-    if (diff.inDays == 1) return 'Hôm qua';
+    if (diff.inDays == 1) return 'Yesterday';
     return '${dt.day}/${dt.month}';
   }
 
@@ -266,20 +266,20 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
     switch (type) {
       case 'BLOOD_PRESSURE':
         final sys = double.tryParse(data.value);
-        if (sys != null && sys < 130) return _Status('Bình thường', AppColors.success);
-        if (sys != null && sys < 140) return _Status('Cao nhẹ', AppColors.warning);
-        return _Status('Cao', AppColors.error);
+        if (sys != null && sys < 130) return _Status('Normal', AppColors.success);
+        if (sys != null && sys < 140) return _Status('Slightly High', AppColors.warning);
+        return _Status('High', AppColors.error);
       case 'BLOOD_GLUCOSE':
         final v = double.tryParse(data.value);
-        if (v != null && v < 7.0) return _Status('Bình thường', AppColors.success);
-        if (v != null && v < 11.1) return _Status('Cao', AppColors.warning);
-        return _Status('Rất cao', AppColors.error);
+        if (v != null && v < 7.0) return _Status('Normal', AppColors.success);
+        if (v != null && v < 11.1) return _Status('High', AppColors.warning);
+        return _Status('Very High', AppColors.error);
       case 'HEART_RATE':
         final v = double.tryParse(data.value);
-        if (v != null && v >= 60 && v <= 100) return _Status('Bình thường', AppColors.success);
-        return _Status('Bất thường', AppColors.warning);
+        if (v != null && v >= 60 && v <= 100) return _Status('Normal', AppColors.success);
+        return _Status('Abnormal', AppColors.warning);
       default:
-        return _Status('Ghi nhận', AppColors.success);
+        return _Status('Recorded', AppColors.success);
     }
   }
 }
@@ -299,10 +299,10 @@ class _MetricDef {
 }
 
 const _metricDefs = <String, _MetricDef>{
-  'BLOOD_PRESSURE': _MetricDef('Huyết áp', Icons.favorite, AppColors.error, 'mmHg'),
-  'BLOOD_GLUCOSE': _MetricDef('Đường huyết', Icons.water_drop, Color(0xFF1565C0), 'mmol/L'),
-  'HEART_RATE': _MetricDef('Nhịp tim', Icons.monitor_heart, AppColors.secondary, 'bpm'),
-  'WEIGHT': _MetricDef('Cân nặng', Icons.monitor_weight, AppColors.warning, 'kg'),
+  'BLOOD_PRESSURE': _MetricDef('Blood Pressure', Icons.favorite, AppColors.error, 'mmHg'),
+  'BLOOD_GLUCOSE': _MetricDef('Blood Sugar', Icons.water_drop, Color(0xFF1565C0), 'mmol/L'),
+  'HEART_RATE': _MetricDef('Heart Rate', Icons.monitor_heart, AppColors.secondary, 'bpm'),
+  'WEIGHT': _MetricDef('Weight', Icons.monitor_weight, AppColors.warning, 'kg'),
 };
 
 class _PeriodChip extends StatelessWidget {
