@@ -47,11 +47,11 @@ class _ElderlyAppointmentsScreenState
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     final weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return '\, \ \ \';
+    return '${weekDays[dt.weekday - 1]}, ${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   String _formatTime(DateTime dt) {
-    return '\:\';
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -79,8 +79,8 @@ class _ElderlyAppointmentsScreenState
           labelStyle:
               const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           tabs: [
-            Tab(text: 'Upcoming (\)'),
-            Tab(text: 'Past (\)'),
+            Tab(text: 'Upcoming (${state.upcoming.length})'),
+            Tab(text: 'Past (${state.past.length})'),
           ],
         ),
       ),
