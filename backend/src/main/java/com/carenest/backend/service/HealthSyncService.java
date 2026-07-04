@@ -28,7 +28,7 @@ public class HealthSyncService {
 
     public HealthDataSyncResponse sync(Long elderlyId, HealthDataSyncRequest request) {
         User elderly = userRepository.findById(elderlyId)
-            .orElseThrow(() -> new NotFoundException("User không tồn tại: " + elderlyId));
+            .orElseThrow(() -> new NotFoundException("User not found: " + elderlyId));
 
         int imported = 0;
         int skipped = 0;
