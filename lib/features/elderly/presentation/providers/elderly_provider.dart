@@ -78,7 +78,7 @@ class ElderlyProfileNotifier extends StateNotifier<ElderlyProfileState> {
     try {
       final userId = await SecureStorage.getUserId();
       if (userId == null) {
-        state = state.copyWith(isLoading: false, error: 'Chưa đăng nhập');
+        state = state.copyWith(isLoading: false, error: 'Not logged in');
         return;
       }
       final resp = await _dio.get('/elderly-profiles/$userId');
@@ -92,10 +92,10 @@ class ElderlyProfileNotifier extends StateNotifier<ElderlyProfileState> {
         isLoading: false,
         error: e.response?.statusCode == 404
             ? null
-            : 'Lỗi tải hồ sơ',
+            : 'Error loading profile',
       );
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Lỗi tải hồ sơ');
+      state = state.copyWith(isLoading: false, error: 'Error loading profile');
     }
   }
 
@@ -124,9 +124,9 @@ class ElderlyProfileNotifier extends StateNotifier<ElderlyProfileState> {
       await load();
     } on DioException catch (e) {
       state = state.copyWith(
-          isUpdating: false, error: 'Lỗi cập nhật: ${e.message}');
+          isUpdating: false, error: 'Update error: ${e.message}');
     } catch (_) {
-      state = state.copyWith(isUpdating: false, error: 'Lỗi cập nhật');
+      state = state.copyWith(isUpdating: false, error: 'Update error');
     }
   }
 }
