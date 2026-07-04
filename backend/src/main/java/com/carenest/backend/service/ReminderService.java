@@ -74,6 +74,10 @@ public class ReminderService {
         reminderRepository.save(reminder);
     }
 
+    public void save(Reminder reminder) {
+        reminderRepository.save(reminder);
+    }
+
     @Transactional(readOnly = true)
     public List<Reminder> findDueReminders(OffsetDateTime from, OffsetDateTime to) {
         return reminderRepository.findByIsActiveTrueAndDeletedAtIsNullAndRemindAtBetween(from, to);
