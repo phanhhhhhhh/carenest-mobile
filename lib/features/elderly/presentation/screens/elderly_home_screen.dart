@@ -6,6 +6,7 @@ import '../providers/elderly_provider.dart';
 import '../providers/medication_provider.dart';
 import '../providers/health_metric_provider.dart';
 import '../../../family/presentation/providers/emergency_event_provider.dart';
+import '../../../family/presentation/providers/appointment_provider.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,7 +34,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
     final id = await SecureStorage.getUserId();
     if (mounted) {
       setState(() {
-        _name = name ?? 'bạn';
+        _name = name ?? 'you';
         _elderlyId = id;
       });
     }
@@ -41,9 +42,9 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
 
   String get _greeting {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Chào buổi sáng';
-    if (hour < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   }
 
   void _onSosPressed() {
@@ -72,7 +73,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Không thể gửi SOS: chưa xác định được tài khoản'),
+              content: Text('Unable to send SOS: account not identified'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -88,11 +89,11 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
           builder: (_) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             icon: const Icon(Icons.check_circle, color: AppColors.success, size: 56),
-            title: const Text('Đã gửi SOS',
+            title: const Text('SOS Sent',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontWeight: FontWeight.bold)),
             content: const Text(
-              'Tín hiệu khẩn cấp đã được gửi. Tất cả thành viên gia đình đã được thông báo.',
+              'Emergency signal has been sent. All family members have been notified.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
@@ -105,7 +106,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Đã hiểu'),
+                  child: const Text('Got it'),
                 ),
               ),
             ],
@@ -114,7 +115,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Không thể gửi SOS. Hãy gọi trực tiếp cho gia đình trong trường hợp khẩn cấp!'),
+            content: Text('Cannot send SOS. Please call your family directly in case of emergency!'),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 5),
           ),
@@ -124,7 +125,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Không thể gửi SOS. Hãy gọi trực tiếp cho gia đình trong trường hợp khẩn cấp!'),
+            content: Text('Cannot send SOS. Please call your family directly in case of emergency!'),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 5),
           ),
@@ -156,6 +157,8 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               _buildHealthSummary(),
               const SizedBox(height: 28),
               _buildTodayMedications(),
+              const SizedBox(height: 28),
+              _buildUpcomingAppointments(),
               const SizedBox(height: 20),
             ],
           ),
@@ -235,7 +238,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
         children: [
           if (_sosCountdown) ...[
             const Text(
-              'Đang gửi tín hiệu khẩn cấp...',
+              'Sending emergency signal...',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -271,7 +274,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               onPressed: _cancelSos,
               icon: const Icon(Icons.close, color: AppColors.textSecondary),
               label: const Text(
-                'Hủy',
+                'Cancel',
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.textSecondary,
@@ -322,7 +325,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Nhấn và giữ 3 giây để gửi tín hiệu khẩn cấp',
+              'Press and hold 3 seconds to send emergency signal',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 13,
@@ -369,7 +372,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Chỉ số hôm nay',
+          'Today\'s Readings',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -383,7 +386,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               icon: Icons.favorite,
               iconBgColor: const Color(0xFFFFEBEE),
               iconColor: AppColors.error,
-              label: 'Nhịp tim',
+              label: 'Heart Rate',
               value: heartRate ?? '--',
               unit: '',
             ),
@@ -392,7 +395,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               icon: Icons.water_drop,
               iconBgColor: const Color(0xFFE3F2FD),
               iconColor: const Color(0xFF1565C0),
-              label: 'Huyết áp',
+              label: 'Blood Pressure',
               value: bloodPressure ?? '--',
               unit: '',
             ),
@@ -401,7 +404,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               icon: Icons.opacity,
               iconBgColor: const Color(0xFFFFF3E0),
               iconColor: AppColors.warning,
-              label: 'Đường huyết',
+              label: 'Blood Sugar',
               value: bloodSugar ?? '--',
               unit: '',
             ),
@@ -421,7 +424,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Thuốc hôm nay',
+              'Today\'s Medications',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -432,7 +435,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               GestureDetector(
                 onTap: () => context.go('/elderly/medication'),
                 child: const Text(
-                  'Xem tất cả',
+                  'View all',
                   style: TextStyle(
                     color: AppColors.primary,
                     fontSize: 14,
@@ -464,7 +467,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
                     color: AppColors.textHint, size: 36),
                 SizedBox(height: 8),
                 Text(
-                  'Chưa có thuốc nào',
+                  'No medications yet',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,
@@ -481,11 +484,85 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
     );
   }
 
+  Widget _buildUpcomingAppointments() {
+    final state = ref.watch(appointmentProvider);
+    final upcoming = state.upcoming.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Upcoming Appointments',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            if (upcoming.isNotEmpty)
+              GestureDetector(
+                onTap: () => context.push('/elderly/appointments'),
+                child: const Text(
+                  'View all',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (state.isLoading && upcoming.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else if (upcoming.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: GestureDetector(
+              onTap: () => context.push('/elderly/appointments'),
+              child: const Column(
+                children: [
+                  Icon(Icons.event_note, color: AppColors.textHint, size: 32),
+                  SizedBox(height: 8),
+                  Text(
+                    'No appointments',
+                    style: TextStyle(
+                        color: AppColors.textSecondary, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ...upcoming.map((apt) => _AppointmentTile(
+                doctor: apt.doctor,
+                specialty: apt.specialty,
+                date: apt.appointmentDate,
+                onTap: () => context.push('/elderly/appointments'),
+              )),
+      ],
+    );
+  }
+
   String _formatDate() {
     final now = DateTime.now();
     const days = [
-      'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm',
-      'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật',
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+      'Friday', 'Saturday', 'Sunday',
     ];
     return '${days[now.weekday - 1]}, ${now.day}/${now.month}/${now.year}';
   }
@@ -665,6 +742,106 @@ class _MedicationTile extends StatelessWidget {
                 : null,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AppointmentTile extends StatelessWidget {
+  final String doctor;
+  final String specialty;
+  final DateTime date;
+  final VoidCallback onTap;
+
+  const _AppointmentTile({
+    required this.doctor,
+    required this.specialty,
+    required this.date,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final timeStr =
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${date.day}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    months[date.month - 1],
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    doctor,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$specialty • $timeStr',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textHint),
+          ],
+        ),
       ),
     );
   }
