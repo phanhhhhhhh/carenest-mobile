@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,12 +19,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "family_links")
+@Table(name = "family_links", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"elderly_id", "family_id"})
+})
 @Getter
 @Setter
 @Builder
@@ -38,10 +43,12 @@ public class FamilyLink {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "elderly_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User elderly;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User family;
 
     @Column(nullable = false, length = 50)
