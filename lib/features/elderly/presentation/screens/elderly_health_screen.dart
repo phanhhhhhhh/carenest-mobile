@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/config/app_config.dart';
+import '../../../../core/services/gemini_service.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../providers/health_metric_provider.dart';
 
@@ -34,9 +36,14 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
   bool _idLoaded = false;
   String _period = 'week';
 
+  // AI Insight state
+  String? _aiInsight;
+  bool _aiLoading = false;
+  String? _aiError;
+
   static const _metricConfigs = <String, _MetricConfig>{
     'BLOOD_PRESSURE': _MetricConfig(
-      'Huyết áp',
+      'Blood Pressure',
       Icons.favorite,
       AppColors.error,
       Color(0xFFFFEBEE),
@@ -44,7 +51,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
       normalRange: [90, 140],
     ),
     'BLOOD_GLUCOSE': _MetricConfig(
-      'Đường huyết',
+      'Blood Sugar',
       Icons.water_drop,
       Color(0xFF1565C0),
       Color(0xFFE3F2FD),
@@ -52,7 +59,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
       normalRange: [3.9, 6.7],
     ),
     'HEART_RATE': _MetricConfig(
-      'Nhịp tim',
+      'Heart Rate',
       Icons.monitor_heart,
       AppColors.secondary,
       Color(0xFFE8F5E9),
@@ -60,7 +67,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
       normalRange: [60, 100],
     ),
     'WEIGHT': _MetricConfig(
-      'Cân nặng',
+      'Weight',
       Icons.monitor_weight,
       AppColors.warning,
       Color(0xFFFFF3E0),
@@ -87,15 +94,15 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
   String _formatTime(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Vừa xong';
-    if (diff.inHours < 1) return '${diff.inMinutes}m trước';
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
     if (diff.inDays == 0) {
       final h = dt.hour.toString().padLeft(2, '0');
       final m = dt.minute.toString().padLeft(2, '0');
       return '$h:$m';
     }
-    if (diff.inDays == 1) return 'Hôm qua';
-    if (diff.inDays < 7) return '${diff.inDays} ngày trước';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
     return '${dt.day}/${dt.month}';
   }
 
@@ -151,6 +158,13 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
   }
 
   Widget _buildBody(HealthMetricState state) {
+    // Trigger AI insight loading when data first arrives or changes
+    if (!_aiLoading && _aiInsight == null && state.latestByType.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadAiInsight(state);
+      });
+    }
+
     if (state.isLoading && state.latestByType.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -170,7 +184,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
             ElevatedButton(
               onPressed: () =>
                   ref.read(healthMetricProvider(_elderlyId).notifier).load(),
-              child: const Text('Thử lại'),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -187,7 +201,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
           _buildEmptyState()
         else ...[
           const Text(
-            'Chỉ số mới nhất',
+            'Latest Readings',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -215,7 +229,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
     return Row(
       children: [
         _PeriodChip(
-          label: '7 ngày',
+          label: '7 days',
           selected: _period == 'week',
           onTap: () {
             setState(() => _period = 'week');
@@ -226,7 +240,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
         ),
         const SizedBox(width: 8),
         _PeriodChip(
-          label: '30 ngày',
+          label: '30 days',
           selected: _period == 'month',
           onTap: () {
             setState(() => _period = 'month');
@@ -239,26 +253,89 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
     );
   }
 
-  Widget _buildAiInsight(HealthMetricState state) {
-    String insight;
+  Future<void> _loadAiInsight(HealthMetricState state) async {
     if (state.latestByType.isEmpty) {
-      insight = 'Bắt đầu theo dõi sức khỏe bằng cách thêm chỉ số đầu tiên. '
-          'Tôi sẽ giúp bạn phân tích xu hướng và đưa ra lời khuyên phù hợp!';
-    } else {
-      final abnormal = state.latestByType.entries
-          .where((e) => _getStatus(e.value) != 'normal')
-          .toList();
-      if (abnormal.isEmpty) {
-        insight = 'Các chỉ số của bạn hôm nay đều trong ngưỡng bình thường. '
-            'Tiếp tục duy trì lối sống lành mạnh nhé!';
-      } else {
-        final names = abnormal
-            .map((e) => _metricConfigs[e.key]?.label ?? e.key)
-            .join(', ');
-        insight = 'Chú ý: $names đang ngoài ngưỡng bình thường. '
-            'Hãy theo dõi thêm và tham khảo ý kiến bác sĩ nếu tình trạng kéo dài.';
+      setState(() {
+        _aiInsight = 'Start tracking your health by adding your first reading. '
+            'I will help you analyze trends and provide personalized advice!';
+        _aiLoading = false;
+        _aiError = null;
+      });
+      return;
+    }
+
+    final hasGemini = AppConfig.geminiApiKey != 'YOUR_GEMINI_API_KEY';
+    if (!hasGemini) {
+      // Fallback to rule-based when no API key
+      setState(() {
+        _aiInsight = _ruleBasedInsight(state);
+        _aiLoading = false;
+        _aiError = null;
+      });
+      return;
+    }
+
+    if (_aiLoading) return;
+    setState(() {
+      _aiLoading = true;
+      _aiError = null;
+    });
+
+    try {
+      final prompt = _buildHealthPrompt(state);
+      final gemini = GeminiService();
+      final reply = await gemini.sendMessage(prompt);
+      if (mounted) {
+        setState(() {
+          _aiInsight = reply;
+          _aiLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _aiInsight = _ruleBasedInsight(state);
+          _aiLoading = false;
+          _aiError = 'Cannot connect to AI, showing basic analysis';
+        });
       }
     }
+  }
+
+  String _buildHealthPrompt(HealthMetricState state) {
+    final buf = StringBuffer();
+    buf.writeln('Briefly analyze the following health metrics for an elderly person (reply in English, max 3-4 sentences, friendly tone like a care assistant):');
+    for (final entry in state.latestByType.entries) {
+      final config = _metricConfigs[entry.key];
+      final data = entry.value;
+      if (config != null) {
+        final display = data.valueSecondary != null
+            ? '${data.value}/${data.valueSecondary}'
+            : data.value;
+        buf.writeln('- ${config.label}: $display ${config.unit} (at ${data.recordedAt.hour}:${data.recordedAt.minute.toString().padLeft(2, '0')})');
+      }
+    }
+    buf.writeln('Evaluate each metric, flag any abnormalities, and give one short piece of advice.');
+    return buf.toString();
+  }
+
+  String _ruleBasedInsight(HealthMetricState state) {
+    final abnormal = state.latestByType.entries
+        .where((e) => _getStatus(e.value) != 'normal')
+        .toList();
+    if (abnormal.isEmpty) {
+      return 'All your readings today are within normal range. '
+          'Keep up the healthy lifestyle!';
+    }
+    final names = abnormal
+        .map((e) => _metricConfigs[e.key]?.label ?? e.key)
+        .join(', ');
+    return 'Note: $names are outside normal range. '
+        'Monitor closely and consult your doctor if it persists.';
+  }
+
+  Widget _buildAiInsight(HealthMetricState state) {
+    final displayText = _aiInsight ?? _ruleBasedInsight(state);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -271,44 +348,96 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.success.withOpacity(0.2)),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.auto_awesome,
-                color: AppColors.success, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'AI Insight',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: _aiLoading
+                      ? AppColors.warning.withOpacity(0.15)
+                      : AppColors.success.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: _aiLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.warning,
+                        ),
+                      )
+                    : const Icon(Icons.auto_awesome,
+                        color: AppColors.success, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'AI Insight',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (_aiLoading) ...[
+                          const SizedBox(width: 8),
+                          const Text(
+                            'analyzing...',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      displayText,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!_aiLoading && _aiInsight != null)
+                InkWell(
+                  onTap: () => _loadAiInsight(state),
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.refresh,
+                        color: AppColors.textHint, size: 18),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  insight,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
+            ],
           ),
+          if (_aiError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _aiError!,
+              style: const TextStyle(
+                color: AppColors.warning,
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -331,7 +460,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Chưa có dữ liệu sức khỏe',
+            'No health data yet',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -340,7 +469,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Nhấn nút + để thêm chỉ số đầu tiên',
+            'Press + to add your first reading',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -377,7 +506,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Thêm chỉ số sức khỏe',
+              'Add health metric',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -399,7 +528,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
                       style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary)),
-                  subtitle: Text('Đơn vị: ${e.value.unit}',
+                  subtitle: Text('Unit: ${e.value.unit}',
                       style: const TextStyle(
                           color: AppColors.textSecondary, fontSize: 12)),
                   trailing: const Icon(Icons.chevron_right,
@@ -423,13 +552,13 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Nhập $label'),
+        title: Text('Enter $label'),
         content: TextFormField(
           controller: valueCtrl,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: 'Giá trị ($unit)',
+            labelText: 'Value ($unit)',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -438,7 +567,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -460,7 +589,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('Lưu'),
+            child: const Text('Save'),
           ),
         ],
       ),
@@ -523,11 +652,11 @@ class _MetricSection extends StatelessWidget {
   String _statusLabel() {
     switch (status) {
       case 'high':
-        return 'Cao';
+        return 'High';
       case 'low':
-        return 'Thấp';
+        return 'Low';
       case 'normal':
-        return 'Bình thường';
+        return 'Normal';
       default:
         return '';
     }
@@ -671,7 +800,7 @@ class _MetricSection extends StatelessWidget {
         ),
         child: const Center(
           child: Text(
-            'Cần thêm dữ liệu để hiển thị biểu đồ',
+            'Need more data to show chart',
             style: TextStyle(color: AppColors.textHint, fontSize: 12),
           ),
         ),

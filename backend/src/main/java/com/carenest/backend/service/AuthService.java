@@ -40,11 +40,11 @@ public class AuthService {
         String phone = firebaseService.verifyAndGetPhone(request.getFirebaseToken());
 
         if (request.getRole() == com.carenest.backend.entity.UserRole.ADMIN) {
-            throw new UnauthorizedException("Không thể tự đăng ký role ADMIN");
+            throw new UnauthorizedException("Cannot self-register ADMIN role");
         }
 
         if (userRepository.existsByPhoneAndDeletedAtIsNull(phone)) {
-            throw new ConflictException("Số điện thoại đã được đăng ký: " + phone);
+            throw new ConflictException("Phone number already registered: " + phone);
         }
 
         User user = User.builder()
@@ -63,7 +63,7 @@ public class AuthService {
         String phone = firebaseService.verifyAndGetPhone(request.getFirebaseToken());
 
         User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
-            .orElseThrow(() -> new NotFoundException("Số điện thoại chưa đăng ký: " + phone));
+            .orElseThrow(() -> new NotFoundException("Phone number not registered: " + phone));
 
         return buildAuthResponse(user, deviceInfo);
     }
@@ -74,12 +74,12 @@ public class AuthService {
 
         RefreshToken stored = refreshTokenRepository
             .findByTokenHashAndRevokedAtIsNull(tokenHash)
-            .orElseThrow(() -> new UnauthorizedException("Refresh token không hợp lệ hoặc đã hết hạn"));
+            .orElseThrow(() -> new UnauthorizedException("Refresh token is invalid or has expired"));
 
         if (stored.getExpiresAt().isBefore(OffsetDateTime.now())) {
             stored.setRevokedAt(OffsetDateTime.now());
             refreshTokenRepository.save(stored);
-            throw new UnauthorizedException("Refresh token đã hết hạn, vui lòng đăng nhập lại");
+            throw new UnauthorizedException("Refresh token expired, please log in again");
         }
 
         User user = stored.getUser();
@@ -94,6 +94,54 @@ public class AuthService {
     public void logout(Long userId) {
         refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(userId)
             .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
+    }
+
+    // ── Forgot Password Flow ──────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public void forgotPassword(String phone) {
+        userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException(
+                "Phone number not registered: " + phone));
+        // Firebase OTP is sent client-side via Firebase SDK.
+        // Backend just confirms the phone is registered.
+    }
+
+    @Transactional(readOnly = true)
+    public String verifyResetOtp(String phone, String otpToken) {
+        // otpToken is a Firebase idToken obtained after OTP verification
+        String verifiedPhone = firebaseService.verifyAndGetPhone(otpToken);
+
+        if (!verifiedPhone.equals(phone)) {
+            throw new UnauthorizedException(
+                "Verified phone does not match request");
+        }
+
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException(
+                "Phone number not registered: " + phone));
+
+        // Return a short-lived reset token
+        return jwtService.generateAccessToken(user.getId(), user.getRole());
+    }
+
+    @Transactional
+    public AuthResponse resetPassword(String phone, String newPassword, String confirmPassword) {
+        if (newPassword != null && !newPassword.equals(confirmPassword)) {
+            throw new IllegalArgumentException(
+                "newPassword and confirmPassword do not match");
+        }
+
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException(
+                "Phone number not registered: " + phone));
+
+        // Revoke all existing refresh tokens (force re-auth)
+        refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(user.getId())
+            .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
+
+        // Issue new tokens
+        return buildAuthResponse(user, "password-reset");
     }
 
     private AuthResponse buildAuthResponse(User user, String deviceInfo) {

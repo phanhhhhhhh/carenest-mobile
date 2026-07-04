@@ -22,7 +22,7 @@ public class FirebaseService {
     public String verifyAndGetPhone(String idToken) {
         if (idToken.startsWith(DEV_PREFIX)) {
             if (!environment.matchesProfiles("local") && !environment.matchesProfiles("dev")) {
-                throw new UnauthorizedException("DEV_PHONE bypass không được phép trong môi trường này");
+                throw new UnauthorizedException("DEV_PHONE bypass is not allowed in this environment");
             }
             String phone = idToken.substring(DEV_PREFIX.length());
             log.warn("Dev mode auth — skipping Firebase for phone: {}", phone);
