@@ -39,6 +39,17 @@ public class MedicationReminderScheduler {
             .findByNextDoseTimeBetweenAndDeletedAtIsNull(oneHourAgo, now);
 
         for (Medication med : dueMedications) {
+            // Honour quiet hours — defer until quiet period ends
+            if (med.getElderly().getNotificationPreferences() != null
+                && med.getElderly().getNotificationPreferences().isInQuietHours()) {
+                // Bump nextDoseTime by 30 min so it stays in upcoming check windows
+                med.setNextDoseTime(now.plusMinutes(30));
+                medicationRepository.save(med);
+                log.debug("Deferred medication reminder {} — within quiet hours for userId={}",
+                    med.getId(), med.getElderly().getId());
+                continue;
+            }
+
             // Check if a log already exists for this medication in the same window
             boolean alreadyLogged = medicationRepository
                 .existsLogForMedicationInWindow(med.getId(), oneHourAgo, now);
