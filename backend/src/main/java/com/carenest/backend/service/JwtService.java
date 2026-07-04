@@ -39,7 +39,7 @@ public class JwtService {
             boolean isSafeProfile = environment.matchesProfiles("local") || environment.matchesProfiles("dev");
             if (!isSafeProfile) {
                 throw new IllegalStateException(
-                    "JWT secret quá yếu hoặc dùng default — set JWT_SECRET env var trước khi deploy"
+                    "JWT secret is too weak or using default — set JWT_SECRET env var before deploy"
                 );
             }
             log.warn("JWT secret is weak or default — acceptable only in local/dev profile. Set JWT_SECRET before deploying.");
