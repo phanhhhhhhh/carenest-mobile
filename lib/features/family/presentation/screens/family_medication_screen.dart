@@ -150,7 +150,7 @@ class _FamilyMedicationScreenState
                 ],
                 const SizedBox(height: 14),
                 // Day-of-week selector
-                const Text('Days of week',
+                const Text('Days of the week',
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
