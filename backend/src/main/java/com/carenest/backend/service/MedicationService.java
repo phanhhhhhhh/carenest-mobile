@@ -29,7 +29,7 @@ public class MedicationService {
 
     public MedicationResponse create(MedicationRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
-            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
         Medication medication = Medication.builder()
             .elderly(elderly)
@@ -86,7 +86,7 @@ public class MedicationService {
 
     private Medication findOrThrow(Long id) {
         return medicationRepository.findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new NotFoundException("Medication không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("Medication not found: " + id));
     }
 
     private MedicationResponse toResponse(Medication m) {

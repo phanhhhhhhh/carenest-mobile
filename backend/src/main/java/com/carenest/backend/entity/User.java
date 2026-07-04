@@ -52,7 +52,7 @@ public class User {
     private String fcmToken;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "notification_preferences", columnDefinition = "jsonb")
+    @Column(name = "notification_preferences")
     @Builder.Default
     private NotificationPreferences notificationPreferences = new NotificationPreferences();
 

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -74,5 +75,18 @@ public class EmergencyEventController {
     @PreAuthorize("@authz.canAccessEmergencyEvent(authentication.principal, #id)")
     public ResponseEntity<EmergencyEventResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(emergencyEventService.getById(id));
+    }
+
+    @PatchMapping("/users/{userId}/emergency-events/read-all")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
+    public ResponseEntity<Map<String, Object>> readAll(
+        @PathVariable Long userId,
+        @AuthenticationPrincipal Long principalId
+    ) {
+        int count = emergencyEventService.acknowledgeAllForUser(userId, principalId);
+        return ResponseEntity.ok(Map.of(
+            "message", "All emergency alerts marked as read",
+            "acknowledgedCount", count
+        ));
     }
 }

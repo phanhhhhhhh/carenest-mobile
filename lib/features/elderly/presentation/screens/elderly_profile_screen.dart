@@ -32,7 +32,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
     final role = await SecureStorage.getRole();
     if (mounted) {
       setState(() {
-        _name = name ?? 'Người dùng';
+        _name = name ?? 'User';
         _phone = phone ?? '';
         _role = role ?? 'ELDERLY';
       });
@@ -120,7 +120,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            _role == 'ELDERLY' ? 'Người cao tuổi' : 'Người thân',
+            _role == 'ELDERLY' ? 'Elderly' : 'Family',
             style: TextStyle(
               color: _role == 'ELDERLY'
                   ? AppColors.primary
@@ -160,7 +160,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
                   color: AppColors.primary, size: 22),
               SizedBox(width: 10),
               Text(
-                'Hồ sơ sức khỏe',
+                'Health Profile',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -193,7 +193,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
                       onPressed: () => ref
                           .read(elderlyProfileProvider.notifier)
                           .load(),
-                      child: const Text('Thử lại'),
+                      child: const Text('Retry'),
                     ),
                   ],
                 ),
@@ -203,15 +203,15 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
             _buildConditionTags(profileState.profile?.healthConditions ?? []),
             if (profileState.profile?.bloodType?.isNotEmpty == true) ...[
               const SizedBox(height: 14),
-              _InfoRow('Nhóm máu', profileState.profile!.bloodType!),
+              _InfoRow('Blood Type', profileState.profile!.bloodType!),
             ],
             if (profileState.profile?.weight != null) ...[
               const SizedBox(height: 8),
-              _InfoRow('Cân nặng', '${profileState.profile!.weight} kg'),
+              _InfoRow('Weight', '${profileState.profile!.weight} kg'),
             ],
             if (profileState.profile?.height != null) ...[
               const SizedBox(height: 8),
-              _InfoRow('Chiều cao', '${profileState.profile!.height} cm'),
+              _InfoRow('Height', '${profileState.profile!.height} cm'),
             ],
             if ((profileState.profile?.allergies ?? []).isNotEmpty) ...[
               const SizedBox(height: 14),
@@ -219,7 +219,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
             ],
             if (profileState.profile?.notes?.isNotEmpty == true) ...[
               const SizedBox(height: 14),
-              _InfoRow('Ghi chú', profileState.profile!.notes ?? ''),
+              _InfoRow('Notes', profileState.profile!.notes ?? ''),
             ],
           ],
         ],
@@ -230,7 +230,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
   Widget _buildConditionTags(List<String> conditions) {
     if (conditions.isEmpty) {
       return const Text(
-        'Chưa có thông tin bệnh lý',
+        'No medical conditions recorded',
         style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
       );
     }
@@ -241,11 +241,9 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         Color tagColor;
         switch (c.toLowerCase()) {
           case 'diabetes':
-          case 'tiểu đường':
             tagColor = AppColors.warning;
             break;
           case 'hypertension':
-          case 'cao huyết áp':
             tagColor = AppColors.error;
             break;
           default:
@@ -275,7 +273,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Dị ứng thuốc',
+        const Text('Drug Allergies',
             style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 13,
@@ -333,7 +331,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
               Icon(Icons.people, color: AppColors.secondary, size: 22),
               SizedBox(width: 10),
               Text(
-                'Người thân đã kết nối',
+                'Connected Family Members',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -354,7 +352,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'Chưa có người thân nào được kết nối.\nYêu cầu thành viên gia đình thêm bạn qua số điện thoại.',
+                'No family members connected yet.\nAsk your family to add you by phone number.',
                 style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
@@ -395,45 +393,45 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
     final items = [
       (
         Icons.edit,
-        'Chỉnh sửa hồ sơ',
+        'Edit Profile',
         AppColors.primary,
         AppColors.primary.withOpacity(0.08),
         () => context.go('/elderly/edit-profile'),
       ),
       (
         Icons.contact_emergency,
-        'Liên hệ khẩn cấp',
+        'Emergency Contacts',
         AppColors.sosPrimary,
         AppColors.sosPrimary.withOpacity(0.08),
         () => context.go('/elderly/emergency-contacts'),
       ),
       (
         Icons.notifications_outlined,
-        'Cài đặt thông báo',
+        'Notification Settings',
         AppColors.secondary,
         AppColors.secondary.withOpacity(0.08),
         () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Tính năng đang phát triển')),
+                content: Text('Feature under development')),
           );
         }
       ),
       (
         Icons.workspace_premium_outlined,
-        'Nâng cấp Premium',
+        'Upgrade to Premium',
         AppColors.warning,
         AppColors.warning.withOpacity(0.08),
         () {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Tính năng đang phát triển')),
+                content: Text('Feature under development')),
           );
         }
       ),
       (
         Icons.help_outline,
-        'Trợ giúp & Hỗ trợ',
+        'Help & Support',
         AppColors.textSecondary,
         AppColors.textHint.withOpacity(0.08),
         () {}
@@ -493,7 +491,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
                   color: AppColors.error, size: 20),
             ),
             title: const Text(
-              'Đăng xuất',
+              'Sign Out',
               style: TextStyle(
                 color: AppColors.error,
                 fontSize: 15,
