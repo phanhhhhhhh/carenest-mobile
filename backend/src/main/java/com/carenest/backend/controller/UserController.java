@@ -56,6 +56,6 @@ public class UserController {
         @Valid @RequestBody FcmTokenRequest request
     ) {
         userService.updateFcmToken(userId, request.getFcmToken());
-        return ResponseEntity.ok(Map.of("message", "FCM token đã được cập nhật"));
+        return ResponseEntity.ok(Map.of("message", "FCM token updated successfully"));
     }
 }
