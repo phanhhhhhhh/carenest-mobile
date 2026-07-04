@@ -23,17 +23,17 @@ class ElderlyShell extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'Trang chủ',
+            label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.medication_outlined),
             activeIcon: Icon(Icons.medication),
-            label: 'Thuốc',
+            label: 'Meds',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_outline),
             activeIcon: Icon(Icons.favorite),
-            label: 'Sức khỏe',
+            label: 'Health',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
@@ -43,7 +43,7 @@ class ElderlyShell extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
-            label: 'Hồ sơ',
+            label: 'Profile',
           ),
         ],
       ),
