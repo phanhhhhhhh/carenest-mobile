@@ -65,7 +65,7 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
     try {
       final userId = await SecureStorage.getUserId();
       if (userId == null) {
-        state = state.copyWith(isLoading: false, error: 'Chưa đăng nhập');
+        state = state.copyWith(isLoading: false, error: 'Not logged in');
         return;
       }
 
@@ -109,7 +109,7 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
               : <dynamic>[];
           totalMeds = meds.length;
         } on DioException {
-          // bỏ qua
+          // skip
         }
       }
 
@@ -125,7 +125,7 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
         ),
       );
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
+      state = state.copyWith(isLoading: false, error: 'Connection error');
     }
   }
 
@@ -178,7 +178,7 @@ class FamilyLinkNotifier extends StateNotifier<FamilyLinkRequestState> {
       final familyId = await SecureStorage.getUserId();
       if (familyId == null) {
         state = state.copyWith(
-            isLoading: false, error: 'Chưa đăng nhập');
+            isLoading: false, error: 'Not logged in');
         return false;
       }
       await _dio.post('/family-links', data: {
@@ -189,13 +189,13 @@ class FamilyLinkNotifier extends StateNotifier<FamilyLinkRequestState> {
       return true;
     } on DioException catch (e) {
       final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Không thể gửi yêu cầu')
-          : 'Không thể gửi yêu cầu kết nối';
+          ? (e.response?.data['message'] ?? 'Cannot send request')
+          : 'Cannot send connection request';
       state = state.copyWith(isLoading: false, error: msg.toString());
       return false;
     } catch (_) {
       state = state.copyWith(
-          isLoading: false, error: 'Lỗi kết nối');
+          isLoading: false, error: 'Connection error');
       return false;
     }
   }
@@ -271,7 +271,7 @@ class LinkedFamilyNotifier extends StateNotifier<LinkedFamilyState> {
       state = state.copyWith(isLoading: false, members: members);
     } on DioException catch (e) {
       state = state.copyWith(
-          isLoading: false, error: 'Lỗi tải danh sách: ${e.message}');
+          isLoading: false, error: 'Error loading list: ${e.message}');
     }
   }
 }
