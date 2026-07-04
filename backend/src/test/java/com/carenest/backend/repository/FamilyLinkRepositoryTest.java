@@ -145,7 +145,7 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    void deleteElderlyUser_cascadeDeletesFamilyLinks() {
+    void softDeleteElderly_doesNotHardDeleteLink() {
         User elderly = createElderlyUser("0904000015");
         User family = createFamilyUser("0904000016");
 
@@ -153,9 +153,14 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
         Long linkId = link.getId();
         familyLinkRepository.flush();
 
-        userRepository.delete(elderly);
+        // Soft-delete the elderly user (app uses soft deletes)
+        elderly.setDeletedAt(java.time.OffsetDateTime.now());
+        userRepository.save(elderly);
         userRepository.flush();
 
-        assertThat(familyLinkRepository.findById(linkId)).isEmpty();
+        // Family link should still exist (soft-delete doesn't cascade)
+        assertThat(familyLinkRepository.findById(linkId)).isPresent();
+        // But queries that filter deleted users should exclude it
+        assertThat(userRepository.findByPhoneAndDeletedAtIsNull("0904000015")).isEmpty();
     }
 }
