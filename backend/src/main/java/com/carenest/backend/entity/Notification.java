@@ -53,7 +53,7 @@ public class Notification {
     private String body;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
+    @Column
     @Builder.Default
     private Map<String, Object> data = java.util.Collections.emptyMap();
 
