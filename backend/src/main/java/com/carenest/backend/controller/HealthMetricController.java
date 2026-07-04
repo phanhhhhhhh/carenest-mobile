@@ -134,7 +134,7 @@ public class HealthMetricController {
     public ResponseEntity<?> generateWeeklySummary(@PathVariable Long elderlyId) {
         String summary = weeklySummaryService.generateWeeklySummary(elderlyId);
         return ResponseEntity.ok(java.util.Map.of(
-            "message", "Đã tạo tổng kết tuần",
+            "message", "Weekly summary generated",
             "summary", summary
         ));
     }
