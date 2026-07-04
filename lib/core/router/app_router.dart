@@ -21,8 +21,11 @@ import '../../features/family/presentation/screens/family_medication_screen.dart
 import '../../features/family/presentation/screens/family_health_screen.dart';
 import '../../features/family/presentation/screens/family_alerts_screen.dart';
 import '../../features/family/presentation/screens/family_profile_screen.dart';
+import '../../features/family/presentation/screens/family_appointments_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_edit_profile_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_emergency_contacts_screen.dart';
+import '../../features/elderly/presentation/screens/elderly_medication_history_screen.dart';
+import '../../features/elderly/presentation/screens/elderly_appointments_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 
 final appRouter = GoRouter(
@@ -114,6 +117,28 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/elderly/emergency-contacts',
       builder: (context, state) => const ElderlyEmergencyContactsScreen(),
+    ),
+
+    // Medication history
+    GoRoute(
+      path: '/elderly/medication-history',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return ElderlyMedicationHistoryScreen(
+          medicationId: extra['medicationId'] as String,
+          medicationName: extra['medicationName'] as String,
+        );
+      },
+    ),
+
+    // Appointments
+    GoRoute(
+      path: '/elderly/appointments',
+      builder: (context, state) => const ElderlyAppointmentsScreen(),
+    ),
+    GoRoute(
+      path: '/family/appointments',
+      builder: (context, state) => const FamilyAppointmentsScreen(),
     ),
 
     // Notifications (auth required)
