@@ -28,14 +28,14 @@ public class ElderlyProfileService {
 
     public ElderlyProfileResponse create(Long userId, ElderlyProfileRequest request) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User không tồn tại: " + userId));
+            .orElseThrow(() -> new NotFoundException("User not found: " + userId));
 
         if (user.getRole() != UserRole.ELDERLY) {
-            throw new UnauthorizedException("Chỉ user có role ELDERLY mới có thể tạo profile");
+            throw new UnauthorizedException("Only ELDERLY role users can create a profile");
         }
 
         if (elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(userId).isPresent()) {
-            throw new IllegalArgumentException("Profile đã tồn tại cho user này");
+            throw new IllegalArgumentException("Profile already exists for this user");
         }
 
         ElderlyProfile profile = ElderlyProfile.builder()
@@ -87,7 +87,7 @@ public class ElderlyProfileService {
 
     private ElderlyProfile findOrThrow(Long id) {
         return elderlyProfileRepository.findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new NotFoundException("ElderlyProfile không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("ElderlyProfile not found: " + id));
     }
 
     private List<EmergencyContact> mapContactsFromDto(List<EmergencyContactDto> dtos) {
