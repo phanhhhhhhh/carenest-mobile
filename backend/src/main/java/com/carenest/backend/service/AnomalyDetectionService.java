@@ -73,19 +73,19 @@ public class AnomalyDetectionService {
 
         // 1. Z-Score check
         if (checkZScore(metric, recentMetrics)) {
-            reasons.add("Z-Score: giá trị lệch " + ZSCORE_THRESHOLD + "+ độ lệch chuẩn");
+            reasons.add("Z-Score: value deviates " + ZSCORE_THRESHOLD + "+ standard deviations");
             anomalyCount++;
         }
 
         // 2. IQR outlier check
         if (checkIQR(metric, recentMetrics)) {
-            reasons.add("IQR: giá trị nằm ngoài khoảng tứ phân vị");
+            reasons.add("IQR: value outside interquartile range");
             anomalyCount++;
         }
 
         // 3. Moving average deviation
         if (checkMovingAverage(metric, recentMetrics)) {
-            reasons.add("Moving Average: lệch >" + (int) MOVING_AVG_DEVIATION_PCT + "% so với trung bình " + MA_WINDOW + " lần gần nhất");
+            reasons.add("Moving Average: deviation >" + (int) MOVING_AVG_DEVIATION_PCT + "% from " + MA_WINDOW + " recent average");
             anomalyCount++;
         }
 
@@ -168,10 +168,10 @@ public class AnomalyDetectionService {
 
     private void createAnomalyAlert(HealthMetric metric, List<String> reasons) {
         User elderly = metric.getElderly();
-        String title = "⚠️ Bất thường: " + formatType(metric.getType());
+        String title = "⚠️ Anomaly: " + formatType(metric.getType());
         String body = elderly.getName() + " - " + formatType(metric.getType())
             + ": " + metric.getValue() + " " + metric.getUnit()
-            + ". Lý do: " + String.join("; ", reasons);
+            + ". Reason: " + String.join("; ", reasons);
 
         Notification notification = Notification.builder()
             .user(elderly)
@@ -225,11 +225,11 @@ public class AnomalyDetectionService {
 
     private String formatType(HealthMetricType type) {
         return switch (type) {
-            case BLOOD_PRESSURE -> "Huyết áp";
-            case HEART_RATE -> "Nhịp tim";
-            case BLOOD_GLUCOSE -> "Đường huyết";
-            case WEIGHT -> "Cân nặng";
-            case TEMPERATURE -> "Nhiệt độ";
+            case BLOOD_PRESSURE -> "Blood Pressure";
+            case HEART_RATE -> "Heart Rate";
+            case BLOOD_GLUCOSE -> "Blood Glucose";
+            case WEIGHT -> "Weight";
+            case TEMPERATURE -> "Temperature";
             case SPO2 -> "SpO2";
         };
     }
