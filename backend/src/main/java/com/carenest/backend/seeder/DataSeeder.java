@@ -80,63 +80,63 @@ public class DataSeeder implements CommandLineRunner {
     private void seedUsers() {
         log.info("Seeding users...");
 
-        User e1 = saveUser("Nguyễn Văn An",  "+84912345001", LocalDate.of(1948, 3, 15),  UserRole.ELDERLY);
-        User e2 = saveUser("Trần Thị Bình",   "+84912345002", LocalDate.of(1945, 7, 22),  UserRole.ELDERLY);
-        User e3 = saveUser("Lê Văn Cường",    "+84912345003", LocalDate.of(1950, 11, 8),  UserRole.ELDERLY);
-        User e4 = saveUser("Phạm Thị Dung",   "+84912345004", LocalDate.of(1943, 1, 30),  UserRole.ELDERLY);
-        User e5 = saveUser("Hoàng Văn Em",    "+84912345005", LocalDate.of(1952, 9, 12),  UserRole.ELDERLY);
+        User e1 = saveUser("John Anderson",  "+84912345001", LocalDate.of(1948, 3, 15),  UserRole.ELDERLY);
+        User e2 = saveUser("Jane Thompson",   "+84912345002", LocalDate.of(1945, 7, 22),  UserRole.ELDERLY);
+        User e3 = saveUser("Robert Lee",    "+84912345003", LocalDate.of(1950, 11, 8),  UserRole.ELDERLY);
+        User e4 = saveUser("Mary Pham",   "+84912345004", LocalDate.of(1943, 1, 30),  UserRole.ELDERLY);
+        User e5 = saveUser("William Hoang",    "+84912345005", LocalDate.of(1952, 9, 12),  UserRole.ELDERLY);
 
         elderlyUsers.addAll(List.of(e1, e2, e3, e4, e5));
 
         saveElderlyProfile(e1,
-            List.of("Tiểu đường type 2", "Tăng huyết áp"),
+            List.of("Type 2 Diabetes", "Hypertension"),
             List.of(EmergencyContact.builder()
-                .name("Nguyễn Thị Lan").phone("0912111001").relationship("Con gái").build()));
+                .name("Linda Nguyen").phone("0912111001").relationship("Daughter").build()));
 
         saveElderlyProfile(e2,
-            List.of("Suy tim độ II", "Rung nhĩ"),
+            List.of("Heart Failure Class II", "Atrial Fibrillation"),
             List.of(EmergencyContact.builder()
-                .name("Trần Văn Minh").phone("0912111002").relationship("Con trai").build()));
+                .name("Michael Tran").phone("0912111002").relationship("Son").build()));
 
         saveElderlyProfile(e3,
-            List.of("COPD", "Thoái hóa khớp gối"),
+            List.of("COPD", "Knee Osteoarthritis"),
             List.of(EmergencyContact.builder()
-                .name("Lê Thị Hoa").phone("0912111003").relationship("Vợ").build()));
+                .name("Sarah Le").phone("0912111003").relationship("Wife").build()));
 
         saveElderlyProfile(e4,
-            List.of("Alzheimer giai đoạn đầu", "Loãng xương"),
+            List.of("Early-stage Alzheimer", "Osteoporosis"),
             List.of(EmergencyContact.builder()
-                .name("Phạm Văn Đức").phone("0912111004").relationship("Con trai").build()));
+                .name("David Pham").phone("0912111004").relationship("Son").build()));
 
         saveElderlyProfile(e5,
-            List.of("Parkinson giai đoạn 2", "Trầm cảm"),
+            List.of("Parkinson Stage 2", "Depression"),
             List.of(EmergencyContact.builder()
-                .name("Hoàng Thị Phương").phone("0912111005").relationship("Con gái").build()));
+                .name("Emily Hoang").phone("0912111005").relationship("Daughter").build()));
 
-        User f1  = saveUser("Nguyễn Thị Lan",  "+84918111001", null, UserRole.FAMILY);
-        User f2  = saveUser("Trần Văn Minh",    "+84918111002", null, UserRole.FAMILY);
-        User f3  = saveUser("Lê Thị Hoa",       "+84918111003", null, UserRole.FAMILY);
-        User f4  = saveUser("Phạm Văn Đức",     "+84918111004", null, UserRole.FAMILY);
-        User f5  = saveUser("Hoàng Thị Phương", "+84918111005", null, UserRole.FAMILY);
-        User f6  = saveUser("Vũ Thị Mai",       "+84918111006", null, UserRole.FAMILY);
-        User f7  = saveUser("Đặng Văn Nam",     "+84918111007", null, UserRole.FAMILY);
-        User f8  = saveUser("Bùi Thị Oanh",     "+84918111008", null, UserRole.FAMILY);
-        User f9  = saveUser("Đỗ Văn Phong",     "+84918111009", null, UserRole.FAMILY);
-        User f10 = saveUser("Ngô Thị Quỳnh",    "+84918111010", null, UserRole.FAMILY);
+        User f1  = saveUser("Linda Nguyen",  "+84918111001", null, UserRole.FAMILY);
+        User f2  = saveUser("Michael Tran",    "+84918111002", null, UserRole.FAMILY);
+        User f3  = saveUser("Sarah Le",       "+84918111003", null, UserRole.FAMILY);
+        User f4  = saveUser("David Pham",     "+84918111004", null, UserRole.FAMILY);
+        User f5  = saveUser("Emily Hoang", "+84918111005", null, UserRole.FAMILY);
+        User f6  = saveUser("Anna Vu",       "+84918111006", null, UserRole.FAMILY);
+        User f7  = saveUser("Nathan Dang",     "+84918111007", null, UserRole.FAMILY);
+        User f8  = saveUser("Olivia Bui",     "+84918111008", null, UserRole.FAMILY);
+        User f9  = saveUser("Peter Do",     "+84918111009", null, UserRole.FAMILY);
+        User f10 = saveUser("Quinn Ngo",    "+84918111010", null, UserRole.FAMILY);
 
         familyUsers.addAll(List.of(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10));
 
-        saveFamilyLink(e1, f1, "Con gái");
-        saveFamilyLink(e2, f2, "Con trai");
-        saveFamilyLink(e3, f3, "Vợ");
-        saveFamilyLink(e4, f4, "Con trai");
-        saveFamilyLink(e5, f5, "Con gái");
+        saveFamilyLink(e1, f1, "Daughter");
+        saveFamilyLink(e2, f2, "Son");
+        saveFamilyLink(e3, f3, "Wife");
+        saveFamilyLink(e4, f4, "Son");
+        saveFamilyLink(e5, f5, "Daughter");
 
-        saveFamilyLink(e1, f6,  "Người thân");
-        saveFamilyLink(e1, f7,  "Người thân");
-        saveFamilyLink(e1, f8,  "Người thân");
-        saveFamilyLink(e2, f9,  "Người thân");
-        saveFamilyLink(e2, f10, "Người thân");
+        saveFamilyLink(e1, f6,  "Relative");
+        saveFamilyLink(e1, f7,  "Relative");
+        saveFamilyLink(e1, f8,  "Relative");
+        saveFamilyLink(e2, f9,  "Relative");
+        saveFamilyLink(e2, f10, "Relative");
 
         log.info("Seeded {} elderly + {} family users.", elderlyUsers.size(), familyUsers.size());
     }
@@ -180,35 +180,35 @@ public class DataSeeder implements CommandLineRunner {
         OffsetDateTime now = OffsetDateTime.now();
 
         medications.add(saveMedication(e1, "Metformin", "500mg",
-            schedule("TWICE_DAILY", "07:30", "19:30"), "Uống sau ăn",
+            schedule("TWICE_DAILY", "07:30", "19:30"), "Take after meals",
             nextDoseFromNow(now, 12)));
 
         medications.add(saveMedication(e1, "Amlodipine", "5mg",
-            schedule("DAILY", "08:00"), "Uống buổi sáng",
+            schedule("DAILY", "08:00"), "Take in the morning",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e1, "Aspirin", "81mg",
-            schedule("DAILY", "08:00"), "Uống sau ăn sáng",
+            schedule("DAILY", "08:00"), "Take after breakfast",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e2, "Furosemide", "40mg",
-            schedule("DAILY", "07:00"), "Theo dõi phù chi",
+            schedule("DAILY", "07:00"), "Monitor for edema",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e2, "Bisoprolol", "2.5mg",
-            schedule("DAILY", "08:00"), "Không ngừng đột ngột",
+            schedule("DAILY", "08:00"), "Do not stop abruptly",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e2, "Warfarin", "5mg",
-            schedule("DAILY", "18:00"), "Theo dõi INR định kỳ",
+            schedule("DAILY", "18:00"), "Monitor INR regularly",
             nextDoseFromNow(now, 8)));
 
-        medications.add(saveMedication(e3, "Salbutamol inhaler", "100mcg/liều",
-            scheduleAsNeeded(), "Dùng khi khó thở",
+        medications.add(saveMedication(e3, "Salbutamol inhaler", "100mcg/dose",
+            scheduleAsNeeded(), "Use when short of breath",
             null));
 
-        medications.add(saveMedication(e3, "Tiotropium inhaler", "18mcg/liều",
-            schedule("DAILY", "08:00"), "Hít buổi sáng",
+        medications.add(saveMedication(e3, "Tiotropium inhaler", "18mcg/dose",
+            schedule("DAILY", "08:00"), "Inhale in the morning",
             nextDoseFromNow(now, 24)));
 
         log.info("Seeded {} medications.", medications.size());
@@ -363,24 +363,24 @@ public class DataSeeder implements CommandLineRunner {
         for (User elderly : elderlyUsers) {
 
             saveAppointment(elderly,
-                "Tái khám Nội tiết",
-                "BS. Nguyễn Minh Hoàng",
-                "Nội tiết - Đái tháo đường",
-                "Bệnh viện Chợ Rẫy",
+                "Endocrinology follow-up",
+                "Dr. Michael Nguyen",
+                "Endocrinology - Diabetes",
+                "City General Hospital",
                 now.plusWeeks(2).withHour(9).withMinute(0).withSecond(0).withNano(0));
 
             saveAppointment(elderly,
-                "Xét nghiệm máu định kỳ",
-                "BS. Trần Thị Hương",
-                "Xét nghiệm",
+                "Routine blood work",
+                "Dr. Hannah Tran",
+                "Laboratory",
                 "Lab Medlatec",
                 now.plusWeeks(3).withHour(7).withMinute(30).withSecond(0).withNano(0));
 
             saveAppointment(elderly,
-                "Khám tim mạch",
-                "BS. Lê Văn Phúc",
-                "Tim mạch",
-                "Viện Tim TP.HCM",
+                "Cardiology check-up",
+                "Dr. Felix Le",
+                "Cardiology",
+                "Heart Institute",
                 now.plusWeeks(6).withHour(10).withMinute(0).withSecond(0).withNano(0));
         }
 
