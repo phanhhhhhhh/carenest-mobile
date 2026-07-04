@@ -34,11 +34,11 @@ class _ForgotPasswordPhoneScreenState
   void _submit() {
     final rawPhone = _phoneController.text;
     if (rawPhone.isEmpty) {
-      setState(() => _error = 'Vui lòng nhập số điện thoại');
+      setState(() => _error = 'Please enter phone number');
       return;
     }
     if (!_isValidPhone(rawPhone)) {
-      setState(() => _error = 'Số điện thoại không hợp lệ');
+      setState(() => _error = 'Invalid phone number');
       return;
     }
     setState(() => _error = null);
@@ -75,7 +75,7 @@ class _ForgotPasswordPhoneScreenState
                 const SizedBox(height: 32),
 
                 const Text(
-                  'Quên mật khẩu',
+                  'Forgot Password',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -84,7 +84,7 @@ class _ForgotPasswordPhoneScreenState
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Nhập số điện thoại đã đăng ký, chúng tôi sẽ gửi mã OTP để đặt lại mật khẩu.',
+                  'Enter your registered phone number and we\'ll send an OTP to reset your password.',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -95,7 +95,7 @@ class _ForgotPasswordPhoneScreenState
 
                 // Phone input with +84 prefix
                 Text(
-                  'Số điện thoại',
+                  'Phone Number',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -183,7 +183,7 @@ class _ForgotPasswordPhoneScreenState
                             ),
                           )
                         : const Text(
-                            'Gửi mã OTP',
+                            'Send OTP',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -200,7 +200,7 @@ class _ForgotPasswordPhoneScreenState
                       foregroundColor: AppColors.textHint,
                     ),
                     child: const Text(
-                      'Quay lại đăng nhập',
+                      'Back to Sign In',
                       style: TextStyle(fontSize: 14),
                     ),
                   ),
