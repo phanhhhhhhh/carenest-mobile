@@ -60,7 +60,7 @@ class _ElderlyEmergencyContactsScreenState
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Thêm liên hệ khẩn cấp',
+        title: const Text('Add Emergency Contact',
             style: TextStyle(fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -68,7 +68,7 @@ class _ElderlyEmergencyContactsScreenState
             TextField(
               controller: nameCtrl,
               decoration: InputDecoration(
-                labelText: 'Họ và tên',
+                labelText: 'Full Name',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.person, color: AppColors.primary),
               ),
@@ -78,7 +78,7 @@ class _ElderlyEmergencyContactsScreenState
               controller: phoneCtrl,
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
-                labelText: 'Số điện thoại',
+                labelText: 'Phone Number',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.phone, color: AppColors.primary),
               ),
@@ -87,7 +87,7 @@ class _ElderlyEmergencyContactsScreenState
             TextField(
               controller: relationshipCtrl,
               decoration: InputDecoration(
-                labelText: 'Quan hệ (VD: Con trai, Bác sĩ...)',
+                labelText: 'Relationship (e.g. Son, Doctor...)',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 prefixIcon: const Icon(Icons.people, color: AppColors.primary),
               ),
@@ -97,7 +97,7 @@ class _ElderlyEmergencyContactsScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -131,14 +131,14 @@ class _ElderlyEmergencyContactsScreenState
                 } catch (e) {
                   if (ctx.mounted) {
                     ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(content: Text('Lỗi: $e'),
+                      SnackBar(content: Text('Error: $e'),
                           backgroundColor: AppColors.error),
                     );
                   }
                 }
               }
             },
-            child: const Text('Thêm'),
+            child: const Text('Add'),
           ),
         ],
       ),
@@ -150,13 +150,13 @@ class _ElderlyEmergencyContactsScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xóa liên hệ?'),
-        content: Text('Bạn muốn xóa ${contact.name} khỏi danh sách khẩn cấp?'),
+        title: const Text('Delete Contact?'),
+        content: Text('Remove ${contact.name} from emergency contacts?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xóa', style: TextStyle(color: AppColors.error)),
+            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -182,7 +182,7 @@ class _ElderlyEmergencyContactsScreenState
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
+            SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
           );
         }
       }
@@ -194,7 +194,7 @@ class _ElderlyEmergencyContactsScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Liên hệ khẩn cấp',
+        title: const Text('Emergency Contacts',
             style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
@@ -221,7 +221,7 @@ class _ElderlyEmergencyContactsScreenState
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Những người này sẽ được thông báo khi bạn nhấn nút SOS.',
+                              'These people will be notified when you press the SOS button.',
                               style: TextStyle(color: AppColors.textPrimary, fontSize: 13, height: 1.4),
                             ),
                           ),
@@ -241,7 +241,7 @@ class _ElderlyEmergencyContactsScreenState
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('Thêm liên hệ'),
+        label: const Text('Add Contact'),
       ),
     );
   }
@@ -263,12 +263,12 @@ class _ElderlyEmergencyContactsScreenState
                   color: AppColors.primary, size: 40),
             ),
             const SizedBox(height: 20),
-            const Text('Chưa có liên hệ khẩn cấp',
+            const Text('No Emergency Contacts',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary)),
             const SizedBox(height: 8),
             const Text(
-              'Thêm ít nhất một người để nhận\nthông báo khi bạn cần giúp đỡ.',
+              'Add at least one person to receive\nnotifications when you need help.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
             ),
@@ -276,7 +276,7 @@ class _ElderlyEmergencyContactsScreenState
             ElevatedButton.icon(
               onPressed: _showAddDialog,
               icon: const Icon(Icons.add),
-              label: const Text('Thêm liên hệ'),
+              label: const Text('Add Contact'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -317,14 +317,14 @@ class _ContactCard extends StatelessWidget {
 
   IconData _relationIcon() {
     switch (contact.relationship.toLowerCase()) {
-      case 'con trai':
-      case 'con gái':
-      case 'con':
+      case 'son':
+      case 'daughter':
+      case 'child':
         return Icons.child_care;
-      case 'vợ':
-      case 'chồng':
+      case 'wife':
+      case 'husband':
         return Icons.favorite;
-      case 'bác sĩ':
+      case 'doctor':
         return Icons.medical_services;
       default:
         return Icons.person;
@@ -385,7 +385,7 @@ class _ContactCard extends StatelessWidget {
                 color: AppColors.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text('Ưu tiên',
+              child: const Text('Priority',
                   style: TextStyle(color: AppColors.primary, fontSize: 11,
                       fontWeight: FontWeight.w600)),
             ),

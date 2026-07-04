@@ -51,7 +51,7 @@ class PhoneNotifier extends StateNotifier<PhoneState> {
         verificationId: '__dev_register__:$phoneNumber',
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Không thể kết nối backend');
+      state = state.copyWith(isLoading: false, error: 'Cannot connect to backend');
     }
   }
 }
@@ -112,7 +112,7 @@ class OtpNotifier extends StateNotifier<OtpState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Mã OTP không đúng');
+      state = state.copyWith(isLoading: false, error: 'Incorrect OTP code');
     }
   }
 }
@@ -165,7 +165,7 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
       );
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Đăng ký thất bại, thử lại');
+      state = state.copyWith(isLoading: false, error: 'Registration failed, try again');
     }
   }
 }
@@ -198,11 +198,11 @@ class ForgotPasswordPhoneNotifier extends StateNotifier<ForgotPasswordPhoneState
       state = state.copyWith(isLoading: false, success: true);
     } on DioException catch (e) {
       final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Không thể gửi OTP')
-          : 'Không thể gửi OTP';
+          ? (e.response?.data['message'] ?? 'Cannot send OTP')
+          : 'Cannot send OTP';
       state = state.copyWith(isLoading: false, error: msg.toString());
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
+      state = state.copyWith(isLoading: false, error: 'Connection error');
     }
   }
 }
@@ -232,11 +232,11 @@ class ForgotPasswordOtpNotifier extends StateNotifier<ForgotPasswordOtpState> {
       state = state.copyWith(isLoading: false, success: true);
     } on DioException catch (e) {
       final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Mã OTP không đúng')
-          : 'Mã OTP không đúng';
+          ? (e.response?.data['message'] ?? 'Incorrect OTP code')
+          : 'Incorrect OTP code';
       state = state.copyWith(isLoading: false, error: msg.toString());
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
+      state = state.copyWith(isLoading: false, error: 'Connection error');
     }
   }
 }
@@ -266,11 +266,11 @@ class ResetPasswordNotifier extends StateNotifier<ResetPasswordState> {
       state = state.copyWith(isLoading: false, success: true);
     } on DioException catch (e) {
       final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Không thể đặt lại mật khẩu')
-          : 'Không thể đặt lại mật khẩu';
+          ? (e.response?.data['message'] ?? 'Cannot reset password')
+          : 'Cannot reset password';
       state = state.copyWith(isLoading: false, error: msg.toString());
     } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Lỗi kết nối');
+      state = state.copyWith(isLoading: false, error: 'Connection error');
     }
   }
 }
