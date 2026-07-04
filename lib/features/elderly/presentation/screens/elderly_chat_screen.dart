@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/gemini_service.dart';
@@ -16,7 +17,12 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
   final _scrollController = ScrollController();
   late final GeminiService? _gemini;
   bool _isTyping = false;
-  String _userName = 'bạn';
+  String _userName = 'you';
+
+  // Voice input
+  late final stt.SpeechToText _speech;
+  bool _speechAvailable = false;
+  bool _isListening = false;
 
   @override
   void initState() {
@@ -24,7 +30,27 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     _gemini = AppConfig.geminiApiKey != 'YOUR_GEMINI_API_KEY'
         ? GeminiService()
         : null;
+    _speech = stt.SpeechToText();
+    _initSpeech();
     _loadUserName();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      final available = await _speech.initialize(
+        onStatus: (status) {
+          if (status == 'notListening' && _isListening) {
+            if (mounted) setState(() => _isListening = false);
+          }
+        },
+        onError: (_) {
+          if (mounted) setState(() => _isListening = false);
+        },
+      );
+      if (mounted) setState(() => _speechAvailable = available);
+    } catch (_) {
+      if (mounted) setState(() => _speechAvailable = false);
+    }
   }
 
   Future<void> _loadUserName() async {
@@ -36,20 +62,20 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
 
   String get _greeting {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Chào buổi sáng';
-    if (hour < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   }
 
   List<_ChatMessage> get _messages => _messageList;
   final List<_ChatMessage> _messageList = [];
 
   String get _welcomeMessage {
-    return '$_greeting $_userName! Tôi là trợ lý chăm sóc sức khỏe của bạn. '
-        'Hôm nay bạn cảm thấy thế nào? Tôi có thể giúp bạn:\n'
-        '• Kiểm tra chỉ số sức khỏe\n'
-        '• Nhắc nhở lịch uống thuốc\n'
-        '• Trò chuyện cùng bạn';
+    return '$_greeting $_userName! I am your health care assistant. '
+        'How are you feeling today? I can help you:\n'
+        '• Check health indicators\n'
+        '• Medication reminders\n'
+        '• Chat with you';
   }
 
   @override
@@ -77,7 +103,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
       try {
         reply = await gemini.sendMessage(text);
       } catch (_) {
-        reply = 'Xin lỗi $_userName, tôi không thể kết nối lúc này. Vui lòng thử lại.';
+        reply = 'Sorry $_userName, I can\'t connect right now. Please try again.';
       }
     } else {
       await Future.delayed(const Duration(milliseconds: 1000));
@@ -93,25 +119,52 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     _scrollToBottom();
   }
 
+  Future<void> _toggleListening() async {
+    if (_isListening) {
+      await _speech.stop();
+      if (mounted) setState(() => _isListening = false);
+      return;
+    }
+    if (!_speechAvailable) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Voice input is not available')),
+        );
+      }
+      return;
+    }
+    if (mounted) setState(() => _isListening = true);
+    await _speech.listen(
+      onResult: (result) {
+        if (result.finalResult && mounted) {
+          setState(() => _isListening = false);
+          _controller.text = result.recognizedWords;
+          _sendMessage();
+        }
+      },
+      localeId: 'en_US',
+    );
+  }
+
   String _fakeReply(String question) {
     final q = question.toLowerCase();
-    if (q.contains('huyết áp')) {
-      return 'Chỉ số huyết áp gần đây của $_userName đang ở mức bình thường. '
-          'Hãy tiếp tục duy trì chế độ ăn ít muối và uống đủ nước nhé!';
+    if (q.contains('blood pressure')) {
+      return 'Your recent blood pressure readings are normal. '
+          'Keep up with a low-salt diet and stay hydrated!';
     }
-    if (q.contains('thuốc') || q.contains('uống')) {
-      return '$_userName thân mến, hãy kiểm tra mục "Thuốc của tôi" để xem lịch uống thuốc hôm nay. '
-          'Đừng quên uống đúng giờ và đủ liều nhé!';
+    if (q.contains('medicine') || q.contains('medication') || q.contains('pill')) {
+      return 'Dear $_userName, please check "My Medications" for today\'s schedule. '
+          'Don\'t forget to take them on time and at the right dosage!';
     }
-    if (q.contains('đau') || q.contains('mệt') || q.contains('khó chịu')) {
-      return '$_userName đang không khỏe à? Hãy nghỉ ngơi và uống đủ nước. '
-          'Nếu triệu chứng kéo dài hoặc nghiêm trọng, hãy liên hệ bác sĩ hoặc nhấn nút SOS để thông báo cho gia đình.';
+    if (q.contains('pain') || q.contains('tired') || q.contains('unwell') || q.contains('sick')) {
+      return 'Not feeling well? Please rest and drink plenty of water. '
+          'If symptoms persist or are severe, contact your doctor or press the SOS button to notify your family.';
     }
-    if (q.contains('chào') || q.contains('xin chào') || q.contains('hello')) {
-      return '$_greeting $_userName! Rất vui được trò chuyện với bạn. Tôi có thể giúp gì cho bạn hôm nay?';
+    if (q.contains('hello') || q.contains('hi') || q.contains('hey')) {
+      return '$_greeting $_userName! Great to chat with you. How can I help you today?';
     }
-    return 'Cảm ơn $_userName đã chia sẻ! Tôi luôn ở đây để hỗ trợ bạn. '
-        'Bạn có muốn tôi kiểm tra lịch thuốc hoặc chỉ số sức khỏe hôm nay không?';
+    return 'Thank you for sharing, $_userName! I\'m always here to support you. '
+        'Would you like me to check your medication schedule or health indicators today?';
   }
 
   void _scrollToBottom() {
@@ -177,7 +230,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
                     style: TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
                 Text(
-                  _gemini != null ? 'Trực tuyến' : 'Chế độ offline',
+                  _gemini != null ? 'Online' : 'Offline mode',
                   style: TextStyle(
                     fontSize: 12,
                     color: _gemini != null
@@ -219,9 +272,9 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
 
   Widget _buildQuickReplies() {
     final replies = [
-      'Huyết áp hôm nay?',
-      'Thuốc cần uống?',
-      'Tôi đau đầu'
+      'Blood pressure today?',
+      'Medication schedule?',
+      'I have a headache'
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -262,15 +315,32 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.background,
-              shape: BoxShape.circle,
+          InkWell(
+            onTap: _toggleListening,
+            borderRadius: BorderRadius.circular(22),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: _isListening
+                    ? AppColors.error.withOpacity(0.1)
+                    : AppColors.background,
+                shape: BoxShape.circle,
+                border: _isListening
+                    ? Border.all(color: AppColors.error, width: 2)
+                    : null,
+              ),
+              child: Icon(
+                _isListening ? Icons.mic : Icons.mic_none,
+                color: _isListening
+                    ? AppColors.error
+                    : _speechAvailable
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                size: 22,
+              ),
             ),
-            child: const Icon(Icons.mic_none,
-                color: AppColors.textSecondary, size: 22),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -280,7 +350,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
               onSubmitted: (_) => _sendMessage(),
               enabled: !_isTyping,
               decoration: InputDecoration(
-                hintText: 'Nhập tin nhắn...',
+                hintText: 'Type a message...',
                 hintStyle: const TextStyle(color: AppColors.textHint),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 10),
