@@ -29,7 +29,7 @@ class HomeScreen extends ConsumerWidget {
             Icon(Icons.favorite, size: 64, color: AppColors.primary),
             SizedBox(height: 16),
             Text(
-              'Chào mừng đến CareNest!',
+              'Welcome to CareNest!',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
