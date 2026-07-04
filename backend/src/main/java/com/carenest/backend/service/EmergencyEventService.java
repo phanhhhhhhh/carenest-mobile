@@ -33,7 +33,7 @@ public class EmergencyEventService {
 
     public EmergencyEventResponse trigger(EmergencyEventRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
-            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
         EmergencyEvent event = EmergencyEvent.builder()
             .elderly(elderly)
@@ -56,8 +56,8 @@ public class EmergencyEventService {
 
         if (!familyUserIds.isEmpty()) {
             fcmService.sendToUsers(familyUserIds,
-                "Cảnh báo khẩn cấp",
-                elderly.getName() + " đã kích hoạt cảnh báo khẩn cấp",
+                "Emergency Alert",
+                elderly.getName() + " has triggered an emergency alert",
                 Map.of(
                     "type", "EMERGENCY",
                     "eventId", saved.getId().toString(),
@@ -72,10 +72,10 @@ public class EmergencyEventService {
 
     public EmergencyEventResponse acknowledge(Long eventId, Long familyUserId) {
         EmergencyEvent event = emergencyEventRepository.findById(eventId)
-            .orElseThrow(() -> new NotFoundException("EmergencyEvent không tồn tại: " + eventId));
+            .orElseThrow(() -> new NotFoundException("EmergencyEvent not found: " + eventId));
 
         User family = userRepository.findById(familyUserId)
-            .orElseThrow(() -> new NotFoundException("User (family) không tồn tại: " + familyUserId));
+            .orElseThrow(() -> new NotFoundException("User (family) not found: " + familyUserId));
 
         event.setAcknowledgedAt(OffsetDateTime.now());
         event.setAcknowledgedBy(familyUserId);
@@ -88,7 +88,7 @@ public class EmergencyEventService {
     @Transactional(readOnly = true)
     public EmergencyEventResponse getById(Long id) {
         EmergencyEvent event = emergencyEventRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("EmergencyEvent không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("EmergencyEvent not found: " + id));
         return toResponse(event);
     }
 

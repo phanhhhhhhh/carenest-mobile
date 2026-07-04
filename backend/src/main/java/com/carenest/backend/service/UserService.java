@@ -19,14 +19,14 @@ public class UserService {
     @Transactional(readOnly = true)
     public NotificationPreferences getNotificationPreferences(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User không tồn tại: " + userId));
+            .orElseThrow(() -> new NotFoundException("User not found: " + userId));
         return user.getNotificationPreferences();
     }
 
     public NotificationPreferences updateNotificationPreferences(
             Long userId, NotificationPreferencesRequest request) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User không tồn tại: " + userId));
+            .orElseThrow(() -> new NotFoundException("User not found: " + userId));
 
         NotificationPreferences current = user.getNotificationPreferences();
         if (current == null) {
@@ -60,7 +60,7 @@ public class UserService {
 
     public void updateFcmToken(Long userId, String fcmToken) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User không tồn tại: " + userId));
+            .orElseThrow(() -> new NotFoundException("User not found: " + userId));
         user.setFcmToken(fcmToken);
         userRepository.save(user);
     }
