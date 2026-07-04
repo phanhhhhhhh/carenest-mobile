@@ -69,7 +69,7 @@ public class WeeklySummaryService {
         Notification notif = Notification.builder()
             .user(elderly)
             .type(NotificationType.FAMILY_UPDATE)
-            .title("📊 Tổng kết sức khỏe tuần")
+            .title("📊 Weekly Health Summary")
             .body(summary)
             .data(Map.of(
                 "type", "WEEKLY_SUMMARY",
@@ -82,7 +82,7 @@ public class WeeklySummaryService {
 
         // Push to elderly
         fcmService.sendToUser(elderlyId,
-            "📊 Tổng kết sức khỏe tuần của bạn",
+            "📊 Your Weekly Health Summary",
             buildShortSummary(metrics, logs),
             Map.of("type", "WEEKLY_SUMMARY"));
 
@@ -94,7 +94,7 @@ public class WeeklySummaryService {
             Notification familyNotif = Notification.builder()
                 .user(fl.getFamily())
                 .type(NotificationType.FAMILY_UPDATE)
-                .title("📊 Tổng kết tuần: " + elderly.getName())
+                .title("📊 Weekly Summary: " + elderly.getName())
                 .body(summary)
                 .data(Map.of(
                     "type", "WEEKLY_SUMMARY",
@@ -106,7 +106,7 @@ public class WeeklySummaryService {
             notificationRepository.save(familyNotif);
 
             fcmService.sendToUser(fl.getFamily().getId(),
-                "📊 Tổng kết tuần của " + elderly.getName(),
+                "📊 Weekly Summary: " + elderly.getName(),
                 buildShortSummary(metrics, logs),
                 Map.of("type", "WEEKLY_SUMMARY", "elderlyId", elderlyId.toString()));
         }
@@ -158,11 +158,11 @@ public class WeeklySummaryService {
     // ── Summary Text Generation (template-based, AI-pluggable) ──────────────
 
     /**
-     * Generate a detailed Vietnamese summary.
+     * Generate a detailed English summary.
      *
      * This method is designed to be replaced with an AI/LLM call
      * (e.g., OpenAI, Claude) without changing the rest of the system.
-     * The AI prompt would receive the same data map and return Vietnamese text.
+     * The AI prompt would receive the same data map and return generated text.
      */
     private String buildSummaryText(String name, List<HealthMetric> metrics,
                                      List<MedicationLog> logs,
@@ -170,7 +170,7 @@ public class WeeklySummaryService {
         StringBuilder sb = new StringBuilder();
         String weekLabel = from.format(DATE_FMT) + " - " + to.format(DATE_FMT);
 
-        sb.append("📅 Tuần: ").append(weekLabel).append("\n");
+        sb.append("📅 Week: ").append(weekLabel).append("\n");
         sb.append("👤 ").append(name).append("\n\n");
 
         // ── Health Metrics Summary ──────────────────────────────────────
@@ -178,7 +178,7 @@ public class WeeklySummaryService {
             .collect(Collectors.groupingBy(HealthMetric::getType, LinkedHashMap::new, Collectors.toList()));
 
         if (!byType.isEmpty()) {
-            sb.append("💓 Chỉ số sức khỏe:\n");
+            sb.append("💓 Health Metrics:\n");
             for (var entry : byType.entrySet()) {
                 String label = formatType(entry.getKey());
                 List<BigDecimal> values = entry.getValue().stream()
@@ -193,16 +193,16 @@ public class WeeklySummaryService {
                 BigDecimal max = values.get(values.size() - 1);
 
                 sb.append("  • ").append(label).append(": TB ")
-                    .append(avg).append(", thấp nhất ").append(min)
-                    .append(", cao nhất ").append(max);
+                    .append(avg).append(", min ").append(min)
+                    .append(", max ").append(max);
                 if (entry.getValue().get(0).getUnit() != null) {
                     sb.append(" ").append(entry.getValue().get(0).getUnit());
                 }
-                sb.append(" (").append(values.size()).append(" lần đo)\n");
+                sb.append(" (").append(values.size()).append(" readings)\n");
             }
             sb.append("\n");
         } else {
-            sb.append("⚠️ Không có dữ liệu sức khỏe trong tuần này.\n\n");
+            sb.append("⚠️ No health data recorded this week.\n\n");
         }
 
         // ── Medication Adherence ────────────────────────────────────────
@@ -213,14 +213,14 @@ public class WeeklySummaryService {
 
         if (total > 0) {
             double rate = (double) taken / total * 100;
-            sb.append("💊 Tuân thủ thuốc:\n");
-            sb.append("  • Đã uống: ").append(taken).append(" lần\n");
-            if (missed > 0) sb.append("  • Quên: ").append(missed).append(" lần\n");
-            if (skipped > 0) sb.append("  • Bỏ qua: ").append(skipped).append(" lần\n");
-            sb.append("  • Tỷ lệ: ").append(String.format("%.0f%%", rate));
-            if (rate >= 90) sb.append(" ✅ Rất tốt!");
-            else if (rate >= 70) sb.append(" ⚠️ Cần chú ý");
-            else sb.append(" 🔴 Cần cải thiện ngay");
+            sb.append("💊 Medication Adherence:\n");
+            sb.append("  • Taken: ").append(taken).append(" times\n");
+            if (missed > 0) sb.append("  • Missed: ").append(missed).append(" times\n");
+            if (skipped > 0) sb.append("  • Skipped: ").append(skipped).append(" times\n");
+            sb.append("  • Rate: ").append(String.format("%.0f%%", rate));
+            if (rate >= 90) sb.append(" ✅ Excellent!");
+            else if (rate >= 70) sb.append(" ⚠️ Needs attention");
+            else sb.append(" 🔴 Needs immediate improvement");
             sb.append("\n\n");
         }
 
@@ -247,7 +247,7 @@ public class WeeklySummaryService {
                     .divide(BigDecimal.valueOf(e.getValue().size()), 1, RoundingMode.HALF_UP)));
 
         if (!prevWeekAvgs.isEmpty()) {
-            sb.append("📈 So với tuần trước:\n");
+            sb.append("📈 vs. Previous Week:\n");
             for (var entry : thisWeekAvgs.entrySet()) {
                 BigDecimal prev = prevWeekAvgs.get(entry.getKey());
                 if (prev == null || prev.compareTo(BigDecimal.ZERO) == 0) continue;
@@ -263,7 +263,7 @@ public class WeeklySummaryService {
             sb.append("\n");
         }
 
-        sb.append("📱 Xem chi tiết trong ứng dụng CareNest.\n");
+        sb.append("📱 Open CareNest app for details.\n");
         sb.append("— CareNest AI 🤖");
 
         return sb.toString();
@@ -273,19 +273,19 @@ public class WeeklySummaryService {
         long taken = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
         long total = taken + logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.MISSED).count();
         String medStatus = total > 0
-            ? "Tuân thủ thuốc: " + (taken * 100 / total) + "%"
-            : "Không có dữ liệu thuốc";
+            ? "Adherence: " + (taken * 100 / total) + "%"
+            : "No medication data";
 
-        return "Xem tổng kết sức khỏe tuần này. " + medStatus + ". Mở app để xem chi tiết.";
+        return "View your weekly health summary. " + medStatus + ". Open the app for details.";
     }
 
     private String formatType(HealthMetricType type) {
         return switch (type) {
-            case BLOOD_PRESSURE -> "Huyết áp";
-            case HEART_RATE -> "Nhịp tim";
-            case BLOOD_GLUCOSE -> "Đường huyết";
-            case WEIGHT -> "Cân nặng";
-            case TEMPERATURE -> "Nhiệt độ";
+            case BLOOD_PRESSURE -> "Blood Pressure";
+            case HEART_RATE -> "Heart Rate";
+            case BLOOD_GLUCOSE -> "Blood Glucose";
+            case WEIGHT -> "Weight";
+            case TEMPERATURE -> "Temperature";
             case SPO2 -> "SpO2";
         };
     }
