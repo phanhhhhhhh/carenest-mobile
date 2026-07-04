@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../providers/medication_provider.dart';
 
@@ -13,7 +14,7 @@ class ElderlyMedicationScreen extends ConsumerStatefulWidget {
 
 class _ElderlyMedicationScreenState
     extends ConsumerState<ElderlyMedicationScreen> {
-  static const _dayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   void _showAddDialog({MedicationItem? existing}) {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
@@ -57,7 +58,7 @@ class _ElderlyMedicationScreenState
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  isEdit ? 'Chỉnh sửa thuốc' : 'Thêm thuốc mới',
+                  isEdit ? 'Edit medication' : 'Add new medication',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -68,8 +69,8 @@ class _ElderlyMedicationScreenState
                 TextField(
                   controller: nameCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Tên thuốc',
-                    hintText: 'Ví dụ: Metformin',
+                    labelText: 'Medication name',
+                    hintText: 'e.g. Metformin',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -81,8 +82,8 @@ class _ElderlyMedicationScreenState
                 TextField(
                   controller: dosageCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Liều lượng',
-                    hintText: 'Ví dụ: 500mg',
+                    labelText: 'Dosage',
+                    hintText: 'e.g. 500mg',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -97,7 +98,7 @@ class _ElderlyMedicationScreenState
                     const Icon(Icons.access_time,
                         color: AppColors.primary, size: 20),
                     const SizedBox(width: 8),
-                    const Text('Giờ uống thuốc',
+                    const Text('Medication time',
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
@@ -114,7 +115,7 @@ class _ElderlyMedicationScreenState
                         }
                       },
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Thêm giờ'),
+                      label: const Text('Add time'),
                     ),
                   ],
                 ),
@@ -141,7 +142,7 @@ class _ElderlyMedicationScreenState
                 ],
                 const SizedBox(height: 14),
                 // Day-of-week selector
-                const Text('Ngày trong tuần',
+                const Text('Days of week',
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -195,8 +196,8 @@ class _ElderlyMedicationScreenState
                 TextField(
                   controller: instructionsCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Hướng dẫn (tùy chọn)',
-                    hintText: 'Ví dụ: Uống sau khi ăn',
+                    labelText: 'Instructions (optional)',
+                    hintText: 'e.g. Take after meals',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -255,7 +256,7 @@ class _ElderlyMedicationScreenState
                         Navigator.pop(ctx);
                       }
                     },
-                    child: Text(isEdit ? 'Cập nhật' : 'Thêm thuốc',
+                    child: Text(isEdit ? 'Update' : 'Add medication',
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
@@ -273,12 +274,12 @@ class _ElderlyMedicationScreenState
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Xóa thuốc'),
-        content: Text('Bạn có chắc muốn xóa "${item.name}" không?'),
+        title: const Text('Delete medication'),
+        content: Text('Are you sure you want to delete "${item.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -291,7 +292,7 @@ class _ElderlyMedicationScreenState
                   .read(medicationsProvider.notifier)
                   .deleteMedication(item.id);
             },
-            child: const Text('Xóa'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -310,7 +311,7 @@ class _ElderlyMedicationScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
-          'Thuốc của tôi',
+          'My Medications',
           style: TextStyle(
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
@@ -340,7 +341,7 @@ class _ElderlyMedicationScreenState
                       ElevatedButton(
                         onPressed: () =>
                             ref.read(medicationsProvider.notifier).load(),
-                        child: const Text('Thử lại'),
+                        child: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -354,7 +355,7 @@ class _ElderlyMedicationScreenState
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Danh sách thuốc',
+                          'Medication List',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -362,7 +363,7 @@ class _ElderlyMedicationScreenState
                           ),
                         ),
                         Text(
-                          '$takenCount/$totalCount đã uống',
+                          '$takenCount/$totalCount taken',
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13,
@@ -384,7 +385,7 @@ class _ElderlyMedicationScreenState
                                 color: AppColors.textHint, size: 48),
                             SizedBox(height: 12),
                             Text(
-                              'Chưa có thuốc nào',
+                              'No medications yet',
                               style: TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14,
@@ -392,7 +393,7 @@ class _ElderlyMedicationScreenState
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'Nhấn + để thêm thuốc',
+                              'Press + to add medication',
                               style: TextStyle(
                                 color: AppColors.textHint,
                                 fontSize: 13,
@@ -410,6 +411,10 @@ class _ElderlyMedicationScreenState
                               .toggleTaken(m.id),
                           onEdit: () => _showAddDialog(existing: m),
                           onDelete: () => _confirmDelete(m),
+                          onHistory: () => context.push('/elderly/medication-history', extra: {
+                            'medicationId': m.id,
+                            'medicationName': m.name,
+                          }),
                         ),
                       ),
                   ],
@@ -447,7 +452,7 @@ class _ElderlyMedicationScreenState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Hôm nay',
+                'Today',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 14,
@@ -474,7 +479,7 @@ class _ElderlyMedicationScreenState
           ),
           const SizedBox(height: 8),
           Text(
-            'Đã uống $taken / $total liều',
+            'Taken $taken / $total doses',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 22,
@@ -495,10 +500,10 @@ class _ElderlyMedicationScreenState
           const SizedBox(height: 10),
           Text(
             total == 0
-                ? 'Thêm thuốc để bắt đầu theo dõi'
+                ? 'Add medication to start tracking'
                 : taken == total
-                    ? '🎉 Tuyệt vời! Bạn đã uống đủ thuốc hôm nay'
-                    : 'Còn ${total - taken} liều cần uống',
+                    ? 'Great! You have taken all medication today'
+                    : '${total - taken} doses remaining',
             style: TextStyle(
               color: Colors.white.withOpacity(0.8),
               fontSize: 13,
@@ -515,12 +520,14 @@ class _MedCard extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onHistory;
 
   const _MedCard({
     required this.item,
     required this.onToggle,
     required this.onEdit,
     required this.onDelete,
+    this.onHistory,
   });
 
   String _formatTime(DateTime dt) {
@@ -644,6 +651,23 @@ class _MedCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+          ],
+          // History button
+          if (onHistory != null) ...[
+            InkWell(
+              onTap: onHistory,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.history, color: AppColors.success, size: 16),
+              ),
+            ),
+            const SizedBox(width: 6),
           ],
           // Edit button
           InkWell(

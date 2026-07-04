@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -106,7 +106,7 @@ class _ElderlyEditProfileScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Đã cập nhật hồ sơ'),
+            content: Text('Profile updated'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -116,7 +116,7 @@ class _ElderlyEditProfileScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi: ${e.message}'),
+            content: Text('Error: ${e.message}'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -142,7 +142,7 @@ class _ElderlyEditProfileScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Chỉnh sửa hồ sơ',
+        title: const Text('Edit Profile',
             style: TextStyle(
                 fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
@@ -157,7 +157,7 @@ class _ElderlyEditProfileScreenState
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Lưu',
+                : const Text('Save',
                     style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -219,12 +219,12 @@ class _ElderlyEditProfileScreenState
 
   Widget _buildPersonalInfo() {
     return _buildCard(
-      'Thông tin cá nhân',
+      'Personal Information',
       children: [
         TextField(
           controller: _nameCtrl,
           decoration: InputDecoration(
-            labelText: 'Họ và tên',
+            labelText: 'Full Name',
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.person, color: AppColors.primary),
@@ -234,11 +234,11 @@ class _ElderlyEditProfileScreenState
         TextField(
           enabled: false,
           decoration: InputDecoration(
-            labelText: 'Số điện thoại',
+            labelText: 'Phone Number',
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: const Icon(Icons.phone, color: AppColors.textHint),
-            hintText: 'Liên kết qua Firebase',
+            hintText: 'Linked via Firebase',
           ),
         ),
       ],
@@ -247,14 +247,14 @@ class _ElderlyEditProfileScreenState
 
   Widget _buildVitalsSection() {
     return _buildCard(
-      'Chỉ số cơ thể',
+      'Body Measurements',
       children: [
         // Blood type
         Row(
           children: [
             const Icon(Icons.bloodtype, color: AppColors.error, size: 20),
             const SizedBox(width: 8),
-            const Text('Nhóm máu',
+            const Text('Blood Type',
                 style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
@@ -268,7 +268,7 @@ class _ElderlyEditProfileScreenState
               ),
               child: DropdownButton<String?>(
                 value: _bloodType,
-                hint: const Text('Chọn',
+                hint: const Text('Select',
                     style: TextStyle(color: AppColors.textHint, fontSize: 13)),
                 underline: const SizedBox(),
                 isDense: true,
@@ -291,7 +291,7 @@ class _ElderlyEditProfileScreenState
                 controller: _weightCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Cân nặng (kg)',
+                  labelText: 'Weight (kg)',
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.monitor_weight,
@@ -305,7 +305,7 @@ class _ElderlyEditProfileScreenState
                 controller: _heightCtrl,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Chiều cao (cm)',
+                  labelText: 'Height (cm)',
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.height,
@@ -321,7 +321,7 @@ class _ElderlyEditProfileScreenState
 
   Widget _buildConditionsSection() {
     return _buildCard(
-      'Bệnh lý nền',
+      'Medical Conditions',
       children: [
         Row(
           children: [
@@ -330,8 +330,8 @@ class _ElderlyEditProfileScreenState
                 controller: _conditionCtrl,
                 onSubmitted: (_) => _addCondition(),
                 decoration: InputDecoration(
-                  labelText: 'Thêm bệnh lý',
-                  hintText: 'VD: Tiểu đường, Cao huyết áp...',
+                  labelText: 'Add Condition',
+                  hintText: 'e.g. Diabetes, Hypertension...',
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.add_circle_outline,
@@ -350,7 +350,7 @@ class _ElderlyEditProfileScreenState
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Thêm'),
+              child: const Text('Add'),
             ),
           ],
         ),
@@ -380,7 +380,7 @@ class _ElderlyEditProfileScreenState
 
   Widget _buildAllergiesSection() {
     return _buildCard(
-      'Dị ứng thuốc',
+      'Drug Allergies',
       children: [
         Row(
           children: [
@@ -389,8 +389,8 @@ class _ElderlyEditProfileScreenState
                 controller: _allergyCtrl,
                 onSubmitted: (_) => _addAllergy(),
                 decoration: InputDecoration(
-                  labelText: 'Thêm dị ứng',
-                  hintText: 'VD: Penicillin, Aspirin...',
+                  labelText: 'Add Allergy',
+                  hintText: 'e.g. Penicillin, Aspirin...',
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                   prefixIcon: const Icon(Icons.warning_amber_outlined,
@@ -409,7 +409,7 @@ class _ElderlyEditProfileScreenState
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Thêm'),
+              child: const Text('Add'),
             ),
           ],
         ),
@@ -440,14 +440,14 @@ class _ElderlyEditProfileScreenState
 
   Widget _buildNotesSection() {
     return _buildCard(
-      'Ghi chú y tế',
+      'Medical Notes',
       children: [
         TextField(
           controller: _notesCtrl,
           maxLines: 4,
           decoration: InputDecoration(
-            labelText: 'Ghi chú thêm',
-            hintText: 'VD: Lưu ý đặc biệt, tiền sử phẫu thuật...',
+            labelText: 'Additional Notes',
+            hintText: 'e.g. Special notes, surgery history...',
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             alignLabelWithHint: true,
@@ -485,3 +485,4 @@ class _ElderlyEditProfileScreenState
     );
   }
 }
+

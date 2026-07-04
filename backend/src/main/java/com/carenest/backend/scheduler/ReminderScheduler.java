@@ -34,11 +34,22 @@ public class ReminderScheduler {
         List<Reminder> dueReminders = reminderService.findDueReminders(now, window);
 
         for (Reminder reminder : dueReminders) {
+            // Honour quiet hours — defer until quiet period ends
+            if (reminder.getElderly().getNotificationPreferences() != null
+                && reminder.getElderly().getNotificationPreferences().isInQuietHours()) {
+                // Bump remindAt by 1 min so it stays in the upcoming window
+                reminder.setRemindAt(now.plusMinutes(1));
+                reminderService.save(reminder);
+                log.debug("Deferred reminder {} — within quiet hours for userId={}",
+                    reminder.getId(), reminder.getElderly().getId());
+                continue;
+            }
+
             Notification notification = Notification.builder()
                 .user(reminder.getElderly())
                 .type(NotificationType.MEDICATION_REMINDER)
-                .title("Nhắc nhở: " + reminder.getTitle())
-                .body("Đã đến giờ: " + reminder.getTitle())
+                .title("Reminder: " + reminder.getTitle())
+                .body("Time for: " + reminder.getTitle())
                 .data(java.util.Map.of(
                     "reminderId", reminder.getId(),
                     "elderlyId", reminder.getElderly().getId()
@@ -48,8 +59,8 @@ public class ReminderScheduler {
 
             // Send push notification to the elderly user
             fcmService.sendToUser(reminder.getElderly().getId(),
-                "Nhắc nhở: " + reminder.getTitle(),
-                "Đã đến giờ: " + reminder.getTitle(),
+                "Reminder: " + reminder.getTitle(),
+                "Time for: " + reminder.getTitle(),
                 Map.of(
                     "type", "REMINDER",
                     "reminderId", reminder.getId().toString()

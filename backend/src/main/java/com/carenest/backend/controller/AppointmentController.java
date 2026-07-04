@@ -2,6 +2,7 @@ package com.carenest.backend.controller;
 
 import com.carenest.backend.dto.appointment.AppointmentRequest;
 import com.carenest.backend.dto.appointment.AppointmentResponse;
+import com.carenest.backend.dto.appointment.AppointmentStatusUpdateRequest;
 import com.carenest.backend.service.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -62,5 +63,14 @@ public class AppointmentController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         appointmentService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/appointments/{id}/status")
+    @PreAuthorize("@authz.canAccessAppointment(authentication.principal, #id)")
+    public ResponseEntity<AppointmentResponse> updateStatus(
+        @PathVariable Long id,
+        @Valid @RequestBody AppointmentStatusUpdateRequest request
+    ) {
+        return ResponseEntity.ok(appointmentService.updateStatus(id, request.getStatus()));
     }
 }

@@ -23,27 +23,27 @@ class FamilyShell extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
             activeIcon: Icon(Icons.dashboard),
-            label: 'Tổng quan',
+            label: 'Overview',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.medication_outlined),
             activeIcon: Icon(Icons.medication),
-            label: 'Thuốc',
+            label: 'Meds',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.monitor_heart_outlined),
             activeIcon: Icon(Icons.monitor_heart),
-            label: 'Sức khỏe',
+            label: 'Health',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications_outlined),
             activeIcon: Icon(Icons.notifications),
-            label: 'Cảnh báo',
+            label: 'Alerts',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
-            label: 'Hồ sơ',
+            label: 'Profile',
           ),
         ],
       ),

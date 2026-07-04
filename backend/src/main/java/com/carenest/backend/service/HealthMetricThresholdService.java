@@ -37,14 +37,14 @@ public class HealthMetricThresholdService {
 
     public HealthMetricThresholdResponse create(Long elderlyId, HealthMetricThresholdRequest request) {
         User elderly = userRepository.findById(elderlyId)
-            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + elderlyId));
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + elderlyId));
 
         // Check if threshold already exists for this type
         thresholdRepository.findByElderlyIdAndMetricType(elderlyId, request.getMetricType())
             .ifPresent(existing -> {
                 throw new IllegalArgumentException(
-                    "Threshold đã tồn tại cho metricType=" + request.getMetricType() +
-                    " của elderlyId=" + elderlyId);
+                    "Threshold already exists for metricType=" + request.getMetricType() +
+                    " for elderlyId=" + elderlyId);
             });
 
         HealthMetricThreshold threshold = HealthMetricThreshold.builder()
@@ -108,7 +108,7 @@ public class HealthMetricThresholdService {
                     Notification notification = Notification.builder()
                         .user(metric.getElderly())
                         .type(NotificationType.HEALTH_ALERT)
-                        .title("Cảnh báo sức khỏe: " + metric.getType())
+                        .title("Health Alert: " + metric.getType())
                         .body(body)
                         .data(java.util.Map.of(
                             "metricId", metric.getId(),
@@ -122,7 +122,7 @@ public class HealthMetricThresholdService {
 
                     // Send push to the elderly user
                     fcmService.sendToUser(metric.getElderly().getId(),
-                        "Cảnh báo sức khỏe: " + metric.getType(),
+                        "Health Alert: " + metric.getType(),
                         body,
                         Map.of(
                             "type", "HEALTH_ALERT",
@@ -141,7 +141,7 @@ public class HealthMetricThresholdService {
 
                         if (!familyUserIds.isEmpty()) {
                             fcmService.sendToUsers(familyUserIds,
-                                "Cảnh báo sức khỏe: " + metric.getElderly().getName(),
+                                "Health Alert: " + metric.getElderly().getName(),
                                 metric.getElderly().getName() + " - " + body,
                                 Map.of(
                                     "type", "HEALTH_ALERT",
@@ -167,19 +167,19 @@ public class HealthMetricThresholdService {
     private String buildAlertBody(HealthMetric metric, HealthMetricThreshold threshold,
                                    boolean primaryBreached, boolean secondaryBreached) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Chỉ số ").append(metric.getType()).append(" vượt ngưỡng: ");
+        sb.append("Metric out of range: ").append(metric.getType()).append(" out of range: ");
 
         if (primaryBreached) {
             sb.append(metric.getValue()).append(" ").append(metric.getUnit());
             if (threshold.getMinValue() != null && threshold.getMaxValue() != null) {
-                sb.append(" (ngưỡng: ").append(threshold.getMinValue())
+                sb.append(" (threshold: ").append(threshold.getMinValue())
                     .append(" - ").append(threshold.getMaxValue()).append(")");
             }
         }
 
         if (secondaryBreached && metric.getValueSecondary() != null) {
             if (primaryBreached) sb.append("; ");
-            sb.append("giá trị phụ: ").append(metric.getValueSecondary());
+            sb.append("secondary value: ").append(metric.getValueSecondary());
         }
 
         return sb.toString();
@@ -187,7 +187,7 @@ public class HealthMetricThresholdService {
 
     private HealthMetricThreshold findOrThrow(Long id) {
         return thresholdRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("HealthMetricThreshold không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("HealthMetricThreshold not found: " + id));
     }
 
     private HealthMetricThresholdResponse toResponse(HealthMetricThreshold t) {
