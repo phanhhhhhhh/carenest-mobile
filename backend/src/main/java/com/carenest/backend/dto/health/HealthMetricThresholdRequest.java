@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class HealthMetricThresholdRequest {
 
-    @NotNull(message = "metricType không được để trống")
+    @NotNull(message = "metricType is required")
     private HealthMetricType metricType;
 
     private BigDecimal minValue;
