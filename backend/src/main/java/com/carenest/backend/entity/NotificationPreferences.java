@@ -1,5 +1,6 @@
 package com.carenest.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +26,7 @@ public class NotificationPreferences {
      * Returns true if the current time falls within the configured quiet hours.
      * Handles overnight ranges (e.g., 22:00 to 07:00).
      */
+    @JsonIgnore
     public boolean isInQuietHours() {
         if (quietHoursStart == null || quietHoursEnd == null) {
             return false;
