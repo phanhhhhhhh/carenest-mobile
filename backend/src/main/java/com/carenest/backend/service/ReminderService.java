@@ -26,10 +26,10 @@ public class ReminderService {
 
     public ReminderResponse create(ReminderRequest request, Long createdById) {
         User elderly = userRepository.findById(request.getElderlyId())
-            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
         User createdBy = userRepository.findById(createdById)
-            .orElseThrow(() -> new NotFoundException("User (createdBy) không tồn tại: " + createdById));
+            .orElseThrow(() -> new NotFoundException("User (createdBy) not found: " + createdById));
 
         Reminder reminder = Reminder.builder()
             .elderly(elderly)
@@ -106,7 +106,7 @@ public class ReminderService {
     private Reminder findOrThrow(Long id) {
         return reminderRepository.findById(id)
             .filter(r -> r.getDeletedAt() == null)
-            .orElseThrow(() -> new NotFoundException("Reminder không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("Reminder not found: " + id));
     }
 
     private ReminderResponse toResponse(Reminder r) {
