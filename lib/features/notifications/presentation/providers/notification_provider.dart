@@ -73,7 +73,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       state = state.copyWith(isLoading: false, items: items);
     } on DioException catch (e) {
       state = state.copyWith(
-          isLoading: false, error: 'Lỗi tải thông báo: ${e.message}');
+          isLoading: false, error: 'Error loading notifications: ${e.message}');
     }
   }
 }
