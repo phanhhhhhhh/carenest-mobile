@@ -14,16 +14,16 @@ class FamilyMedicationScreen extends ConsumerStatefulWidget {
 
 class _FamilyMedicationScreenState
     extends ConsumerState<FamilyMedicationScreen> {
-  static const _dayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+  static const _dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   void _showAddSheet({MedicationItem? existing}) {
     final dash = ref.read(familyDashboardProvider);
     final elderlyId = dash.data?.elderlyId;
-    final elderlyName = dash.data?.elderlyName ?? 'người thân';
+    final elderlyName = dash.data?.elderlyName ?? 'Loved one';
 
     if (elderlyId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng liên kết người thân trước')),
+        const SnackBar(content: Text('Please link a family member first')),
       );
       return;
     }
@@ -70,8 +70,8 @@ class _FamilyMedicationScreenState
                 const SizedBox(height: 16),
                 Text(
                   isEdit
-                      ? 'Chỉnh sửa thuốc cho $elderlyName'
-                      : 'Thêm thuốc cho $elderlyName',
+                      ? 'Edit medication for $elderlyName'
+                      : 'Add medication for $elderlyName',
                   style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -81,7 +81,7 @@ class _FamilyMedicationScreenState
                 TextField(
                   controller: nameCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Tên thuốc',
+                    labelText: 'Medication name',
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.medication,
@@ -92,7 +92,7 @@ class _FamilyMedicationScreenState
                 TextField(
                   controller: dosageCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Liều lượng',
+                    labelText: 'Dosage',
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     prefixIcon:
@@ -106,7 +106,7 @@ class _FamilyMedicationScreenState
                     const Icon(Icons.access_time,
                         color: AppColors.primary, size: 20),
                     const SizedBox(width: 8),
-                    const Text('Giờ uống thuốc',
+                    const Text('Medication time',
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
@@ -123,7 +123,7 @@ class _FamilyMedicationScreenState
                         }
                       },
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Thêm giờ'),
+                      label: const Text('Add time'),
                     ),
                   ],
                 ),
@@ -150,7 +150,7 @@ class _FamilyMedicationScreenState
                 ],
                 const SizedBox(height: 14),
                 // Day-of-week selector
-                const Text('Ngày trong tuần',
+                const Text('Days of the week',
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -200,7 +200,7 @@ class _FamilyMedicationScreenState
                 TextField(
                   controller: instructionsCtrl,
                   decoration: InputDecoration(
-                    labelText: 'Hướng dẫn (tùy chọn)',
+                    labelText: 'Instructions (optional)',
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.info_outline,
@@ -258,7 +258,7 @@ class _FamilyMedicationScreenState
                         Navigator.pop(ctx);
                       }
                     },
-                    child: Text(isEdit ? 'Cập nhật' : 'Thêm thuốc',
+                    child: Text(isEdit ? 'Update' : 'Add medication',
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
@@ -277,12 +277,12 @@ class _FamilyMedicationScreenState
       builder: (ctx) => AlertDialog(
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Xóa thuốc'),
-        content: Text('Bạn có chắc muốn xóa "${item.name}" không?'),
+        title: const Text('Delete medication'),
+        content: Text('Are you sure you want to delete "${item.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -295,7 +295,7 @@ class _FamilyMedicationScreenState
                   .read(medicationsProvider.notifier)
                   .deleteMedication(item.id);
             },
-            child: const Text('Xóa'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -305,7 +305,7 @@ class _FamilyMedicationScreenState
   @override
   Widget build(BuildContext context) {
     final dash = ref.watch(familyDashboardProvider);
-    final elderlyName = dash.data?.elderlyName ?? 'Người thân';
+    final elderlyName = dash.data?.elderlyName ?? 'Loved one';
 
     final medState = ref.watch(medicationsProvider);
     final items = medState.items;
@@ -316,7 +316,7 @@ class _FamilyMedicationScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Thuốc — $elderlyName',
+        title: Text('Meds — $elderlyName',
             style: const TextStyle(
                 fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
@@ -333,12 +333,12 @@ class _FamilyMedicationScreenState
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Danh sách thuốc',
+                    const Text('Medication list',
                         style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary)),
-                    Text('$taken/$total đã uống',
+                    Text('$taken/$total taken',
                         style: const TextStyle(
                             color: AppColors.textSecondary, fontSize: 13)),
                   ],
@@ -356,12 +356,12 @@ class _FamilyMedicationScreenState
                         const Icon(Icons.medication_outlined,
                             color: AppColors.textHint, size: 48),
                         const SizedBox(height: 12),
-                        const Text('Chưa có thuốc nào',
+                        const Text('No medications yet',
                             style: TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text('Nhấn + để thêm thuốc cho $elderlyName',
+                        Text('Tap + to add medication for $elderlyName',
                             style: const TextStyle(
                                 color: AppColors.textHint, fontSize: 13)),
                       ],
@@ -412,7 +412,7 @@ class _FamilyMedicationScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Tuân thủ thuốc',
+              const Text('Medication adherence',
                   style: TextStyle(color: Colors.white70, fontSize: 14)),
               Container(
                 padding:
@@ -431,7 +431,7 @@ class _FamilyMedicationScreenState
             ],
           ),
           const SizedBox(height: 8),
-          Text('Đã uống $taken / $total liều',
+          Text('Taken $taken / $total doses',
               style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -450,10 +450,10 @@ class _FamilyMedicationScreenState
           const SizedBox(height: 10),
           Text(
             total == 0
-                ? 'Thêm thuốc để bắt đầu theo dõi'
+                ? 'Add medication to start tracking'
                 : taken == total
-                    ? '🎉 Đã uống đủ thuốc hôm nay!'
-                    : 'Còn ${total - taken} liều chưa uống',
+                    ? '🎉 All medications taken today!'
+                    : '${total - taken} doses remaining',
             style:
                 TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
           ),
