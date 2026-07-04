@@ -25,7 +25,7 @@ public class MedicationLogService {
 
     public MedicationLogResponse create(MedicationLogRequest request) {
         Medication medication = medicationRepository.findByIdAndDeletedAtIsNull(request.getMedicationId())
-            .orElseThrow(() -> new NotFoundException("Medication không tồn tại: " + request.getMedicationId()));
+            .orElseThrow(() -> new NotFoundException("Medication not found: " + request.getMedicationId()));
 
         MedicationLog log = MedicationLog.builder()
             .medication(medication)
@@ -64,7 +64,7 @@ public class MedicationLogService {
     @Transactional(readOnly = true)
     public MedicationLogResponse getById(Long id) {
         MedicationLog log = medicationLogRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("MedicationLog không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("MedicationLog not found: " + id));
         return toResponse(log);
     }
 

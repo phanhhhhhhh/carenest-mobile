@@ -36,7 +36,7 @@ public class NotificationService {
 
     public NotificationResponse markAsRead(Long id) {
         Notification notification = notificationRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Notification không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("Notification not found: " + id));
         if (notification.getReadAt() == null) {
             notification.setReadAt(OffsetDateTime.now());
             notificationRepository.save(notification);
