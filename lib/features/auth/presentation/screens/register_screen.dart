@@ -37,7 +37,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng đồng ý với Điều khoản dịch vụ')),
+        const SnackBar(content: Text('Please agree to the Terms of Service')),
       );
       return;
     }
@@ -86,7 +86,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // Title
                 Text(
-                  'Tạo tài khoản',
+                  'Create Account',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -94,7 +94,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Điền thông tin để hoàn tất đăng ký',
+                  'Fill in your details to complete registration',
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
@@ -102,14 +102,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 28),
 
-                // Họ và tên
-                _buildLabel('Họ và tên'),
+                // Full Name
+                _buildLabel('Full Name'),
                 const SizedBox(height: 6),
                 _buildTextField(
                   controller: _nameController,
-                  hint: 'Nguyễn Văn A',
+                  hint: 'Full Name',
                   validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Vui lòng nhập họ tên' : null,
+                      v == null || v.trim().isEmpty ? 'Please enter your full name' : null,
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 18),
@@ -124,12 +124,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // Mật khẩu
-                _buildLabel('Mật khẩu'),
+                // Password
+                _buildLabel('Password'),
                 const SizedBox(height: 6),
                 _buildTextField(
                   controller: _passwordController,
-                  hint: 'Tối thiểu 6 ký tự',
+                  hint: 'At least 6 characters',
                   obscure: _obscurePassword,
                   suffix: IconButton(
                     icon: Icon(
@@ -143,19 +143,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Vui lòng nhập mật khẩu';
-                    if (v.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
+                    if (v == null || v.isEmpty) return 'Please enter password';
+                    if (v.length < 6) return 'Password must be at least 6 characters';
                     return null;
                   },
                 ),
                 const SizedBox(height: 18),
 
-                // Xác nhận mật khẩu
-                _buildLabel('Xác nhận mật khẩu'),
+                // Confirm Password
+                _buildLabel('Confirm Password'),
                 const SizedBox(height: 6),
                 _buildTextField(
                   controller: _confirmPasswordController,
-                  hint: 'Nhập lại mật khẩu',
+                  hint: 'Re-enter password',
                   obscure: _obscureConfirm,
                   suffix: IconButton(
                     icon: Icon(
@@ -170,7 +170,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   validator: (v) {
                     if (v != _passwordController.text) {
-                      return 'Mật khẩu xác nhận không khớp';
+                      return 'Passwords do not match';
                     }
                     return null;
                   },
@@ -178,7 +178,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 22),
 
                 // Role selector
-                _buildLabel('Bạn là'),
+                _buildLabel('I am'),
                 const SizedBox(height: 8),
                 _RoleSelector(
                   selected: _selectedRole,
@@ -211,17 +211,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             fontSize: 13,
                           ),
                           children: [
-                            TextSpan(text: 'Tôi đồng ý với '),
+                            TextSpan(text: 'I agree to the '),
                             TextSpan(
-                              text: 'Điều khoản dịch vụ',
+                              text: 'Terms of Service',
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            TextSpan(text: ' và '),
+                            TextSpan(text: ' and '),
                             TextSpan(
-                              text: 'Chính sách bảo mật',
+                              text: 'Privacy Policy',
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
@@ -270,7 +270,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ),
                           )
                         : const Text(
-                            'Đăng ký',
+                            'Sign Up',
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w600),
                           ),
@@ -287,9 +287,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       TextSpan(
                         style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                         children: [
-                          TextSpan(text: 'Đã có tài khoản? '),
+                          TextSpan(text: 'Already have an account? '),
                           TextSpan(
-                            text: 'Đăng nhập',
+                            text: 'Sign In',
                             style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -382,14 +382,14 @@ class _RoleSelector extends StatelessWidget {
     return Row(
       children: [
         _RoleCard(
-          label: 'Người cao tuổi',
+          label: 'Elderly',
           icon: Icons.elderly_woman_rounded,
           isSelected: selected == 'ELDERLY',
           onTap: () => onChange('ELDERLY'),
         ),
         const SizedBox(width: 12),
         _RoleCard(
-          label: 'Người thân\n/ Gia đình',
+          label: 'Family\n/ Relative',
           icon: Icons.family_restroom_rounded,
           isSelected: selected == 'FAMILY',
           onTap: () => onChange('FAMILY'),
