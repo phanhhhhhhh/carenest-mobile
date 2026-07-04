@@ -44,7 +44,7 @@ class EmergencyEventNotifier extends StateNotifier<EmergencyEventState> {
       final list = asListOfMaps(resp.data).map((e) => EmergencyEventData.fromJson(e)).toList();
       state = state.copyWith(isLoading: false, events: list);
     } on DioException catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Lỗi: ${e.message}');
+      state = state.copyWith(isLoading: false, error: 'Error: ${e.message}');
     }
   }
 
@@ -54,7 +54,7 @@ class EmergencyEventNotifier extends StateNotifier<EmergencyEventState> {
     try {
       final resp = await _dio.post('/elderly/$elderlyId/emergency-events', data: {
         'type': 'SOS',
-        'description': 'Người dùng nhấn nút SOS khẩn cấp',
+        'description': 'User pressed emergency SOS button',
       });
       if (resp.statusCode == 201 || resp.statusCode == 200) {
         await load(); // refresh list after creating
