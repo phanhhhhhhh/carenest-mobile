@@ -27,10 +27,10 @@ public class AppointmentService {
 
     public AppointmentResponse create(AppointmentRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
-            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
         if (elderly.getRole() != UserRole.ELDERLY) {
-            throw new IllegalArgumentException("elderlyId phải là user có role ELDERLY");
+            throw new IllegalArgumentException("elderlyId must be a user with ELDERLY role");
         }
 
         Appointment appointment = Appointment.builder()
@@ -99,7 +99,7 @@ public class AppointmentService {
     private Appointment findOrThrow(Long id) {
         return appointmentRepository.findById(id)
             .filter(a -> a.getDeletedAt() == null)
-            .orElseThrow(() -> new NotFoundException("Appointment không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("Appointment not found: " + id));
     }
 
     private AppointmentResponse toResponse(Appointment a) {
