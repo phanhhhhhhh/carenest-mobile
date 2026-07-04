@@ -36,22 +36,22 @@ public class FamilyLinkService {
 
     public FamilyLinkResponse create(FamilyLinkRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
-            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
         if (elderly.getRole() != UserRole.ELDERLY) {
-            throw new IllegalArgumentException("elderlyId phải là user có role ELDERLY");
+            throw new IllegalArgumentException("elderlyId must be a user with ELDERLY role");
         }
 
         User family = userRepository.findById(request.getFamilyId())
-            .orElseThrow(() -> new NotFoundException("User (family) không tồn tại: " + request.getFamilyId()));
+            .orElseThrow(() -> new NotFoundException("User (family) not found: " + request.getFamilyId()));
 
         if (family.getRole() != UserRole.FAMILY) {
-            throw new IllegalArgumentException("familyId phải là user có role FAMILY");
+            throw new IllegalArgumentException("familyId must be a user with FAMILY role");
         }
 
         if (familyLinkRepository.findByElderlyIdAndFamilyIdAndDeletedAtIsNull(
                 request.getElderlyId(), request.getFamilyId()).isPresent()) {
-            throw new ConflictException("Liên kết giữa elderly và family đã tồn tại");
+            throw new ConflictException("Link between elderly and family already exists");
         }
 
         FamilyLink link = FamilyLink.builder()
@@ -67,8 +67,8 @@ public class FamilyLinkService {
         Notification notification = Notification.builder()
             .user(elderly)
             .type(NotificationType.FAMILY_LINK_REQUEST)
-            .title("Yêu cầu liên kết gia đình")
-            .body(family.getName() + " muốn liên kết để theo dõi sức khỏe của bạn")
+            .title("Family Link Request")
+            .body(family.getName() + " wants to link to monitor your health")
             .data(java.util.Map.of(
                 "linkId", saved.getId(),
                 "familyId", family.getId(),
@@ -99,7 +99,7 @@ public class FamilyLinkService {
 
     public FamilyLinkResponse updateStatus(Long id, FamilyLinkStatus status) {
         FamilyLink link = familyLinkRepository.findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new NotFoundException("FamilyLink không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("FamilyLink not found: " + id));
 
         link.setStatus(status);
         return toResponse(familyLinkRepository.save(link));
