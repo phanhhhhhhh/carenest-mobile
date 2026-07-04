@@ -65,7 +65,7 @@ class HealthMetricNotifier extends StateNotifier<HealthMetricState> {
       }
       state = state.copyWith(isLoading: false, metrics: list, latestByType: latest);
     } on DioException catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Loi: ${e.message}');
+      state = state.copyWith(isLoading: false, error: 'Error: ${e.message}');
     }
   }
 
@@ -83,7 +83,7 @@ class HealthMetricNotifier extends StateNotifier<HealthMetricState> {
       await _dio.post('/elderly/$elderlyId/health-metrics', data: {'type': type, 'value': value, 'unit': unit});
       await load();
     } on DioException catch (e) {
-      state = state.copyWith(error: 'Loi: ${e.message}');
+      state = state.copyWith(error: 'Error: ${e.message}');
     }
   }
 }
