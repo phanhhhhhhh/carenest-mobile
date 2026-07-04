@@ -17,7 +17,7 @@ class AuthRepository {
     required void Function(String error) onError,
   }) async {
     if (kIsWeb) {
-      onError('Firebase Phone Auth không hỗ trợ trên web. Dùng DEV mode.');
+      onError('Firebase Phone Auth not supported on web. Use DEV mode.');
       return;
     }
     await _firebaseAuth!.verifyPhoneNumber(
@@ -25,7 +25,7 @@ class AuthRepository {
       verificationCompleted: (credential) async {
         await signInWithCredential(credential);
       },
-      verificationFailed: (e) => onError(e.message ?? 'Lỗi xác thực'),
+      verificationFailed: (e) => onError(e.message ?? 'Authentication error'),
       codeSent: (verificationId, _) => onCodeSent(verificationId),
       codeAutoRetrievalTimeout: (_) {},
     );
@@ -45,7 +45,7 @@ class AuthRepository {
   Future<String> signInWithCredential(PhoneAuthCredential credential) async {
     final auth = _firebaseAuth;
     if (auth == null) {
-      throw UnsupportedError('Firebase Auth không khả dụng trên platform này');
+      throw UnsupportedError('Firebase Auth not available on this platform');
     }
     final result = await auth.signInWithCredential(credential);
     return await result.user!.getIdToken() ?? '';
