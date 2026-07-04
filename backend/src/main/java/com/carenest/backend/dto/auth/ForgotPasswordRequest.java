@@ -8,6 +8,6 @@ import lombok.Setter;
 @Setter
 public class ForgotPasswordRequest {
 
-    @NotBlank(message = "phoneNumber không được để trống")
+    @NotBlank(message = "phoneNumber is required")
     private String phoneNumber;
 }

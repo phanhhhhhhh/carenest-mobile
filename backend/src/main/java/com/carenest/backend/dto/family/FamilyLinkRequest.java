@@ -13,12 +13,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FamilyLinkRequest {
 
-    @NotNull(message = "elderlyId không được để trống")
+    @NotNull(message = "elderlyId is required")
     private Long elderlyId;
 
-    @NotNull(message = "familyId không được để trống")
+    @NotNull(message = "familyId is required")
     private Long familyId;
 
-    @NotBlank(message = "relationship không được để trống")
+    @NotBlank(message = "relationship is required")
     private String relationship;
 }

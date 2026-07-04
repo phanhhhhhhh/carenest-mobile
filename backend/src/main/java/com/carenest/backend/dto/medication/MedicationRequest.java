@@ -16,13 +16,13 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 public class MedicationRequest {
 
-    @NotNull(message = "elderlyId không được để trống")
+    @NotNull(message = "elderlyId is required")
     private Long elderlyId;
 
-    @NotBlank(message = "name không được để trống")
+    @NotBlank(message = "name is required")
     private String name;
 
-    @NotBlank(message = "dosage không được để trống")
+    @NotBlank(message = "dosage is required")
     private String dosage;
 
     private MedicationSchedule schedule;
