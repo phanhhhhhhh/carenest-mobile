@@ -90,6 +90,12 @@ public class AppointmentService {
         appointmentRepository.save(appointment);
     }
 
+    public AppointmentResponse updateStatus(Long id, AppointmentStatus status) {
+        Appointment appointment = findOrThrow(id);
+        appointment.setStatus(status);
+        return toResponse(appointmentRepository.save(appointment));
+    }
+
     private Appointment findOrThrow(Long id) {
         return appointmentRepository.findById(id)
             .filter(a -> a.getDeletedAt() == null)
