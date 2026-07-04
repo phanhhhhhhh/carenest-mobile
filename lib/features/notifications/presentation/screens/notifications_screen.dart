@@ -20,7 +20,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('Thông báo',
+            const Text('Notifications',
                 style: TextStyle(
                     fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
             if (state.unreadCount > 0) ...[
@@ -32,7 +32,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   color: AppColors.error,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text('${state.unreadCount} mới',
+                child: Text('${state.unreadCount} new',
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -73,7 +73,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 onPressed: () =>
                     ref.read(notificationProvider.notifier).load(),
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Thử lại'),
+                label: const Text('Retry'),
               ),
             ],
           ),
@@ -97,13 +97,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   color: AppColors.primary, size: 40),
             ),
             const SizedBox(height: 16),
-            const Text('Chưa có thông báo nào',
+            const Text('No notifications yet',
                 style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            const Text('Thông báo từ hệ thống sẽ xuất hiện ở đây',
+            const Text('System notifications will appear here',
                 style:
                     TextStyle(color: AppColors.textSecondary, fontSize: 14)),
           ],
@@ -132,15 +132,15 @@ class _NotificationCard extends StatelessWidget {
 
   String _formatTime(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Vừa xong';
-    if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
     if (diff.inDays == 0) {
-      return 'Hôm nay ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+      return 'Today ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
     }
     if (diff.inDays == 1) {
-      return 'Hôm qua ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+      return 'Yesterday ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
     }
-    return '${diff.inDays} ngày trước';
+    return '${diff.inDays} days ago';
   }
 
   IconData _iconForType(String type) {
