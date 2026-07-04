@@ -1,9 +1,15 @@
 package com.carenest.backend.controller;
 
+import com.carenest.backend.dto.health.HealthDataSyncRequest;
+import com.carenest.backend.dto.health.HealthDataSyncResponse;
 import com.carenest.backend.dto.health.HealthMetricRequest;
 import com.carenest.backend.dto.health.HealthMetricResponse;
+import com.carenest.backend.dto.health.HealthReportResponse;
 import com.carenest.backend.entity.HealthMetricType;
 import com.carenest.backend.service.HealthMetricService;
+import com.carenest.backend.service.HealthReportService;
+import com.carenest.backend.service.HealthSyncService;
+import com.carenest.backend.service.WeeklySummaryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
@@ -29,6 +36,9 @@ import java.util.List;
 public class HealthMetricController {
 
     private final HealthMetricService healthMetricService;
+    private final HealthReportService healthReportService;
+    private final HealthSyncService healthSyncService;
+    private final WeeklySummaryService weeklySummaryService;
 
     @PostMapping("/elderly/{elderlyId}/health-metrics")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
@@ -76,5 +86,56 @@ public class HealthMetricController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         healthMetricService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── Health Report ───────────────────────────────────────────────────────
+
+    @GetMapping("/elderly/{elderlyId}/health-report")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
+    public ResponseEntity<HealthReportResponse> getReport(
+        @PathVariable Long elderlyId,
+        @RequestParam(required = false) Set<HealthMetricType> types,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
+    ) {
+        return ResponseEntity.ok(healthReportService.generateReport(elderlyId, types, from, to));
+    }
+
+    // ── Google Fit / Health Connect Sync ─────────────────────────────────────
+
+    @PostMapping("/elderly/{elderlyId}/sync-health-data")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
+    public ResponseEntity<HealthDataSyncResponse> syncHealthData(
+        @PathVariable Long elderlyId,
+        @Valid @RequestBody HealthDataSyncRequest request
+    ) {
+        return ResponseEntity.ok(healthSyncService.sync(elderlyId, request));
+    }
+
+    // ── Weekly Summary ──────────────────────────────────────────────────────
+
+    @GetMapping("/elderly/{elderlyId}/weekly-summary")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
+    public ResponseEntity<?> getWeeklySummary(@PathVariable Long elderlyId) {
+        var summary = weeklySummaryService.getLatestSummary(elderlyId);
+        if (summary == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(java.util.Map.of(
+            "title", summary.getTitle(),
+            "body", summary.getBody(),
+            "data", summary.getData(),
+            "createdAt", summary.getCreatedAt()
+        ));
+    }
+
+    @PostMapping("/elderly/{elderlyId}/weekly-summary/generate")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
+    public ResponseEntity<?> generateWeeklySummary(@PathVariable Long elderlyId) {
+        String summary = weeklySummaryService.generateWeeklySummary(elderlyId);
+        return ResponseEntity.ok(java.util.Map.of(
+            "message", "Đã tạo tổng kết tuần",
+            "summary", summary
+        ));
     }
 }
