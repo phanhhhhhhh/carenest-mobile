@@ -85,7 +85,7 @@ public class EmergencyEventController {
     ) {
         int count = emergencyEventService.acknowledgeAllForUser(userId, principalId);
         return ResponseEntity.ok(Map.of(
-            "message", "Đã đánh dấu tất cả cảnh báo là đã đọc",
+            "message", "All emergency alerts marked as read",
             "acknowledgedCount", count
         ));
     }
