@@ -35,7 +35,7 @@ public class HealthReportService {
     public HealthReportResponse generateReport(Long elderlyId, Set<HealthMetricType> types,
                                                 OffsetDateTime from, OffsetDateTime to) {
         User elderly = userRepository.findById(elderlyId)
-            .orElseThrow(() -> new NotFoundException("User không tồn tại: " + elderlyId));
+            .orElseThrow(() -> new NotFoundException("User not found: " + elderlyId));
 
         if (from == null) from = OffsetDateTime.now().minusWeeks(1);
         if (to == null) to = OffsetDateTime.now();
