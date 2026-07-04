@@ -58,8 +58,8 @@ public class MedicationReminderScheduler {
                 Notification notification = Notification.builder()
                     .user(med.getElderly())
                     .type(NotificationType.MEDICATION_REMINDER)
-                    .title("Nhắc uống thuốc: " + med.getName())
-                    .body("Đã đến giờ uống " + med.getName() + " - " + med.getDosage()
+                    .title("Medication Reminder: " + med.getName())
+                    .body("Time to take " + med.getName() + " - " + med.getDosage()
                         + ". " + (med.getInstructions() != null ? med.getInstructions() : ""))
                     .data(Map.of(
                         "medicationId", med.getId().toString(),
@@ -71,7 +71,7 @@ public class MedicationReminderScheduler {
 
                 // Send push notification
                 fcmService.sendToUser(med.getElderly().getId(),
-                    "Nhắc uống thuốc: " + med.getName(),
+                    "Medication Reminder: " + med.getName(),
                     med.getName() + " - " + med.getDosage(),
                     Map.of(
                         "type", "MEDICATION_REMINDER",
