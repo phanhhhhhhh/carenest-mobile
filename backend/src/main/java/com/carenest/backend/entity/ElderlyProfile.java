@@ -42,11 +42,11 @@ public class ElderlyProfile {
     private User user;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "health_conditions", columnDefinition = "jsonb")
+    @Column(name = "health_conditions")
     private List<String> healthConditions;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "emergency_contacts", columnDefinition = "jsonb")
+    @Column(name = "emergency_contacts")
     private List<EmergencyContact> emergencyContacts;
 
     @Column(columnDefinition = "TEXT")
