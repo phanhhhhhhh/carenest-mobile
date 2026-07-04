@@ -59,7 +59,7 @@ class PasswordResetSuccessScreen extends StatelessWidget {
                 const SizedBox(height: 28),
 
                 const Text(
-                  'Mật khẩu đã được đặt lại!',
+                  'Password Has Been Reset!',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -69,7 +69,7 @@ class PasswordResetSuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Bạn đã đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.',
+                  'You have successfully reset your password. Please sign in with your new password.',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -101,7 +101,7 @@ class PasswordResetSuccessScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Vì lý do bảo mật, tất cả các thiết bị khác sẽ bị đăng xuất sau khi bạn đăng nhập bằng mật khẩu mới.',
+                          'For security reasons, all other devices will be signed out after you sign in with your new password.',
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13,
@@ -129,7 +129,7 @@ class PasswordResetSuccessScreen extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Đăng nhập ngay',
+                      'Sign In Now',
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
