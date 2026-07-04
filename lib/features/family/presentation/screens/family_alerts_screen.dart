@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
@@ -39,7 +39,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
             children: [
               Icon(Icons.people_outline, size: 56, color: AppColors.textHint),
               SizedBox(height: 16),
-              Text('Chưa có người cao tuổi được liên kết',
+              Text('No elderly person linked yet',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
             ],
           ),
@@ -59,7 +59,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
     return AppBar(
       title: Row(
         children: [
-          const Text('Cảnh báo',
+          const Text('Alerts',
               style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           if (activeCount > 0) ...[
             const SizedBox(width: 10),
@@ -69,7 +69,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
                 color: AppColors.error,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text('$activeCount mới',
+              child: Text('$activeCount new',
                   style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
             ),
           ],
@@ -85,7 +85,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
             child: _markingRead
                 ? const SizedBox(width: 16, height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Đánh dấu đã đọc',
+                : const Text('Mark all read',
                     style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
       ],
@@ -112,7 +112,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
               ElevatedButton.icon(
                 onPressed: () => ref.invalidate(emergencyEventProvider(elderlyId)),
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Thử lại'),
+                label: const Text('Retry'),
               ),
             ],
           ),
@@ -134,10 +134,10 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
               child: const Icon(Icons.check_circle_outline, color: AppColors.success, size: 44),
             ),
             const SizedBox(height: 16),
-            const Text('Không có cảnh báo nào',
+            const Text('No alerts',
                 style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            const Text('Mọi thứ đều ổn!',
+            const Text('Everything is fine!',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
           ],
         ),
@@ -152,7 +152,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
       padding: const EdgeInsets.all(16),
       children: [
         if (active.isNotEmpty) ...[
-          const Text('Đang active',
+          const Text('Active',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
                   color: AppColors.error)),
           const SizedBox(height: 10),
@@ -163,7 +163,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
         ],
         if (resolved.isNotEmpty) ...[
           if (active.isNotEmpty) const SizedBox(height: 10),
-          const Text('Đã xử lý',
+          const Text('Resolved',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary)),
           const SizedBox(height: 10),
@@ -268,10 +268,10 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
 
   String _eventTitle(String type) {
     switch (type) {
-      case 'SOS': return 'SOS khẩn cấp';
-      case 'MISSED_MEDICATION': return 'Bỏ lỡ thuốc';
-      case 'ABNORMAL_VITALS': return 'Chỉ số bất thường';
-      default: return 'Cảnh báo';
+      case 'SOS': return 'SOS Emergency';
+      case 'MISSED_MEDICATION': return 'Missed Medication';
+      case 'ABNORMAL_VITALS': return 'Abnormal Vitals';
+      default: return 'Alert';
     }
   }
 
@@ -295,10 +295,11 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
 
   String _formatRelative(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Vừa xong';
-    if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
-    if (diff.inDays == 0) return 'Hôm nay ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-    if (diff.inDays == 1) return 'Hôm qua ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-    return '${diff.inDays} ngày trước';
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays == 0) return 'Today ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    if (diff.inDays == 1) return 'Yesterday ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    return '${diff.inDays}d ago';
   }
 }
+
