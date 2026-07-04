@@ -114,7 +114,7 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
               const SizedBox(height: 32),
 
               const Text(
-                'Xác thực OTP',
+                'OTP Verification',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -123,7 +123,7 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
               ),
               const SizedBox(height: 8),
               const Text(
-                'Nhập mã OTP được gửi qua SMS để tiếp tục đặt lại mật khẩu',
+                'Enter the OTP sent via SMS to continue resetting your password',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -216,7 +216,7 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
                               color: Colors.white, strokeWidth: 2.5),
                         )
                       : const Text(
-                          'Xác nhận',
+                          'Confirm',
                           style:
                               TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
@@ -236,7 +236,7 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
                           ref.read(forgotPasswordPhoneProvider.notifier).sendOtp(widget.phone);
                         },
                         child: const Text(
-                          'Gửi lại',
+                          'Resend',
                           style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
@@ -250,9 +250,9 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
                             fontSize: 14,
                           ),
                           children: [
-                            const TextSpan(text: 'Không nhận được mã? '),
+                            const TextSpan(text: 'Didn\'t receive the code? '),
                             TextSpan(
-                              text: 'Gửi lại sau ${_secondsRemaining}s',
+                              text: 'Resend in ${_secondsRemaining}s',
                               style: const TextStyle(
                                 color: AppColors.textHint,
                               ),

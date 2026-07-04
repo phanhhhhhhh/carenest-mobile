@@ -16,15 +16,15 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 public class ReminderRequest {
 
-    @NotNull(message = "elderlyId không được để trống")
+    @NotNull(message = "elderlyId is required")
     private Long elderlyId;
 
-    @NotBlank(message = "title không được để trống")
+    @NotBlank(message = "title is required")
     private String title;
 
-    @NotNull(message = "remindAt không được để trống")
+    @NotNull(message = "remindAt is required")
     private OffsetDateTime remindAt;
 
-    @NotNull(message = "repeatRule không được để trống")
+    @NotNull(message = "repeatRule is required")
     private RepeatRule repeatRule;
 }
