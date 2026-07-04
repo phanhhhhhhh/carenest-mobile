@@ -25,6 +25,7 @@ public class HealthMetricService {
     private final HealthMetricRepository healthMetricRepository;
     private final UserRepository userRepository;
     private final HealthMetricThresholdService thresholdService;
+    private final AnomalyDetectionService anomalyDetectionService;
 
     public HealthMetricResponse create(HealthMetricRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
@@ -48,6 +49,9 @@ public class HealthMetricService {
 
         // Check thresholds and create alert if exceeded
         thresholdService.checkAndAlert(saved);
+
+        // Run statistical anomaly detection
+        anomalyDetectionService.analyze(saved);
 
         return toResponse(saved);
     }
