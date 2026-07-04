@@ -29,10 +29,10 @@ public class HealthMetricService {
 
     public HealthMetricResponse create(HealthMetricRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
-            .orElseThrow(() -> new NotFoundException("User (elderly) không tồn tại: " + request.getElderlyId()));
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
         if (elderly.getRole() != UserRole.ELDERLY) {
-            throw new IllegalArgumentException("elderlyId phải là user có role ELDERLY");
+            throw new IllegalArgumentException("elderlyId must be a user with ELDERLY role");
         }
 
         HealthMetric metric = HealthMetric.builder()
@@ -59,7 +59,7 @@ public class HealthMetricService {
     @Transactional(readOnly = true)
     public HealthMetricResponse getById(Long id) {
         HealthMetric metric = healthMetricRepository.findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new NotFoundException("HealthMetric không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("HealthMetric not found: " + id));
         return toResponse(metric);
     }
 
@@ -82,7 +82,7 @@ public class HealthMetricService {
 
     public HealthMetricResponse update(Long id, HealthMetricRequest request) {
         HealthMetric metric = healthMetricRepository.findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new NotFoundException("HealthMetric không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("HealthMetric not found: " + id));
 
         metric.setType(request.getType());
         metric.setValue(request.getValue());
@@ -96,7 +96,7 @@ public class HealthMetricService {
 
     public void delete(Long id) {
         HealthMetric metric = healthMetricRepository.findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new NotFoundException("HealthMetric không tồn tại: " + id));
+            .orElseThrow(() -> new NotFoundException("HealthMetric not found: " + id));
         metric.setDeletedAt(OffsetDateTime.now());
         healthMetricRepository.save(metric);
     }
