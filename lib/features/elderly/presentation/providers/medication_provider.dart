@@ -4,6 +4,27 @@ import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
+class MedicationLogEntry {
+  final String id;
+  final String medicationId;
+  final String status; // TAKEN | MISSED
+  final DateTime takenAt;
+  const MedicationLogEntry({
+    required this.id,
+    required this.medicationId,
+    required this.status,
+    required this.takenAt,
+  });
+  factory MedicationLogEntry.fromJson(Map<String, dynamic> j) =>
+      MedicationLogEntry(
+        id: j['id'].toString(),
+        medicationId: j['medicationId']?.toString() ?? '',
+        status: j['status'] as String? ?? 'TAKEN',
+        takenAt:
+            DateTime.tryParse(j['takenAt'] as String? ?? '') ?? DateTime.now(),
+      );
+}
+
 class MedicationItem {
   final String id;
   final String name;
@@ -64,20 +85,28 @@ class MedicationListState {
   final bool isLoading;
   final String? error;
   final List<MedicationItem> items;
+  final List<MedicationLogEntry> logs;
+  final String? logsError;
   const MedicationListState({
     this.isLoading = false,
     this.error,
     this.items = const [],
+    this.logs = const [],
+    this.logsError,
   });
   MedicationListState copyWith({
     bool? isLoading,
     String? error,
     List<MedicationItem>? items,
+    List<MedicationLogEntry>? logs,
+    String? logsError,
   }) =>
       MedicationListState(
         isLoading: isLoading ?? this.isLoading,
         error: error,
         items: items ?? this.items,
+        logs: logs ?? this.logs,
+        logsError: logsError,
       );
 }
 
@@ -102,7 +131,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
       state = state.copyWith(isLoading: false, items: items);
     } on DioException catch (e) {
       state = state.copyWith(
-          isLoading: false, error: 'Lỗi tải thuốc: ${e.message}');
+          isLoading: false, error: 'Error loading medication: ${e.message}');
     }
   }
 
@@ -128,7 +157,9 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
           'daysOfWeek': daysOfWeek,
       });
       await load();
-    } catch (_) {}
+    } on DioException catch (e) {
+      state = state.copyWith(error: 'Error adding medication: ${e.message}');
+    }
   }
 
   Future<void> updateMedication({
@@ -148,7 +179,9 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
       if (daysOfWeek != null) data['daysOfWeek'] = daysOfWeek;
       await _dio.patch('/medications/$medicationId', data: data);
       await load();
-    } catch (_) {}
+    } on DioException catch (e) {
+      state = state.copyWith(error: 'Error updating medication: ${e.message}');
+    }
   }
 
   Future<bool> deleteMedication(String medicationId) async {
@@ -158,6 +191,20 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// GET /api/medications/{medicationId}/logs — fetch dose history.
+  Future<void> fetchLogs(String medicationId) async {
+    state = state.copyWith(logsError: null);
+    try {
+      final resp = await _dio.get('/medications/$medicationId/logs');
+      final logs = asListOfMaps(resp.data)
+          .map((e) => MedicationLogEntry.fromJson(e))
+          .toList();
+      state = state.copyWith(logs: logs);
+    } on DioException catch (e) {
+      state = state.copyWith(logsError: 'Error loading history: ${e.message}');
     }
   }
 
@@ -185,7 +232,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
       final reverted = List<MedicationItem>.from(state.items);
       reverted[idx] = reverted[idx].copyWith(taken: previousTaken);
       state = state.copyWith(items: reverted);
-      onError?.call('Lỗi: ${e.message}');
+      onError?.call('Error: ${e.message}');
       return false;
     }
   }
