@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AppointmentStatusUpdateRequest {
 
-    @NotNull(message = "status không được để trống")
+    @NotNull(message = "status is required")
     private AppointmentStatus status;
 }
