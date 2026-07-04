@@ -16,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 public class HealthDataSyncRequest {
 
-    @NotEmpty(message = "dataPoints không được để trống")
+    @NotEmpty(message = "dataPoints is required")
     private List<@Valid ExternalDataPoint> dataPoints;
 
     /** Source of the synced data: GOOGLE_FIT, HEALTH_CONNECT, APPLE_HEALTH, MANUAL */
@@ -28,18 +28,18 @@ public class HealthDataSyncRequest {
     @AllArgsConstructor
     public static class ExternalDataPoint {
 
-        @NotNull(message = "type không được để trống")
+        @NotNull(message = "type is required")
         private String type;
 
-        @NotNull(message = "value không được để trống")
+        @NotNull(message = "value is required")
         private java.math.BigDecimal value;
 
         private java.math.BigDecimal valueSecondary;
 
-        @NotNull(message = "unit không được để trống")
+        @NotNull(message = "unit is required")
         private String unit;
 
-        @NotNull(message = "recordedAt không được để trống")
+        @NotNull(message = "recordedAt is required")
         private java.time.OffsetDateTime recordedAt;
 
         private String notes;
