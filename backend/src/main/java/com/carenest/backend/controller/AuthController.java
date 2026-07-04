@@ -64,7 +64,7 @@ public class AuthController {
         @Valid @RequestBody ForgotPasswordRequest request
     ) {
         authService.forgotPassword(request.getPhoneNumber());
-        return ResponseEntity.ok(Map.of("message", "Nếu số điện thoại đã đăng ký, OTP sẽ được gửi"));
+        return ResponseEntity.ok(Map.of("message", "If phone is registered, OTP will be sent"));
     }
 
     @PostMapping("/verify-reset-otp")
