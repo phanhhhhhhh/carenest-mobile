@@ -15,6 +15,6 @@ class GeminiService {
 
   Future<String> sendMessage(String text) async {
     final response = await _chat.sendMessage(Content.text(text));
-    return response.text?.trim() ?? 'Xin lỗi, tôi không thể trả lời lúc này.';
+    return response.text?.trim() ?? 'Sorry, I cannot answer right now.';
   }
 }
