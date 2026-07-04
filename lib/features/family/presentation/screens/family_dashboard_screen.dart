@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../providers/family_provider.dart';
 import '../providers/emergency_event_provider.dart';
+import '../providers/appointment_provider.dart';
 import '../../../elderly/presentation/providers/health_metric_provider.dart';
 import '../../../elderly/presentation/providers/medication_provider.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
@@ -28,14 +29,14 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
 
   Future<void> _loadName() async {
     final name = await SecureStorage.getName();
-    if (mounted) setState(() => _name = name ?? 'bạn');
+    if (mounted) setState(() => _name = name ?? 'you');
   }
 
   String get _greeting {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Chào buổi sáng';
-    if (hour < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   }
 
   @override
@@ -56,7 +57,9 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
               const SizedBox(height: 24),
               _buildElderlyCard(data),
               const SizedBox(height: 20),
-              _buildSummaryGrid(data),
+              _buildSummaryGrid(data, data?.elderlyId),
+              const SizedBox(height: 24),
+              _buildUpcomingAppointments(),
               const SizedBox(height: 24),
               _buildRecentActivity(data?.elderlyId),
             ],
@@ -163,7 +166,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Người thân của bạn',
+                      'Your loved one',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 13,
@@ -171,7 +174,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      hasElderly ? data!.elderlyName! : 'Chưa liên kết',
+                      hasElderly ? data!.elderlyName! : 'Not linked',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -220,14 +223,31 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
     );
   }
 
-  Widget _buildSummaryGrid(dynamic data) {
+  Widget _buildSummaryGrid(dynamic data, String? elderlyId) {
     final totalMeds = data?.totalMedications ?? 0;
+
+    // Derive real BP and alerts values from providers when elderly is linked
+    String bpValue = '--';
+    int alertsCount = 0;
+
+    if (elderlyId != null) {
+      final healthState = ref.watch(healthMetricProvider(elderlyId));
+      final bpData = healthState.latestByType['BLOOD_PRESSURE'];
+      if (bpData != null) {
+        bpValue = bpData.valueSecondary != null
+            ? '${bpData.value}/${bpData.valueSecondary}'
+            : bpData.value;
+      }
+
+      final alertState = ref.watch(emergencyEventProvider(elderlyId));
+      alertsCount = alertState.activeCount;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Tổng quan',
+          'Overview',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -241,9 +261,9 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
               icon: Icons.medication,
               iconColor: AppColors.primary,
               iconBgColor: AppColors.primary.withOpacity(0.08),
-              label: 'Thuốc',
+              label: 'Meds',
               value: '$totalMeds',
-              subtitle: 'đang dùng',
+              subtitle: 'taking',
               onTap: () => context.go('/family/medication'),
             ),
             const SizedBox(width: 10),
@@ -251,9 +271,9 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
               icon: Icons.favorite,
               iconColor: AppColors.error,
               iconBgColor: const Color(0xFFFFEBEE),
-              label: 'Huyết áp',
-              value: '--',
-              subtitle: 'Cập nhật',
+              label: 'Blood Pressure',
+              value: bpValue,
+              subtitle: 'Updated',
               onTap: () => context.go('/family/health'),
             ),
             const SizedBox(width: 10),
@@ -261,13 +281,74 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
               icon: Icons.notifications_active,
               iconColor: AppColors.warning,
               iconBgColor: const Color(0xFFFFF3E0),
-              label: 'Cảnh báo',
-              value: '0',
-              subtitle: 'đang active',
+              label: 'Alerts',
+              value: '$alertsCount',
+              subtitle: 'active',
               onTap: () => context.go('/family/alerts'),
             ),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _buildUpcomingAppointments() {
+    final state = ref.watch(appointmentProvider);
+    final upcoming = state.upcoming.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Upcoming Appointments',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            TextButton(
+              onPressed: () => context.push('/family/appointments'),
+              child: const Text('View All',
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (state.isLoading && upcoming.isEmpty)
+          const SizedBox(
+            height: 60,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else if (upcoming.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.event_note, color: AppColors.textHint, size: 32),
+                SizedBox(height: 8),
+                Text('No appointments yet',
+                    style: TextStyle(
+                        color: AppColors.textSecondary, fontSize: 13)),
+              ],
+            ),
+          )
+        else
+          ...upcoming.map((apt) => _AppointmentPreviewCard(
+                doctor: apt.doctor,
+                specialty: apt.specialty,
+                date: apt.appointmentDate,
+                onTap: () => context.push('/family/appointments'),
+              )),
       ],
     );
   }
@@ -287,8 +368,8 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             icon: Icons.medication,
             iconColor: AppColors.primary,
             title: med.name,
-            subtitle: '${med.dosage}${timeLabel.isNotEmpty ? ' lúc $timeLabel' : ''}',
-            time: med.taken ? 'Đã uống' : 'Sắp tới',
+            subtitle: '${med.dosage}${timeLabel.isNotEmpty ? ' at $timeLabel' : ''}',
+            time: med.taken ? 'Taken' : 'Upcoming',
           ));
         }
       }
@@ -299,9 +380,9 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
         for (final entry in healthState.latestByType.entries.take(2)) {
           final data = entry.value;
           final typeLabel = switch (entry.key) {
-            'BLOOD_PRESSURE' => 'Huyết áp',
-            'BLOOD_GLUCOSE' => 'Đường huyết',
-            'HEART_RATE' => 'Nhịp tim',
+            'BLOOD_PRESSURE' => 'Blood Pressure',
+            'BLOOD_GLUCOSE' => 'Blood Sugar',
+            'HEART_RATE' => 'Heart Rate',
             _ => entry.key,
           };
           final valueStr = data.valueSecondary != null
@@ -311,7 +392,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
           activityItems.add(_ActivityItem(
             icon: Icons.monitor_heart,
             iconColor: AppColors.success,
-            title: 'Chỉ số $typeLabel',
+            title: '$typeLabel reading',
             subtitle: '$valueStr $unitStr',
             time: _formatRelative(data.recordedAt),
           ));
@@ -325,7 +406,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
           activityItems.add(_ActivityItem(
             icon: Icons.warning_amber,
             iconColor: AppColors.warning,
-            title: event.type == 'SOS' ? 'SOS khẩn cấp' : 'Cảnh báo',
+            title: event.type == 'SOS' ? 'SOS Emergency' : 'Alert',
             subtitle: event.description,
             time: _formatRelative(event.createdAt),
           ));
@@ -338,8 +419,8 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
       activityItems.add(const _ActivityItem(
         icon: Icons.info_outline,
         iconColor: AppColors.textHint,
-        title: 'Chưa có hoạt động',
-        subtitle: 'Dữ liệu sẽ xuất hiện khi có hoạt động mới',
+        title: 'No activity yet',
+        subtitle: 'Data appears when new activity occurs',
         time: '',
       ));
     }
@@ -348,7 +429,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Hoạt động gần đây',
+          'Recent Activity',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -388,11 +469,11 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
 
   String _formatRelative(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Vừa xong';
-    if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
-    if (diff.inDays == 0) return 'Hôm nay';
-    if (diff.inDays == 1) return 'Hôm qua';
-    return '${diff.inDays} ngày trước';
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays == 1) return 'Yesterday';
+    return '${diff.inDays}d ago';
   }
 }
 
@@ -469,6 +550,108 @@ class _SummaryCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AppointmentPreviewCard extends StatelessWidget {
+  final String doctor;
+  final String specialty;
+  final DateTime date;
+  final VoidCallback onTap;
+
+  const _AppointmentPreviewCard({
+    required this.doctor,
+    required this.specialty,
+    required this.date,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final timeStr =
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final day = date.day;
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final monthStr = months[date.month - 1];
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '$day',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    monthStr,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    doctor,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$specialty • $timeStr',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textHint),
+          ],
         ),
       ),
     );

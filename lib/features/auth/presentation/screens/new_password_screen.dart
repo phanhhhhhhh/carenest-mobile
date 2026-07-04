@@ -51,11 +51,11 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
     final confirm = _confirmController.text;
 
     if (password.length < 6) {
-      setState(() => _error = 'Mật khẩu phải có ít nhất 6 ký tự');
+      setState(() => _error = 'Password must be at least 6 characters');
       return;
     }
     if (password != confirm) {
-      setState(() => _error = 'Mật khẩu xác nhận không khớp');
+      setState(() => _error = 'Passwords do not match');
       return;
     }
 
@@ -95,7 +95,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                 const SizedBox(height: 32),
 
                 const Text(
-                  'Đặt mật khẩu mới',
+                  'Set New Password',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
@@ -104,7 +104,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Mật khẩu mới phải có ít nhất 6 ký tự',
+                  'New password must be at least 6 characters',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -115,7 +115,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
 
                 // New password
                 Text(
-                  'Mật khẩu mới',
+                  'New Password',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -197,7 +197,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    ['', 'Yếu', 'Trung bình', 'Khá', 'Mạnh'][strength],
+                    ['', 'Weak', 'Medium', 'Good', 'Strong'][strength],
                     style: TextStyle(
                       fontSize: 12,
                       color: strength < 3 ? AppColors.warning : AppColors.success,
@@ -209,7 +209,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
 
                 // Confirm password
                 Text(
-                  'Xác nhận mật khẩu',
+                  'Confirm Password',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -301,7 +301,7 @@ class _NewPasswordScreenState extends ConsumerState<NewPasswordScreen> {
                             ),
                           )
                         : const Text(
-                            'Đặt mật khẩu',
+                            'Set Password',
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.w600),
                           ),

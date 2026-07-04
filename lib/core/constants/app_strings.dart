@@ -1,4 +1,4 @@
 class AppStrings {
   static const appName = 'CareNest';
-  static const tagline = 'Yên tâm khi xa nhà';
+  static const tagline = 'Peace of mind when away from home';
 }

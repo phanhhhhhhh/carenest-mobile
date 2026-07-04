@@ -47,7 +47,7 @@ public class Medication {
     private String dosage;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "schedule", columnDefinition = "jsonb")
+    @Column(name = "schedule")
     private MedicationSchedule schedule;
 
     @Column(name = "next_dose_time")

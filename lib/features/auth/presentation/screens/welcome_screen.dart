@@ -115,7 +115,7 @@ class _SplashScreenState extends State<_SplashScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Yên tâm khi xa nhà',
+                  'Peace of mind when away from home',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -167,23 +167,23 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
 
   static const _slides = [
     _SlideData(
-      title: 'Chăm sóc sức khỏe\ntoàn diện',
+      title: 'Comprehensive\nhealth care',
       subtitle:
-          'Theo dõi huyết áp, nhịp tim, đường huyết và nhiều chỉ số khác mỗi ngày.',
+          'Track blood pressure, heart rate, blood sugar and many other indicators daily.',
       emoji: '❤️',
       gradient: [AppColors.onboardSplashStart, AppColors.onboardSplashEnd],
     ),
     _SlideData(
-      title: 'Nhắc thuốc\nthông minh',
+      title: 'Smart\nmedication reminders',
       subtitle:
-          'Không bao giờ quên lịch uống thuốc với hệ thống nhắc nhở theo toa.',
+          'Never miss your medication schedule with prescription reminders.',
       emoji: '💊',
       gradient: [AppColors.secondary, Color(0xFF66BB6A)],
     ),
     _SlideData(
-      title: 'Yên tâm khi\nxa nhà',
+      title: 'Peace of mind when\naway from home',
       subtitle:
-          'Người thân có thể theo dõi sức khỏe từ xa, nhận cảnh báo khẩn cấp ngay lập tức.',
+          'Family can monitor health remotely and receive instant emergency alerts.',
       emoji: '🏠',
       gradient: [Color(0xFFFFB300), Color(0xFFFF9800)],
     ),
@@ -349,7 +349,7 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
                       elevation: 0,
                     ),
                     child: Text(
-                      _isLastSlide ? 'Bắt đầu' : 'Tiếp tục',
+                      _isLastSlide ? 'Get Started' : 'Continue',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -447,7 +447,7 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
               children: [
                 const SizedBox(height: 32),
                 const Text(
-                  'Sẵn sàng trải nghiệm?',
+                  'Ready to get started?',
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
@@ -457,7 +457,7 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Đăng ký ngay để bắt đầu chăm sóc sức khỏe cho người thân yêu của bạn.',
+                  'Sign up now to start caring for your loved ones\' health.',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -482,7 +482,7 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Đăng ký miễn phí',
+                      'Sign Up Free',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -500,9 +500,9 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
                       text: const TextSpan(
                         style: TextStyle(fontSize: 13, color: AppColors.textHint),
                         children: [
-                          TextSpan(text: 'Đã có tài khoản? '),
+                          TextSpan(text: 'Already have an account? '),
                           TextSpan(
-                            text: 'Đăng nhập',
+                            text: 'Sign In',
                             style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
