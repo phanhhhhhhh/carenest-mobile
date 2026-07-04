@@ -48,8 +48,8 @@ public class ReminderScheduler {
             Notification notification = Notification.builder()
                 .user(reminder.getElderly())
                 .type(NotificationType.MEDICATION_REMINDER)
-                .title("Nhắc nhở: " + reminder.getTitle())
-                .body("Đã đến giờ: " + reminder.getTitle())
+                .title("Reminder: " + reminder.getTitle())
+                .body("Time for: " + reminder.getTitle())
                 .data(java.util.Map.of(
                     "reminderId", reminder.getId(),
                     "elderlyId", reminder.getElderly().getId()
@@ -59,8 +59,8 @@ public class ReminderScheduler {
 
             // Send push notification to the elderly user
             fcmService.sendToUser(reminder.getElderly().getId(),
-                "Nhắc nhở: " + reminder.getTitle(),
-                "Đã đến giờ: " + reminder.getTitle(),
+                "Reminder: " + reminder.getTitle(),
+                "Time for: " + reminder.getTitle(),
                 Map.of(
                     "type", "REMINDER",
                     "reminderId", reminder.getId().toString()
