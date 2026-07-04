@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FamilyLinkStatusRequest {
 
-    @NotNull(message = "status không được để trống")
+    @NotNull(message = "status is required")
     private FamilyLinkStatus status;
 }

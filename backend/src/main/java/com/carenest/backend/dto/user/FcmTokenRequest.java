@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FcmTokenRequest {
 
-    @NotBlank(message = "fcmToken không được để trống")
+    @NotBlank(message = "fcmToken is required")
     private String fcmToken;
 }
