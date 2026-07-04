@@ -30,7 +30,7 @@ class _FamilyAppointmentsScreenState
 
   static const _statusLabels = {
     'SCHEDULED': 'Upcoming',
-    'COMPLETED': 'Done',
+    'COMPLETED': 'Completed',
     'CANCELLED': 'Cancelled',
     'RESCHEDULED': 'Rescheduled',
   };
@@ -652,7 +652,7 @@ class _AppointmentCard extends StatelessWidget {
                   children: [
                     _ActionChip(
                       icon: Icons.check_circle_outline,
-                      label: 'Done',
+                      label: 'Completed',
                       color: AppColors.success,
                       onTap: onComplete,
                     ),
