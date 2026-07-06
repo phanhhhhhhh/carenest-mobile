@@ -10,6 +10,7 @@ import com.carenest.backend.repository.HealthMetricThresholdRepository;
 import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.MedicationRepository;
 import com.carenest.backend.repository.NotificationRepository;
+import com.carenest.backend.repository.CameraDeviceRepository;
 import com.carenest.backend.repository.ReminderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class AuthorizationService {
     private final NotificationRepository notificationRepository;
     private final ReminderRepository reminderRepository;
     private final HealthMetricThresholdRepository healthMetricThresholdRepository;
+    private final CameraDeviceRepository cameraDeviceRepository;
 
     public boolean isOwnerOrLinkedFamily(Long principalId, Long elderlyId) {
         if (principalId == null || elderlyId == null) return false;
@@ -106,6 +108,17 @@ public class AuthorizationService {
         if (principalId == null || thresholdId == null) return false;
         return healthMetricThresholdRepository.findById(thresholdId)
             .map(t -> isOwnerOrLinkedFamily(principalId, t.getElderly().getId()))
+            .orElse(false);
+    }
+
+    /**
+     * Check access to a camera device.
+     * Family members linked to the elderly who owns the camera can access.
+     */
+    public boolean canAccessCamera(Long principalId, Long cameraId) {
+        if (principalId == null || cameraId == null) return false;
+        return cameraDeviceRepository.findById(cameraId)
+            .map(c -> isOwnerOrLinkedFamily(principalId, c.getElderly().getId()))
             .orElse(false);
     }
 }
