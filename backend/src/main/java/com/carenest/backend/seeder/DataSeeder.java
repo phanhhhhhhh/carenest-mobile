@@ -14,12 +14,18 @@ import com.carenest.backend.entity.MedicationLogStatus;
 import com.carenest.backend.entity.MedicationSchedule;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
+import com.carenest.backend.entity.CameraDevice;
+import com.carenest.backend.entity.ChatMessage;
+import com.carenest.backend.entity.Subscription;
 import com.carenest.backend.repository.AppointmentRepository;
+import com.carenest.backend.repository.CameraDeviceRepository;
+import com.carenest.backend.repository.ChatMessageRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
 import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.MedicationRepository;
+import com.carenest.backend.repository.SubscriptionRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +57,9 @@ public class DataSeeder implements CommandLineRunner {
     private final MedicationLogRepository medicationLogRepository;
     private final HealthMetricRepository healthMetricRepository;
     private final AppointmentRepository appointmentRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final SubscriptionRepository subscriptionRepository;
+    private final CameraDeviceRepository cameraDeviceRepository;
 
     private final List<User> elderlyUsers = new ArrayList<>();
     private final List<User> familyUsers = new ArrayList<>();
@@ -74,6 +83,9 @@ public class DataSeeder implements CommandLineRunner {
         seedMedicationLogs();
         seedHealthMetrics();
         seedAppointments();
+        seedChatMessages();
+        seedSubscriptions();
+        seedCameras();
         log.info("Seed data created successfully.");
     }
 
@@ -400,5 +412,83 @@ public class DataSeeder implements CommandLineRunner {
             .status(AppointmentStatus.SCHEDULED)
             .build();
         appointmentRepository.save(appointment);
+    }
+
+    // ── New: Chat Messages Seed ──────────────────────────────────────────
+
+    private void seedChatMessages() {
+        log.info("Seeding chat messages...");
+        User e1 = elderlyUsers.get(0);
+
+        String[][] convos = {
+            {"Good morning! How are you feeling today?",
+             "I'm a bit tired. My back hurts.",
+             "HEALTH"},
+            {"What time do I take my blood pressure medicine?",
+             "Your Amlodipine 5mg is scheduled for 8:00 AM. You've already taken today's morning dose! ✅",
+             "MEDICATION"},
+            {"Can you tell me a story? I feel lonely.",
+             "Of course! Did you know that in Vietnam, there's a legend about the origins of bánh chưng and bánh dày? The 6th Hùng King...",
+             "GENERAL"},
+            {"Thank you. That was a nice story.",
+             "I'm glad you enjoyed it! What would you like to talk about next? Your family or maybe a memory from your youth?",
+             "GENERAL"}
+        };
+
+        String sessionId = "default-" + e1.getId();
+        for (String[] convo : convos) {
+            ChatMessage userMsg = ChatMessage.builder()
+                .user(e1).role(ChatMessage.ChatRole.USER)
+                .content(convo[0]).sessionId(sessionId).build();
+            chatMessageRepository.save(userMsg);
+
+            ChatMessage aiMsg = ChatMessage.builder()
+                .user(e1).role(ChatMessage.ChatRole.AI)
+                .content(convo[1]).intent(convo[2])
+                .sessionId(sessionId).build();
+            chatMessageRepository.save(aiMsg);
+        }
+        log.info("Chat messages seeded ({} pairs).", convos.length);
+    }
+
+    // ── New: Subscription Seed ───────────────────────────────────────────
+
+    private void seedSubscriptions() {
+        log.info("Seeding subscriptions...");
+        User family1 = familyUsers.get(0);
+
+        Subscription sub = Subscription.builder()
+            .user(family1)
+            .planType(Subscription.PlanType.PREMIUM_MONTHLY)
+            .status(Subscription.SubscriptionStatus.ACTIVE)
+            .paymentProvider("MANUAL")
+            .amount(new BigDecimal("49000"))
+            .startDate(java.time.Instant.now().minus(5, java.time.temporal.ChronoUnit.DAYS))
+            .endDate(java.time.Instant.now().plus(25, java.time.temporal.ChronoUnit.DAYS))
+            .build();
+        subscriptionRepository.save(sub);
+        log.info("Subscription seeded (1 premium user).");
+    }
+
+    // ── New: Camera Seed ─────────────────────────────────────────────────
+
+    private void seedCameras() {
+        log.info("Seeding camera devices...");
+        User e1 = elderlyUsers.get(0);
+
+        CameraDevice camera = CameraDevice.builder()
+            .elderly(e1)
+            .label("Living Room")
+            .deviceSn("IMOU-DEMO-001")
+            .deviceId("demo-device-001")
+            .status(CameraDevice.CameraStatus.ONLINE)
+            .lastSeenAt(java.time.Instant.now())
+            .motionDetectionEnabled(true)
+            .monitoringWindowStart("07:00")
+            .monitoringWindowEnd("09:00")
+            .snapshotSchedule("08:00,13:00,20:00")
+            .build();
+        cameraDeviceRepository.save(camera);
+        log.info("Camera device seeded (1 demo device).");
     }
 }
