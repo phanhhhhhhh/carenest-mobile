@@ -27,6 +27,7 @@ import '../../features/elderly/presentation/screens/elderly_emergency_contacts_s
 import '../../features/elderly/presentation/screens/elderly_medication_history_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_appointments_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/notifications/presentation/screens/notification_settings_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/welcome',
@@ -145,6 +146,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/notification-settings',
+      builder: (context, state) => const NotificationSettingsScreen(),
     ),
 
     // Elderly shell

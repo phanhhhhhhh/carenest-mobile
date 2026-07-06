@@ -30,6 +30,7 @@ public class EmergencyEventService {
     private final UserRepository userRepository;
     private final FamilyLinkRepository familyLinkRepository;
     private final FcmService fcmService;
+    private final CameraService cameraService;
 
     public EmergencyEventResponse trigger(EmergencyEventRequest request) {
         User elderly = userRepository.findById(request.getElderlyId())
@@ -65,6 +66,13 @@ public class EmergencyEventService {
                 ));
             log.info("Emergency push sent to {} family members for elderlyId={}",
                 familyUserIds.size(), elderly.getId());
+        }
+
+        // UC-28: Capture camera snapshot in parallel (non-blocking)
+        try {
+            cameraService.captureSosSnapshot(elderly.getId(), saved.getId());
+        } catch (Exception e) {
+            log.warn("SOS snapshot capture failed (non-blocking): {}", e.getMessage());
         }
 
         return toResponse(saved);
