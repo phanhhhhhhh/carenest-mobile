@@ -54,6 +54,7 @@ dependencies:
 
   # Voice
   speech_to_text: ^7.0.0
+  url_launcher: ^6.3.0
 
   # Env
   flutter_dotenv: ^5.1.0
