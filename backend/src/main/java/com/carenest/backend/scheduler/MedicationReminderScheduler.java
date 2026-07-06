@@ -28,6 +28,7 @@ public class MedicationReminderScheduler {
     private final MedicationRepository medicationRepository;
     private final NotificationRepository notificationRepository;
     private final FcmService fcmService;
+    private final com.carenest.backend.service.ChatReminderService chatReminderService;
 
     @Scheduled(fixedRate = 3600000) // every hour
     @Transactional
@@ -77,6 +78,13 @@ public class MedicationReminderScheduler {
                         "type", "MEDICATION_REMINDER",
                         "medicationId", med.getId().toString()
                     ));
+
+                // UC-18: Also send AI-powered chat reminder
+                try {
+                    chatReminderService.sendMedicationChatReminder(med.getElderly(), med);
+                } catch (Exception e) {
+                    log.warn("Failed to send chat reminder for medication {}: {}", med.getId(), e.getMessage());
+                }
 
                 log.debug("Medication reminder: elderly={} medication={}",
                     med.getElderly().getId(), med.getName());
