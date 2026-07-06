@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/config/app_config.dart';
-import '../../../../core/services/gemini_service.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../providers/chat_provider.dart';
 
-class ElderlyChatScreen extends StatefulWidget {
+class ElderlyChatScreen extends ConsumerStatefulWidget {
   const ElderlyChatScreen({super.key});
 
   @override
-  State<ElderlyChatScreen> createState() => _ElderlyChatScreenState();
+  ConsumerState<ElderlyChatScreen> createState() => _ElderlyChatScreenState();
 }
 
-class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
+class _ElderlyChatScreenState extends ConsumerState<ElderlyChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  late final GeminiService? _gemini;
-  bool _isTyping = false;
   String _userName = 'you';
 
   // Voice input
@@ -27,9 +25,6 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
   @override
   void initState() {
     super.initState();
-    _gemini = AppConfig.geminiApiKey != 'YOUR_GEMINI_API_KEY'
-        ? GeminiService()
-        : null;
     _speech = stt.SpeechToText();
     _initSpeech();
     _loadUserName();
@@ -67,9 +62,6 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     return 'Good evening';
   }
 
-  List<_ChatMessage> get _messages => _messageList;
-  final List<_ChatMessage> _messageList = [];
-
   String get _welcomeMessage {
     return '$_greeting $_userName! I am your health care assistant. '
         'How are you feeling today? I can help you:\n'
@@ -87,35 +79,13 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _isTyping) return;
+    if (text.isEmpty) return;
 
-    setState(() {
-      _messageList.add(
-          _ChatMessage(text: text, isAi: false, time: _timeNow()));
-      _isTyping = true;
-    });
+    final chatState = ref.read(chatProvider);
+    if (chatState.isSending) return;
+
     _controller.clear();
-    _scrollToBottom();
-
-    String reply;
-    final gemini = _gemini;
-    if (gemini != null) {
-      try {
-        reply = await gemini.sendMessage(text);
-      } catch (_) {
-        reply = 'Sorry $_userName, I can\'t connect right now. Please try again.';
-      }
-    } else {
-      await Future.delayed(const Duration(milliseconds: 1000));
-      reply = _fakeReply(text);
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _isTyping = false;
-      _messageList
-          .add(_ChatMessage(text: reply, isAi: true, time: _timeNow()));
-    });
+    await ref.read(chatProvider.notifier).sendMessage(text);
     _scrollToBottom();
   }
 
@@ -146,27 +116,6 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     );
   }
 
-  String _fakeReply(String question) {
-    final q = question.toLowerCase();
-    if (q.contains('blood pressure')) {
-      return 'Your recent blood pressure readings are normal. '
-          'Keep up with a low-salt diet and stay hydrated!';
-    }
-    if (q.contains('medicine') || q.contains('medication') || q.contains('pill')) {
-      return 'Dear $_userName, please check "My Medications" for today\'s schedule. '
-          'Don\'t forget to take them on time and at the right dosage!';
-    }
-    if (q.contains('pain') || q.contains('tired') || q.contains('unwell') || q.contains('sick')) {
-      return 'Not feeling well? Please rest and drink plenty of water. '
-          'If symptoms persist or are severe, contact your doctor or press the SOS button to notify your family.';
-    }
-    if (q.contains('hello') || q.contains('hi') || q.contains('hey')) {
-      return '$_greeting $_userName! Great to chat with you. How can I help you today?';
-    }
-    return 'Thank you for sharing, $_userName! I\'m always here to support you. '
-        'Would you like me to check your medication schedule or health indicators today?';
-  }
-
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -179,13 +128,13 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     });
   }
 
-  String _timeNow() {
-    final now = DateTime.now();
-    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final chatState = ref.watch(chatProvider);
+    final messages = chatState.messages;
+    final isSending = chatState.isSending;
+    final aiOnline = chatState.aiAvailable;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -196,8 +145,8 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
                       colors: [AppColors.primary, AppColors.primaryLight],
                     ),
                     shape: BoxShape.circle,
@@ -205,21 +154,20 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
                   child: const Icon(Icons.auto_awesome,
                       color: Colors.white, size: 22),
                 ),
-                if (_gemini != null)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: AppColors.surface, width: 2),
-                      ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: aiOnline ? AppColors.success : AppColors.warning,
+                      shape: BoxShape.circle,
+                      border:
+                          Border.all(color: AppColors.surface, width: 2),
                     ),
                   ),
+                ),
               ],
             ),
             const SizedBox(width: 12),
@@ -230,12 +178,11 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
                     style: TextStyle(
                         fontSize: 16, fontWeight: FontWeight.w700)),
                 Text(
-                  _gemini != null ? 'Online' : 'Offline mode',
+                  aiOnline ? 'Online — AI-powered' : 'Offline mode',
                   style: TextStyle(
                     fontSize: 12,
-                    color: _gemini != null
-                        ? AppColors.success
-                        : AppColors.textSecondary,
+                    color:
+                        aiOnline ? AppColors.success : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -245,36 +192,88 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          if (messages.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_outline,
+                  color: AppColors.textSecondary, size: 20),
+              onPressed: () => _confirmClearHistory(),
+              tooltip: 'Clear history',
+            ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: (_messages.isEmpty ? 1 : _messages.length) +
-                  (_isTyping ? 1 : 0),
-              itemBuilder: (ctx, i) {
-                if (_messages.isEmpty) {
-                  return _WelcomeBubble(message: _welcomeMessage);
-                }
-                if (i == _messages.length) return const _TypingIndicator();
-                return _BubbleWidget(message: _messages[i]);
-              },
-            ),
+            child: chatState.isLoading && messages.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount:
+                        (messages.isEmpty ? 1 : messages.length) +
+                            (isSending ? 1 : 0),
+                    itemBuilder: (ctx, i) {
+                      if (messages.isEmpty) {
+                        return _WelcomeBubble(message: _welcomeMessage);
+                      }
+                      if (i == messages.length) {
+                        return const _TypingIndicator();
+                      }
+                      final msg = messages[i];
+                      return _BubbleWidget(
+                        text: msg.content,
+                        isAi: msg.isAi,
+                        time: _formatTime(msg.createdAt),
+                        intent: msg.intent,
+                      );
+                    },
+                  ),
           ),
           _buildQuickReplies(),
-          _buildInputBar(),
+          _buildInputBar(isSending),
         ],
       ),
     );
+  }
+
+  void _confirmClearHistory() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Clear chat history?'),
+        content: const Text(
+            'This will delete all messages in this conversation.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ref.read(chatProvider.notifier).clearHistory();
+            },
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildQuickReplies() {
     final replies = [
       'Blood pressure today?',
       'Medication schedule?',
-      'I have a headache'
+      'I have a headache',
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -309,7 +308,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(bool isSending) {
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -348,7 +347,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
               controller: _controller,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendMessage(),
-              enabled: !_isTyping,
+              enabled: !isSending,
               decoration: InputDecoration(
                 hintText: 'Type a message...',
                 hintStyle: const TextStyle(color: AppColors.textHint),
@@ -365,13 +364,13 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
           ),
           const SizedBox(width: 8),
           InkWell(
-            onTap: _isTyping ? null : _sendMessage,
+            onTap: isSending ? null : _sendMessage,
             borderRadius: BorderRadius.circular(24),
             child: Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: _isTyping ? AppColors.textHint : AppColors.primary,
+                color: isSending ? AppColors.textHint : AppColors.primary,
                 shape: BoxShape.circle,
               ),
               child:
@@ -384,13 +383,7 @@ class _ElderlyChatScreenState extends State<ElderlyChatScreen> {
   }
 }
 
-class _ChatMessage {
-  final String text;
-  final bool isAi;
-  final String time;
-
-  _ChatMessage({required this.text, required this.isAi, required this.time});
-}
+// ── Welcome bubble ──────────────────────────────────────────────────────
 
 class _WelcomeBubble extends StatelessWidget {
   final String message;
@@ -416,7 +409,8 @@ class _WelcomeBubble extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: const BorderRadius.only(
@@ -448,6 +442,8 @@ class _WelcomeBubble extends StatelessWidget {
     );
   }
 }
+
+// ── Typing indicator ────────────────────────────────────────────────────
 
 class _TypingIndicator extends StatelessWidget {
   const _TypingIndicator();
@@ -482,13 +478,13 @@ class _TypingIndicator extends StatelessWidget {
                 bottomLeft: Radius.circular(4),
               ),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 _Dot(delay: 0),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 _Dot(delay: 200),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 _Dot(delay: 400),
               ],
             ),
@@ -546,10 +542,20 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   }
 }
 
-class _BubbleWidget extends StatelessWidget {
-  final _ChatMessage message;
+// ── Chat bubble ─────────────────────────────────────────────────────────
 
-  const _BubbleWidget({required this.message});
+class _BubbleWidget extends StatelessWidget {
+  final String text;
+  final bool isAi;
+  final String time;
+  final String? intent;
+
+  const _BubbleWidget({
+    required this.text,
+    required this.isAi,
+    required this.time,
+    this.intent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -557,10 +563,10 @@ class _BubbleWidget extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment:
-            message.isAi ? MainAxisAlignment.start : MainAxisAlignment.end,
+            isAi ? MainAxisAlignment.start : MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (message.isAi) ...[
+          if (isAi) ...[
             Container(
               width: 30,
               height: 30,
@@ -575,24 +581,39 @@ class _BubbleWidget extends StatelessWidget {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: message.isAi
+              crossAxisAlignment: isAi
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.end,
               children: [
+                if (intent != null && intent!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        intent!,
+                        style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: message.isAi
-                        ? AppColors.surface
-                        : AppColors.primary,
+                    color: isAi ? AppColors.surface : AppColors.primary,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
-                      bottomLeft:
-                          Radius.circular(message.isAi ? 4 : 16),
-                      bottomRight:
-                          Radius.circular(message.isAi ? 16 : 4),
+                      bottomLeft: Radius.circular(isAi ? 4 : 16),
+                      bottomRight: Radius.circular(isAi ? 16 : 4),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -603,11 +624,9 @@ class _BubbleWidget extends StatelessWidget {
                     ],
                   ),
                   child: Text(
-                    message.text,
+                    text,
                     style: TextStyle(
-                      color: message.isAi
-                          ? AppColors.textPrimary
-                          : Colors.white,
+                      color: isAi ? AppColors.textPrimary : Colors.white,
                       fontSize: 14,
                       height: 1.4,
                     ),
@@ -615,7 +634,7 @@ class _BubbleWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  message.time,
+                  time,
                   style: const TextStyle(
                       color: AppColors.textHint, fontSize: 11),
                 ),
