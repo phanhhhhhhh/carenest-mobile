@@ -1,14 +1,17 @@
 package com.carenest.backend.service;
 
 import com.carenest.backend.dto.health.HealthMetricThresholdRequest;
-import com.carenest.backend.dto.health.HealthMetricThresholdResponse;
+import com.carenest.backend.entity.ElderlyProfile;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.HealthMetric;
 import com.carenest.backend.entity.HealthMetricThreshold;
+import com.carenest.backend.entity.HealthMetricType;
 import com.carenest.backend.entity.Notification;
 import com.carenest.backend.entity.NotificationType;
 import com.carenest.backend.entity.User;
+import com.carenest.backend.dto.health.HealthMetricThresholdResponse;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricThresholdRepository;
 import com.carenest.backend.repository.NotificationRepository;
@@ -19,8 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -33,7 +35,10 @@ public class HealthMetricThresholdService {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
     private final FamilyLinkRepository familyLinkRepository;
+    private final ElderlyProfileRepository elderlyProfileRepository;
     private final FcmService fcmService;
+    private final GeminiApiService geminiApiService;
+
 
     public HealthMetricThresholdResponse create(Long elderlyId, HealthMetricThresholdRequest request) {
         User elderly = userRepository.findById(elderlyId)
@@ -183,6 +188,45 @@ public class HealthMetricThresholdService {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * UC-11: Use Gemini AI to recommend personalized thresholds based on
+     * the elderly's health profile (age, chronic conditions, etc.).
+     */
+    public Map<String, Object> recommendThresholds(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+        Optional<ElderlyProfile> profileOpt = elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(userId);
+
+        if (!geminiApiService.isAvailable()) {
+            return Map.of("aiRecommended", false, "recommendations",
+                List.of(
+                    Map.of("metricType", "BLOOD_PRESSURE", "minValue", 90, "maxValue", 140, "unit", "mmHg"),
+                    Map.of("metricType", "HEART_RATE", "minValue", 60, "maxValue", 100, "unit", "bpm"),
+                    Map.of("metricType", "BLOOD_GLUCOSE", "minValue", 3.9, "maxValue", 7.0, "unit", "mmol/L"),
+                    Map.of("metricType", "TEMPERATURE", "minValue", 36.1, "maxValue", 37.5, "unit", "C"),
+                    Map.of("metricType", "SPO2", "minValue", 95, "maxValue", 100, "unit", "%")
+                ));
+        }
+
+        try {
+            String context = "Patient: " + user.getName() + "\n"
+                + (profileOpt.isPresent()
+                    ? "Conditions: " + String.join(", ", profileOpt.get().getHealthConditions())
+                    : "No chronic conditions recorded.");
+
+            String aiResponse = geminiApiService.generateHealthAnalysis(
+                "Recommend personalized health thresholds for this elderly patient. "
+                    + "Consider their chronic conditions. Output thresholds for: "
+                    + "BLOOD_PRESSURE, HEART_RATE, BLOOD_GLUCOSE, TEMPERATURE, SPO2.",
+                context);
+            return Map.of("aiRecommended", true, "recommendations", aiResponse);
+        } catch (Exception e) {
+            log.warn("Gemini threshold recommendation failed: {}", e.getMessage());
+            return Map.of("aiRecommended", false, "error", "AI service unavailable");
+        }
     }
 
     private HealthMetricThreshold findOrThrow(Long id) {

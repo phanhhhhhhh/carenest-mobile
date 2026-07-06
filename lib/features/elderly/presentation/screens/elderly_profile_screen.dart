@@ -410,12 +410,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         'Notification Settings',
         AppColors.secondary,
         AppColors.secondary.withOpacity(0.08),
-        () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Feature under development')),
-          );
-        }
+        () => context.go('/notification-settings'),
       ),
       (
         Icons.workspace_premium_outlined,
