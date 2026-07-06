@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../providers/family_provider.dart';
 import '../../../elderly/presentation/providers/health_metric_provider.dart';
@@ -31,6 +32,13 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune, color: AppColors.textPrimary, size: 22),
+            tooltip: 'Threshold Settings',
+            onPressed: () => context.push('/health-thresholds'),
+          ),
+        ],
       ),
       body: _buildBody(elderlyId),
     );
