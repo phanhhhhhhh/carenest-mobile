@@ -1,76 +1,69 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import '../../../../core/storage/secure_storage.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 class NotificationSettingsData {
-  final bool medicationReminders;
-  final bool healthAlerts;
-  final bool weeklyReport;
-  final bool appointmentReminders;
-  final bool pushEnabled;
-  final bool quietHoursEnabled;
-  final String quietStart;
-  final String quietEnd;
+  final bool medicationReminder;
+  final int reminderMinutesBefore;
+  final bool healthAlert;
+  final bool familyUpdate;
+  final String quietHoursStart;
+  final String quietHoursEnd;
 
   const NotificationSettingsData({
-    this.medicationReminders = true,
-    this.healthAlerts = true,
-    this.weeklyReport = true,
-    this.appointmentReminders = true,
-    this.pushEnabled = true,
-    this.quietHoursEnabled = false,
-    this.quietStart = '22:00',
-    this.quietEnd = '07:00',
+    this.medicationReminder = true,
+    this.reminderMinutesBefore = 15,
+    this.healthAlert = true,
+    this.familyUpdate = true,
+    this.quietHoursStart = '22:00',
+    this.quietHoursEnd = '07:00',
   });
 
   NotificationSettingsData copyWith({
-    bool? medicationReminders,
-    bool? healthAlerts,
-    bool? weeklyReport,
-    bool? appointmentReminders,
-    bool? pushEnabled,
-    bool? quietHoursEnabled,
-    String? quietStart,
-    String? quietEnd,
+    bool? medicationReminder,
+    int? reminderMinutesBefore,
+    bool? healthAlert,
+    bool? familyUpdate,
+    String? quietHoursStart,
+    String? quietHoursEnd,
   }) =>
       NotificationSettingsData(
-        medicationReminders:
-            medicationReminders ?? this.medicationReminders,
-        healthAlerts: healthAlerts ?? this.healthAlerts,
-        weeklyReport: weeklyReport ?? this.weeklyReport,
-        appointmentReminders:
-            appointmentReminders ?? this.appointmentReminders,
-        pushEnabled: pushEnabled ?? this.pushEnabled,
-        quietHoursEnabled: quietHoursEnabled ?? this.quietHoursEnabled,
-        quietStart: quietStart ?? this.quietStart,
-        quietEnd: quietEnd ?? this.quietEnd,
+        medicationReminder:
+            medicationReminder ?? this.medicationReminder,
+        reminderMinutesBefore:
+            reminderMinutesBefore ?? this.reminderMinutesBefore,
+        healthAlert: healthAlert ?? this.healthAlert,
+        familyUpdate: familyUpdate ?? this.familyUpdate,
+        quietHoursStart: quietHoursStart ?? this.quietHoursStart,
+        quietHoursEnd: quietHoursEnd ?? this.quietHoursEnd,
       );
 
   Map<String, dynamic> toJson() => {
-        'medicationReminders': medicationReminders,
-        'healthAlerts': healthAlerts,
-        'weeklyReport': weeklyReport,
-        'appointmentReminders': appointmentReminders,
-        'pushEnabled': pushEnabled,
-        'quietHoursEnabled': quietHoursEnabled,
-        'quietStart': quietStart,
-        'quietEnd': quietEnd,
+        'medicationReminder': medicationReminder,
+        'reminderMinutesBefore': reminderMinutesBefore,
+        'healthAlert': healthAlert,
+        'familyUpdate': familyUpdate,
+        'quietHoursStart': quietHoursStart,
+        'quietHoursEnd': quietHoursEnd,
       };
 
   factory NotificationSettingsData.fromJson(Map<String, dynamic> j) =>
       NotificationSettingsData(
-        medicationReminders:
-            j['medicationReminders'] as bool? ?? true,
-        healthAlerts: j['healthAlerts'] as bool? ?? true,
-        weeklyReport: j['weeklyReport'] as bool? ?? true,
-        appointmentReminders:
-            j['appointmentReminders'] as bool? ?? true,
-        pushEnabled: j['pushEnabled'] as bool? ?? true,
-        quietHoursEnabled:
-            j['quietHoursEnabled'] as bool? ?? false,
-        quietStart: j['quietStart'] as String? ?? '22:00',
-        quietEnd: j['quietEnd'] as String? ?? '07:00',
+        medicationReminder:
+            j['medicationReminder'] as bool? ?? true,
+        reminderMinutesBefore:
+            (j['reminderMinutesBefore'] as num?)?.toInt() ?? 15,
+        healthAlert: j['healthAlert'] as bool? ?? true,
+        familyUpdate: j['familyUpdate'] as bool? ?? true,
+        quietHoursStart:
+            j['quietHoursStart'] as String? ?? '22:00',
+        quietHoursEnd:
+            j['quietHoursEnd'] as String? ?? '07:00',
       );
+
+  bool get quietHoursEnabled =>
+      quietHoursStart.isNotEmpty && quietHoursEnd.isNotEmpty;
 }
 
 class NotificationSettingsState {
@@ -78,12 +71,14 @@ class NotificationSettingsState {
   final String? error;
   final NotificationSettingsData data;
   final bool isSaving;
+  final bool fcmTokenSaved;
 
   const NotificationSettingsState({
     this.isLoading = false,
     this.error,
     this.data = const NotificationSettingsData(),
     this.isSaving = false,
+    this.fcmTokenSaved = false,
   });
 
   NotificationSettingsState copyWith({
@@ -91,23 +86,23 @@ class NotificationSettingsState {
     String? error,
     NotificationSettingsData? data,
     bool? isSaving,
+    bool? fcmTokenSaved,
   }) =>
       NotificationSettingsState(
         isLoading: isLoading ?? this.isLoading,
         error: error,
         data: data ?? this.data,
         isSaving: isSaving ?? this.isSaving,
+        fcmTokenSaved: fcmTokenSaved ?? this.fcmTokenSaved,
       );
 
-  // Convenience getters
-  bool get medicationReminders => data.medicationReminders;
-  bool get healthAlerts => data.healthAlerts;
-  bool get weeklyReport => data.weeklyReport;
-  bool get appointmentReminders => data.appointmentReminders;
-  bool get pushEnabled => data.pushEnabled;
+  bool get medicationReminder => data.medicationReminder;
+  int get reminderMinutesBefore => data.reminderMinutesBefore;
+  bool get healthAlert => data.healthAlert;
+  bool get familyUpdate => data.familyUpdate;
   bool get quietHoursEnabled => data.quietHoursEnabled;
-  String get quietStart => data.quietStart;
-  String get quietEnd => data.quietEnd;
+  String get quietHoursStart => data.quietHoursStart;
+  String get quietHoursEnd => data.quietHoursEnd;
 }
 
 class NotificationSettingsNotifier
@@ -119,16 +114,19 @@ class NotificationSettingsNotifier
     load();
   }
 
+  Future<String?> get _userId async => await SecureStorage.getUserId();
+
   Future<void> load() async {
+    final userId = await _userId;
+    if (userId == null) return;
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final resp = await _dio.get('/notification-settings');
-      final data = resp.data is Map<String, dynamic>
-          ? NotificationSettingsData.fromJson(resp.data as Map<String, dynamic>)
-          : const NotificationSettingsData();
+      final resp =
+          await _dio.get('/users/$userId/notification-preferences');
+      final data = NotificationSettingsData.fromJson(
+          resp.data as Map<String, dynamic>);
       state = state.copyWith(isLoading: false, data: data);
     } on DioException catch (e) {
-      // If backend doesn't have the endpoint yet, use defaults
       if (e.response?.statusCode == 404) {
         state = state.copyWith(isLoading: false);
         return;
@@ -141,13 +139,15 @@ class NotificationSettingsNotifier
   }
 
   Future<void> _save(NotificationSettingsData updated) async {
+    final userId = await _userId;
+    if (userId == null) return;
     state = state.copyWith(data: updated, isSaving: true);
     try {
-      await _dio.put('/notification-settings', data: updated.toJson());
+      await _dio.put('/users/$userId/notification-preferences',
+          data: updated.toJson());
       state = state.copyWith(isSaving: false);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        // Backend not ready — keep local state
         state = state.copyWith(isSaving: false);
         return;
       }
@@ -155,27 +155,37 @@ class NotificationSettingsNotifier
         isSaving: false,
         error: 'Could not save settings: ${e.message}',
       );
-      // Revert to previous on next load
       await load();
     }
   }
 
-  void setMedicationReminders(bool v) =>
-      _save(state.data.copyWith(medicationReminders: v));
-  void setHealthAlerts(bool v) =>
-      _save(state.data.copyWith(healthAlerts: v));
-  void setWeeklyReport(bool v) =>
-      _save(state.data.copyWith(weeklyReport: v));
-  void setAppointmentReminders(bool v) =>
-      _save(state.data.copyWith(appointmentReminders: v));
-  void setPushEnabled(bool v) =>
-      _save(state.data.copyWith(pushEnabled: v));
-  void setQuietHoursEnabled(bool v) =>
-      _save(state.data.copyWith(quietHoursEnabled: v));
-  void setQuietStart(String v) =>
-      _save(state.data.copyWith(quietStart: v));
-  void setQuietEnd(String v) =>
-      _save(state.data.copyWith(quietEnd: v));
+  void setMedicationReminder(bool v) =>
+      _save(state.data.copyWith(medicationReminder: v));
+  void setReminderMinutes(int v) =>
+      _save(state.data.copyWith(reminderMinutesBefore: v));
+  void setHealthAlert(bool v) =>
+      _save(state.data.copyWith(healthAlert: v));
+  void setFamilyUpdate(bool v) =>
+      _save(state.data.copyWith(familyUpdate: v));
+  void setQuietHoursStart(String v) =>
+      _save(state.data.copyWith(quietHoursStart: v));
+  void setQuietHoursEnd(String v) =>
+      _save(state.data.copyWith(quietHoursEnd: v));
+
+  /// Register FCM token with backend for push notifications (UC-19).
+  Future<bool> registerFcmToken(String token) async {
+    final userId = await _userId;
+    if (userId == null) return false;
+    try {
+      await _dio.put('/users/$userId/fcm-token', data: {
+        'fcmToken': token,
+      });
+      state = state.copyWith(fcmTokenSaved: true);
+      return true;
+    } on DioException {
+      return false;
+    }
+  }
 }
 
 final notificationSettingsProvider = StateNotifierProvider<
