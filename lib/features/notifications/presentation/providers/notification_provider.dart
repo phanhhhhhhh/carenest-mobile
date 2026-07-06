@@ -76,6 +76,47 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           isLoading: false, error: 'Error loading notifications: ${e.message}');
     }
   }
+
+  Future<void> markAsRead(String notificationId) async {
+    try {
+      await _dio.patch('/notifications/$notificationId/read');
+      final updated = state.items.map((n) {
+        if (n.id == notificationId) {
+          return NotificationData(
+            id: n.id,
+            title: n.title,
+            body: n.body,
+            type: n.type,
+            read: true,
+            createdAt: n.createdAt,
+          );
+        }
+        return n;
+      }).toList();
+      state = state.copyWith(items: updated);
+    } on DioException {
+      // silent
+    }
+  }
+
+  Future<void> markAllRead() async {
+    try {
+      final userId = await SecureStorage.getUserId();
+      if (userId == null) return;
+      await _dio.patch('/users/$userId/notifications/read-all');
+      final updated = state.items.map((n) => NotificationData(
+            id: n.id,
+            title: n.title,
+            body: n.body,
+            type: n.type,
+            read: true,
+            createdAt: n.createdAt,
+          )).toList();
+      state = state.copyWith(items: updated);
+    } on DioException {
+      // silent
+    }
+  }
 }
 
 final notificationProvider =
