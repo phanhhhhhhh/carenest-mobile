@@ -46,6 +46,7 @@ public class WeeklySummaryService {
     private final FamilyLinkRepository familyLinkRepository;
     private final NotificationRepository notificationRepository;
     private final FcmService fcmService;
+    private final GeminiApiService geminiApiService;
 
     /**
      * Generate weekly health summary for one elderly user.
@@ -63,7 +64,10 @@ public class WeeklySummaryService {
         List<MedicationLog> logs = medicationLogRepository
             .findAllByElderlyIdAndDateRange(elderlyId, weekStart, now);
 
-        String summary = buildSummaryText(elderly.getName(), metrics, logs, weekStart, now);
+        // Try AI-generated summary first, fall back to template
+        String aiSummary = buildAiSummary(elderly, metrics, logs, weekStart, now);
+        String summary = (aiSummary != null) ? aiSummary
+            : buildSummaryText(elderly.getName(), metrics, logs, weekStart, now);
 
         // Save as notification for the elderly
         Notification notif = Notification.builder()
@@ -155,7 +159,181 @@ public class WeeklySummaryService {
             .orElse(null);
     }
 
-    // ── Summary Text Generation (template-based, AI-pluggable) ──────────────
+    // ── AI-Generated Summary (UC-13: Gemini API) ─────────────────────────────
+
+    /**
+     * Generate a natural-language weekly health summary using Gemini AI.
+     * Falls back to null if Gemini is unavailable, so the template path can take over.
+     */
+    private String buildAiSummary(User elderly, List<HealthMetric> metrics,
+                                   List<MedicationLog> logs,
+                                   OffsetDateTime from, OffsetDateTime to) {
+        if (!geminiApiService.isAvailable()) {
+            log.debug("Gemini API not available — using template summary for elderlyId={}", elderly.getId());
+            return null;
+        }
+
+        try {
+            String systemPrompt = buildAiSystemPrompt();
+            String dataContext = buildAiDataContext(elderly, metrics, logs, from, to);
+            return geminiApiService.generateContent(systemPrompt, dataContext, 0.5, 2048);
+        } catch (Exception e) {
+            log.warn("Gemini AI summary failed for elderlyId={}: {}", elderly.getId(), e.getMessage());
+            return null;
+        }
+    }
+
+    private String buildAiSystemPrompt() {
+        return """
+            You are a caring health assistant for CareNest, an elderly care platform.
+            Your task: write a warm, personalized weekly health summary for a family
+            member to read about their elderly loved one.
+
+            === TONE GUIDELINES ===
+            - Warm and caring, like a family doctor writing to concerned children
+            - Use simple language (the reader may not have medical training)
+            - Celebrate good trends, gently flag concerns
+            - NEVER diagnose or cause panic — always frame concerns constructively
+            - Include specific numbers (averages, percentages)
+            - Use emoji for visual warmth (📊 💓 💊 📈 ⚠️ ✅)
+            - Structure with clear sections
+            - Keep under 500 words
+
+            === OUTPUT FORMAT ===
+            1. Opening greeting with the elderly person's name and the week dates
+            2. 💓 Health Metrics section: each metric with average, min, max, trend arrow
+            3. 💊 Medication Adherence section: rate, missed doses, rating
+            4. 📈 Week-over-Week Comparison: what improved, what needs attention
+            5. ⚠️ Alerts/Concerns section (if any flagged metrics)
+            6. Closing message with warmth and recommendation to check the app
+
+            Do NOT use markdown headers (##). Use emoji-prefixed lines instead.
+            """;
+    }
+
+    private String buildAiDataContext(User elderly, List<HealthMetric> metrics,
+                                       List<MedicationLog> logs,
+                                       OffsetDateTime from, OffsetDateTime to) {
+        StringBuilder ctx = new StringBuilder();
+        String weekLabel = from.format(DATE_FMT) + " to " + to.format(DATE_FMT);
+
+        ctx.append("=== ELDERLY ===\n");
+        ctx.append("Name: ").append(elderly.getName()).append("\n");
+        ctx.append("Week: ").append(weekLabel).append("\n\n");
+
+        // Health metrics grouped by type
+        Map<HealthMetricType, List<HealthMetric>> byType = metrics.stream()
+            .collect(Collectors.groupingBy(HealthMetric::getType, LinkedHashMap::new, Collectors.toList()));
+
+        ctx.append("=== HEALTH METRICS THIS WEEK ===\n");
+        if (byType.isEmpty()) {
+            ctx.append("No health data recorded this week.\n");
+        } else {
+            for (var entry : byType.entrySet()) {
+                List<BigDecimal> values = entry.getValue().stream()
+                    .map(HealthMetric::getValue).sorted().collect(Collectors.toList());
+                BigDecimal avg = values.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .divide(BigDecimal.valueOf(values.size()), 1, RoundingMode.HALF_UP);
+                String unit = entry.getValue().get(0).getUnit();
+                ctx.append(formatType(entry.getKey())).append(": ")
+                    .append(values.size()).append(" readings, avg ").append(avg)
+                    .append(", min ").append(values.get(0))
+                    .append(", max ").append(values.get(values.size() - 1));
+                if (unit != null) ctx.append(" ").append(unit);
+                ctx.append("\n");
+            }
+        }
+
+        // Medication adherence
+        long taken = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
+        long missed = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.MISSED).count();
+        long skipped = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.SKIPPED).count();
+        long total = taken + missed + skipped;
+
+        ctx.append("\n=== MEDICATION ADHERENCE ===\n");
+        if (total > 0) {
+            double rate = (double) taken / (taken + missed) * 100;
+            ctx.append("Total doses tracked: ").append(total).append("\n");
+            ctx.append("Taken: ").append(taken).append(", Missed: ").append(missed)
+                .append(", Skipped: ").append(skipped).append("\n");
+            ctx.append("Adherence rate: ").append(String.format("%.0f%%", rate)).append("\n");
+        } else {
+            ctx.append("No medication data this week.\n");
+        }
+
+        // Week-over-week comparison
+        OffsetDateTime twoWeeksAgo = from.minusDays(7);
+        Map<HealthMetricType, BigDecimal> thisWeekAvgs = byType.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey,
+                e -> e.getValue().stream().map(HealthMetric::getValue)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .divide(BigDecimal.valueOf(e.getValue().size()), 1, RoundingMode.HALF_UP)));
+
+        Map<HealthMetricType, BigDecimal> prevWeekAvgs = metrics.isEmpty() ? Map.of()
+            : healthMetricRepository.findAllByElderlyIdAndDateRange(
+                metrics.get(0).getElderly().getId(), twoWeeksAgo, from)
+                .stream()
+                .collect(Collectors.groupingBy(HealthMetric::getType))
+                .entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                    e -> e.getValue().stream().map(HealthMetric::getValue)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(e.getValue().size()), 1, RoundingMode.HALF_UP)));
+
+        ctx.append("\n=== WEEK-OVER-WEEK COMPARISON ===\n");
+        if (!prevWeekAvgs.isEmpty()) {
+            for (var entry : thisWeekAvgs.entrySet()) {
+                BigDecimal prev = prevWeekAvgs.get(entry.getKey());
+                if (prev == null || prev.compareTo(BigDecimal.ZERO) == 0) continue;
+                BigDecimal change = entry.getValue().subtract(prev)
+                    .divide(prev, 2, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+                String direction = change.compareTo(BigDecimal.ZERO) >= 0 ? "increased" : "decreased";
+                ctx.append(formatType(entry.getKey())).append(": ")
+                    .append(direction).append(" ").append(change.abs()).append("%\n");
+            }
+        } else {
+            ctx.append("Insufficient data from previous week for comparison.\n");
+        }
+
+        ctx.append("\n=== FLAGGED METRICS ===\n");
+        // Identify any metric outside normal ranges
+        boolean hasFlags = false;
+        for (var entry : byType.entrySet()) {
+            List<BigDecimal> values = entry.getValue().stream()
+                .map(HealthMetric::getValue).collect(Collectors.toList());
+            BigDecimal avg = values.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(values.size()), 1, RoundingMode.HALF_UP);
+            if (isOutOfRange(entry.getKey(), avg)) {
+                ctx.append("⚠️ ").append(formatType(entry.getKey()))
+                    .append(": avg ").append(avg).append(" is outside normal range\n");
+                hasFlags = true;
+            }
+        }
+        if (missed > taken * 0.3) {
+            ctx.append("⚠️ Medication adherence below 70% — needs attention\n");
+            hasFlags = true;
+        }
+        if (!hasFlags) {
+            ctx.append("All metrics within normal ranges.\n");
+        }
+
+        ctx.append("\nGenerate the weekly summary now per the system prompt instructions.\n");
+        return ctx.toString();
+    }
+
+    private boolean isOutOfRange(HealthMetricType type, BigDecimal value) {
+        return switch (type) {
+            case BLOOD_PRESSURE -> value.compareTo(new BigDecimal("140")) > 0
+                || value.compareTo(new BigDecimal("90")) < 0;
+            case HEART_RATE -> value.compareTo(new BigDecimal("100")) > 0
+                || value.compareTo(new BigDecimal("50")) < 0;
+            case BLOOD_GLUCOSE -> value.compareTo(new BigDecimal("7.0")) > 0;
+            case TEMPERATURE -> value.compareTo(new BigDecimal("38.0")) > 0;
+            case SPO2 -> value.compareTo(new BigDecimal("92")) < 0;
+            default -> false;
+        };
+    }
 
     /**
      * Generate a detailed English summary.

@@ -48,6 +48,7 @@ public class DashboardService {
     private final MedicationLogRepository medicationLogRepository;
     private final AppointmentRepository appointmentRepository;
     private final NotificationRepository notificationRepository;
+    private final com.carenest.backend.repository.EmergencyEventRepository emergencyEventRepository;
 
     public FamilyDashboardResponse getFamilyDashboard(Long familyId) {
         List<FamilyLink> links = familyLinkRepository
@@ -82,16 +83,47 @@ public class DashboardService {
 
     private ElderlyDashboardItem buildElderlyItem(User elderly) {
         Long elderlyId = elderly.getId();
+        MedicationAdherenceSummary adherence = getMedicationAdherence(elderlyId);
+        ActiveAlertSummary alerts = getActiveAlerts(elderlyId);
+
+        // UC-22: Compute color-coded status for multi-elderly dashboard
+        String statusColor;
+        String statusMessage;
+        if (alerts.getCount() > 0 && hasEmergencyAlert(elderlyId)) {
+            statusColor = "RED";
+            statusMessage = "Emergency alert active";
+        } else if (alerts.getCount() > 3 || adherence.getAdherenceRate() < 0.7) {
+            statusColor = "RED";
+            statusMessage = "Needs immediate attention";
+        } else if (alerts.getCount() > 0 || adherence.getAdherenceRate() < 0.9) {
+            statusColor = "YELLOW";
+            statusMessage = "Some items need attention";
+        } else {
+            statusColor = "GREEN";
+            statusMessage = "All good";
+        }
 
         return ElderlyDashboardItem.builder()
             .elderlyId(elderlyId)
             .elderlyName(elderly.getName())
             .healthConditions(getHealthConditions(elderlyId))
             .latestMetrics(getLatestMetrics(elderlyId))
-            .medicationAdherence(getMedicationAdherence(elderlyId))
+            .medicationAdherence(adherence)
             .upcomingAppointments(getUpcomingAppointments(elderlyId))
-            .activeAlerts(getActiveAlerts(elderlyId))
+            .activeAlerts(alerts)
+            .statusColor(statusColor)
+            .statusMessage(statusMessage)
             .build();
+    }
+
+    /**
+     * Check if this elderly has any active (unresolved) emergency events.
+     */
+    private boolean hasEmergencyAlert(Long elderlyId) {
+        return !emergencyEventRepository
+            .findByElderlyIdAndStatusOrderByTriggeredAtDesc(elderlyId,
+                com.carenest.backend.entity.EmergencyStatus.ACTIVE)
+            .isEmpty();
     }
 
     private List<String> getHealthConditions(Long elderlyId) {
