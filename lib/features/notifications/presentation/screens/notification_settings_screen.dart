@@ -20,13 +20,9 @@ class _NotificationSettingsScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          'Notification Settings',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: const Text('Notification Settings',
+            style: TextStyle(
+                fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
@@ -36,65 +32,56 @@ class _NotificationSettingsScreenState
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildSection(
-                  title: 'Alert Types',
-                  children: [
-                    _ToggleTile(
-                      icon: Icons.medication,
-                      iconColor: AppColors.primary,
-                      title: 'Medication Reminders',
-                      subtitle:
-                          'Get notified when it\'s time to take medication',
-                      value: settings.medicationReminders,
+                _buildSection(title: 'Alert Types', children: [
+                  _ToggleTile(
+                    icon: Icons.medication,
+                    iconColor: AppColors.primary,
+                    title: 'Medication Reminders',
+                    subtitle: 'Get notified when it\'s time to take medication',
+                    value: settings.medicationReminder,
+                    onChanged: (v) => ref
+                        .read(notificationSettingsProvider.notifier)
+                        .setMedicationReminder(v),
+                  ),
+                  if (settings.medicationReminder)
+                    _ReminderMinutesTile(
+                      value: settings.reminderMinutesBefore,
                       onChanged: (v) => ref
                           .read(notificationSettingsProvider.notifier)
-                          .setMedicationReminders(v),
+                          .setReminderMinutes(v),
                     ),
-                    _ToggleTile(
-                      icon: Icons.health_and_safety,
-                      iconColor: AppColors.error,
-                      title: 'Health Alerts',
-                      subtitle:
-                          'Get notified when health metrics are abnormal',
-                      value: settings.healthAlerts,
-                      onChanged: (v) => ref
-                          .read(notificationSettingsProvider.notifier)
-                          .setHealthAlerts(v),
-                    ),
-                    _ToggleTile(
-                      icon: Icons.sos,
-                      iconColor: AppColors.sosPrimary,
-                      title: 'SOS Emergency Alerts',
-                      subtitle:
-                          'Always enabled — SOS alerts cannot be turned off',
-                      value: true,
-                      enabled: false,
-                      onChanged: (_) {},
-                    ),
-                    _ToggleTile(
-                      icon: Icons.auto_awesome,
-                      iconColor: AppColors.secondary,
-                      title: 'Weekly Health Report',
-                      subtitle:
-                          'Receive a weekly summary every Sunday evening',
-                      value: settings.weeklyReport,
-                      onChanged: (v) => ref
-                          .read(notificationSettingsProvider.notifier)
-                          .setWeeklyReport(v),
-                    ),
-                    _ToggleTile(
-                      icon: Icons.event,
-                      iconColor: AppColors.warning,
-                      title: 'Appointment Reminders',
-                      subtitle:
-                          'Get reminded 1 day and 2 hours before appointments',
-                      value: settings.appointmentReminders,
-                      onChanged: (v) => ref
-                          .read(notificationSettingsProvider.notifier)
-                          .setAppointmentReminders(v),
-                    ),
-                  ],
-                ),
+                  _ToggleTile(
+                    icon: Icons.health_and_safety,
+                    iconColor: AppColors.error,
+                    title: 'Health Alerts',
+                    subtitle: 'Get notified when health metrics are abnormal',
+                    value: settings.healthAlert,
+                    onChanged: (v) => ref
+                        .read(notificationSettingsProvider.notifier)
+                        .setHealthAlert(v),
+                  ),
+                  _ToggleTile(
+                    icon: Icons.sos,
+                    iconColor: AppColors.sosPrimary,
+                    title: 'SOS Emergency Alerts',
+                    subtitle:
+                        'Always enabled — SOS alerts cannot be turned off',
+                    value: true,
+                    enabled: false,
+                    onChanged: (_) {},
+                  ),
+                  _ToggleTile(
+                    icon: Icons.people,
+                    iconColor: AppColors.secondary,
+                    title: 'Family Updates',
+                    subtitle:
+                        'Get notified about family link requests and status changes',
+                    value: settings.familyUpdate,
+                    onChanged: (v) => ref
+                        .read(notificationSettingsProvider.notifier)
+                        .setFamilyUpdate(v),
+                  ),
+                ]),
                 const SizedBox(height: 20),
                 _buildSection(
                   title: 'Quiet Hours',
@@ -106,12 +93,28 @@ class _NotificationSettingsScreenState
                       iconColor: const Color(0xFF7B1FA2),
                       title: 'Do Not Disturb',
                       subtitle: settings.quietHoursEnabled
-                          ? '${settings.quietStart} – ${settings.quietEnd}'
+                          ? '${settings.quietHoursStart} – ${settings.quietHoursEnd}'
                           : 'All notifications delivered normally',
                       value: settings.quietHoursEnabled,
-                      onChanged: (v) => ref
-                          .read(notificationSettingsProvider.notifier)
-                          .setQuietHoursEnabled(v),
+                      onChanged: (v) {
+                        if (v) {
+                          // enable with defaults
+                          ref
+                              .read(notificationSettingsProvider.notifier)
+                              .setQuietHoursStart('22:00');
+                          ref
+                              .read(notificationSettingsProvider.notifier)
+                              .setQuietHoursEnd('07:00');
+                        } else {
+                          // disable by clearing
+                          ref
+                              .read(notificationSettingsProvider.notifier)
+                              .setQuietHoursStart('');
+                          ref
+                              .read(notificationSettingsProvider.notifier)
+                              .setQuietHoursEnd('');
+                        }
+                      },
                     ),
                     if (settings.quietHoursEnabled) ...[
                       const SizedBox(height: 8),
@@ -122,14 +125,13 @@ class _NotificationSettingsScreenState
                             Expanded(
                               child: _TimePickerTile(
                                 label: 'Start',
-                                time: settings.quietStart,
+                                time: settings.quietHoursStart,
                                 onTap: () => _pickTime(
-                                  context,
-                                  settings.quietStart,
+                                  settings.quietHoursStart,
                                   (t) => ref
                                       .read(notificationSettingsProvider
                                           .notifier)
-                                      .setQuietStart(t),
+                                      .setQuietHoursStart(t),
                                 ),
                               ),
                             ),
@@ -142,14 +144,13 @@ class _NotificationSettingsScreenState
                             Expanded(
                               child: _TimePickerTile(
                                 label: 'End',
-                                time: settings.quietEnd,
+                                time: settings.quietHoursEnd,
                                 onTap: () => _pickTime(
-                                  context,
-                                  settings.quietEnd,
+                                  settings.quietHoursEnd,
                                   (t) => ref
                                       .read(notificationSettingsProvider
                                           .notifier)
-                                      .setQuietEnd(t),
+                                      .setQuietHoursEnd(t),
                                 ),
                               ),
                             ),
@@ -159,37 +160,20 @@ class _NotificationSettingsScreenState
                     ],
                   ],
                 ),
-                const SizedBox(height: 20),
-                _buildSection(
-                  title: 'Channels',
-                  subtitle: 'Choose how you want to receive notifications',
-                  children: [
-                    _ToggleTile(
-                      icon: Icons.notifications_active,
-                      iconColor: AppColors.primary,
-                      title: 'Push Notifications',
-                      subtitle: 'Receive alerts directly on your phone',
-                      value: settings.pushEnabled,
-                      onChanged: (v) => ref
-                          .read(notificationSettingsProvider.notifier)
-                          .setPushEnabled(v),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 32),
               ],
             ),
     );
   }
 
-  Future<void> _pickTime(
-      BuildContext context, String current, Function(String) onSet) async {
+  Future<void> _pickTime(String current, Function(String) onSet) async {
     final parts = current.split(':');
     final initial = TimeOfDay(
       hour: int.tryParse(parts[0]) ?? 22,
       minute: int.tryParse(parts[1]) ?? 0,
     );
-    final picked = await showTimePicker(context: context, initialTime: initial);
+    final picked =
+        await showTimePicker(context: context, initialTime: initial);
     if (picked != null && context.mounted) {
       onSet(
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}');
@@ -206,27 +190,20 @@ class _NotificationSettingsScreenState
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 4),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-              letterSpacing: 0.5,
-            ),
-          ),
+          child: Text(title,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.5)),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 2),
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textHint,
-              ),
-            ),
+            child: Text(subtitle,
+                style:
+                    const TextStyle(fontSize: 12, color: AppColors.textHint)),
           ),
         ],
         const SizedBox(height: 4),
@@ -289,24 +266,17 @@ class _ToggleTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: enabled
-                        ? AppColors.textPrimary
-                        : AppColors.textSecondary,
-                  ),
-                ),
+                Text(title,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: enabled
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary)),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.textHint,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(subtitle,
+                    style: const TextStyle(
+                        color: AppColors.textHint, fontSize: 12)),
               ],
             ),
           ),
@@ -315,6 +285,59 @@ class _ToggleTile extends StatelessWidget {
             value: value,
             onChanged: enabled ? onChanged : null,
             activeThumbColor: AppColors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReminderMinutesTile extends StatelessWidget {
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  const _ReminderMinutesTile({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [5, 10, 15, 30, 60];
+    return Padding(
+      padding: const EdgeInsets.only(left: 70, right: 16, bottom: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.timer, color: AppColors.textHint, size: 16),
+          const SizedBox(width: 8),
+          const Text('Remind before:',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.textHint.withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: options.contains(value) ? value : 15,
+                isDense: true,
+                style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600),
+                items: options
+                    .map((m) => DropdownMenuItem(
+                        value: m,
+                        child: Text('$m min',
+                            style: const TextStyle(fontSize: 13))))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) onChanged(v);
+                },
+              ),
+            ),
           ),
         ],
       ),
