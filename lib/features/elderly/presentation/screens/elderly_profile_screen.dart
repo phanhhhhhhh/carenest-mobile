@@ -417,12 +417,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         'Upgrade to Premium',
         AppColors.warning,
         AppColors.warning.withOpacity(0.08),
-        () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Feature under development')),
-          );
-        }
+        () => context.go('/premium-plans'),
       ),
       (
         Icons.help_outline,
