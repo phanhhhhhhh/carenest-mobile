@@ -31,6 +31,7 @@ import '../../features/notifications/presentation/screens/notification_settings_
 import '../../features/family/presentation/screens/premium_plans_screen.dart';
 import '../../features/family/presentation/screens/weekly_summary_screen.dart';
 import '../../features/family/presentation/screens/camera_screen.dart';
+import '../../features/family/presentation/screens/health_threshold_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/welcome',
@@ -165,6 +166,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/camera',
       builder: (context, state) => const CameraScreen(),
+    ),
+    GoRoute(
+      path: '/health-thresholds',
+      builder: (context, state) => const HealthThresholdScreen(),
     ),
 
     // Elderly shell
