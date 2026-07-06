@@ -28,6 +28,9 @@ import '../../features/elderly/presentation/screens/elderly_medication_history_s
 import '../../features/elderly/presentation/screens/elderly_appointments_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/notifications/presentation/screens/notification_settings_screen.dart';
+import '../../features/family/presentation/screens/premium_plans_screen.dart';
+import '../../features/family/presentation/screens/weekly_summary_screen.dart';
+import '../../features/family/presentation/screens/camera_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/welcome',
@@ -150,6 +153,18 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/notification-settings',
       builder: (context, state) => const NotificationSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/premium-plans',
+      builder: (context, state) => const PremiumPlansScreen(),
+    ),
+    GoRoute(
+      path: '/weekly-summary',
+      builder: (context, state) => const WeeklySummaryScreen(),
+    ),
+    GoRoute(
+      path: '/camera',
+      builder: (context, state) => const CameraScreen(),
     ),
 
     // Elderly shell
