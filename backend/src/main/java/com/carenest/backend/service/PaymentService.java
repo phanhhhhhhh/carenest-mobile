@@ -206,6 +206,73 @@ public class PaymentService {
     }
 
     /**
+     * Handle MoMo return/callback (IPN).
+     * Verifies the MoMo signature, checks resultCode, and activates subscription.
+     */
+    @Transactional
+    public Map<String, String> handleMomoReturn(Map<String, String> params) {
+        String receivedSignature = params.get("signature");
+
+        // Verify signature
+        String computedSignature = verifyMomoSignature(params);
+        boolean valid = computedSignature != null && computedSignature.equals(receivedSignature);
+
+        if (!valid) {
+            log.warn("MoMo return: invalid signature for orderId={}", params.get("orderId"));
+            return Map.of("status", "ERROR", "message", "Invalid MoMo signature");
+        }
+
+        String orderId = params.get("orderId");
+        String resultCode = params.get("resultCode");
+        String message = params.getOrDefault("message", "");
+
+        if ("0".equals(resultCode)) {
+            // Payment successful
+            activateSubscription(orderId, "MOMO");
+            log.info("MoMo payment success: orderId={}", orderId);
+            return Map.of("status", "SUCCESS", "message", "Payment successful — Premium activated!");
+        } else {
+            // Payment failed
+            log.info("MoMo payment failed: orderId={} resultCode={} message={}", orderId, resultCode, message);
+            subscriptionRepository.findByTransactionId(orderId).ifPresent(sub -> {
+                sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                subscriptionRepository.save(sub);
+            });
+            return Map.of("status", "FAILED", "message", message.isBlank() ? "Payment failed" : message);
+        }
+    }
+
+    /**
+     * Verify MoMo signature using HMAC-SHA256.
+     * MoMo signature string format:
+     * accessKey={accessKey}&amount={amount}&extraData={extraData}&message={message}
+     * &orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}
+     * &payType={payType}&requestId={requestId}&responseTime={responseTime}
+     * &resultCode={resultCode}&transId={transId}
+     */
+    public String verifyMomoSignature(Map<String, String> params) {
+        try {
+            String rawSignature = "accessKey=" + momoAccessKey
+                + "&amount=" + params.getOrDefault("amount", "")
+                + "&extraData=" + params.getOrDefault("extraData", "")
+                + "&message=" + params.getOrDefault("message", "")
+                + "&orderId=" + params.getOrDefault("orderId", "")
+                + "&orderInfo=" + params.getOrDefault("orderInfo", "")
+                + "&partnerCode=" + params.getOrDefault("partnerCode", "")
+                + "&payType=" + params.getOrDefault("payType", "")
+                + "&requestId=" + params.getOrDefault("requestId", "")
+                + "&responseTime=" + params.getOrDefault("responseTime", "")
+                + "&resultCode=" + params.getOrDefault("resultCode", "")
+                + "&transId=" + params.getOrDefault("transId", "");
+
+            return hmacSHA256(momoSecretKey, rawSignature);
+        } catch (Exception e) {
+            log.error("MoMo signature verification failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Get current subscription status for a user.
      */
     @Transactional(readOnly = true)
