@@ -11,10 +11,9 @@ import java.time.LocalDate;
 @Setter
 public class RegisterRequest {
 
-    @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     @Size(max = 255, message = "Email must be at most 255 characters")
-    private String email;
+    private String email;  // optional — if provided, email verification required
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be 8-100 characters")

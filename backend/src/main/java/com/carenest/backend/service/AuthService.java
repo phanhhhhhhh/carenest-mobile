@@ -24,6 +24,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -41,10 +43,10 @@ public class AuthService {
     @Value("${jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpirationMs;
 
-    // ── Register (Email + Password) ──────────────────────────────────────────
+    // ── Register ──────────────────────────────────────────────────────────
 
     @Transactional
-    public AuthResponse register(RegisterRequest request, String deviceInfo) {
+    public Map<String, Object> register(RegisterRequest request) {
         // Validate password match
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("Password and confirm password do not match");
@@ -55,39 +57,63 @@ public class AuthService {
             throw new UnauthorizedException("Cannot self-register ADMIN role");
         }
 
-        // Check email uniqueness
-        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())) {
-            throw new ConflictException("Email already registered: " + request.getEmail());
+        // Require at least email or phone
+        boolean hasEmail = request.getEmail() != null && !request.getEmail().isBlank();
+        boolean hasPhone = request.getPhone() != null && !request.getPhone().isBlank();
+        if (!hasEmail && !hasPhone) {
+            throw new IllegalArgumentException("Either email or phone number is required");
         }
 
-        // Check phone uniqueness if provided
-        if (request.getPhone() != null && !request.getPhone().isBlank()) {
-            if (userRepository.existsByPhoneAndDeletedAtIsNull(request.getPhone())) {
+        // Check email uniqueness
+        if (hasEmail) {
+            if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())) {
+                throw new ConflictException("Email already registered: " + request.getEmail());
+            }
+        }
+
+        // Check phone uniqueness
+        if (hasPhone) {
+            if (userRepository.existsByPhoneAndDeletedAtIsNull(request.getPhone().trim())) {
                 throw new ConflictException("Phone number already registered: " + request.getPhone());
             }
         }
 
-        // Generate verification token (24h expiry)
-        String verificationToken = generateSecureToken();
-        OffsetDateTime expiry = OffsetDateTime.now().plusHours(24);
+        // Generate verification token if email is provided
+        String verificationToken = null;
+        boolean needsVerification = hasEmail;
+        if (needsVerification) {
+            verificationToken = generateSecureToken();
+        }
 
         User user = User.builder()
-            .email(request.getEmail().toLowerCase().trim())
+            .email(hasEmail ? request.getEmail().toLowerCase().trim() : null)
             .passwordHash(passwordEncoder.encode(request.getPassword()))
             .name(request.getName().trim())
             .role(request.getRole())
-            .phone(request.getPhone() != null ? request.getPhone().trim() : null)
+            .phone(hasPhone ? request.getPhone().trim() : null)
             .dob(request.getDob())
-            .emailVerified(false)
+            .emailVerified(!needsVerification) // auto-verify if no email
             .emailVerificationToken(verificationToken)
-            .emailVerificationExpiry(expiry)
+            .emailVerificationExpiry(needsVerification ? OffsetDateTime.now().plusHours(24) : null)
             .build();
         userRepository.save(user);
 
-        // Send verification email (async)
-        emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
+        // Send verification email if email provided
+        if (needsVerification) {
+            emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
+        }
 
-        return buildAuthResponse(user, deviceInfo);
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", user.getId());
+        if (needsVerification) {
+            response.put("message", "Registration successful. Please check your email (" + user.getEmail()
+                + ") to verify your account before logging in.");
+            response.put("requiresVerification", true);
+        } else {
+            response.put("message", "Registration successful. You can now log in with your phone and password.");
+            response.put("requiresVerification", false);
+        }
+        return response;
     }
 
     // ── Login (Phone + Password / Email + Password / Firebase Token) ──────
@@ -127,6 +153,12 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new UnauthorizedException("Invalid phone or password");
+        }
+
+        // If user has email set but not verified, block login
+        if (user.getEmail() != null && !user.getEmail().isBlank() && !user.isEmailVerified()) {
+            throw new UnauthorizedException(
+                "Email not verified. Please check your inbox or request a new verification email.");
         }
 
         return buildAuthResponse(user, deviceInfo);
