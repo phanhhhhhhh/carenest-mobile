@@ -219,6 +219,21 @@ public class CameraService {
     // UC-30: Motion Detection Alert
     // ══════════════════════════════════════════════════════════════════════
 
+    /**
+     * UC-30: Configure motion detection settings for a camera.
+     */
+    @Transactional
+    public void configureMotionDetection(Long deviceId, boolean enabled, String windowStart, String windowEnd) {
+        CameraDevice device = cameraDeviceRepository.findById(deviceId)
+            .orElseThrow(() -> new NotFoundException("Camera not found"));
+        device.setMotionDetectionEnabled(enabled);
+        device.setMonitoringWindowStart(windowStart);
+        device.setMonitoringWindowEnd(windowEnd);
+        cameraDeviceRepository.save(device);
+        log.info("Motion detection configured: cameraId={} enabled={} window={}-{}",
+            deviceId, enabled, windowStart, windowEnd);
+    }
+
     @Transactional
     @Scheduled(fixedRate = 300000) // every 5 minutes — check monitoring windows
     public void checkMotionDetectionWindows() {
@@ -250,7 +265,32 @@ public class CameraService {
         if (events.isEmpty()) {
             // No motion detected during window → alert family
             sendNoMotionAlert(camera);
+        } else {
+            // Motion detected — log and send positive confirmation
+            sendMotionDetectedNotification(camera, events.size());
         }
+    }
+
+    private void sendMotionDetectedNotification(CameraDevice camera, int eventCount) {
+        String title = "Movement Detected";
+        String body = "Movement detected from " + camera.getElderly().getName()
+            + "'s " + camera.getLabel() + " during the monitoring window (" + eventCount + " events).";
+
+        List<FamilyLink> links = familyLinkRepository
+            .findAllFamilyByElderlyIdAndStatus(camera.getElderly().getId(), FamilyLinkStatus.ACTIVE);
+
+        for (FamilyLink link : links) {
+            Notification notif = Notification.builder()
+                .user(link.getFamily())
+                .type(NotificationType.FAMILY_UPDATE)
+                .title(title)
+                .body(body)
+                .data(Map.of("type", "MOTION_DETECTED", "cameraId", camera.getId().toString(),
+                    "eventCount", String.valueOf(eventCount)))
+                .build();
+            notificationRepository.save(notif);
+        }
+        log.info("Motion-detected notification: cameraId={} events={}", camera.getId(), eventCount);
     }
 
     private void sendNoMotionAlert(CameraDevice camera) {
