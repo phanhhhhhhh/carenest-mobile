@@ -8,6 +8,20 @@ class EmailNotVerifiedException implements Exception {
   const EmailNotVerifiedException(this.email);
 }
 
+sealed class RegisterResult {
+  const RegisterResult();
+}
+
+class RegisterAutoLoggedIn extends RegisterResult {
+  const RegisterAutoLoggedIn();
+}
+
+class RegisterNeedsVerification extends RegisterResult {
+  final String contact;
+  final String? message;
+  const RegisterNeedsVerification(this.contact, this.message);
+}
+
 class AuthRepository {
   final Dio _dio;
 
@@ -17,9 +31,14 @@ class AuthRepository {
   // Register & Login
   // ═══════════════════════════════════════════════════════════════
 
-  /// POST /api/auth/register — email+password registration.
-  Future<void> register({
-    required String email,
+  /// POST /api/auth/register.
+  ///
+  /// - With email: backend returns `{message: "check your email"}` — NO JWT.
+  ///   User must verify email before login. Returns [RegisterResult.needsVerification].
+  /// - Without email (phone only): auto-verified, backend returns JWT.
+  ///   Returns [RegisterResult.autoLoggedIn].
+  Future<RegisterResult> register({
+    String? email,
     required String password,
     required String confirmPassword,
     required String name,
@@ -28,28 +47,46 @@ class AuthRepository {
     String? dob,
   }) async {
     final body = <String, dynamic>{
-      'email': email,
       'password': password,
       'confirmPassword': confirmPassword,
       'name': name,
       'role': role,
     };
+    if (email != null && email.isNotEmpty) body['email'] = email;
     if (phone != null && phone.isNotEmpty) body['phone'] = phone;
     if (dob != null) body['dob'] = dob;
 
     final response = await _dio.post('/auth/register', data: body);
-    await persistAuth(response.data as Map<String, dynamic>);
+    final data = response.data as Map<String, dynamic>;
+
+    // If response has accessToken → phone-only registration, auto-logged-in
+    if (data.containsKey('accessToken')) {
+      await persistAuth(data);
+      return const RegisterAutoLoggedIn();
+    }
+
+    // Email-based registration → must verify email
+    return RegisterNeedsVerification(
+      email ?? phone ?? '',
+      data['message'] as String?,
+    );
   }
 
-  /// POST /api/auth/login — email+password login (primary).
-  /// Set [firebaseToken] for legacy Firebase phone OTP login.
+  /// POST /api/auth/login.
+  ///
+  /// Supports 3 methods (priority: phone > email > firebaseToken):
+  /// 1. Phone + password (no email required)
+  /// 2. Email + password
+  /// 3. Firebase OTP token (legacy)
   Future<bool> login({
     String? email,
+    String? phone,
     String? password,
     String? firebaseToken,
   }) async {
     try {
       final body = <String, dynamic>{};
+      if (phone != null && phone.isNotEmpty) body['phone'] = phone;
       if (email != null && email.isNotEmpty) body['email'] = email;
       if (password != null) body['password'] = password;
       if (firebaseToken != null) body['firebaseToken'] = firebaseToken;
