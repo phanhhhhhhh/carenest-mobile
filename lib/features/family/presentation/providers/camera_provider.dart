@@ -301,6 +301,18 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
+  // UC-30: Motion detection toggle
+  Future<bool> toggleMotionDetection(int deviceId, bool enabled) async {
+    try {
+      await _dio.put('/cameras/$deviceId/motion-detection',
+          data: {'enabled': enabled});
+      await load();
+      return true;
+    } on DioException {
+      return false;
+    }
+  }
+
   void clearLiveStream() => state = state.copyWith(liveStreamUrl: null);
   void refresh() => load();
 }
