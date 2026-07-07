@@ -5,12 +5,11 @@ import '../navigation/family_shell.dart';
 import '../storage/secure_storage.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/phone_screen.dart';
-import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_phone_screen.dart';
-import '../../features/auth/presentation/screens/forgot_password_otp_screen.dart';
 import '../../features/auth/presentation/screens/new_password_screen.dart';
 import '../../features/auth/presentation/screens/password_reset_success_screen.dart';
+import '../../features/auth/presentation/screens/verify_email_prompt_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_home_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_medication_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_health_screen.dart';
@@ -43,11 +42,12 @@ final appRouter = GoRouter(
 
     final isOnAuth = loc == '/welcome' ||
         loc == '/phone' ||
-        loc.startsWith('/otp') ||
         loc == '/register' ||
-        loc.startsWith('/forgot-password') ||
+        loc == '/register-dev' ||
+        loc == '/forgot-password' ||
         loc == '/new-password' ||
-        loc == '/password-reset-success';
+        loc == '/password-reset-success' ||
+        loc.startsWith('/verify-email-prompt');
 
     if (!isAuth && !isOnAuth) return '/welcome';
 
@@ -65,45 +65,52 @@ final appRouter = GoRouter(
       builder: (context, state) => const WelcomeScreen(),
     ),
 
-    // Auth
+    // Auth — Login (email+password)
     GoRoute(
       path: '/phone',
       builder: (context, state) => const PhoneScreen(),
     ),
-    GoRoute(
-      path: '/otp',
-      builder: (context, state) => OtpScreen(
-        verificationId: state.extra as String,
-      ),
-    ),
+
+    // Auth — Register
     GoRoute(
       path: '/register',
-      builder: (context, state) => RegisterScreen(
-        firebaseToken: state.extra as String,
-      ),
+      builder: (context, state) => const RegisterScreen(),
     ),
 
-    // Forgot Password flow
+    // Auth — Register (dev mode with firebaseToken)
+    GoRoute(
+      path: '/register-dev',
+      builder: (context, state) {
+        // TODO: Create a dev-specific register screen or reuse
+        return const RegisterScreen();
+      },
+    ),
+
+    // Email verification prompt (after registration)
+    GoRoute(
+      path: '/verify-email-prompt',
+      builder: (context, state) {
+        final email = state.extra as String? ?? '';
+        return VerifyEmailPromptScreen(email: email);
+      },
+    ),
+
+    // Forgot Password (email-based)
     GoRoute(
       path: '/forgot-password',
       builder: (context, state) => const ForgotPasswordPhoneScreen(),
     ),
-    GoRoute(
-      path: '/forgot-password/otp',
-      builder: (context, state) => ForgotPasswordOtpScreen(
-        phone: state.extra as String,
-      ),
-    ),
+
+    // Reset Password (token from email link)
     GoRoute(
       path: '/new-password',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        return NewPasswordScreen(
-          phone: extra['phone'] as String,
-          otp: extra['otp'] as String,
-        );
+        final token = state.extra as String? ?? '';
+        return NewPasswordScreen(token: token);
       },
     ),
+
+    // Password reset success
     GoRoute(
       path: '/password-reset-success',
       builder: (context, state) => const PasswordResetSuccessScreen(),

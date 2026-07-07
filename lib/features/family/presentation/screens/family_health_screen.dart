@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../providers/family_provider.dart';
+import '../providers/health_threshold_provider.dart';
 import '../../../elderly/presentation/providers/health_metric_provider.dart';
 
 class FamilyHealthScreen extends ConsumerStatefulWidget {
@@ -112,7 +113,8 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
         for (final type in order)
           if (healthState.latestByType.containsKey(type)) ...[
             _buildMetricSection(type, healthState.latestByType[type]!,
-                healthState.metrics.where((m) => m.type == type).toList()),
+                healthState.metrics.where((m) => m.type == type).toList(),
+                elderlyId),
             const SizedBox(height: 12),
           ],
         const SizedBox(height: 20),
@@ -148,13 +150,14 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
   }
 
   Widget _buildMetricSection(
-      String type, HealthMetricData latest, List<HealthMetricData> all) {
+      String type, HealthMetricData latest, List<HealthMetricData> all,
+      String elderlyId) {
     final config = _metricDefs[type]!;
     final displayValue = type == 'BLOOD_PRESSURE' && latest.valueSecondary != null
         ? '${latest.value}/${latest.valueSecondary}'
         : latest.value;
     final unitLabel = latest.unit ?? config.unit;
-    final status = _deriveStatus(type, latest);
+    final status = _deriveStatus(type, latest, elderlyId);
     final timeLabel = _formatTime(latest.recordedAt);
 
     return Container(
@@ -270,20 +273,35 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
     return '${dt.day}/${dt.month}';
   }
 
-  _Status _deriveStatus(String type, HealthMetricData data) {
+  _Status _deriveStatus(
+      String type, HealthMetricData data, String elderlyId) {
+    // Try backend thresholds first, fall back to defaults
+    final threshold = ref.read(healthThresholdProvider(elderlyId).notifier).findFor(type);
+
+    final val = double.tryParse(data.value);
+
+    if (threshold != null && val != null) {
+      final minOk = threshold.minValue != null ? val >= threshold.minValue! : true;
+      final maxOk = threshold.maxValue != null ? val <= threshold.maxValue! : true;
+      if (minOk && maxOk) return _Status('Normal', AppColors.success);
+      if (!minOk) return _Status('Low', AppColors.warning);
+      if (!maxOk) return _Status('High', AppColors.error);
+    }
+
+    // Fallback to built-in defaults when no backend threshold exists
     switch (type) {
       case 'BLOOD_PRESSURE':
-        final sys = double.tryParse(data.value);
+        final sys = val;
         if (sys != null && sys < 130) return _Status('Normal', AppColors.success);
         if (sys != null && sys < 140) return _Status('Slightly High', AppColors.warning);
         return _Status('High', AppColors.error);
       case 'BLOOD_GLUCOSE':
-        final v = double.tryParse(data.value);
+        final v = val;
         if (v != null && v < 7.0) return _Status('Normal', AppColors.success);
         if (v != null && v < 11.1) return _Status('High', AppColors.warning);
         return _Status('Very High', AppColors.error);
       case 'HEART_RATE':
-        final v = double.tryParse(data.value);
+        final v = val;
         if (v != null && v >= 60 && v <= 100) return _Status('Normal', AppColors.success);
         return _Status('Abnormal', AppColors.warning);
       default:
