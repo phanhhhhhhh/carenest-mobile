@@ -198,6 +198,76 @@ class ChatNotifier extends StateNotifier<ChatState> {
   }
 
   void refresh() => loadHistory(refresh: true);
+
+  /// POST /api/chat/voice — send audio for server-side STT + AI chat.
+  /// Returns the AI response content on success, null on failure.
+  Future<String?> sendVoice({
+    required List<int> audioBytes,
+    required String mimeType,
+    String? sessionId,
+    String language = 'vi',
+  }) async {
+    state = state.copyWith(isSending: true);
+    try {
+      final formData = FormData.fromMap({
+        'audio': MultipartFile.fromBytes(audioBytes,
+            filename: 'recording.${mimeType.split('/').last}',
+            contentType: DioMediaType.parse(mimeType)),
+        if (sessionId != null) 'sessionId': sessionId,
+        'language': language,
+      });
+
+      final resp = await _dio.post('/chat/voice', data: formData);
+      final data = resp.data as Map<String, dynamic>;
+
+      // Add transcription as user message
+      final transcription = data['transcription'] as String? ?? '';
+      if (transcription.isNotEmpty) {
+        final userMsg = ChatMessage(
+          messageId: DateTime.now().millisecondsSinceEpoch,
+          role: 'USER',
+          content: '🎤 $transcription',
+          createdAt: DateTime.now(),
+        );
+        state = state.copyWith(
+            messages: [...state.messages, userMsg]);
+      }
+
+      // Add AI response
+      final aiMsg = ChatMessage(
+        messageId: (data['messageId'] as num?)?.toInt() ??
+            DateTime.now().millisecondsSinceEpoch,
+        role: data['role'] as String? ?? 'AI',
+        content: data['content'] as String? ?? '',
+        intent: data['intent'] as String?,
+        sessionId: data['sessionId'] as String?,
+        createdAt: DateTime.tryParse(data['createdAt'] as String? ?? '') ??
+            DateTime.now(),
+      );
+      state = state.copyWith(
+        isSending: false,
+        messages: [...state.messages, aiMsg],
+      );
+      return aiMsg.content;
+    } on DioException catch (e) {
+      state = state.copyWith(
+        isSending: false,
+        error: 'Voice processing failed: ${e.message}',
+      );
+      return null;
+    }
+  }
+
+  /// GET /api/chat/voice/health — check STT availability.
+  Future<bool> checkVoiceHealth() async {
+    try {
+      final resp = await _dio.get('/chat/voice/health');
+      final data = resp.data as Map<String, dynamic>;
+      return data['sttAvailable'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 final chatProvider =

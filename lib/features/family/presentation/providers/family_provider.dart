@@ -7,20 +7,55 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 
 // ── Family Dashboard ──────────────────────────────────────────────
 
-class FamilyDashboardData {
-  final String? elderlyId;
-  final String? elderlyName;
+class ElderlySummary {
+  final String elderlyId;
+  final String elderlyName;
   final List<String> healthConditions;
+
+  const ElderlySummary({
+    required this.elderlyId,
+    required this.elderlyName,
+    this.healthConditions = const [],
+  });
+
+  factory ElderlySummary.fromJson(Map<String, dynamic> j) => ElderlySummary(
+        elderlyId: j['elderlyId']?.toString() ?? '',
+        elderlyName: j['elderlyName'] as String? ?? '',
+        healthConditions:
+            (j['healthConditions'] as List<dynamic>?)
+                    ?.map((e) => e.toString())
+                    .toList() ??
+                [],
+      );
+}
+
+class FamilyDashboardData {
+  final List<ElderlySummary> linkedElderly;
+  final int selectedIndex;
   final int totalMedications;
   final int takenMedications;
 
   const FamilyDashboardData({
-    this.elderlyId,
-    this.elderlyName,
-    this.healthConditions = const [],
+    this.linkedElderly = const [],
+    this.selectedIndex = 0,
     this.totalMedications = 0,
     this.takenMedications = 0,
   });
+
+  String? get elderlyId =>
+      linkedElderly.isNotEmpty && selectedIndex < linkedElderly.length
+          ? linkedElderly[selectedIndex].elderlyId
+          : null;
+
+  String? get elderlyName =>
+      linkedElderly.isNotEmpty && selectedIndex < linkedElderly.length
+          ? linkedElderly[selectedIndex].elderlyName
+          : null;
+
+  List<String> get healthConditions =>
+      linkedElderly.isNotEmpty && selectedIndex < linkedElderly.length
+          ? linkedElderly[selectedIndex].healthConditions
+          : [];
 }
 
 class FamilyDashboardState {
@@ -69,28 +104,22 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
         return;
       }
 
-      String? elderlyId;
-      String? elderlyName;
-      List<String> healthConditions = [];
+      // Fetch all linked elderly
+      List<ElderlySummary> elderlyList = [];
       try {
         final familyResp = await _dio.get('/family/$userId/elderly');
         final dynamic raw = familyResp.data;
-        // Convert JS interop types to native Dart types (web compatibility)
-        final List<dynamic> elderlyList = raw is List<dynamic>
+        final List<dynamic> rawList = raw is List<dynamic>
             ? List<dynamic>.from(raw)
             : [];
-        if (elderlyList.isNotEmpty) {
-          final dynamic firstRaw = elderlyList[0];
-          final Map<String, dynamic> first = firstRaw is Map<String, dynamic>
-              ? Map<String, dynamic>.from(firstRaw)
-              : firstRaw as Map<String, dynamic>;
-          elderlyId = first['elderlyId']?.toString();
-          elderlyName = first['elderlyName'] as String?;
-          final rawConditions = first['healthConditions'];
-          if (rawConditions is List) {
-            healthConditions = List<String>.from(rawConditions.map((e) => e.toString()));
-          }
-        }
+        elderlyList = rawList
+            .map((e) {
+              final m = e is Map<String, dynamic>
+                  ? Map<String, dynamic>.from(e)
+                  : e as Map<String, dynamic>;
+              return ElderlySummary.fromJson(m);
+            })
+            .toList();
       } on DioException catch (e) {
         state = state.copyWith(
           isLoading: false,
@@ -99,17 +128,57 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
         return;
       }
 
+      // Preserve previously selected index if still valid
+      final prevIndex = state.data?.selectedIndex ?? 0;
+      final selectedIndex =
+          prevIndex < elderlyList.length ? prevIndex : 0;
+      final selectedElderlyId = elderlyList.isNotEmpty
+          ? elderlyList[selectedIndex].elderlyId
+          : null;
+
+      // Count medications and taken status for selected elderly
       int totalMeds = 0;
-      if (elderlyId != null) {
+      int takenMeds = 0;
+      if (selectedElderlyId != null) {
         try {
-          final medResp = await _dio.get('/users/$elderlyId/medications');
+          final medResp =
+              await _dio.get('/users/$selectedElderlyId/medications');
           final dynamic medsRaw = medResp.data;
           final meds = medsRaw is List<dynamic>
               ? List<dynamic>.from(medsRaw)
               : <dynamic>[];
           totalMeds = meds.length;
+
+          // Count taken medications via log query for today
+          try {
+            final today = DateTime.now();
+            final todayStr =
+                '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+            final logResp = await _dio.get(
+              '/users/$selectedElderlyId/medications/logs',
+              queryParameters: {'date': todayStr},
+            );
+            final dynamic logsRaw = logResp.data;
+            final logs = logsRaw is List<dynamic>
+                ? List<dynamic>.from(logsRaw)
+                : <dynamic>[];
+            takenMeds =
+                logs.where((l) {
+                  final m = l is Map ? Map<String, dynamic>.from(l) : null;
+                  return m?['status'] == 'TAKEN';
+                }).length;
+          } on DioException {
+            // If log endpoint unavailable, count from medication data
+            takenMeds = meds
+                .where((m) {
+                  final map =
+                      m is Map ? Map<String, dynamic>.from(m) : null;
+                  return map?['taken'] == true;
+                })
+                .length;
+          }
         } on DioException {
-          // skip
+          // skip medication count
         }
       }
 
@@ -117,16 +186,35 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
         isLoading: false,
         lastRefreshed: DateTime.now(),
         data: FamilyDashboardData(
-          elderlyId: elderlyId,
-          elderlyName: elderlyName,
-          healthConditions: healthConditions,
+          linkedElderly: elderlyList,
+          selectedIndex: selectedIndex,
           totalMedications: totalMeds,
-          takenMedications: 0,
+          takenMedications: takenMeds,
         ),
       );
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Connection error');
     }
+  }
+
+  /// Switch to a different linked elderly profile.
+  /// Reloads all data for the newly selected elderly.
+  Future<void> selectElderly(int index) async {
+    final data = state.data;
+    if (data == null || index >= data.linkedElderly.length) return;
+
+    state = state.copyWith(
+      data: FamilyDashboardData(
+        linkedElderly: data.linkedElderly,
+        selectedIndex: index,
+        // Reset counters — load() will refill
+        totalMedications: 0,
+        takenMedications: 0,
+      ),
+    );
+
+    // Reload to get medication counts for newly selected elderly
+    await load();
   }
 
   void refresh() => load();
