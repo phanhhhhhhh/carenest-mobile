@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../medication/services/medication_reminder_service.dart';
 
 class MedicationLogEntry {
   final String id;
@@ -129,6 +130,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
           .map((e) => MedicationItem.fromJson(e))
           .toList();
       state = state.copyWith(isLoading: false, items: items);
+      MedicationReminderService.instance.scheduleFrom(items);
     } on DioException catch (e) {
       state = state.copyWith(
           isLoading: false, error: 'Error loading medication: ${e.message}');

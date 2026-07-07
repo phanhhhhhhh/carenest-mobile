@@ -228,6 +228,26 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     }
   }
 
+  void _handleMotionToggle(int deviceId, bool enabled) async {
+    final dash = ref.read(familyDashboardProvider);
+    final elderlyId = dash.data?.elderlyId;
+    if (elderlyId == null) return;
+
+    final ok = await ref
+        .read(cameraProvider(elderlyId).notifier)
+        .toggleMotionDetection(deviceId, enabled);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok
+              ? 'Motion detection ${enabled ? "ON" : "OFF"}'
+              : 'Could not update motion detection'),
+          backgroundColor: ok ? AppColors.success : AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dash = ref.watch(familyDashboardProvider);
@@ -574,6 +594,28 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ],
           ),
           const SizedBox(height: 14),
+          // Motion detection toggle
+          Row(
+            children: [
+              Icon(Icons.motion_photos_on,
+                  size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('Motion Detection',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary)),
+              ),
+              Switch(
+                value: cam.motionDetectionEnabled,
+                onChanged: (v) =>
+                    _handleMotionToggle(cam.id, v),
+                activeColor: AppColors.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           // Action buttons
           Wrap(
             spacing: 8,
