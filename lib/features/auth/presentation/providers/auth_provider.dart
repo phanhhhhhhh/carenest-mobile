@@ -49,18 +49,20 @@ class LoginNotifier extends StateNotifier<LoginState> {
 
   LoginNotifier(this._repo) : super(const LoginState());
 
+  /// Login with email+password or phone+password.
   Future<void> login({
-    required String email,
+    String? email,
+    String? phone,
     required String password,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _repo.login(email: email, password: password);
+      await _repo.login(email: email, phone: phone, password: password);
       state = state.copyWith(isLoading: false, success: true);
     } on UserNotFoundException {
       state = state.copyWith(
         isLoading: false,
-        error: 'No account found with this email. Please register first.',
+        error: 'No account found. Please register first.',
       );
     } on EmailNotVerifiedException catch (e) {
       state = state.copyWith(
@@ -70,8 +72,8 @@ class LoginNotifier extends StateNotifier<LoginState> {
       );
     } on DioException catch (e) {
       final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Invalid email or password')
-          : 'Invalid email or password';
+          ? (e.response?.data['message'] ?? 'Invalid credentials')
+          : 'Invalid credentials';
       state = state.copyWith(isLoading: false, error: msg.toString());
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Connection error');
@@ -109,14 +111,31 @@ class RegisterState {
   final bool isLoading;
   final String? error;
   final bool success;
+  final bool needsEmailVerification;
+  final String? verificationContact;
 
-  const RegisterState({this.isLoading = false, this.error, this.success = false});
+  const RegisterState({
+    this.isLoading = false,
+    this.error,
+    this.success = false,
+    this.needsEmailVerification = false,
+    this.verificationContact,
+  });
 
-  RegisterState copyWith({bool? isLoading, String? error, bool? success}) =>
+  RegisterState copyWith({
+    bool? isLoading,
+    String? error,
+    bool? success,
+    bool? needsEmailVerification,
+    String? verificationContact,
+  }) =>
       RegisterState(
         isLoading: isLoading ?? this.isLoading,
         error: error,
         success: success ?? this.success,
+        needsEmailVerification:
+            needsEmailVerification ?? this.needsEmailVerification,
+        verificationContact: verificationContact,
       );
 }
 
@@ -126,7 +145,7 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
   RegisterNotifier(this._repo) : super(const RegisterState());
 
   Future<void> register({
-    required String email,
+    String? email,
     required String password,
     required String confirmPassword,
     required String name,
@@ -136,7 +155,7 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
   }) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await _repo.register(
+      final result = await _repo.register(
         email: email,
         password: password,
         confirmPassword: confirmPassword,
@@ -145,7 +164,16 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
         phone: phone,
         dob: dob,
       );
-      state = state.copyWith(isLoading: false, success: true);
+
+      if (result is RegisterAutoLoggedIn) {
+        state = state.copyWith(isLoading: false, success: true);
+      } else if (result is RegisterNeedsVerification) {
+        state = state.copyWith(
+          isLoading: false,
+          needsEmailVerification: true,
+          verificationContact: result.contact,
+        );
+      }
     } on DioException catch (e) {
       final msg = e.response?.data is Map
           ? (e.response?.data['message'] ?? 'Registration failed')
@@ -156,46 +184,6 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
     }
   }
 
-  /// Dev-mode register with firebaseToken (legacy path).
-  Future<void> registerDev({
-    required String firebaseToken,
-    required String name,
-    required String role,
-    String? email,
-    String? password,
-    String? dob,
-  }) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _repo.login(firebaseToken: firebaseToken);
-      // Dev register via legacy path — login with token, backend auto-creates
-      state = state.copyWith(isLoading: false, success: true);
-    } on UserNotFoundException {
-      // Need to register first
-      try {
-        final dio = DioClient.create();
-        final body = <String, dynamic>{
-          'firebaseToken': firebaseToken,
-          'name': name,
-          'role': role,
-        };
-        if (email != null && email.isNotEmpty) body['email'] = email;
-        if (password != null && password.isNotEmpty) body['password'] = password;
-        if (dob != null) body['dob'] = dob;
-        final response = await dio.post('/auth/register', data: body);
-        final data = response.data as Map<String, dynamic>;
-        await _repo.persistAuth(data);
-        state = state.copyWith(isLoading: false, success: true);
-      } on DioException catch (e) {
-        final msg = e.response?.data is Map
-            ? (e.response?.data['message'] ?? 'Registration failed')
-            : 'Registration failed';
-        state = state.copyWith(isLoading: false, error: msg.toString());
-      }
-    } catch (_) {
-      state = state.copyWith(isLoading: false, error: 'Registration failed');
-    }
-  }
 }
 
 final registerProvider =
