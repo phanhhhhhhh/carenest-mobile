@@ -4,6 +4,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/proactive_reminder_card.dart';
 
 class ElderlyChatScreen extends ConsumerStatefulWidget {
   const ElderlyChatScreen({super.key});
@@ -204,6 +205,7 @@ class _ElderlyChatScreenState extends ConsumerState<ElderlyChatScreen> {
       ),
       body: Column(
         children: [
+          const ProactiveReminderCard(),
           Expanded(
             child: chatState.isLoading && messages.isEmpty
                 ? const Center(child: CircularProgressIndicator())
