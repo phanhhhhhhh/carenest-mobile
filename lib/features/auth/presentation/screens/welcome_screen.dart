@@ -208,10 +208,9 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
     }
   }
 
-  void _goToRegister() => context.go('/phone');
+  void _goToRegister() => context.go('/register');
 
   void _goToLogin() {
-    // Navigate to login / phone screen
     context.go('/phone');
   }
 
