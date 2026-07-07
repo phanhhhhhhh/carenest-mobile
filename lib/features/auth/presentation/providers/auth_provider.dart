@@ -177,7 +177,9 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
     } on DioException catch (e) {
       final msg = e.response?.data is Map
           ? (e.response?.data['message'] ?? 'Registration failed')
-          : 'Registration failed, try again';
+          : (e.response?.data is String
+              ? e.response!.data as String
+              : 'Registration failed');
       state = state.copyWith(isLoading: false, error: msg.toString());
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Registration failed, try again');
