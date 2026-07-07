@@ -17,6 +17,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _usePhoneLogin = false;
   // Dev mode
   final _phoneController = TextEditingController();
   bool _showDevMode = false;
@@ -31,10 +32,16 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    ref.read(loginProvider.notifier).login(
+    final notifier = ref.read(loginProvider.notifier);
+    if (_usePhoneLogin) {
+      final phone =
+          '+84${_phoneController.text.replaceFirst(RegExp(r'^0'), '')}';
+      notifier.login(phone: phone, password: _passwordController.text);
+    } else {
+      notifier.login(
           email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
+          password: _passwordController.text);
+    }
   }
 
   void _submitDev() {
@@ -77,39 +84,116 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                 const Text('Sign in to continue monitoring\nyour loved ones',
                     style: TextStyle(fontSize: 15, color: AppColors.textSecondary,
                         height: 1.5)),
-                const SizedBox(height: 40),
+                const SizedBox(height: 28),
 
-                // Email
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary),
-                  decoration: InputDecoration(
-                    hintText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined,
-                        color: AppColors.textSecondary),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.socialBorder)),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.socialBorder)),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-                    errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.error)),
-                    filled: true, fillColor: AppColors.background,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                // Email/Phone toggle
+                Row(children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _usePhoneLogin = false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: !_usePhoneLogin
+                              ? AppColors.primary : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text('Email',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: !_usePhoneLogin
+                                    ? Colors.white : AppColors.textSecondary,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ),
                   ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Please enter your email';
-                    if (!v.contains('@')) return 'Invalid email format';
-                    return null;
-                  },
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _usePhoneLogin = true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _usePhoneLogin
+                              ? AppColors.primary : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text('Phone',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: _usePhoneLogin
+                                    ? Colors.white : AppColors.textSecondary,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 20),
+
+                // Email or Phone field
+                if (!_usePhoneLogin)
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Email',
+                      prefixIcon: const Icon(Icons.email_outlined,
+                          color: AppColors.textSecondary),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.socialBorder)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.socialBorder)),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                      filled: true, fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
+                    validator: _usePhoneLogin ? null : (v) {
+                      if (v == null || v.trim().isEmpty) return 'Please enter your email';
+                      if (!v.contains('@')) return 'Invalid email format';
+                      return null;
+                    },
+                  )
+                else
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Phone number',
+                      prefixIcon: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text('🇻🇳', style: TextStyle(fontSize: 18)),
+                          SizedBox(width: 6),
+                          Text('+84', style: TextStyle(fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary)),
+                        ]),
+                      ),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.socialBorder)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.socialBorder)),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+                      filled: true, fillColor: AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
+                    validator: _usePhoneLogin ? (v) {
+                      if (v == null || v.trim().isEmpty) return 'Please enter your phone';
+                      return null;
+                    } : null,
+                  ),
                 const SizedBox(height: 16),
 
                 // Password

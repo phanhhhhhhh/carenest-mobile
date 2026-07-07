@@ -41,8 +41,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       return;
     }
+    final email = _emailController.text.trim();
     ref.read(registerProvider.notifier).register(
-          email: _emailController.text.trim(),
+          email: email.isNotEmpty ? email : null,
           password: _passwordController.text,
           confirmPassword: _confirmPasswordController.text,
           name: _nameController.text.trim(),
@@ -59,8 +60,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     ref.listen(registerProvider, (_, next) {
       if (next.success) {
+        context.go('/home');
+      } else if (next.needsEmailVerification) {
         context.go('/verify-email-prompt',
-            extra: _emailController.text.trim());
+            extra: next.verificationContact ?? _emailController.text.trim());
       }
     });
 
@@ -97,15 +100,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                 const SizedBox(height: 28),
 
-                _buildLabel('Email *'),
+                _buildLabel('Email (optional)'),
                 const SizedBox(height: 6),
                 _buildTextField(
                   controller: _emailController,
-                  hint: 'example@email.com',
+                  hint: 'example@email.com (skip for phone-only)',
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
-                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) {
+                    if (v != null && v.trim().isNotEmpty &&
+                        !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) {
                       return 'Invalid email format';
                     }
                     return null;
