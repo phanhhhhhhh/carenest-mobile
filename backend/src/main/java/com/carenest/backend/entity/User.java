@@ -40,7 +40,7 @@ public class User {
     @Column(nullable = false, length = 20)
     private UserRole role;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(unique = true, length = 20)
     private String phone;
 
     /**
