@@ -8,10 +8,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ResetPasswordRequest {
+public class ChangePasswordRequest {
 
-    @NotBlank(message = "Reset token is required")
-    private String token;
+    @NotBlank(message = "Current password is required")
+    private String currentPassword;
 
     @NotBlank(message = "New password is required")
     @Size(min = 8, max = 100, message = "Password must be 8-100 characters")
