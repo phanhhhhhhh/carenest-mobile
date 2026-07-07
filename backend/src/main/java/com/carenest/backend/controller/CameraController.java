@@ -125,12 +125,20 @@ public class CameraController {
 
     @PutMapping("/cameras/{deviceId}/motion-detection")
     @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, String>> configureMotionDetection(
+    public ResponseEntity<Map<String, Object>> configureMotionDetection(
         @PathVariable Long deviceId,
         @RequestBody Map<String, String> body
     ) {
-        // Configuration is stored on CameraDevice entity via CameraService
-        return ResponseEntity.ok(Map.of("message", "Motion detection settings updated"));
+        boolean enabled = Boolean.parseBoolean(body.getOrDefault("enabled", "false"));
+        String windowStart = body.getOrDefault("monitoringWindowStart", null);
+        String windowEnd = body.getOrDefault("monitoringWindowEnd", null);
+        cameraService.configureMotionDetection(deviceId, enabled, windowStart, windowEnd);
+        return ResponseEntity.ok(Map.of(
+            "message", "Motion detection settings updated",
+            "enabled", enabled,
+            "monitoringWindowStart", windowStart != null ? windowStart : "",
+            "monitoringWindowEnd", windowEnd != null ? windowEnd : ""
+        ));
     }
 
     // ═══ UC-31: Two-Way Voice ═════════════════════════════════════════════

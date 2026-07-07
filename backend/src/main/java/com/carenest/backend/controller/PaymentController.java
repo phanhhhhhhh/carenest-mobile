@@ -74,12 +74,12 @@ public class PaymentController {
     }
 
     /**
-     * MoMo return/callback.
+     * MoMo return/callback (IPN).
+     * MoMo sends a JSON body to this endpoint after payment processing.
      */
     @PostMapping("/momo/return")
     public ResponseEntity<Map<String, String>> momoReturn(@RequestBody Map<String, String> body) {
-        // MoMo sends JSON body in callback; process similarly
-        Map<String, String> result = Map.of("status", "RECEIVED", "message", "MoMo callback received");
+        Map<String, String> result = paymentService.handleMomoReturn(body);
         return ResponseEntity.ok(result);
     }
 
