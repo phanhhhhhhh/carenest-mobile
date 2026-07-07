@@ -55,6 +55,8 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 24),
+              if (data != null && data.linkedElderly.length > 1)
+                _buildElderlySelector(data),
               _buildElderlyCard(data),
               const SizedBox(height: 20),
               _buildSummaryGrid(data, data?.elderlyId),
@@ -123,6 +125,69 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
           );
         }),
       ],
+    );
+  }
+
+  Widget _buildElderlySelector(FamilyDashboardData data) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: data.linkedElderly.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final elder = data.linkedElderly[index];
+            final isSelected = index == data.selectedIndex;
+            return GestureDetector(
+              onTap: () {
+                ref
+                    .read(familyDashboardProvider.notifier)
+                    .selectElderly(index);
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textHint.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.elderly,
+                      size: 16,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      elder.elderlyName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
