@@ -92,11 +92,11 @@ public class DataSeeder implements CommandLineRunner {
     private void seedUsers() {
         log.info("Seeding users...");
 
-        User e1 = saveUser("John Anderson",  "+84912345001", LocalDate.of(1948, 3, 15),  UserRole.ELDERLY);
-        User e2 = saveUser("Jane Thompson",   "+84912345002", LocalDate.of(1945, 7, 22),  UserRole.ELDERLY);
-        User e3 = saveUser("Robert Lee",    "+84912345003", LocalDate.of(1950, 11, 8),  UserRole.ELDERLY);
-        User e4 = saveUser("Mary Pham",   "+84912345004", LocalDate.of(1943, 1, 30),  UserRole.ELDERLY);
-        User e5 = saveUser("William Hoang",    "+84912345005", LocalDate.of(1952, 9, 12),  UserRole.ELDERLY);
+        User e1 = saveUser("John Anderson",  "+84912345001", "john.anderson@test.com",   LocalDate.of(1948, 3, 15),  UserRole.ELDERLY);
+        User e2 = saveUser("Jane Thompson",   "+84912345002", "jane.thompson@test.com",  LocalDate.of(1945, 7, 22),  UserRole.ELDERLY);
+        User e3 = saveUser("Robert Lee",    "+84912345003", "robert.lee@test.com",     LocalDate.of(1950, 11, 8),  UserRole.ELDERLY);
+        User e4 = saveUser("Mary Pham",   "+84912345004", "mary.pham@test.com",      LocalDate.of(1943, 1, 30),  UserRole.ELDERLY);
+        User e5 = saveUser("William Hoang",    "+84912345005", "william.hoang@test.com",  LocalDate.of(1952, 9, 12),  UserRole.ELDERLY);
 
         elderlyUsers.addAll(List.of(e1, e2, e3, e4, e5));
 
@@ -125,16 +125,16 @@ public class DataSeeder implements CommandLineRunner {
             List.of(EmergencyContact.builder()
                 .name("Emily Hoang").phone("0912111005").relationship("Daughter").build()));
 
-        User f1  = saveUser("Linda Nguyen",  "+84918111001", null, UserRole.FAMILY);
-        User f2  = saveUser("Michael Tran",    "+84918111002", null, UserRole.FAMILY);
-        User f3  = saveUser("Sarah Le",       "+84918111003", null, UserRole.FAMILY);
-        User f4  = saveUser("David Pham",     "+84918111004", null, UserRole.FAMILY);
-        User f5  = saveUser("Emily Hoang", "+84918111005", null, UserRole.FAMILY);
-        User f6  = saveUser("Anna Vu",       "+84918111006", null, UserRole.FAMILY);
-        User f7  = saveUser("Nathan Dang",     "+84918111007", null, UserRole.FAMILY);
-        User f8  = saveUser("Olivia Bui",     "+84918111008", null, UserRole.FAMILY);
-        User f9  = saveUser("Peter Do",     "+84918111009", null, UserRole.FAMILY);
-        User f10 = saveUser("Quinn Ngo",    "+84918111010", null, UserRole.FAMILY);
+        User f1  = saveUser("Linda Nguyen",  "+84918111001", "linda.nguyen@test.com",  null, UserRole.FAMILY);
+        User f2  = saveUser("Michael Tran",    "+84918111002", "michael.tran@test.com",   null, UserRole.FAMILY);
+        User f3  = saveUser("Sarah Le",       "+84918111003", "sarah.le@test.com",      null, UserRole.FAMILY);
+        User f4  = saveUser("David Pham",     "+84918111004", "david.pham@test.com",    null, UserRole.FAMILY);
+        User f5  = saveUser("Emily Hoang", "+84918111005", "emily.hoang@test.com",   null, UserRole.FAMILY);
+        User f6  = saveUser("Anna Vu",       "+84918111006", "anna.vu@test.com",       null, UserRole.FAMILY);
+        User f7  = saveUser("Nathan Dang",     "+84918111007", "nathan.dang@test.com",    null, UserRole.FAMILY);
+        User f8  = saveUser("Olivia Bui",     "+84918111008", "olivia.bui@test.com",    null, UserRole.FAMILY);
+        User f9  = saveUser("Peter Do",     "+84918111009", "peter.do@test.com",      null, UserRole.FAMILY);
+        User f10 = saveUser("Quinn Ngo",    "+84918111010", "quinn.ngo@test.com",     null, UserRole.FAMILY);
 
         familyUsers.addAll(List.of(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10));
 
@@ -153,10 +153,12 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Seeded {} elderly + {} family users.", elderlyUsers.size(), familyUsers.size());
     }
 
-    private User saveUser(String name, String phone, LocalDate dob, UserRole role) {
+    private User saveUser(String name, String phone, String email, LocalDate dob, UserRole role) {
         User user = User.builder()
             .name(name)
             .phone(phone)
+            .email(email)
+            .emailVerified(true) // seed users are pre-verified
             .dob(dob)
             .role(role)
             .build();
