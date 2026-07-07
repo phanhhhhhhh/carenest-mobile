@@ -24,11 +24,10 @@ public class AuthController {
     // ═══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(
-        @Valid @RequestBody RegisterRequest request,
-        HttpServletRequest httpRequest
+    public ResponseEntity<Map<String, Object>> register(
+        @Valid @RequestBody RegisterRequest request
     ) {
-        AuthResponse response = authService.register(request, httpRequest.getHeader("User-Agent"));
+        Map<String, Object> response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
