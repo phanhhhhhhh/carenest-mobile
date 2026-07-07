@@ -1,11 +1,12 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.entity.GoogleFitToken;
 import com.carenest.backend.entity.HealthMetricType;
 import com.carenest.backend.entity.User;
+import com.carenest.backend.repository.GoogleFitTokenRepository;
 import com.carenest.backend.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -17,18 +18,16 @@ import org.springframework.web.client.RestClient;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
  * UC-10: Google Fit / Smartwatch data synchronization.
  * Pulls heart rate, step count, and sleep data from Google Fit REST API
  * on a scheduled basis (every 1 hour per spec).
+ * Uses database-backed token storage (GoogleFitToken entity).
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class GoogleFitService {
 
     private final RestClient restClient = RestClient.builder().build();
@@ -36,6 +35,7 @@ public class GoogleFitService {
     private final UserRepository userRepository;
     private final HealthMetricService healthMetricService;
     private final AnomalyDetectionService anomalyDetectionService;
+    private final GoogleFitTokenRepository googleFitTokenRepository;
 
     @Value("${google.fit.client-id:}")
     private String clientId;
@@ -49,9 +49,17 @@ public class GoogleFitService {
     private static final String GOOGLE_FIT_API = "https://www.googleapis.com/fitness/v1/users/me";
     private static final String GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
-    // In-memory token store (production should use DB)
-    private final Map<Long, String> accessTokens = new HashMap<>();
-    private final Map<Long, String> refreshTokens = new HashMap<>();
+    public GoogleFitService(ObjectMapper objectMapper,
+                            UserRepository userRepository,
+                            HealthMetricService healthMetricService,
+                            AnomalyDetectionService anomalyDetectionService,
+                            GoogleFitTokenRepository googleFitTokenRepository) {
+        this.objectMapper = objectMapper;
+        this.userRepository = userRepository;
+        this.healthMetricService = healthMetricService;
+        this.anomalyDetectionService = anomalyDetectionService;
+        this.googleFitTokenRepository = googleFitTokenRepository;
+    }
 
     /**
      * UC-10: Scheduled background sync every 1 hour.
@@ -75,7 +83,7 @@ public class GoogleFitService {
 
         for (User elderly : elderlyUsers) {
             try {
-                if (accessTokens.containsKey(elderly.getId())) {
+                if (isConnected(elderly.getId())) {
                     syncHealthData(elderly);
                     synced++;
                 }
@@ -109,10 +117,14 @@ public class GoogleFitService {
     }
 
     /**
-     * Handle OAuth callback — exchange code for tokens.
+     * Handle OAuth callback — exchange code for tokens and persist to DB.
      */
+    @Transactional
     public void handleOAuthCallback(String code, Long userId) {
         try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
             Map<String, String> body = Map.of(
                 "client_id", clientId,
                 "client_secret", clientSecret,
@@ -129,10 +141,21 @@ public class GoogleFitService {
                 .body(String.class);
 
             JsonNode json = objectMapper.readTree(response);
-            accessTokens.put(userId, json.get("access_token").asText());
-            if (json.has("refresh_token")) {
-                refreshTokens.put(userId, json.get("refresh_token").asText());
+            String accessToken = json.get("access_token").asText();
+            String refreshToken = json.has("refresh_token") ? json.get("refresh_token").asText() : null;
+            long expiresIn = json.has("expires_in") ? json.get("expires_in").asLong() : 3600;
+
+            // Persist to DB (upsert)
+            GoogleFitToken token = googleFitTokenRepository.findByUserId(userId)
+                .orElse(GoogleFitToken.builder().user(user).build());
+
+            token.setAccessToken(accessToken);
+            if (refreshToken != null) {
+                token.setRefreshToken(refreshToken);
             }
+            token.setExpiresAt(Instant.now().plusSeconds(expiresIn));
+            googleFitTokenRepository.save(token);
+
             log.info("Google Fit OAuth complete for userId={}", userId);
         } catch (Exception e) {
             log.error("Google Fit OAuth failed for userId={}: {}", userId, e.getMessage());
@@ -143,9 +166,10 @@ public class GoogleFitService {
     /**
      * Sync health data from Google Fit for a specific user.
      */
+    @Transactional
     public Map<String, Object> syncHealthData(User elderly) {
-        String accessToken = accessTokens.get(elderly.getId());
-        if (accessToken == null) {
+        GoogleFitToken token = googleFitTokenRepository.findByUserId(elderly.getId()).orElse(null);
+        if (token == null || token.getAccessToken() == null) {
             return Map.of("status", "NOT_CONNECTED", "message", "Google Fit not connected");
         }
 
@@ -154,11 +178,11 @@ public class GoogleFitService {
 
         try {
             // Fetch heart rate
-            var heartRateData = fetchHeartRate(elderly.getId(), accessToken);
+            var heartRateData = fetchHeartRate(elderly.getId(), token.getAccessToken());
             results.put("heartRate", heartRateData);
 
             // Fetch step count
-            var stepData = fetchStepCount(elderly.getId(), accessToken);
+            var stepData = fetchStepCount(elderly.getId(), token.getAccessToken());
             results.put("steps", stepData);
 
             log.info("Google Fit data synced for userId={}: heartRate={} steps={}",
@@ -167,13 +191,12 @@ public class GoogleFitService {
             return results;
         } catch (Exception e) {
             // Try refresh token
-            if (refreshTokens.containsKey(elderly.getId())) {
+            if (token.getRefreshToken() != null) {
                 try {
-                    refreshAccessToken(elderly.getId());
+                    refreshAccessToken(elderly.getId(), token);
                     return Map.of("status", "TOKEN_REFRESHED", "message", "Token refreshed — retry sync");
                 } catch (Exception ex) {
-                    accessTokens.remove(elderly.getId());
-                    refreshTokens.remove(elderly.getId());
+                    googleFitTokenRepository.deleteByUserId(elderly.getId());
                     return Map.of("status", "ERROR", "message", "Token refresh failed — please reconnect Google Fit");
                 }
             }
@@ -187,6 +210,39 @@ public class GoogleFitService {
     public boolean isConfigured() {
         return clientId != null && !clientId.isBlank()
             && clientSecret != null && !clientSecret.isBlank();
+    }
+
+    /**
+     * UC-10: Check if a user has connected Google Fit.
+     */
+    @Transactional(readOnly = true)
+    public boolean isConnected(Long userId) {
+        return googleFitTokenRepository.findByUserId(userId)
+            .map(t -> t.getAccessToken() != null && !t.getAccessToken().isBlank())
+            .orElse(false);
+    }
+
+    /**
+     * UC-10: Disconnect Google Fit for a user.
+     * Revokes tokens at Google and removes from DB.
+     */
+    @Transactional
+    public void disconnect(Long userId) {
+        GoogleFitToken token = googleFitTokenRepository.findByUserId(userId).orElse(null);
+        if (token != null && token.getAccessToken() != null) {
+            try {
+                // Revoke token at Google
+                restClient.post()
+                    .uri("https://oauth2.googleapis.com/revoke?token=" + token.getAccessToken())
+                    .retrieve()
+                    .toBodilessEntity();
+                log.info("Google Fit token revoked at Google for userId={}", userId);
+            } catch (Exception e) {
+                log.warn("Failed to revoke Google Fit token at Google for userId={}: {}", userId, e.getMessage());
+            }
+        }
+        googleFitTokenRepository.deleteByUserId(userId);
+        log.info("Google Fit disconnected for userId={}", userId);
     }
 
     // ── Private: Data Fetching ──────────────────────────────────────────────
@@ -231,7 +287,6 @@ public class GoogleFitService {
 
             if (count > 0) {
                 double avgBpm = sum / count;
-                // Save as health metric via the service
                 saveMetric(userId, HealthMetricType.HEART_RATE,
                     BigDecimal.valueOf(Math.round(avgBpm)), "bpm");
             }
@@ -286,14 +341,15 @@ public class GoogleFitService {
         }
     }
 
-    private void refreshAccessToken(Long userId) {
-        String refreshToken = refreshTokens.get(userId);
-        if (refreshToken == null) throw new RuntimeException("No refresh token");
+    private void refreshAccessToken(Long userId, GoogleFitToken token) {
+        if (token.getRefreshToken() == null) {
+            throw new RuntimeException("No refresh token available");
+        }
 
         Map<String, String> body = Map.of(
             "client_id", clientId,
             "client_secret", clientSecret,
-            "refresh_token", refreshToken,
+            "refresh_token", token.getRefreshToken(),
             "grant_type", "refresh_token"
         );
 
@@ -306,7 +362,11 @@ public class GoogleFitService {
 
         try {
             JsonNode json = objectMapper.readTree(response);
-            accessTokens.put(userId, json.get("access_token").asText());
+            token.setAccessToken(json.get("access_token").asText());
+            if (json.has("expires_in")) {
+                token.setExpiresAt(Instant.now().plusSeconds(json.get("expires_in").asLong()));
+            }
+            googleFitTokenRepository.save(token);
             log.info("Google Fit token refreshed for userId={}", userId);
         } catch (Exception e) {
             throw new RuntimeException("Failed to refresh token", e);
@@ -323,7 +383,6 @@ public class GoogleFitService {
                 .recordedAt(OffsetDateTime.now())
                 .notes("Synced from Google Fit")
                 .build();
-            // healthMetricService.create() already triggers anomaly detection internally
             healthMetricService.create(request);
         } catch (Exception e) {
             log.warn("Failed to save Google Fit metric for userId={}: {}", userId, e.getMessage());

@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -116,6 +117,64 @@ public class GeminiApiService {
      */
     public boolean isAvailable() {
         return apiKey != null && !apiKey.isBlank();
+    }
+
+    /**
+     * UC-17: Transcribe audio to text using Gemini's multimodal capabilities.
+     * Sends raw audio bytes as inlineData and returns the transcribed text.
+     *
+     * @param audioData raw audio bytes (MP3, WAV, WEBM, OGG)
+     * @param mimeType  MIME type of the audio (e.g., "audio/mp3", "audio/wav")
+     * @return transcribed text, or null if transcription failed
+     */
+    public String transcribeAudio(byte[] audioData, String mimeType) {
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("Gemini API key not configured — cannot transcribe audio");
+            return null;
+        }
+
+        try {
+            String base64Audio = Base64.getEncoder().encodeToString(audioData);
+
+            Map<String, Object> inlineData = Map.of(
+                "mimeType", mimeType != null ? mimeType : "audio/webm",
+                "data", base64Audio
+            );
+
+            Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                    Map.of("parts", List.of(
+                        Map.of("inlineData", inlineData),
+                        Map.of("text", "Transcribe the spoken words in this audio clip. "
+                            + "Return ONLY the transcribed text, nothing else. "
+                            + "If the audio is in Vietnamese, transcribe in Vietnamese. "
+                            + "If the audio is in English, transcribe in English. "
+                            + "Do not add explanations, punctuation corrections, or commentary.")
+                    ))
+                ),
+                "generationConfig", Map.of(
+                    "temperature", 0.1,
+                    "maxOutputTokens", 1024,
+                    "topP", 0.95
+                )
+            );
+
+            String responseJson = restClient.post()
+                .uri(GEMINI_BASE_URL + "/models/" + model + ":generateContent?key=" + apiKey)
+                .header("Content-Type", "application/json")
+                .body(objectMapper.writeValueAsString(requestBody))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                    log.error("Gemini STT error: {} — body: {}",
+                        res.getStatusCode(), new String(res.getBody().readAllBytes()));
+                })
+                .body(String.class);
+
+            return extractText(responseJson);
+        } catch (Exception e) {
+            log.error("Failed to transcribe audio via Gemini: {}", e.getMessage(), e);
+            return null;
+        }
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
