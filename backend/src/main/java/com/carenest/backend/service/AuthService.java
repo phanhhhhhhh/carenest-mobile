@@ -90,21 +90,46 @@ public class AuthService {
         return buildAuthResponse(user, deviceInfo);
     }
 
-    // ── Login (Email + Password OR Firebase Token) ──────────────────────────
+    // ── Login (Phone + Password / Email + Password / Firebase Token) ──────
 
     @Transactional
     public AuthResponse login(LoginRequest request, String deviceInfo) {
-        // Method 1: Email + Password
+        // Method 1: Phone + Password
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            return loginWithPhone(request, deviceInfo);
+        }
+
+        // Method 2: Email + Password
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             return loginWithEmail(request, deviceInfo);
         }
 
-        // Method 2: Firebase phone token (legacy)
+        // Method 3: Firebase phone token (legacy)
         if (request.getFirebaseToken() != null && !request.getFirebaseToken().isBlank()) {
             return loginWithFirebase(request.getFirebaseToken(), deviceInfo);
         }
 
-        throw new IllegalArgumentException("Either email+password or firebaseToken is required");
+        throw new IllegalArgumentException("Either phone+password, email+password, or firebaseToken is required");
+    }
+
+    private AuthResponse loginWithPhone(LoginRequest request, String deviceInfo) {
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required for phone login");
+        }
+
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(request.getPhone().trim())
+            .orElseThrow(() -> new UnauthorizedException("Invalid phone or password"));
+
+        if (user.getPasswordHash() == null) {
+            throw new UnauthorizedException(
+                "No password set for this account. Use forgot-password to set a password, or login with Firebase OTP.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid phone or password");
+        }
+
+        return buildAuthResponse(user, deviceInfo);
     }
 
     private AuthResponse loginWithEmail(LoginRequest request, String deviceInfo) {
