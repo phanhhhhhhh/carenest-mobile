@@ -3,6 +3,12 @@ import 'package:dio/dio.dart';
 import '../../data/auth_repository.dart';
 import '../../../../core/network/dio_client.dart';
 
+/// Dio instance for the entire app lifecycle.
+///
+/// Uses a plain [Provider] (keepAlive by default) — NOT autoDispose —
+/// because [DioClient.create] sets up interceptors with refresh-token
+/// mutex state that must survive widget rebuilds. Recreating the Dio
+/// would reset the mutex and lose in-flight request deduplication.
 final dioProvider = Provider<Dio>((ref) => DioClient.create());
 
 final authRepositoryProvider = Provider<AuthRepository>(
