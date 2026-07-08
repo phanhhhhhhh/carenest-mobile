@@ -105,10 +105,37 @@ public class AuthService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("userId", user.getId());
-        if (needsVerification) {
+        if (needsVerification && !hasPhone) {
+            // Email-only: must verify before login
             response.put("message", "Registration successful. Please check your email (" + user.getEmail()
                 + ") to verify your account before logging in.");
             response.put("requiresVerification", true);
+        } else if (needsVerification) {
+            // Has both email and phone: auto-login via phone, email verification pending
+            response.put("message", "Registration successful. You can log in with your phone and password now. "
+                + "Check your email (" + user.getEmail() + ") to verify your email.");
+            response.put("requiresVerification", false);
+            // Return tokens so the user can auto-login
+            String rawRefreshToken = UUID.randomUUID().toString();
+            RefreshToken rt = RefreshToken.builder()
+                .user(user)
+                .tokenHash(sha256(rawRefreshToken))
+                .expiresAt(OffsetDateTime.now().plusSeconds(refreshTokenExpirationMs / 1000))
+                .build();
+            refreshTokenRepository.save(rt);
+            String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", rawRefreshToken);
+            response.put("expiresIn", jwtService.getAccessTokenExpirationSeconds());
+            response.put("user", Map.of(
+                "id", user.getId(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "phone", user.getPhone(),
+                "role", user.getRole().name(),
+                "dob", user.getDob() != null ? user.getDob().toString() : null,
+                "emailVerified", user.isEmailVerified()
+            ));
         } else {
             response.put("message", "Registration successful. You can now log in with your phone and password.");
             response.put("requiresVerification", false);
@@ -297,13 +324,14 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public void forgotPassword(String email) {
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email.toLowerCase().trim())
-            .orElseThrow(() -> new NotFoundException("No account found with email: " + email));
-
-        // Generate password reset token (JWT, 15 min expiry)
-        String resetToken = jwtService.generatePasswordResetToken(user.getId(), user.getEmail());
-
-        emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
+        // Security: always return "success" even if email not found
+        // to prevent email enumeration attacks.
+        userRepository.findByEmailAndDeletedAtIsNull(email.toLowerCase().trim())
+            .ifPresent(user -> {
+                // Generate password reset token (JWT, 15 min expiry)
+                String resetToken = jwtService.generatePasswordResetToken(user.getId(), user.getEmail());
+                emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
+            });
     }
 
     @Transactional

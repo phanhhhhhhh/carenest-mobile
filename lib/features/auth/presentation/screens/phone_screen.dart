@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -277,31 +277,23 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                const Row(children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('Or continue with',
-                        style: TextStyle(color: AppColors.textHint, fontSize: 13)),
-                  ),
-                  Expanded(child: Divider()),
-                ]),
-                const SizedBox(height: 24),
+                // Social login: disabled until backend OAuth integration is complete.
+                // const Row(children: [
+                //   Expanded(child: Divider()),
+                //   Padding(
+                //     padding: EdgeInsets.symmetric(horizontal: 16),
+                //     child: Text('Or continue with',
+                //         style: TextStyle(color: AppColors.textHint, fontSize: 13)),
+                //   ),
+                //   Expanded(child: Divider()),
+                // ]),
+                // const SizedBox(height: 24),
+                // _SocialButton(...)
+                // const SizedBox(height: 12),
+                // _SocialButton(...)
 
-                _SocialButton(
-                  icon: _GoogleIcon(),
-                  label: 'Continue with Google',
-                  onTap: () {},
-                ),
-                const SizedBox(height: 12),
-                _SocialButton(
-                  icon: _FacebookIcon(),
-                  label: 'Continue with Facebook',
-                  onTap: () {},
-                ),
-
-                // Dev mode
-                if (kIsWeb) ...[
+                // Dev mode — only available in debug builds
+                if (kDebugMode) ...[
                   const SizedBox(height: 28),
                   Center(
                     child: InkWell(
@@ -390,57 +382,9 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
   }
 }
 
-// ── Social button widgets (unchanged) ──────────────────────────
-
-class _SocialButton extends StatelessWidget {
-  final Widget icon;
-  final String label;
-  final VoidCallback onTap;
-  const _SocialButton({required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity, height: 50,
-      child: OutlinedButton.icon(
-        onPressed: onTap,
-        icon: icon,
-        label: Text(label, style: const TextStyle(fontSize: 15,
-            fontWeight: FontWeight.w500, color: AppColors.textPrimary)),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.textPrimary,
-          side: const BorderSide(color: AppColors.socialBorder),
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-      ),
-    );
-  }
-}
-
-class _GoogleIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22, height: 22,
-      decoration: BoxDecoration(
-          color: AppColors.socialGoogle, borderRadius: BorderRadius.circular(4)),
-      child: const Center(child: Text('G', style: TextStyle(
-          color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14))),
-    );
-  }
-}
-
-class _FacebookIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22, height: 22,
-      decoration: BoxDecoration(
-          color: AppColors.socialFacebook, borderRadius: BorderRadius.circular(4)),
-      child: const Center(child: Text('f', style: TextStyle(
-          color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15))),
-    );
-  }
-}
+// ── Social button widgets (disabled until OAuth integration) ──────────
+// TODO: Re-enable when Google/Facebook OAuth flows are implemented.
+//
+// class _SocialButton extends StatelessWidget { ... }
+// class _GoogleIcon extends StatelessWidget { ... }
+// class _FacebookIcon extends StatelessWidget { ... }
