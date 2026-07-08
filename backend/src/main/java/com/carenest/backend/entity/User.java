@@ -82,8 +82,9 @@ public class User {
 
     /**
      * 6-digit PIN for quick local auth (alternative to password).
+     * BCrypt hash is ~60 chars; length=255 accommodates future hash upgrades.
      */
-    @Column(length = 10)
+    @Column(length = 255)
     private String pin;
 
     @Column(name = "fcm_token", length = 255)
