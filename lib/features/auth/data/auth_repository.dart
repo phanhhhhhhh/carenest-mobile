@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../core/storage/secure_storage.dart';
+import '../../../core/auth/token_notifier.dart';
 
 class UserNotFoundException implements Exception {}
 
@@ -201,6 +202,8 @@ class AuthRepository {
       // ignore — still clear local storage
     }
     await SecureStorage.clearAll();
+    // Notify GoRouter so it redirects to /welcome
+    TokenNotifier.instance.onSessionExpired();
   }
 
   // ═══════════════════════════════════════════════════════════════
