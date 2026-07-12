@@ -84,16 +84,15 @@ class _ElderlyEditProfileScreenState
 
       final dio = ref.read(dioProvider);
       final data = <String, dynamic>{
-        'userName': _nameCtrl.text.trim(),
         'healthConditions': _conditions,
         'allergies': _allergies,
         'notes': _notesCtrl.text.trim(),
       };
       if (_bloodType != null) data['bloodType'] = _bloodType;
       final weight = double.tryParse(_weightCtrl.text.trim());
-      if (weight != null) data['weight'] = weight;
+      if (weight != null) data['weightKg'] = weight;
       final height = double.tryParse(_heightCtrl.text.trim());
-      if (height != null) data['height'] = height;
+      if (height != null) data['heightCm'] = height;
 
       await dio.put('/elderly-profiles/$userId', data: data);
 
