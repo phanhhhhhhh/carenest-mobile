@@ -213,7 +213,7 @@ class _ElderlyEmergencyContactsScreenState
                       decoration: BoxDecoration(
                         color: AppColors.sosLight,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.sosPrimary.withOpacity(0.2)),
+                        border: Border.all(color: AppColors.sosPrimary.withValues(alpha: 0.2)),
                       ),
                       child: const Row(
                         children: [
@@ -256,7 +256,7 @@ class _ElderlyEmergencyContactsScreenState
             Container(
               width: 80, height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.contact_emergency,
@@ -341,7 +341,7 @@ class _ContactCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
@@ -351,8 +351,8 @@ class _ContactCard extends StatelessWidget {
             width: 48, height: 48,
             decoration: BoxDecoration(
               color: (index == 0)
-                  ? AppColors.primary.withOpacity(0.1)
-                  : AppColors.secondary.withOpacity(0.08),
+                  ? AppColors.primary.withValues(alpha: 0.1)
+                  : AppColors.secondary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
@@ -382,7 +382,7 @@ class _ContactCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text('Priority',

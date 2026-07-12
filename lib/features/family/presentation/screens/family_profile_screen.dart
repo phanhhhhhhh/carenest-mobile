@@ -177,7 +177,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
           children: [
             CircleAvatar(
               radius: 50,
-              backgroundColor: AppColors.secondary.withOpacity(0.1),
+              backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
               child: const Icon(Icons.person,
                   size: 56, color: AppColors.secondary),
             ),
@@ -214,7 +214,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.secondary.withOpacity(0.1),
+            color: AppColors.secondary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Text('Family / Caregiver',
@@ -237,7 +237,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -261,7 +261,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
               radius: 24,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: const Icon(Icons.elderly,
                   color: AppColors.primary, size: 28),
             ),
@@ -301,7 +301,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: InkWell(
         onTap: _showAddFamilyDialog,
@@ -314,7 +314,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
+                  color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.person_add,
@@ -353,28 +353,28 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         Icons.edit,
         'Edit Profile',
         AppColors.primary,
-        AppColors.primary.withOpacity(0.08),
+        AppColors.primary.withValues(alpha: 0.08),
         () {}
       ),
       (
         Icons.notifications_outlined,
         'Notification Settings',
         AppColors.secondary,
-        AppColors.secondary.withOpacity(0.08),
+        AppColors.secondary.withValues(alpha: 0.08),
         () => context.go('/notification-settings'),
       ),
       (
         Icons.workspace_premium_outlined,
         'Upgrade Premium',
         AppColors.warning,
-        AppColors.warning.withOpacity(0.08),
+        AppColors.warning.withValues(alpha: 0.08),
         () => context.go('/premium-plans'),
       ),
       (
         Icons.help_outline,
         'Help & Support',
         AppColors.textSecondary,
-        AppColors.textHint.withOpacity(0.08),
+        AppColors.textHint.withValues(alpha: 0.08),
         () {}
       ),
     ];
@@ -385,7 +385,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -421,7 +421,7 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.08),
+                color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.logout,

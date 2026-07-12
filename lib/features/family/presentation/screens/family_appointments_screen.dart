@@ -168,7 +168,7 @@ class _FamilyAppointmentsScreenState
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 14),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.textHint.withOpacity(0.3)),
+                      border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -208,7 +208,7 @@ class _FamilyAppointmentsScreenState
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 14),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.textHint.withOpacity(0.3)),
+                      border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -520,11 +520,11 @@ class _AppointmentCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: statusColor.withOpacity(0.2),
+          color: statusColor.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -540,7 +540,7 @@ class _AppointmentCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.event, color: statusColor, size: 22),
@@ -575,7 +575,7 @@ class _AppointmentCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -718,9 +718,9 @@ class _ActionChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.06),
+          color: color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

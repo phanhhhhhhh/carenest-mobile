@@ -31,7 +31,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
   }
 
   void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     final notifier = ref.read(loginProvider.notifier);
     if (_usePhoneLogin) {
       final phone =
@@ -191,6 +191,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                     ),
                     validator: _usePhoneLogin ? (v) {
                       if (v == null || v.trim().isEmpty) return 'Please enter your phone';
+                      if (!RegExp(r'^\d{9,10}$').hasMatch(v.trim())) return 'Phone must be 9-10 digits';
                       return null;
                     } : null,
                   ),
@@ -310,7 +311,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                         color: const Color(0xFFFFF8E1),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: AppColors.warning.withOpacity(0.4)),
+                            color: AppColors.warning.withValues(alpha: 0.4)),
                       ),
                       child: const Text(
                         'Dev Mode — Enter phone to bypass email login',

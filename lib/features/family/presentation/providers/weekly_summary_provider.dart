@@ -88,20 +88,20 @@ class WeeklySummaryNotifier extends StateNotifier<WeeklySummaryState> {
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final resp = await _dio.get('/elderly/$elderlyId/weekly-summaries');
-      final rawList = resp.data is List
-          ? resp.data as List<dynamic>
-          : (resp.data['summaries'] as List<dynamic>? ?? []);
-      final summaries = rawList
-          .map((e) => WeeklySummaryData.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final resp = await _dio.get('/elderly/$elderlyId/weekly-summary');
+      final data = resp.data as Map<String, dynamic>?;
+      if (data == null || data.isEmpty) {
+        state = state.copyWith(isLoading: false, summaries: []);
+        return;
+      }
+      final summary = WeeklySummaryData.fromJson(data);
       state = state.copyWith(
         isLoading: false,
-        summaries: summaries,
-        latest: summaries.isNotEmpty ? summaries.first : null,
+        summaries: [summary],
+        latest: summary,
       );
     } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 204) {
         state = state.copyWith(isLoading: false, summaries: []);
         return;
       }
@@ -116,8 +116,17 @@ class WeeklySummaryNotifier extends StateNotifier<WeeklySummaryState> {
     state = state.copyWith(isLoading: true);
     try {
       final resp =
-          await _dio.post('/elderly/$elderlyId/weekly-summaries/generate');
-      final data = WeeklySummaryData.fromJson(resp.data as Map<String, dynamic>);
+          await _dio.post('/elderly/$elderlyId/weekly-summary/generate');
+      final raw = resp.data as Map<String, dynamic>;
+      // Backend returns {message, summary}; adapt to WeeklySummaryData
+      final data = WeeklySummaryData(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: 'Weekly Health Summary',
+        content: raw['summary'] as String? ?? raw['message'] as String? ?? '',
+        weekStart: DateTime.now().subtract(const Duration(days: 7)),
+        weekEnd: DateTime.now(),
+        createdAt: DateTime.now(),
+      );
       state = state.copyWith(
         isLoading: false,
         latest: data,
