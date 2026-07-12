@@ -121,8 +121,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 _buildTextField(
                   controller: _nameController,
                   hint: 'Full Name',
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Name is required' : null,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Name is required';
+                    if (v.trim().length < 2) return 'Name must be at least 2 characters';
+                    return null;
+                  },
                   textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 18),
@@ -133,6 +136,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   controller: _phoneController,
                   hint: '912 345 678',
                   keyboardType: TextInputType.phone,
+                  validator: (v) {
+                    if (v != null && v.trim().isNotEmpty &&
+                        !RegExp(r'^\d{9,10}$').hasMatch(v.trim())) {
+                      return 'Phone must be 9-10 digits';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 18),
 

@@ -189,7 +189,7 @@ class _ElderlyMedicationHistoryScreenState
             child: LinearProgressIndicator(
               value: adherence,
               minHeight: 8,
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
               valueColor:
                   const AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
             ),
@@ -245,8 +245,8 @@ class _LogEntryTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isTaken
-              ? AppColors.success.withOpacity(0.2)
-              : AppColors.error.withOpacity(0.15),
+              ? AppColors.success.withValues(alpha: 0.2)
+              : AppColors.error.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
@@ -256,8 +256,8 @@ class _LogEntryTile extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               color: isTaken
-                  ? AppColors.success.withOpacity(0.1)
-                  : AppColors.error.withOpacity(0.08),
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : AppColors.error.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -280,7 +280,7 @@ class _LogEntryTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.06),
+              color: AppColors.primary.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

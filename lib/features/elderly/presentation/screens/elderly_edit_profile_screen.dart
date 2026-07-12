@@ -192,7 +192,7 @@ class _ElderlyEditProfileScreenState
         children: [
           CircleAvatar(
             radius: 55,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
             child:
                 const Icon(Icons.person, size: 64, color: AppColors.primary),
           ),
@@ -262,7 +262,7 @@ class _ElderlyEditProfileScreenState
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.textHint.withOpacity(0.3)),
+                border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: DropdownButton<String?>(
@@ -364,7 +364,7 @@ class _ElderlyEditProfileScreenState
                       deleteIcon: const Icon(Icons.close, size: 16),
                       onDeleted: () =>
                           setState(() => _conditions.remove(c)),
-                      backgroundColor: AppColors.primary.withOpacity(0.08),
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.08),
                       deleteIconColor: AppColors.textSecondary,
                       side: BorderSide.none,
                       shape: RoundedRectangleBorder(
@@ -424,7 +424,7 @@ class _ElderlyEditProfileScreenState
                       deleteIcon: const Icon(Icons.close, size: 16),
                       onDeleted: () =>
                           setState(() => _allergies.remove(a)),
-                      backgroundColor: AppColors.error.withOpacity(0.08),
+                      backgroundColor: AppColors.error.withValues(alpha: 0.08),
                       deleteIconColor: AppColors.textSecondary,
                       side: BorderSide.none,
                       shape: RoundedRectangleBorder(
@@ -464,7 +464,7 @@ class _ElderlyEditProfileScreenState
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
