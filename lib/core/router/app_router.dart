@@ -10,6 +10,9 @@ import '../../features/auth/presentation/screens/forgot_password_phone_screen.da
 import '../../features/auth/presentation/screens/new_password_screen.dart';
 import '../../features/auth/presentation/screens/password_reset_success_screen.dart';
 import '../../features/auth/presentation/screens/verify_email_prompt_screen.dart';
+import '../../features/auth/presentation/screens/pin_setup_screen.dart';
+import '../../features/auth/presentation/screens/pin_verify_screen.dart';
+import '../../features/elderly/presentation/screens/health_report_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_home_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_medication_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_health_screen.dart';
@@ -114,6 +117,24 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/password-reset-success',
       builder: (context, state) => const PasswordResetSuccessScreen(),
+    ),
+
+    // PIN Setup
+    GoRoute(
+      path: '/pin-setup',
+      builder: (context, state) => const PinSetupScreen(),
+    ),
+
+    // PIN Verify (app unlock)
+    GoRoute(
+      path: '/pin-verify',
+      builder: (context, state) => const PinVerifyScreen(),
+    ),
+
+    // Health Report (30-day summary)
+    GoRoute(
+      path: '/health-report',
+      builder: (context, state) => const HealthReportScreen(),
     ),
 
     GoRoute(path: '/home', redirect: (_, __) async {
