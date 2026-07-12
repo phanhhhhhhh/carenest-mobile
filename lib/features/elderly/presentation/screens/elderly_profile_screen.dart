@@ -420,6 +420,13 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         () => context.go('/premium-plans'),
       ),
       (
+        Icons.lock_outline,
+        'Set PIN Lock',
+        AppColors.primary,
+        AppColors.primary.withOpacity(0.08),
+        () => context.go('/pin-setup'),
+      ),
+      (
         Icons.help_outline,
         'Help & Support',
         AppColors.textSecondary,
