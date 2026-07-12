@@ -83,9 +83,32 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                     : () async {
                         final phone = phoneCtrl.text.trim();
                         if (phone.isEmpty) return;
+
+                        // Resolve phone → userId first
+                        String? elderlyId;
+                        try {
+                          final dio = ref.read(dioProvider);
+                          final lookupResp = await dio.get('/users/by-phone/$phone');
+                          elderlyId = lookupResp.data['id']?.toString();
+                        } catch (_) {
+                          // lookup failed
+                        }
+
+                        if (elderlyId == null) {
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No user found with that phone number'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
                         final ok = await ref
                             .read(familyLinkProvider.notifier)
-                            .sendLinkRequest(phone);
+                            .sendLinkRequest(elderlyId);
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
