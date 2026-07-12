@@ -37,6 +37,7 @@ public class AuthService {
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RateLimitService rateLimitService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -173,7 +174,11 @@ public class AuthService {
         User user = userRepository.findByPhoneAndDeletedAtIsNull(request.getPhone().trim())
             .orElseThrow(() -> new UnauthorizedException("Invalid phone or password"));
 
+        // Check lockout before processing
+        rateLimitService.checkLockout(user.getId());
+
         if (user.getPasswordHash() == null) {
+            rateLimitService.recordFailedAttempt(user.getId());
             throw new UnauthorizedException(
                 "No password set for this account. Use forgot-password to set a password, or login with Firebase OTP.");
         }
@@ -185,9 +190,11 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            rateLimitService.recordFailedAttempt(user.getId());
             throw new UnauthorizedException("Invalid phone or password");
         }
 
+        rateLimitService.clearFailedAttempts(user.getId());
         return buildAuthResponse(user, deviceInfo);
     }
 
@@ -199,6 +206,9 @@ public class AuthService {
         User user = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())
             .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
+        // Check lockout before processing
+        rateLimitService.checkLockout(user.getId());
+
         // Check email verification FIRST before password — prevents info leak
         if (!user.isEmailVerified()) {
             throw new UnauthorizedException(
@@ -206,9 +216,11 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            rateLimitService.recordFailedAttempt(user.getId());
             throw new UnauthorizedException("Invalid email or password");
         }
 
+        rateLimitService.clearFailedAttempts(user.getId());
         return buildAuthResponse(user, deviceInfo);
     }
 
