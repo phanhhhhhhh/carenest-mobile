@@ -145,13 +145,14 @@ class _NotificationCard extends StatelessWidget {
 
   IconData _iconForType(String type) {
     switch (type) {
-      case 'SOS':
+      case 'EMERGENCY':
         return Icons.sos;
-      case 'MISSED_MEDICATION':
+      case 'MEDICATION_REMINDER':
         return Icons.medication_liquid;
-      case 'ABNORMAL_VITALS':
+      case 'HEALTH_ALERT':
         return Icons.warning_amber;
-      case 'FAMILY_LINK':
+      case 'FAMILY_LINK_REQUEST':
+      case 'FAMILY_UPDATE':
         return Icons.people;
       default:
         return Icons.notifications;
@@ -160,13 +161,14 @@ class _NotificationCard extends StatelessWidget {
 
   Color _colorForType(String type) {
     switch (type) {
-      case 'SOS':
+      case 'EMERGENCY':
         return AppColors.error;
-      case 'MISSED_MEDICATION':
+      case 'MEDICATION_REMINDER':
         return AppColors.warning;
-      case 'ABNORMAL_VITALS':
+      case 'HEALTH_ALERT':
         return AppColors.error;
-      case 'FAMILY_LINK':
+      case 'FAMILY_LINK_REQUEST':
+      case 'FAMILY_UPDATE':
         return AppColors.primary;
       default:
         return AppColors.textSecondary;

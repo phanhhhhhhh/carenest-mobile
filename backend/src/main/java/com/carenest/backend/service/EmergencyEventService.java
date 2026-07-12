@@ -36,12 +36,24 @@ public class EmergencyEventService {
         User elderly = userRepository.findById(request.getElderlyId())
             .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
+        // Build notes with type prefix for categorization
+        String enrichedNotes = request.getNotes();
+        if (request.getType() != null && !request.getType().isBlank()) {
+            String typePrefix = "[" + request.getType() + "]";
+            if (request.getDescription() != null && !request.getDescription().isBlank()) {
+                typePrefix += " " + request.getDescription();
+            }
+            enrichedNotes = enrichedNotes != null && !enrichedNotes.isBlank()
+                ? typePrefix + " — " + enrichedNotes
+                : typePrefix;
+        }
+
         EmergencyEvent event = EmergencyEvent.builder()
             .elderly(elderly)
             .latitude(request.getLatitude())
             .longitude(request.getLongitude())
             .address(request.getAddress())
-            .notes(request.getNotes())
+            .notes(enrichedNotes)
             .status(EmergencyStatus.ACTIVE)
             .triggeredAt(OffsetDateTime.now())
             .build();
@@ -151,6 +163,29 @@ public class EmergencyEventService {
                 .orElse(null);
         }
 
+        // Derive type from notes prefix [TYPE] if present
+        String type = "SOS";
+        String description = "";
+        String displayNotes = e.getNotes();
+        if (displayNotes != null && displayNotes.startsWith("[")) {
+            int closeBracket = displayNotes.indexOf("]");
+            if (closeBracket > 0) {
+                String prefix = displayNotes.substring(1, closeBracket);
+                int spaceAfterDesc = prefix.indexOf(" ");
+                if (spaceAfterDesc > 0) {
+                    type = prefix.substring(0, spaceAfterDesc);
+                    description = prefix.substring(spaceAfterDesc + 1);
+                } else {
+                    type = prefix;
+                }
+                int dashIdx = displayNotes.indexOf(" — ", closeBracket);
+                displayNotes = dashIdx > 0
+                    ? displayNotes.substring(dashIdx + 3).trim()
+                    : displayNotes.substring(closeBracket + 1).trim();
+                if (displayNotes.isEmpty()) displayNotes = null;
+            }
+        }
+
         return EmergencyEventResponse.builder()
             .id(e.getId())
             .elderlyId(e.getElderly().getId())
@@ -158,13 +193,15 @@ public class EmergencyEventService {
             .latitude(e.getLatitude())
             .longitude(e.getLongitude())
             .address(e.getAddress())
+            .type(type)
+            .description(description)
             .status(e.getStatus())
             .triggeredAt(e.getTriggeredAt())
             .resolvedAt(e.getResolvedAt())
             .acknowledgedAt(e.getAcknowledgedAt())
             .acknowledgedBy(e.getAcknowledgedBy())
             .acknowledgedByName(acknowledgedByName)
-            .notes(e.getNotes())
+            .notes(displayNotes)
             .createdAt(e.getCreatedAt())
             .updatedAt(e.getUpdatedAt())
             .build();
