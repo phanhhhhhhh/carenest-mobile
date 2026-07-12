@@ -112,7 +112,7 @@ class WeeklySummaryScreen extends ConsumerWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_awesome,
@@ -171,11 +171,11 @@ class WeeklySummaryScreen extends ConsumerWidget {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(18),
               border: isLatest
-                  ? Border.all(color: AppColors.primary.withOpacity(0.3))
+                  ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -220,7 +220,7 @@ class WeeklySummaryScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
+                          color: AppColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text('Latest',

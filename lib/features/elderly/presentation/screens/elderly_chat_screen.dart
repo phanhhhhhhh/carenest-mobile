@@ -295,9 +295,9 @@ class _ElderlyChatScreenState extends ConsumerState<ElderlyChatScreen> {
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         border: Border.all(
-                            color: AppColors.primary.withOpacity(0.4)),
+                            color: AppColors.primary.withValues(alpha: 0.4)),
                         borderRadius: BorderRadius.circular(20),
-                        color: AppColors.primary.withOpacity(0.05),
+                        color: AppColors.primary.withValues(alpha: 0.05),
                       ),
                       child: Text(r,
                           style: const TextStyle(
@@ -325,7 +325,7 @@ class _ElderlyChatScreenState extends ConsumerState<ElderlyChatScreen> {
               height: 44,
               decoration: BoxDecoration(
                 color: _isListening
-                    ? AppColors.error.withOpacity(0.1)
+                    ? AppColors.error.withValues(alpha: 0.1)
                     : AppColors.background,
                 shape: BoxShape.circle,
                 border: _isListening
@@ -402,7 +402,7 @@ class _WelcomeBubble extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.auto_awesome,
@@ -423,7 +423,7 @@ class _WelcomeBubble extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
                   ),
@@ -461,7 +461,7 @@ class _TypingIndicator extends StatelessWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.auto_awesome,
@@ -573,7 +573,7 @@ class _BubbleWidget extends StatelessWidget {
               width: 30,
               height: 30,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.auto_awesome,
@@ -594,7 +594,7 @@ class _BubbleWidget extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.08),
+                        color: AppColors.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -619,7 +619,7 @@ class _BubbleWidget extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),

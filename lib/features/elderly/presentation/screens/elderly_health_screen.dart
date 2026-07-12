@@ -446,7 +446,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.success.withOpacity(0.2)),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,8 +459,8 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: _aiLoading
-                      ? AppColors.warning.withOpacity(0.15)
-                      : AppColors.success.withOpacity(0.15),
+                      ? AppColors.warning.withValues(alpha: 0.15)
+                      : AppColors.success.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: _aiLoading
@@ -552,7 +552,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.monitor_heart_outlined,
@@ -718,7 +718,7 @@ class _PeriodChip extends StatelessWidget {
           color: selected ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.textHint.withOpacity(0.3),
+            color: selected ? AppColors.primary : AppColors.textHint.withValues(alpha: 0.3),
           ),
         ),
         child: Text(
@@ -791,7 +791,7 @@ class _MetricSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -827,10 +827,10 @@ class _MetricSection extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _statusColor().withOpacity(0.1),
+                    color: _statusColor().withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: _statusColor().withOpacity(0.3)),
+                        color: _statusColor().withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     _statusLabel(),
@@ -953,7 +953,7 @@ class _MiniChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [color.withOpacity(0.3), color.withOpacity(0.02)],
+        colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0.02)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();

@@ -142,10 +142,13 @@ class AppointmentNotifier extends StateNotifier<AppointmentListState> {
     String? location,
     required DateTime appointmentDate,
     String? notes,
+    String? elderlyId,
   }) async {
     state = state.copyWith(isSaving: true, error: null);
     try {
+      final eId = elderlyId ?? await SecureStorage.getUserId();
       await _dio.post('/appointments', data: {
+        if (eId != null) 'elderlyId': int.tryParse(eId),
         'doctor': doctor,
         'specialty': specialty,
         if (location != null && location.isNotEmpty) 'location': location,

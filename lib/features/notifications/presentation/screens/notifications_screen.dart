@@ -90,7 +90,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.notifications_none,
@@ -184,14 +184,14 @@ class _NotificationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: notification.read
             ? AppColors.surface
-            : color.withOpacity(0.04),
+            : color.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
         border: notification.read
             ? null
-            : Border.all(color: color.withOpacity(0.3)),
+            : Border.all(color: color.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -204,7 +204,7 @@ class _NotificationCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(_iconForType(notification.type), color: color, size: 22),
