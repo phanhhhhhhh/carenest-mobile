@@ -41,6 +41,17 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.PAYMENT_REQUIRED, ex.getMessage());
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimit(RateLimitExceededException ex) {
+        Map<String, Object> body = new java.util.HashMap<>(Map.of(
+            "status", 429,
+            "error", ex.getMessage(),
+            "timestamp", OffsetDateTime.now().toString()
+        ));
+        body.put("retryAfter", ex.getRetryAfterSeconds());
+        return ResponseEntity.status(429).body(body);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage());
