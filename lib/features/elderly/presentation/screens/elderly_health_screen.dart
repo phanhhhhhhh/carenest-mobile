@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/gemini_service.dart';
@@ -246,6 +247,13 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
       backgroundColor: AppColors.surface,
       foregroundColor: AppColors.textPrimary,
       elevation: 0,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.assessment, color: AppColors.primary),
+          tooltip: 'Health Report',
+          onPressed: () => context.push('/health-report'),
+        ),
+      ],
     );
   }
 
