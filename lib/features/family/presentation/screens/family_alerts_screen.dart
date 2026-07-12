@@ -128,7 +128,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
             Container(
               width: 80, height: 80,
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.08),
+                color: AppColors.success.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.check_circle_outline, color: AppColors.success, size: 44),
@@ -185,12 +185,12 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isActive ? color.withOpacity(0.04) : AppColors.surface,
+        color: isActive ? color.withValues(alpha: 0.04) : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: isActive ? Border.all(color: color.withOpacity(0.3)) : null,
+        border: isActive ? Border.all(color: color.withValues(alpha: 0.3)) : null,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -201,7 +201,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
           Container(
             width: 44, height: 44,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -244,8 +244,8 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? AppColors.error.withOpacity(0.08)
-                            : AppColors.success.withOpacity(0.08),
+                            ? AppColors.error.withValues(alpha: 0.08)
+                            : AppColors.success.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

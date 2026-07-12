@@ -213,7 +213,7 @@ class _NotificationSettingsScreenState
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -255,7 +255,7 @@ class _ToggleTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(enabled ? 0.1 : 0.05),
+              color: iconColor.withValues(alpha: enabled ? 0.1 : 0.05),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon,
@@ -316,7 +316,7 @@ class _ReminderMinutesTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.textHint.withOpacity(0.3)),
+              border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: DropdownButtonHideUnderline(
@@ -364,7 +364,7 @@ class _TimePickerTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.textHint.withOpacity(0.3)),
+          border: Border.all(color: AppColors.textHint.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(

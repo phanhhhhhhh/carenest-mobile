@@ -142,7 +142,7 @@ class _FamilyMedicationScreenState
                         deleteIcon: const Icon(Icons.close, size: 16),
                         onDeleted: () =>
                             setSheetState(() => times.removeAt(entry.key)),
-                        backgroundColor: AppColors.primary.withOpacity(0.08),
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.08),
                         labelStyle: const TextStyle(color: AppColors.primary),
                       );
                     }).toList(),
@@ -177,7 +177,7 @@ class _FamilyMedicationScreenState
                             border: Border.all(
                               color: selected
                                   ? AppColors.primary
-                                  : AppColors.textHint.withOpacity(0.3),
+                                  : AppColors.textHint.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Text(
@@ -400,7 +400,7 @@ class _FamilyMedicationScreenState
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -418,7 +418,7 @@ class _FamilyMedicationScreenState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -442,7 +442,7 @@ class _FamilyMedicationScreenState
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 10,
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
               valueColor:
                   const AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
             ),
@@ -455,7 +455,7 @@ class _FamilyMedicationScreenState
                     ? '🎉 All medications taken today!'
                     : '${total - taken} doses remaining',
             style:
-                TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
+                TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
           ),
         ],
       ),
@@ -489,8 +489,8 @@ class _MedCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: item.taken
-              ? AppColors.success.withOpacity(0.3)
-              : AppColors.textHint.withOpacity(0.15),
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.textHint.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
@@ -500,8 +500,8 @@ class _MedCard extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: item.taken
-                  ? AppColors.success.withOpacity(0.1)
-                  : AppColors.primary.withOpacity(0.08),
+                  ? AppColors.success.withValues(alpha: 0.1)
+                  : AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(Icons.medication,
@@ -547,7 +547,7 @@ class _MedCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(_fmt(item.nextDoseTime!),
@@ -566,7 +566,7 @@ class _MedCard extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.06),
+                color: AppColors.primary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.edit, color: AppColors.primary, size: 16),
@@ -581,7 +581,7 @@ class _MedCard extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.06),
+                color: AppColors.error.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.delete_outline,
@@ -602,7 +602,7 @@ class _MedCard extends StatelessWidget {
                 border: Border.all(
                   color: item.taken
                       ? AppColors.success
-                      : AppColors.textHint.withOpacity(0.5),
+                      : AppColors.textHint.withValues(alpha: 0.5),
                   width: 2,
                 ),
               ),
