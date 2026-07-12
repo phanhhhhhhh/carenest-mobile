@@ -439,7 +439,7 @@ class _HealthThresholdScreenState
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppColors.success.withOpacity(0.2)),
+                        color: AppColors.success.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -447,7 +447,7 @@ class _HealthThresholdScreenState
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.15),
+                          color: AppColors.success.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.auto_awesome,
@@ -554,12 +554,12 @@ class _ThresholdCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: existing != null
-              ? AppColors.success.withOpacity(0.3)
-              : AppColors.textHint.withOpacity(0.15),
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.textHint.withValues(alpha: 0.15),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -574,7 +574,7 @@ class _ThresholdCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 22),
@@ -609,8 +609,8 @@ class _ThresholdCard extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: existing != null
-                    ? AppColors.success.withOpacity(0.1)
-                    : AppColors.textHint.withOpacity(0.06),
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : AppColors.textHint.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

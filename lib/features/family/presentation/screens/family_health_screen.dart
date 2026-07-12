@@ -167,7 +167,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -180,7 +180,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
               Container(
                 width: 40, height: 40,
                 decoration: BoxDecoration(
-                  color: config.iconColor.withOpacity(0.1),
+                  color: config.iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(config.icon, color: config.iconColor, size: 22),
@@ -194,7 +194,7 @@ class _FamilyHealthScreenState extends ConsumerState<FamilyHealthScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: status.color.withOpacity(0.1),
+                  color: status.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(status.label,
@@ -347,7 +347,7 @@ class _PeriodChip extends StatelessWidget {
           color: selected ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: selected ? AppColors.primary : AppColors.textHint.withOpacity(0.3)),
+              color: selected ? AppColors.primary : AppColors.textHint.withValues(alpha: 0.3)),
         ),
         child: Text(label,
             style: TextStyle(
@@ -378,7 +378,7 @@ class _LineChart extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [color.withOpacity(0.3), color.withOpacity(0.02)],
+        colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0.02)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();

@@ -410,7 +410,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.videocam_outlined,
@@ -490,14 +490,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isPrivacyMode
-              ? AppColors.textHint.withOpacity(0.2)
+              ? AppColors.textHint.withValues(alpha: 0.2)
               : isOnline
-                  ? AppColors.success.withOpacity(0.2)
-                  : AppColors.error.withOpacity(0.15),
+                  ? AppColors.success.withValues(alpha: 0.2)
+                  : AppColors.error.withValues(alpha: 0.15),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -514,10 +514,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 height: 44,
                 decoration: BoxDecoration(
                   color: isPrivacyMode
-                      ? AppColors.textHint.withOpacity(0.1)
+                      ? AppColors.textHint.withValues(alpha: 0.1)
                       : isOnline
-                          ? AppColors.success.withOpacity(0.1)
-                          : AppColors.error.withOpacity(0.08),
+                          ? AppColors.success.withValues(alpha: 0.1)
+                          : AppColors.error.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -684,7 +684,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -696,7 +696,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: _triggerColor(snap.trigger).withOpacity(0.1),
+                  color: _triggerColor(snap.trigger).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(_triggerIcon(snap.trigger),
@@ -820,9 +820,9 @@ class _ActionBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.06),
+          color: color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
