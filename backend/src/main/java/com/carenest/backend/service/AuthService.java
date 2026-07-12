@@ -178,14 +178,14 @@ public class AuthService {
                 "No password set for this account. Use forgot-password to set a password, or login with Firebase OTP.");
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Invalid phone or password");
-        }
-
-        // If user has email set but not verified, block login
+        // If user has email set but not verified, block login (check before password)
         if (user.getEmail() != null && !user.getEmail().isBlank() && !user.isEmailVerified()) {
             throw new UnauthorizedException(
                 "Email not verified. Please check your inbox or request a new verification email.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid phone or password");
         }
 
         return buildAuthResponse(user, deviceInfo);
@@ -199,13 +199,14 @@ public class AuthService {
         User user = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())
             .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Invalid email or password");
-        }
-
+        // Check email verification FIRST before password — prevents info leak
         if (!user.isEmailVerified()) {
             throw new UnauthorizedException(
                 "Email not verified. Please check your inbox or request a new verification email.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid email or password");
         }
 
         return buildAuthResponse(user, deviceInfo);
@@ -214,7 +215,7 @@ public class AuthService {
     private AuthResponse loginWithFirebase(String firebaseToken, String deviceInfo) {
         String phone = firebaseService.verifyAndGetPhone(firebaseToken);
         User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
-            .orElseThrow(() -> new NotFoundException("Phone number not registered: " + phone));
+            .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
         return buildAuthResponse(user, deviceInfo);
     }
 
@@ -363,6 +364,10 @@ public class AuthService {
     public void setupPin(Long userId, String pin, String confirmPin) {
         if (!pin.equals(confirmPin)) {
             throw new IllegalArgumentException("PIN and confirm PIN do not match");
+        }
+
+        if (pin == null || !pin.matches("\\d{4,6}")) {
+            throw new IllegalArgumentException("PIN must be 4-6 digits");
         }
 
         User user = userRepository.findById(userId)
