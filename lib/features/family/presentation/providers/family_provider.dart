@@ -155,7 +155,7 @@ class FamilyDashboardNotifier extends StateNotifier<FamilyDashboardState> {
             final todayStr =
                 '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
             final logResp = await _dio.get(
-              '/users/$selectedElderlyId/medications/logs',
+              '/elderly/$selectedElderlyId/medication-logs',
               queryParameters: {'date': todayStr},
             );
             final dynamic logsRaw = logResp.data;
@@ -260,7 +260,7 @@ class FamilyLinkNotifier extends StateNotifier<FamilyLinkRequestState> {
   final Dio _dio;
   FamilyLinkNotifier(this._dio) : super(const FamilyLinkRequestState());
 
-  Future<bool> sendLinkRequest(String elderlyPhone) async {
+  Future<bool> sendLinkRequest(String elderlyId) async {
     state = state.copyWith(isLoading: true, error: null, success: false);
     try {
       final familyId = await SecureStorage.getUserId();
@@ -271,7 +271,8 @@ class FamilyLinkNotifier extends StateNotifier<FamilyLinkRequestState> {
       }
       await _dio.post('/family-links', data: {
         'familyId': int.parse(familyId),
-        'elderlyPhone': elderlyPhone,
+        'elderlyId': int.parse(elderlyId),
+        'relationship': 'family',
       });
       state = state.copyWith(isLoading: false, success: true);
       return true;
