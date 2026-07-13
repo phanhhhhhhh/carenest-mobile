@@ -99,10 +99,16 @@ class AuthRepository {
       if (e.response?.statusCode == 404) {
         throw UserNotFoundException();
       }
-      if (e.response?.statusCode == 403) {
-        final msg = e.response?.data['message'] as String? ?? '';
+      // Backend returns 401 for unverified email (not 403)
+      if (e.response?.statusCode == 401) {
+        final data = e.response?.data;
+        final msg = data is Map
+            ? ((data['error'] ?? data['message']) as String? ?? '')
+            : '';
         if (msg.contains('verify')) {
-          final emailAddr = e.response?.data['email'] as String? ?? email ?? '';
+          final emailAddr = data is Map
+              ? (data['email'] as String? ?? email ?? '')
+              : (email ?? '');
           throw EmailNotVerifiedException(emailAddr);
         }
       }

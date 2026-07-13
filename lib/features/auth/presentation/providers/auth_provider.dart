@@ -77,10 +77,8 @@ class LoginNotifier extends StateNotifier<LoginState> {
         unverifiedEmail: e.email,
       );
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Invalid credentials')
-          : 'Invalid credentials';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Invalid credentials');
+      state = state.copyWith(isLoading: false, error: msg);
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Connection error');
     }
@@ -181,12 +179,8 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
         );
       }
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Registration failed')
-          : (e.response?.data is String
-              ? e.response!.data as String
-              : 'Registration failed');
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Registration failed');
+      state = state.copyWith(isLoading: false, error: msg);
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Registration failed, try again');
     }
@@ -245,10 +239,8 @@ class VerifyEmailNotifier extends StateNotifier<VerifyEmailState> {
         message: 'Email verified successfully! You can now log in.',
       );
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Invalid or expired token')
-          : 'Invalid or expired verification link';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Invalid or expired token');
+      state = state.copyWith(isLoading: false, error: msg);
     }
   }
 
@@ -262,10 +254,8 @@ class VerifyEmailNotifier extends StateNotifier<VerifyEmailState> {
         message: 'Verification email sent. Check your inbox.',
       );
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Could not resend')
-          : 'Could not resend verification email';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Could not resend verification email');
+      state = state.copyWith(isLoading: false, error: msg);
     }
   }
 }
@@ -317,10 +307,8 @@ class ForgotPasswordNotifier extends StateNotifier<ForgotPasswordState> {
         error: null,
       );
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Could not send reset email')
-          : 'Could not send reset email';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Could not send reset email');
+      state = state.copyWith(isLoading: false, error: msg);
     }
   }
 }
@@ -372,10 +360,8 @@ class ResetPasswordNotifier extends StateNotifier<ResetPasswordState> {
       );
       state = state.copyWith(isLoading: false, success: true);
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Cannot reset password')
-          : 'Cannot reset password';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Cannot reset password');
+      state = state.copyWith(isLoading: false, error: msg);
     } catch (_) {
       state = state.copyWith(isLoading: false, error: 'Connection error');
     }
@@ -433,10 +419,8 @@ class ChangePasswordNotifier extends StateNotifier<ChangePasswordState> {
       );
       state = state.copyWith(isLoading: false, success: true);
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Cannot change password')
-          : 'Cannot change password';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Cannot change password');
+      state = state.copyWith(isLoading: false, error: msg);
     }
   }
 }
@@ -488,10 +472,8 @@ class PinNotifier extends StateNotifier<PinState> {
       await _repo.setupPin(pin, confirmPin);
       state = state.copyWith(isLoading: false, success: true);
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Cannot set up PIN')
-          : 'Cannot set up PIN';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      final msg = _extractError(e, 'Cannot set up PIN');
+      state = state.copyWith(isLoading: false, error: msg);
     }
   }
 
@@ -513,3 +495,21 @@ final pinProvider =
     StateNotifierProvider.autoDispose<PinNotifier, PinState>(
   (ref) => PinNotifier(ref.watch(authRepositoryProvider)),
 );
+
+// ═══════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════
+
+/// Extract error text from a DioException response body.
+///
+/// Backend returns `{"error": "...", "status": N}` on validation/auth failures
+/// and `{"message": "...", "status": N}` on success/redirect responses.
+/// We check both so we never fall back to a generic message.
+String _extractError(DioException e, String fallback) {
+  final data = e.response?.data;
+  if (data is Map) {
+    return (data['error'] ?? data['message'] ?? fallback).toString();
+  }
+  if (data is String) return data;
+  return fallback;
+}
