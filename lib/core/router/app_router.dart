@@ -23,6 +23,7 @@ import '../../features/elderly/presentation/screens/elderly_home_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_medication_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_health_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_chat_screen.dart';
+import '../../features/elderly/presentation/screens/elderly_camera_screen.dart';
 import '../../features/elderly/presentation/screens/elderly_profile_screen.dart';
 import '../../features/family/presentation/screens/family_dashboard_screen.dart';
 import '../../features/family/presentation/screens/family_medication_screen.dart';
@@ -49,7 +50,9 @@ final appRouter = GoRouter(
     final isAuth = token != null;
     final loc = state.matchedLocation;
 
-    final isOnAuth = loc == '/welcome' ||
+    final isOnAuth =
+        loc == '/welcome' ||
+        loc == '/welcome-back' ||
         loc == '/phone' ||
         loc == '/register' ||
         loc == '/register-dev' ||
@@ -75,10 +78,7 @@ final appRouter = GoRouter(
     ),
 
     // Auth — Login (email+password)
-    GoRoute(
-      path: '/phone',
-      builder: (context, state) => const PhoneScreen(),
-    ),
+    GoRoute(path: '/phone', builder: (context, state) => const PhoneScreen()),
 
     // Auth — Register
     GoRoute(
@@ -141,7 +141,7 @@ final appRouter = GoRouter(
 
     // Welcome back (after successful verification)
     GoRoute(
-      path: '/welcome',
+      path: '/welcome-back',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
         return WelcomeBackScreen(
@@ -190,10 +190,13 @@ final appRouter = GoRouter(
       builder: (context, state) => const HealthReportScreen(),
     ),
 
-    GoRoute(path: '/home', redirect: (_, __) async {
-      final role = await SecureStorage.getRole();
-      return role == 'ELDERLY' ? '/elderly/home' : '/family/dashboard';
-    }),
+    GoRoute(
+      path: '/home',
+      redirect: (_, __) async {
+        final role = await SecureStorage.getRole();
+        return role == 'ELDERLY' ? '/elderly/home' : '/family/dashboard';
+      },
+    ),
 
     // Profile & Settings (auth required)
     GoRoute(
@@ -244,10 +247,7 @@ final appRouter = GoRouter(
       path: '/weekly-summary',
       builder: (context, state) => const WeeklySummaryScreen(),
     ),
-    GoRoute(
-      path: '/camera',
-      builder: (context, state) => const CameraScreen(),
-    ),
+    GoRoute(path: '/camera', builder: (context, state) => const CameraScreen()),
     GoRoute(
       path: '/health-thresholds',
       builder: (context, state) => const HealthThresholdScreen(),
@@ -257,36 +257,54 @@ final appRouter = GoRouter(
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => ElderlyShell(shell: shell),
       branches: [
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/elderly/home',
-            builder: (context, state) => const ElderlyHomeScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/elderly/medication',
-            builder: (context, state) => const ElderlyMedicationScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/elderly/health',
-            builder: (context, state) => const ElderlyHealthScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/elderly/chat',
-            builder: (context, state) => const ElderlyChatScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/elderly/profile',
-            builder: (context, state) => const ElderlyProfileScreen(),
-          ),
-        ]),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/elderly/home',
+              builder: (context, state) => const ElderlyHomeScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/elderly/medication',
+              builder: (context, state) => const ElderlyMedicationScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/elderly/camera',
+              builder: (context, state) => const ElderlyCameraScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/elderly/health',
+              builder: (context, state) => const ElderlyHealthScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/elderly/chat',
+              builder: (context, state) => const ElderlyChatScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/elderly/profile',
+              builder: (context, state) => const ElderlyProfileScreen(),
+            ),
+          ],
+        ),
       ],
     ),
 
@@ -294,36 +312,46 @@ final appRouter = GoRouter(
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => FamilyShell(shell: shell),
       branches: [
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/family/dashboard',
-            builder: (context, state) => const FamilyDashboardScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/family/medication',
-            builder: (context, state) => const FamilyMedicationScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/family/health',
-            builder: (context, state) => const FamilyHealthScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/family/alerts',
-            builder: (context, state) => const FamilyAlertsScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/family/profile',
-            builder: (context, state) => const FamilyProfileScreen(),
-          ),
-        ]),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/family/dashboard',
+              builder: (context, state) => const FamilyDashboardScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/family/medication',
+              builder: (context, state) => const FamilyMedicationScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/family/health',
+              builder: (context, state) => const FamilyHealthScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/family/alerts',
+              builder: (context, state) => const FamilyAlertsScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/family/profile',
+              builder: (context, state) => const FamilyProfileScreen(),
+            ),
+          ],
+        ),
       ],
     ),
   ],
@@ -365,9 +393,11 @@ class _VerifyEmailScreenState extends State<_VerifyEmailScreen> {
         _loading = false;
         _error = e is DioException
             ? ((e.response?.data is Map
-                    ? ((e.response!.data['error'] ?? e.response!.data['message'])?.toString())
-                    : null) ??
-                'Invalid or expired verification link')
+                      ? ((e.response!.data['error'] ??
+                                e.response!.data['message'])
+                            ?.toString())
+                      : null) ??
+                  'Invalid or expired verification link')
             : 'Verification failed';
       });
     }
@@ -387,67 +417,103 @@ class _VerifyEmailScreenState extends State<_VerifyEmailScreen> {
                 if (_loading) ...[
                   const CircularProgressIndicator(),
                   const SizedBox(height: 24),
-                  const Text('Verifying your email...',
-                      style: TextStyle(fontSize: 16, color: Color(0xFF666666))),
+                  const Text(
+                    'Verifying your email...',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF666666)),
+                  ),
                 ] else if (_success) ...[
                   Container(
-                    width: 80, height: 80,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       color: const Color(0xFF4CAF50).withAlpha(25),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_circle,
-                        color: Color(0xFF4CAF50), size: 48),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Color(0xFF4CAF50),
+                      size: 48,
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  const Text('Email Verified!',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333))),
+                  const Text(
+                    'Email Verified!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
                   const SizedBox(height: 12),
-                  const Text('Your account is now active.',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
+                  const Text(
+                    'Your account is now active.',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                  ),
                   const SizedBox(height: 40),
                   SizedBox(
-                    width: double.infinity, height: 52,
+                    width: double.infinity,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: () => context.go('/phone'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: const Text('Go to Sign In',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      child: const Text(
+                        'Go to Sign In',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ] else ...[
                   Container(
-                    width: 80, height: 80,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       color: const Color(0xFFE53935).withAlpha(25),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.error_outline,
-                        color: Color(0xFFE53935), size: 48),
+                    child: const Icon(
+                      Icons.error_outline,
+                      color: Color(0xFFE53935),
+                      size: 48,
+                    ),
                   ),
                   const SizedBox(height: 24),
-                  Text(_error ?? 'Verification failed',
-                      style: const TextStyle(fontSize: 14, color: Color(0xFFE53935)),
-                      textAlign: TextAlign.center),
+                  Text(
+                    _error ?? 'Verification failed',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFE53935),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 40),
                   SizedBox(
-                    width: double.infinity, height: 52,
+                    width: double.infinity,
+                    height: 52,
                     child: ElevatedButton(
                       onPressed: () => context.go('/phone'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: const Text('Go to Sign In',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      child: const Text(
+                        'Go to Sign In',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ],

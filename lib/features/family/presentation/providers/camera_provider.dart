@@ -2,13 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-// ── Models ────────────────────────────────────────────────────────────
-
 class CameraDeviceData {
   final int id;
   final String label;
   final String deviceSn;
-  final String status; // ONLINE, OFFLINE
+  final String status;
   final bool privacyMode;
   final bool motionDetectionEnabled;
   final String snapshotSchedule;
@@ -23,17 +21,15 @@ class CameraDeviceData {
     this.snapshotSchedule = '',
   });
 
-  factory CameraDeviceData.fromJson(Map<String, dynamic> j) =>
-      CameraDeviceData(
-        id: (j['id'] as num).toInt(),
-        label: j['label'] as String? ?? 'Camera',
-        deviceSn: j['deviceSn'] as String? ?? '',
-        status: j['status'] as String? ?? 'ONLINE',
-        privacyMode: j['privacyMode'] as bool? ?? false,
-        motionDetectionEnabled:
-            j['motionDetectionEnabled'] as bool? ?? false,
-        snapshotSchedule: j['snapshotSchedule'] as String? ?? '',
-      );
+  factory CameraDeviceData.fromJson(Map<String, dynamic> j) => CameraDeviceData(
+    id: (j['id'] as num).toInt(),
+    label: j['label'] as String? ?? 'Camera',
+    deviceSn: j['deviceSn'] as String? ?? '',
+    status: j['status'] as String? ?? 'ONLINE',
+    privacyMode: j['privacyMode'] as bool? ?? false,
+    motionDetectionEnabled: j['motionDetectionEnabled'] as bool? ?? false,
+    snapshotSchedule: j['snapshotSchedule'] as String? ?? '',
+  );
 
   bool get isOnline => status == 'ONLINE';
 }
@@ -42,7 +38,7 @@ class CameraStatusData {
   final bool hasCamera;
   final int cameraCount;
   final bool allOnline;
-  final String indicatorColor; // GREEN, RED, GRAY
+  final String indicatorColor;
   final String statusText;
 
   const CameraStatusData({
@@ -53,20 +49,19 @@ class CameraStatusData {
     this.statusText = '',
   });
 
-  factory CameraStatusData.fromJson(Map<String, dynamic> j) =>
-      CameraStatusData(
-        hasCamera: j['hasCamera'] as bool? ?? false,
-        cameraCount: (j['cameraCount'] as num?)?.toInt() ?? 0,
-        allOnline: j['allOnline'] as bool? ?? false,
-        indicatorColor: j['indicatorColor'] as String? ?? 'GRAY',
-        statusText: j['statusText'] as String? ?? '',
-      );
+  factory CameraStatusData.fromJson(Map<String, dynamic> j) => CameraStatusData(
+    hasCamera: j['hasCamera'] as bool? ?? false,
+    cameraCount: (j['cameraCount'] as num?)?.toInt() ?? 0,
+    allOnline: j['allOnline'] as bool? ?? false,
+    indicatorColor: j['indicatorColor'] as String? ?? 'GRAY',
+    statusText: j['statusText'] as String? ?? '',
+  );
 }
 
 class CameraSnapshotData {
   final int id;
   final String imageUrl;
-  final String trigger; // SOS, CHECK_IN, MOTION
+  final String trigger;
   final bool success;
   final DateTime createdAt;
 
@@ -84,12 +79,11 @@ class CameraSnapshotData {
         imageUrl: j['imageUrl'] as String? ?? '',
         trigger: j['trigger'] as String? ?? 'CHECK_IN',
         success: j['success'] as bool? ?? true,
-        createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ??
+        createdAt:
+            DateTime.tryParse(j['createdAt'] as String? ?? '') ??
             DateTime.now(),
       );
 }
-
-// ── State ──────────────────────────────────────────────────────────────
 
 class CameraState {
   final bool isLoading;
@@ -121,29 +115,25 @@ class CameraState {
     List<CameraSnapshotData>? timeline,
     String? liveStreamUrl,
     bool? voiceActive,
-  }) =>
-      CameraState(
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-        isProcessing: isProcessing ?? this.isProcessing,
-        status: status ?? this.status,
-        cameras: cameras ?? this.cameras,
-        timeline: timeline ?? this.timeline,
-        liveStreamUrl: liveStreamUrl,
-        voiceActive: voiceActive ?? this.voiceActive,
-      );
+  }) => CameraState(
+    isLoading: isLoading ?? this.isLoading,
+    error: error,
+    isProcessing: isProcessing ?? this.isProcessing,
+    status: status ?? this.status,
+    cameras: cameras ?? this.cameras,
+    timeline: timeline ?? this.timeline,
+    liveStreamUrl: liveStreamUrl,
+    voiceActive: voiceActive ?? this.voiceActive,
+  );
 
   int get timelinePage => 0;
 }
-
-// ── Notifier ───────────────────────────────────────────────────────────
 
 class CameraNotifier extends StateNotifier<CameraState> {
   final Dio _dio;
   final String elderlyId;
 
-  CameraNotifier(this._dio, this.elderlyId)
-      : super(const CameraState()) {
+  CameraNotifier(this._dio, this.elderlyId) : super(const CameraState()) {
     load();
   }
 
@@ -153,12 +143,15 @@ class CameraNotifier extends StateNotifier<CameraState> {
       final results = await Future.wait([
         _dio.get('/elderly/$elderlyId/camera-status'),
         _dio.get('/elderly/$elderlyId/cameras'),
-        _dio.get('/elderly/$elderlyId/camera-timeline',
-            queryParameters: {'page': 0, 'size': 20}),
+        _dio.get(
+          '/elderly/$elderlyId/camera-timeline',
+          queryParameters: {'page': 0, 'size': 20},
+        ),
       ]);
 
-      final statusData =
-          CameraStatusData.fromJson(results[0].data as Map<String, dynamic>);
+      final statusData = CameraStatusData.fromJson(
+        results[0].data as Map<String, dynamic>,
+      );
 
       final camerasRaw = results[1].data is List
           ? results[1].data as List<dynamic>
@@ -168,8 +161,9 @@ class CameraNotifier extends StateNotifier<CameraState> {
           .toList();
 
       final timelineRaw =
-          (results[2].data as Map<String, dynamic>)['snapshots'] as List<dynamic>? ??
-              [];
+          (results[2].data as Map<String, dynamic>)['snapshots']
+              as List<dynamic>? ??
+          [];
       final timeline = timelineRaw
           .map((e) => CameraSnapshotData.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -192,14 +186,13 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // UC-26: Bind camera
   Future<bool> bindCamera(String deviceSn, String label) async {
     state = state.copyWith(isProcessing: true);
     try {
-      await _dio.post('/elderly/$elderlyId/cameras', data: {
-        'deviceSn': deviceSn,
-        'label': label,
-      });
+      await _dio.post(
+        '/elderly/$elderlyId/cameras',
+        data: {'deviceSn': deviceSn, 'label': label},
+      );
       await load();
       state = state.copyWith(isProcessing: false);
       return true;
@@ -212,7 +205,6 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // UC-26: Unbind camera
   Future<bool> unbindCamera(int deviceId) async {
     state = state.copyWith(isProcessing: true);
     try {
@@ -229,13 +221,13 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // UC-27: Get live stream
   Future<String?> getLiveStream(int deviceId) async {
     state = state.copyWith(isProcessing: true);
     try {
       final resp = await _dio.get('/cameras/$deviceId/live');
       final data = resp.data as Map<String, dynamic>;
-      final url = data['streamUrl'] as String? ??
+      final url =
+          data['streamUrl'] as String? ??
           data['rtspUrl'] as String? ??
           data['hlsUrl'] as String? ??
           '';
@@ -250,14 +242,15 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // UC-28: SOS Snapshot
   Future<String?> captureSosSnapshot({int? emergencyEventId}) async {
     state = state.copyWith(isProcessing: true);
     try {
-      final resp =
-          await _dio.post('/elderly/$elderlyId/cameras/snapshot', data: {
-        if (emergencyEventId != null) 'emergencyEventId': emergencyEventId,
-      });
+      final resp = await _dio.post(
+        '/elderly/$elderlyId/cameras/snapshot',
+        data: {
+          if (emergencyEventId != null) 'emergencyEventId': emergencyEventId,
+        },
+      );
       final data = resp.data as Map<String, dynamic>;
       final url = data['imageUrl'] as String? ?? '';
       await load();
@@ -269,7 +262,6 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // UC-31: Two-way voice
   Future<bool> startVoiceCall(int deviceId) async {
     try {
       await _dio.post('/cameras/$deviceId/voice/start');
@@ -290,7 +282,6 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // UC-32: Privacy toggle
   Future<bool> setPrivacyMode(int deviceId, bool enabled) async {
     try {
       await _dio.post('/cameras/$deviceId/privacy', data: {'enabled': enabled});
@@ -301,13 +292,27 @@ class CameraNotifier extends StateNotifier<CameraState> {
     }
   }
 
-  // UC-30: Motion detection toggle
   Future<bool> toggleMotionDetection(int deviceId, bool enabled) async {
     try {
-      await _dio.put('/cameras/$deviceId/motion-detection',
-          data: {'enabled': enabled});
+      await _dio.put(
+        '/cameras/$deviceId/motion-detection',
+        data: {'enabled': enabled},
+      );
       await load();
       return true;
+    } on DioException {
+      return false;
+    }
+  }
+
+  Future<bool> controlPtz(int deviceId, String direction) async {
+    try {
+      final resp = await _dio.post(
+        '/cameras/$deviceId/ptz',
+        data: {'direction': direction},
+      );
+      final status = resp.data is Map ? resp.data['status'] : null;
+      return status == 'OK';
     } on DioException {
       return false;
     }
@@ -317,6 +322,7 @@ class CameraNotifier extends StateNotifier<CameraState> {
   void refresh() => load();
 }
 
-final cameraProvider = StateNotifierProvider.family<CameraNotifier, CameraState, String>(
-  (ref, elderlyId) => CameraNotifier(ref.watch(dioProvider), elderlyId),
-);
+final cameraProvider =
+    StateNotifierProvider.family<CameraNotifier, CameraState, String>(
+      (ref, elderlyId) => CameraNotifier(ref.watch(dioProvider), elderlyId),
+    );
