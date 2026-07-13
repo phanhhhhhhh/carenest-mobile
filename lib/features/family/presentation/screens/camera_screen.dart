@@ -53,10 +53,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               decoration: InputDecoration(
                 labelText: 'Device SN',
                 hintText: 'e.g., 5L0A1B2C3D4E5F6G',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon:
-                    const Icon(Icons.qr_code, color: AppColors.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: const Icon(Icons.qr_code, color: AppColors.primary),
               ),
             ),
             const SizedBox(height: 12),
@@ -65,8 +65,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               decoration: InputDecoration(
                 labelText: 'Label (optional)',
                 hintText: 'e.g., Living Room',
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 prefixIcon: const Icon(Icons.label, color: AppColors.primary),
               ),
             ),
@@ -87,10 +88,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
               Navigator.pop(ctx);
               await ref
                   .read(cameraProvider(elderlyId).notifier)
-                  .bindCamera(snCtrl.text.trim(),
-                      labelCtrl.text.trim().isNotEmpty
-                          ? labelCtrl.text.trim()
-                          : 'Camera');
+                  .bindCamera(
+                    snCtrl.text.trim(),
+                    labelCtrl.text.trim().isNotEmpty
+                        ? labelCtrl.text.trim()
+                        : 'Camera',
+                  );
             },
             child: const Text('Link'),
           ),
@@ -109,11 +112,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Remove Camera?'),
-        content: const Text('This will disconnect the camera from the account.'),
+        content: const Text(
+          'This will disconnect the camera from the account.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -173,9 +179,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(url != null
-              ? 'Snapshot captured successfully!'
-              : 'No camera available for snapshot'),
+          content: Text(
+            url != null
+                ? 'Snapshot captured successfully!'
+                : 'No camera available for snapshot',
+          ),
           backgroundColor: url != null ? AppColors.success : AppColors.warning,
         ),
       );
@@ -189,19 +197,19 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
 
     final ok = currentlyActive
         ? await ref
-            .read(cameraProvider(elderlyId).notifier)
-            .stopVoiceCall(deviceId)
+              .read(cameraProvider(elderlyId).notifier)
+              .stopVoiceCall(deviceId)
         : await ref
-            .read(cameraProvider(elderlyId).notifier)
-            .startVoiceCall(deviceId);
+              .read(cameraProvider(elderlyId).notifier)
+              .startVoiceCall(deviceId);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok
-              ? (currentlyActive
-                  ? 'Voice call ended'
-                  : 'Voice call started')
-              : 'Could not change voice state'),
+          content: Text(
+            ok
+                ? (currentlyActive ? 'Voice call ended' : 'Voice call started')
+                : 'Could not change voice state',
+          ),
           backgroundColor: ok ? AppColors.success : AppColors.error,
         ),
       );
@@ -219,9 +227,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok
-              ? 'Privacy mode ${!currentlyEnabled ? "ON" : "OFF"}'
-              : 'Could not change privacy mode'),
+          content: Text(
+            ok
+                ? 'Privacy mode ${!currentlyEnabled ? "ON" : "OFF"}'
+                : 'Could not change privacy mode',
+          ),
           backgroundColor: ok ? AppColors.success : AppColors.error,
         ),
       );
@@ -239,9 +249,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok
-              ? 'Motion detection ${enabled ? "ON" : "OFF"}'
-              : 'Could not update motion detection'),
+          content: Text(
+            ok
+                ? 'Motion detection ${enabled ? "ON" : "OFF"}'
+                : 'Could not update motion detection',
+          ),
           backgroundColor: ok ? AppColors.success : AppColors.error,
         ),
       );
@@ -264,9 +276,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             children: [
               Icon(Icons.people_outline, size: 56, color: AppColors.textHint),
               SizedBox(height: 16),
-              Text('No elderly person linked yet',
-                  style:
-                      TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+              Text(
+                'No elderly person linked yet',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+              ),
             ],
           ),
         ),
@@ -281,47 +294,170 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       body: state.isLoading && state.cameras.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : state.error != null && state.cameras.isEmpty
-              ? _buildError(state.error!, elderlyId)
-              : Column(
-                  children: [
-                    // Status indicator bar
-                    _buildStatusBar(state, elderlyId),
-                    // Tabs
-                    TabBar(
-                      controller: _tabController,
-                      indicatorColor: AppColors.primary,
-                      labelColor: AppColors.primary,
-                      unselectedLabelColor: AppColors.textHint,
-                      labelStyle: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
-                      tabs: [
-                        Tab(
-                            text:
-                                'Cameras (${state.cameras.length})'),
-                        Tab(
-                            text:
-                                'Timeline (${state.timeline.length})'),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildCameraList(state, elderlyId),
-                          _buildTimeline(state),
-                        ],
-                      ),
-                    ),
+          ? _buildError(state.error!, elderlyId)
+          : Column(
+              children: [
+                // Status indicator bar
+                _buildStatusBar(state, elderlyId),
+                // Wireframe A3: khối xem trực tiếp luôn hiển thị trên cùng
+                if (state.cameras.isNotEmpty)
+                  _buildLiveHero(state, state.cameras.first),
+                // Tabs
+                TabBar(
+                  controller: _tabController,
+                  indicatorColor: AppColors.primary,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: AppColors.textHint,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  tabs: [
+                    Tab(text: 'Check-in (${state.timeline.length})'),
+                    Tab(text: 'Thiết bị (${state.cameras.length})'),
                   ],
                 ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildTimeline(state),
+                      _buildCameraList(state, elderlyId),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  /// Wireframe A3: khối video trực tiếp lớn ở đầu trang, với các nút
+  /// Snapshot / Record / Gọi thoại / Xoay ngay bên dưới — camera đầu
+  /// tiên trong danh sách được coi là camera "đang xem".
+  Widget _buildLiveHero(CameraState state, CameraDeviceData cam) {
+    final voiceActive = state.voiceActive;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      cam.privacyMode
+                          ? Icons.visibility_off
+                          : cam.isOnline
+                          ? Icons.play_circle_fill
+                          : Icons.videocam_off,
+                      color: Colors.white54,
+                      size: 44,
+                    ),
+                  ),
+                ),
+                if (cam.isOnline && !cam.privacyMode)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'LIVE · HD',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  cam.label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _ActionBtn(
+                  icon: Icons.camera_alt,
+                  label: 'Snapshot',
+                  color: AppColors.secondary,
+                  onTap: _handleSnapshot,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ActionBtn(
+                  icon: voiceActive ? Icons.mic_off : Icons.mic,
+                  label: voiceActive ? 'Kết thúc' : 'Gọi thoại',
+                  color: voiceActive ? AppColors.error : AppColors.warning,
+                  onTap: () => _handleVoiceToggle(cam.id, voiceActive),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ActionBtn(
+                  icon: Icons.rotate_right,
+                  label: 'Xoay',
+                  color: AppColors.textSecondary,
+                  onTap: () => _handleLiveView(cam.id),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   PreferredSizeWidget _appBar(String name) {
     return AppBar(
-      title: Text('Camera — $name',
-          style: const TextStyle(
-              fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+      title: Text(
+        'Camera — $name',
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+      ),
       backgroundColor: AppColors.surface,
       foregroundColor: AppColors.textPrimary,
       elevation: 0,
@@ -351,22 +487,29 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-                color: indicatorColor, shape: BoxShape.circle),
+              color: indicatorColor,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               s.hasCamera ? s.statusText : 'No cameras linked',
               style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500),
+                color: AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           if (s.hasCamera)
-            Text('${s.cameraCount} camera${s.cameraCount > 1 ? 's' : ''}',
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 12)),
+            Text(
+              '${s.cameraCount} camera${s.cameraCount > 1 ? 's' : ''}',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
         ],
       ),
     );
@@ -381,14 +524,17 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           children: [
             const Icon(Icons.error_outline, color: AppColors.error, size: 48),
             const SizedBox(height: 16),
-            Text(error,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 14)),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () =>
-                  ref.invalidate(cameraProvider(elderlyId)),
+              onPressed: () => ref.invalidate(cameraProvider(elderlyId)),
               icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Retry'),
             ),
@@ -413,19 +559,29 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                     color: AppColors.primary.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.videocam_outlined,
-                      color: AppColors.primary, size: 40),
+                  child: const Icon(
+                    Icons.videocam_outlined,
+                    color: AppColors.primary,
+                    size: 40,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                const Text('No cameras linked',
-                    style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600)),
+                const Text(
+                  'No cameras linked',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                const Text('Link an Imou camera to start monitoring',
-                    style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 14)),
+                const Text(
+                  'Link an Imou camera to start monitoring',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: _showBindDialog,
@@ -435,9 +591,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],
@@ -465,7 +624,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
@@ -492,8 +652,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           color: isPrivacyMode
               ? AppColors.textHint.withValues(alpha: 0.2)
               : isOnline
-                  ? AppColors.success.withValues(alpha: 0.2)
-                  : AppColors.error.withValues(alpha: 0.15),
+              ? AppColors.success.withValues(alpha: 0.2)
+              : AppColors.error.withValues(alpha: 0.15),
         ),
         boxShadow: [
           BoxShadow(
@@ -516,19 +676,17 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   color: isPrivacyMode
                       ? AppColors.textHint.withValues(alpha: 0.1)
                       : isOnline
-                          ? AppColors.success.withValues(alpha: 0.1)
-                          : AppColors.error.withValues(alpha: 0.08),
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.error.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  isPrivacyMode
-                      ? Icons.visibility_off
-                      : Icons.videocam,
+                  isPrivacyMode ? Icons.visibility_off : Icons.videocam,
                   color: isPrivacyMode
                       ? AppColors.textHint
                       : isOnline
-                          ? AppColors.success
-                          : AppColors.error,
+                      ? AppColors.success
+                      : AppColors.error,
                   size: 22,
                 ),
               ),
@@ -537,23 +695,26 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(cam.label,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: AppColors.textPrimary)),
+                    Text(
+                      cam.label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     Text(
                       isPrivacyMode
                           ? 'Privacy mode'
                           : isOnline
-                              ? 'Online'
-                              : 'Offline',
+                          ? 'Online'
+                          : 'Offline',
                       style: TextStyle(
                         color: isPrivacyMode
                             ? AppColors.textSecondary
                             : isOnline
-                                ? AppColors.success
-                                : AppColors.error,
+                            ? AppColors.success
+                            : AppColors.error,
                         fontSize: 12,
                       ),
                     ),
@@ -573,22 +734,32 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 },
                 itemBuilder: (_) => [
                   const PopupMenuItem(
-                      value: 'privacy',
-                      child: Row(children: [
-                        Icon(Icons.visibility_off,
-                            size: 18, color: AppColors.textSecondary),
+                    value: 'privacy',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.visibility_off,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
                         SizedBox(width: 8),
                         Text('Toggle Privacy'),
-                      ])),
+                      ],
+                    ),
+                  ),
                   const PopupMenuItem(
-                      value: 'unbind',
-                      child: Row(children: [
-                        Icon(Icons.link_off,
-                            size: 18, color: AppColors.error),
+                    value: 'unbind',
+                    child: Row(
+                      children: [
+                        Icon(Icons.link_off, size: 18, color: AppColors.error),
                         SizedBox(width: 8),
-                        Text('Remove Camera',
-                            style: TextStyle(color: AppColors.error)),
-                      ])),
+                        Text(
+                          'Remove Camera',
+                          style: TextStyle(color: AppColors.error),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -597,20 +768,25 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           // Motion detection toggle
           Row(
             children: [
-              Icon(Icons.motion_photos_on,
-                  size: 18, color: AppColors.textSecondary),
+              Icon(
+                Icons.motion_photos_on,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 8),
               const Expanded(
-                child: Text('Motion Detection',
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary)),
+                child: Text(
+                  'Motion Detection',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
               ),
               Switch(
                 value: cam.motionDetectionEnabled,
-                onChanged: (v) =>
-                    _handleMotionToggle(cam.id, v),
+                onChanged: (v) => _handleMotionToggle(cam.id, v),
                 activeColor: AppColors.primary,
               ),
             ],
@@ -640,12 +816,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                 onTap: () => _handleVoiceToggle(cam.id, voiceActive),
               ),
               _ActionBtn(
-                icon:
-                    isPrivacyMode ? Icons.visibility : Icons.visibility_off,
+                icon: isPrivacyMode ? Icons.visibility : Icons.visibility_off,
                 label: isPrivacyMode ? 'Show' : 'Privacy',
                 color: AppColors.textSecondary,
-                onTap: () =>
-                    _handlePrivacyToggle(cam.id, cam.privacyMode),
+                onTap: () => _handlePrivacyToggle(cam.id, cam.privacyMode),
               ),
             ],
           ),
@@ -660,12 +834,16 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.photo_library_outlined,
-                color: AppColors.textHint, size: 56),
+            Icon(
+              Icons.photo_library_outlined,
+              color: AppColors.textHint,
+              size: 56,
+            ),
             SizedBox(height: 12),
-            Text('No check-in history yet',
-                style: TextStyle(
-                    color: AppColors.textSecondary, fontSize: 15)),
+            Text(
+              'No check-in history yet',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
+            ),
           ],
         ),
       );
@@ -699,23 +877,33 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   color: _triggerColor(snap.trigger).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(_triggerIcon(snap.trigger),
-                    color: _triggerColor(snap.trigger), size: 22),
+                child: Icon(
+                  _triggerIcon(snap.trigger),
+                  color: _triggerColor(snap.trigger),
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_triggerLabel(snap.trigger),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: AppColors.textPrimary)),
+                    Text(
+                      _triggerLabel(snap.trigger),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(_formatTime(snap.createdAt),
-                        style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 12)),
+                    Text(
+                      _formatTime(snap.createdAt),
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -734,8 +922,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                         color: AppColors.background,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.broken_image,
-                          color: AppColors.textHint, size: 20),
+                      child: const Icon(
+                        Icons.broken_image,
+                        color: AppColors.textHint,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -829,11 +1020,14 @@ class _ActionBtn extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 16),
             const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
