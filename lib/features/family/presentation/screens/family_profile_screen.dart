@@ -84,11 +84,19 @@ class _FamilyProfileScreenState extends ConsumerState<FamilyProfileScreen> {
                         final phone = phoneCtrl.text.trim();
                         if (phone.isEmpty) return;
 
-                        // Resolve phone → userId first
+                        // Resolve phone → userId first (normalize format)
+                        final rawPhone = phoneCtrl.text.trim();
                         String? elderlyId;
                         try {
+                          // Normalize: strip leading 0, ensure +84 prefix
+                          String normalized = rawPhone;
+                          if (normalized.startsWith('0')) {
+                            normalized = '+84${normalized.substring(1)}';
+                          } else if (!normalized.startsWith('+')) {
+                            normalized = '+84$normalized';
+                          }
                           final dio = ref.read(dioProvider);
-                          final lookupResp = await dio.get('/users/by-phone/$phone');
+                          final lookupResp = await dio.get('/users/by-phone/$normalized');
                           elderlyId = lookupResp.data['id']?.toString();
                         } catch (_) {
                           // lookup failed
