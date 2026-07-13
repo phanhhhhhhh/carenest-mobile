@@ -260,6 +260,76 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     }
   }
 
+  void _handlePtz(int deviceId) {
+    final dash = ref.read(familyDashboardProvider);
+    final elderlyId = dash.data?.elderlyId;
+    if (elderlyId == null) return;
+
+    Future<void> send(String direction) async {
+      final ok = await ref
+          .read(cameraProvider(elderlyId).notifier)
+          .controlPtz(deviceId, direction);
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể xoay camera lúc này'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Xoay camera',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            IconButton.filledTonal(
+              onPressed: () => send('UP'),
+              icon: const Icon(Icons.keyboard_arrow_up),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton.filledTonal(
+                  onPressed: () => send('LEFT'),
+                  icon: const Icon(Icons.keyboard_arrow_left),
+                ),
+                const SizedBox(width: 40),
+                IconButton.filledTonal(
+                  onPressed: () => send('RIGHT'),
+                  icon: const Icon(Icons.keyboard_arrow_right),
+                ),
+              ],
+            ),
+            IconButton.filledTonal(
+              onPressed: () => send('DOWN'),
+              icon: const Icon(Icons.keyboard_arrow_down),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                send('STOP');
+                Navigator.pop(ctx);
+              },
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dash = ref.watch(familyDashboardProvider);
@@ -297,12 +367,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           ? _buildError(state.error!, elderlyId)
           : Column(
               children: [
-                // Status indicator bar
                 _buildStatusBar(state, elderlyId),
-                // Wireframe A3: khối xem trực tiếp luôn hiển thị trên cùng
                 if (state.cameras.isNotEmpty)
                   _buildLiveHero(state, state.cameras.first),
-                // Tabs
                 TabBar(
                   controller: _tabController,
                   indicatorColor: AppColors.primary,
@@ -331,9 +398,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
     );
   }
 
-  /// Wireframe A3: khối video trực tiếp lớn ở đầu trang, với các nút
-  /// Snapshot / Record / Gọi thoại / Xoay ngay bên dưới — camera đầu
-  /// tiên trong danh sách được coi là camera "đang xem".
   Widget _buildLiveHero(CameraState state, CameraDeviceData cam) {
     final voiceActive = state.voiceActive;
     return Container(
@@ -439,7 +503,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
                   icon: Icons.rotate_right,
                   label: 'Xoay',
                   color: AppColors.textSecondary,
-                  onTap: () => _handleLiveView(cam.id),
+                  onTap: () => _handlePtz(cam.id),
                 ),
               ),
             ],
@@ -611,7 +675,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
           ref.read(cameraProvider(elderlyId).notifier).load(),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: state.cameras.length + 1, // +1 for add button
+        itemCount: state.cameras.length + 1,
         itemBuilder: (_, i) {
           if (i == state.cameras.length) {
             return Padding(
@@ -666,7 +730,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
           Row(
             children: [
               Container(
@@ -765,7 +828,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ],
           ),
           const SizedBox(height: 14),
-          // Motion detection toggle
           Row(
             children: [
               Icon(
@@ -792,7 +854,6 @@ class _CameraScreenState extends ConsumerState<CameraScreen>
             ],
           ),
           const SizedBox(height: 10),
-          // Action buttons
           Wrap(
             spacing: 8,
             runSpacing: 8,
