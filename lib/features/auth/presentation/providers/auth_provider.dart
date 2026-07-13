@@ -513,3 +513,57 @@ String _extractError(DioException e, String fallback) {
   if (data is String) return data;
   return fallback;
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// OTP Verification (Email or SMS)
+// ═══════════════════════════════════════════════════════════════════
+
+class OtpState {
+  final bool isLoading;
+  final String? error;
+  final Map<String, dynamic>? result;
+
+  const OtpState({this.isLoading = false, this.error, this.result});
+
+  OtpState copyWith({bool? isLoading, String? error, Map<String, dynamic>? result}) =>
+      OtpState(
+        isLoading: isLoading ?? this.isLoading,
+        error: error,
+        result: result,
+      );
+}
+
+class OtpNotifier extends StateNotifier<OtpState> {
+  final AuthRepository _repo;
+
+  OtpNotifier(this._repo) : super(const OtpState());
+
+  Future<void> sendOtp(String target, String method) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      await _repo.sendOtp(target, method);
+      state = state.copyWith(isLoading: false);
+    } on DioException catch (e) {
+      final msg = _extractError(e, 'Could not send verification code');
+      state = state.copyWith(isLoading: false, error: msg);
+    }
+  }
+
+  Future<Map<String, dynamic>?> verifyOtp(String target, String code) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final data = await _repo.verifyOtp(target, code);
+      state = state.copyWith(isLoading: false, result: data);
+      return data;
+    } on DioException catch (e) {
+      final msg = _extractError(e, 'Invalid or expired code');
+      state = state.copyWith(isLoading: false, error: msg);
+      return null;
+    }
+  }
+}
+
+final otpProvider =
+    StateNotifierProvider.autoDispose<OtpNotifier, OtpState>(
+  (ref) => OtpNotifier(ref.watch(authRepositoryProvider)),
+);

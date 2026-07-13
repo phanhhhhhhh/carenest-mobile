@@ -130,6 +130,21 @@ class AuthRepository {
     await _dio.post('/auth/resend-verification', data: {'email': email});
   }
 
+  /// POST /api/auth/send-otp — request OTP via email or SMS.
+  Future<void> sendOtp(String target, String method) async {
+    await _dio.post('/auth/send-otp', data: {'target': target, 'method': method});
+  }
+
+  /// POST /api/auth/verify-otp — verify OTP code.
+  /// Returns user + tokens map on success, throws on failure.
+  Future<Map<String, dynamic>> verifyOtp(String target, String code) async {
+    final response =
+        await _dio.post('/auth/verify-otp', data: {'target': target, 'code': code});
+    final data = response.data as Map<String, dynamic>;
+    await persistAuth(data);
+    return data;
+  }
+
   // ═══════════════════════════════════════════════════════════════
   // Password Management
   // ═══════════════════════════════════════════════════════════════
