@@ -17,6 +17,8 @@ public class EmergencyEventResponse {
     private BigDecimal latitude;
     private BigDecimal longitude;
     private String address;
+    private String type;
+    private String description;
     private EmergencyStatus status;
     private OffsetDateTime triggeredAt;
     private OffsetDateTime resolvedAt;

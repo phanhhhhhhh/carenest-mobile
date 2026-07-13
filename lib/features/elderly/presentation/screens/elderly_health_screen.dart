@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/gemini_service.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../providers/health_metric_provider.dart';
+import '../providers/google_fit_provider.dart';
+import '../../../family/presentation/providers/health_threshold_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ElderlyHealthScreen extends ConsumerStatefulWidget {
   const ElderlyHealthScreen({super.key});
@@ -107,6 +111,20 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
   }
 
   String _getStatus(HealthMetricData data) {
+    // Try backend thresholds first
+    if (_elderlyId.isNotEmpty) {
+      final threshold = ref.read(healthThresholdProvider(_elderlyId).notifier).findFor(data.type);
+      if (threshold != null) {
+        final val = double.tryParse(data.value);
+        if (val != null) {
+          if (threshold.minValue != null && val < threshold.minValue!) return 'low';
+          if (threshold.maxValue != null && val > threshold.maxValue!) return 'high';
+          return 'normal';
+        }
+      }
+    }
+
+    // Fallback to built-in config
     final config = _metricConfigs[data.type];
     if (config == null || config.normalRange.isEmpty) return 'normal';
     final val = double.tryParse(data.value);
@@ -134,12 +152,87 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: _buildBody(healthState),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddMetricSheet(context),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'googleFit',
+            mini: true,
+            onPressed: () => _handleGoogleFit(),
+            backgroundColor: AppColors.secondary,
+            child: const Icon(Icons.sync, color: Colors.white, size: 20),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'addMetric',
+            onPressed: () => _showAddMetricSheet(context),
+            backgroundColor: AppColors.primary,
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _handleGoogleFit() async {
+    if (_elderlyId.isEmpty) return;
+    final fitNotifier = ref.read(googleFitProvider(_elderlyId).notifier);
+    final state = ref.read(googleFitProvider(_elderlyId));
+
+    if (state.isConnected) {
+      // Already connected — offer sync or disconnect
+      final action = await showModalBottomSheet<String>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (ctx) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.sync, color: AppColors.primary),
+                title: const Text('Sync Now'),
+                subtitle: const Text('Pull latest data from Google Fit'),
+                onTap: () => Navigator.pop(ctx, 'sync'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.link_off, color: AppColors.error),
+                title: const Text('Disconnect'),
+                subtitle: const Text('Stop syncing with Google Fit'),
+                onTap: () => Navigator.pop(ctx, 'disconnect'),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (action == 'sync') {
+        await fitNotifier.syncNow();
+        if (mounted) {
+          ref.read(healthMetricProvider(_elderlyId).notifier).load();
+        }
+      } else if (action == 'disconnect') {
+        await fitNotifier.disconnect();
+      }
+    } else {
+      // Not connected — get auth URL
+      final url = await fitNotifier.connect();
+      if (url != null && mounted) {
+        try {
+          await launchUrl(Uri.parse(url),
+              mode: LaunchMode.externalApplication);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('Could not open browser'),
+                  backgroundColor: AppColors.error),
+            );
+          }
+        }
+      }
+    }
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -154,6 +247,13 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
       backgroundColor: AppColors.surface,
       foregroundColor: AppColors.textPrimary,
       elevation: 0,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.assessment, color: AppColors.primary),
+          tooltip: 'Health Report',
+          onPressed: () => context.push('/health-report'),
+        ),
+      ],
     );
   }
 
@@ -346,7 +446,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.success.withOpacity(0.2)),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,8 +459,8 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: _aiLoading
-                      ? AppColors.warning.withOpacity(0.15)
-                      : AppColors.success.withOpacity(0.15),
+                      ? AppColors.warning.withValues(alpha: 0.15)
+                      : AppColors.success.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: _aiLoading
@@ -452,7 +552,7 @@ class _ElderlyHealthScreenState extends ConsumerState<ElderlyHealthScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.monitor_heart_outlined,
@@ -618,7 +718,7 @@ class _PeriodChip extends StatelessWidget {
           color: selected ? AppColors.primary : AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.textHint.withOpacity(0.3),
+            color: selected ? AppColors.primary : AppColors.textHint.withValues(alpha: 0.3),
           ),
         ),
         child: Text(
@@ -691,7 +791,7 @@ class _MetricSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -727,10 +827,10 @@ class _MetricSection extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _statusColor().withOpacity(0.1),
+                    color: _statusColor().withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: _statusColor().withOpacity(0.3)),
+                        color: _statusColor().withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     _statusLabel(),
@@ -853,7 +953,7 @@ class _MiniChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [color.withOpacity(0.3), color.withOpacity(0.02)],
+        colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0.02)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();

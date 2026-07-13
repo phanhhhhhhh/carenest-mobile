@@ -56,6 +56,21 @@ public class JwtService {
             .compact();
     }
 
+    /**
+     * Generate a short-lived password reset token (15 min).
+     */
+    public String generatePasswordResetToken(Long userId, String email) {
+        long resetExpirationMs = 15 * 60 * 1000; // 15 minutes
+        return Jwts.builder()
+            .subject(userId.toString())
+            .claim("email", email)
+            .claim("purpose", "password_reset")
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + resetExpirationMs))
+            .signWith(signingKey())
+            .compact();
+    }
+
     public boolean validateToken(String token) {
         try {
             Jwts.parser().verifyWith(signingKey()).build().parseSignedClaims(token);
