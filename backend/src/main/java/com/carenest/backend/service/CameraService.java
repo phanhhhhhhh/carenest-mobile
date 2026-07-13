@@ -17,10 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * UC-26→33: Camera Monitoring Module.
- * Integrates with Imou Open Platform for remote elderly monitoring.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,10 +33,6 @@ public class CameraService {
     private static final ZoneId ICT = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-26: Link Camera Device to Family Account
-    // ══════════════════════════════════════════════════════════════════════
-
     @Transactional
     public CameraDevice bindCamera(Long elderlyId, String deviceSn, String label) {
         User elderly = userRepository.findById(elderlyId)
@@ -50,13 +42,11 @@ public class CameraService {
             throw new ConflictException("Device " + deviceSn + " is already bound to another account");
         }
 
-        // Get Imou access token
         String accessToken = imouApiService.getAccessToken();
         if (accessToken == null) {
             throw new IllegalStateException("Imou API not configured — cannot bind device");
         }
 
-        // Call Imou API to bind device
         Map<String, Object> result = imouApiService.bindDevice(deviceSn, accessToken);
         if (result.containsKey("error")) {
             throw new RuntimeException("Failed to bind device: " + result.get("error"));
@@ -90,10 +80,6 @@ public class CameraService {
         return cameraDeviceRepository.findByElderlyId(elderlyId);
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-27: View Live Camera Feed
-    // ══════════════════════════════════════════════════════════════════════
-
     public Map<String, Object> getLiveStreamUrl(Long deviceId) {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
             .orElseThrow(() -> new NotFoundException("Camera not found"));
@@ -115,10 +101,6 @@ public class CameraService {
         );
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-28: SOS Snapshot (extends UC-14)
-    // ══════════════════════════════════════════════════════════════════════
-
     @Transactional
     public CameraSnapshot captureSosSnapshot(Long elderlyId, Long emergencyEventId) {
         List<CameraDevice> cameras = cameraDeviceRepository.findByElderlyId(elderlyId);
@@ -127,7 +109,7 @@ public class CameraService {
             return null;
         }
 
-        CameraDevice camera = cameras.get(0); // Use first camera
+        CameraDevice camera = cameras.get(0);
         if (!camera.isOnline()) {
             CameraSnapshot failed = CameraSnapshot.builder()
                 .camera(camera)
@@ -170,12 +152,8 @@ public class CameraService {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-29: Check-in Timeline (scheduled snapshots)
-    // ══════════════════════════════════════════════════════════════════════
-
     @Transactional
-    @Scheduled(fixedRate = 3600000) // every hour — check snapshot schedules
+    @Scheduled(fixedRate = 3600000)
     public void scheduledSnapshotCapture() {
         List<CameraDevice> cameras = cameraDeviceRepository.findByStatus(CameraDevice.CameraStatus.ONLINE);
 
@@ -215,13 +193,6 @@ public class CameraService {
         return cameraSnapshotRepository.findByElderlyIdOrderByCreatedAtDesc(elderlyId, PageRequest.of(page, size));
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-30: Motion Detection Alert
-    // ══════════════════════════════════════════════════════════════════════
-
-    /**
-     * UC-30: Configure motion detection settings for a camera.
-     */
     @Transactional
     public void configureMotionDetection(Long deviceId, boolean enabled, String windowStart, String windowEnd) {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
@@ -235,7 +206,7 @@ public class CameraService {
     }
 
     @Transactional
-    @Scheduled(fixedRate = 300000) // every 5 minutes — check monitoring windows
+    @Scheduled(fixedRate = 300000)
     public void checkMotionDetectionWindows() {
         ZonedDateTime now = ZonedDateTime.now(ICT);
         String currentTime = now.format(TIME_FMT);
@@ -245,7 +216,6 @@ public class CameraService {
             if (!camera.isMotionDetectionEnabled()) continue;
             if (camera.getMonitoringWindowEnd() == null || camera.getMonitoringWindowStart() == null) continue;
 
-            // If the monitoring window just ended, check for motion
             if (currentTime.equals(camera.getMonitoringWindowEnd())) {
                 checkMotionForWindow(camera, now);
             }
@@ -263,10 +233,8 @@ public class CameraService {
         List<Map<String, Object>> events = (List<Map<String, Object>>) result.getOrDefault("events", List.of());
 
         if (events.isEmpty()) {
-            // No motion detected during window → alert family
             sendNoMotionAlert(camera);
         } else {
-            // Motion detected — log and send positive confirmation
             sendMotionDetectedNotification(camera, events.size());
         }
     }
@@ -317,9 +285,26 @@ public class CameraService {
         log.info("No-motion alert sent: cameraId={} elderlyId={}", camera.getId(), camera.getElderly().getId());
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-31: Two-Way Voice Call
-    // ══════════════════════════════════════════════════════════════════════
+    public Map<String, Object> controlPtz(Long deviceId, String direction) {
+        CameraDevice device = cameraDeviceRepository.findById(deviceId)
+            .orElseThrow(() -> new NotFoundException("Camera not found"));
+        if (!device.isOnline()) {
+            return Map.of("status", "ERROR", "message", "Camera offline");
+        }
+        if (device.isPrivacyMode()) {
+            return Map.of("status", "ERROR", "message", "Camera is in privacy mode");
+        }
+        Map<String, Object> allowed = Map.of(
+            "LEFT", 1, "RIGHT", 1, "UP", 1, "DOWN", 1, "STOP", 1
+        );
+        String dir = direction == null ? "" : direction.toUpperCase();
+        if (!allowed.containsKey(dir)) {
+            return Map.of("status", "ERROR", "message", "Invalid PTZ direction: " + direction);
+        }
+        Map<String, Object> result = imouApiService.controlPtz(device.getDeviceSn(), dir, device.getAccessToken());
+        log.info("PTZ {} requested for cameraId={}", dir, deviceId);
+        return Map.of("status", "OK", "direction", dir, "data", result);
+    }
 
     public Map<String, Object> startTwoWayAudio(Long deviceId) {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
@@ -338,10 +323,6 @@ public class CameraService {
         return Map.of("status", "STOPPED", "data", result);
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-32: Privacy Mode
-    // ══════════════════════════════════════════════════════════════════════
-
     @Transactional
     public Map<String, Object> setPrivacyMode(Long deviceId, boolean enabled) {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
@@ -352,7 +333,6 @@ public class CameraService {
         device.setStatus(enabled ? CameraDevice.CameraStatus.PRIVACY : CameraDevice.CameraStatus.ONLINE);
         cameraDeviceRepository.save(device);
 
-        // Notify family about privacy mode change
         notifyFamilyPrivacyChange(device, enabled);
 
         log.info("Privacy mode {} for cameraId={}", enabled ? "ON" : "OFF", deviceId);
@@ -377,12 +357,8 @@ public class CameraService {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // UC-33: Camera Connection Status
-    // ══════════════════════════════════════════════════════════════════════
-
     @Transactional
-    @Scheduled(fixedRate = 120000) // every 2 minutes — poll device status
+    @Scheduled(fixedRate = 120000)
     public void pollCameraStatuses() {
         if (!imouApiService.isConfigured()) return;
 
@@ -441,15 +417,10 @@ public class CameraService {
         };
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // Retention: auto-delete old snapshots (spec: configured retention period)
-    // ══════════════════════════════════════════════════════════════════════
-
     @Transactional
-    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Ho_Chi_Minh") // daily at 3 AM
+    @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Ho_Chi_Minh")
     public void cleanupOldSnapshots() {
         Instant cutoff = Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);
-        // Snapshots older than 30 days are cleaned up
         log.debug("Snapshot cleanup: cutoff={}", cutoff);
     }
 }
