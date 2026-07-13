@@ -23,5 +23,9 @@ public class EmergencyEventRequest {
 
     private String address;
 
+    private String type;
+
+    private String description;
+
     private String notes;
 }

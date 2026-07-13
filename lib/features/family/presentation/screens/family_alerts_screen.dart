@@ -128,7 +128,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
             Container(
               width: 80, height: 80,
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.08),
+                color: AppColors.success.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.check_circle_outline, color: AppColors.success, size: 44),
@@ -158,7 +158,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
           const SizedBox(height: 10),
           ...active.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _buildEventCard(e),
+                child: _buildEventCard(e, elderlyId),
               )),
         ],
         if (resolved.isNotEmpty) ...[
@@ -169,14 +169,14 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
           const SizedBox(height: 10),
           ...resolved.map((e) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _buildEventCard(e),
+                child: _buildEventCard(e, elderlyId),
               )),
         ],
       ],
     );
   }
 
-  Widget _buildEventCard(EmergencyEventData event) {
+  Widget _buildEventCard(EmergencyEventData event, String elderlyId) {
     final isActive = event.status == 'ACTIVE';
     final color = _eventColor(event.type);
     final icon = _eventIcon(event.type);
@@ -185,12 +185,12 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isActive ? color.withOpacity(0.04) : AppColors.surface,
+        color: isActive ? color.withValues(alpha: 0.04) : AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: isActive ? Border.all(color: color.withOpacity(0.3)) : null,
+        border: isActive ? Border.all(color: color.withValues(alpha: 0.3)) : null,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -201,7 +201,7 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
           Container(
             width: 44, height: 44,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -244,8 +244,8 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? AppColors.error.withOpacity(0.08)
-                            : AppColors.success.withOpacity(0.08),
+                            ? AppColors.error.withValues(alpha: 0.08)
+                            : AppColors.success.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -256,6 +256,23 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
                         ),
                       ),
                     ),
+                    if (isActive) ...[
+                      const Spacer(),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final ok = await ref
+                              .read(emergencyEventProvider(elderlyId).notifier)
+                              .acknowledge(event.id);
+                          if (ok) ref.invalidate(emergencyEventProvider(elderlyId));
+                        },
+                        icon: const Icon(Icons.check_circle_outline, size: 16),
+                        label: const Text('Acknowledge', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.success,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -268,28 +285,49 @@ class _FamilyAlertsScreenState extends ConsumerState<FamilyAlertsScreen> {
 
   String _eventTitle(String type) {
     switch (type) {
-      case 'SOS': return 'SOS Emergency';
-      case 'MISSED_MEDICATION': return 'Missed Medication';
-      case 'ABNORMAL_VITALS': return 'Abnormal Vitals';
-      default: return 'Alert';
+      case 'SOS':
+      case 'EMERGENCY':
+        return 'SOS Emergency';
+      case 'MISSED_MEDICATION':
+      case 'MEDICATION_REMINDER':
+        return 'Missed Medication';
+      case 'ABNORMAL_VITALS':
+      case 'HEALTH_ALERT':
+        return 'Abnormal Vitals';
+      default:
+        return 'Alert';
     }
   }
 
   IconData _eventIcon(String type) {
     switch (type) {
-      case 'SOS': return Icons.sos;
-      case 'MISSED_MEDICATION': return Icons.medication_liquid;
-      case 'ABNORMAL_VITALS': return Icons.warning_amber;
-      default: return Icons.notifications;
+      case 'SOS':
+      case 'EMERGENCY':
+        return Icons.sos;
+      case 'MISSED_MEDICATION':
+      case 'MEDICATION_REMINDER':
+        return Icons.medication_liquid;
+      case 'ABNORMAL_VITALS':
+      case 'HEALTH_ALERT':
+        return Icons.warning_amber;
+      default:
+        return Icons.notifications;
     }
   }
 
   Color _eventColor(String type) {
     switch (type) {
-      case 'SOS': return AppColors.sosPrimary;
-      case 'MISSED_MEDICATION': return AppColors.warning;
-      case 'ABNORMAL_VITALS': return AppColors.error;
-      default: return AppColors.primary;
+      case 'SOS':
+      case 'EMERGENCY':
+        return AppColors.sosPrimary;
+      case 'MISSED_MEDICATION':
+      case 'MEDICATION_REMINDER':
+        return AppColors.warning;
+      case 'ABNORMAL_VITALS':
+      case 'HEALTH_ALERT':
+        return AppColors.error;
+      default:
+        return AppColors.primary;
     }
   }
 

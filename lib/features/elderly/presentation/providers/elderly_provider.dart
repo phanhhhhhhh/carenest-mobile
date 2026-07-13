@@ -32,8 +32,8 @@ class ElderlyProfileData {
         healthConditions:
             (j['healthConditions'] as List<dynamic>?)?.cast<String>() ?? [],
         bloodType: j['bloodType'] as String?,
-        weight: (j['weight'] as num?)?.toDouble(),
-        height: (j['height'] as num?)?.toDouble(),
+        weight: (j['weightKg'] as num?)?.toDouble(),
+        height: (j['heightCm'] as num?)?.toDouble(),
         allergies: (j['allergies'] as List<dynamic>?)?.cast<String>() ?? [],
         notes: j['notes'] as String?,
       );
@@ -113,11 +113,11 @@ class ElderlyProfileNotifier extends StateNotifier<ElderlyProfileState> {
       final userId = await SecureStorage.getUserId();
       if (userId == null) return;
       final data = <String, dynamic>{};
-      if (name != null) data['userName'] = name;
+      if (name != null) data['name'] = name;
       if (healthConditions != null) data['healthConditions'] = healthConditions;
       if (bloodType != null) data['bloodType'] = bloodType;
-      if (weight != null) data['weight'] = weight;
-      if (height != null) data['height'] = height;
+      if (weight != null) data['weightKg'] = weight;
+      if (height != null) data['heightCm'] = height;
       if (allergies != null) data['allergies'] = allergies;
       if (notes != null) data['notes'] = notes;
       await _dio.put('/elderly-profiles/$userId', data: data);
