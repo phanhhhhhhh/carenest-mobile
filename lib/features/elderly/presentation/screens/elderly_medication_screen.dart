@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../providers/medication_provider.dart';
+import '../../../medication/services/medication_reminder_service.dart';
 
 class ElderlyMedicationScreen extends ConsumerStatefulWidget {
   const ElderlyMedicationScreen({super.key});
@@ -100,7 +101,6 @@ class _ElderlyMedicationScreenState
                   ),
                 ),
                 const SizedBox(height: 14),
-                // Time picker
                 Row(
                   children: [
                     const Icon(
@@ -159,7 +159,6 @@ class _ElderlyMedicationScreenState
                   ),
                 ],
                 const SizedBox(height: 14),
-                // Day-of-week selector
                 const Text(
                   'Days of week',
                   style: TextStyle(
@@ -468,8 +467,6 @@ class _ElderlyMedicationScreenState
     );
   }
 
-  /// Wireframe B2: banner "⏰ Đến giờ uống thuốc" cho liều gần nhất
-  /// chưa uống, với nút ĐÃ UỐNG to + Hoãn 10 phút.
   Widget _buildDueNowBanner(List<MedicationItem> items) {
     final pending = items.where((m) => !m.taken).toList()
       ..sort((a, b) {
@@ -555,9 +552,10 @@ class _ElderlyMedicationScreenState
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => ref
-                      .read(medicationsProvider.notifier)
-                      .toggleTaken(med.id),
+                  onPressed: () {
+                    MedicationReminderService.instance.cancelSnooze(med);
+                    ref.read(medicationsProvider.notifier).toggleTaken(med.id);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
@@ -575,12 +573,23 @@ class _ElderlyMedicationScreenState
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    // Ghi chú: hiện chưa có API hoãn nhắc nhở ở backend —
-                    // đây là hành động phía client, chỉ hiện xác nhận cho
-                    // người dùng, chưa dời giờ nhắc thực sự.
+                  onPressed: () async {
+                    final ok = await MedicationReminderService.instance
+                        .snoozeOneOff(med, minutes: 10);
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đã hoãn nhắc nhở 10 phút')),
+                      SnackBar(
+                        content: Text(
+                          ok
+                              ? 'Đã hoãn nhắc nhở 10 phút — sẽ nhắc lại lúc '
+                                    '${DateTime.now().add(const Duration(minutes: 10)).hour.toString().padLeft(2, '0')}:'
+                                    '${DateTime.now().add(const Duration(minutes: 10)).minute.toString().padLeft(2, '0')}'
+                              : 'Không thể đặt lại nhắc nhở trên thiết bị này',
+                        ),
+                        backgroundColor: ok
+                            ? AppColors.success
+                            : AppColors.error,
+                      ),
                     );
                   },
                   style: OutlinedButton.styleFrom(
@@ -836,7 +845,6 @@ class _MedCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          // History button
           if (onHistory != null) ...[
             InkWell(
               onTap: onHistory,
@@ -857,7 +865,6 @@ class _MedCard extends StatelessWidget {
             ),
             const SizedBox(width: 6),
           ],
-          // Edit button
           InkWell(
             onTap: onEdit,
             borderRadius: BorderRadius.circular(8),
@@ -872,7 +879,6 @@ class _MedCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          // Delete button
           InkWell(
             onTap: onDelete,
             borderRadius: BorderRadius.circular(8),
@@ -891,7 +897,6 @@ class _MedCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // Taken toggle
           GestureDetector(
             onTap: onToggle,
             child: AnimatedContainer(
