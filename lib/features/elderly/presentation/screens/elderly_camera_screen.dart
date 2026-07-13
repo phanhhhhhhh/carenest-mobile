@@ -40,11 +40,9 @@ class _ElderlyCameraScreenState extends ConsumerState<ElderlyCameraScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          turnOff
-              ? 'Đã tắt camera tạm thời. Con sẽ được báo cần riêng tư.'
-              : 'Đã bật lại camera.',
-        ),
+        content: Text(turnOff
+            ? 'Đã tắt camera tạm thời. Con sẽ được báo cần riêng tư.'
+            : 'Đã bật lại camera.'),
       ),
     );
   }
@@ -59,9 +57,7 @@ class _ElderlyCameraScreenState extends ConsumerState<ElderlyCameraScreen> {
         title: const Text(
           'Camera trong nhà',
           style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
+              fontWeight: FontWeight.w700, color: AppColors.textPrimary),
         ),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
@@ -81,28 +77,22 @@ class _ElderlyCameraScreenState extends ConsumerState<ElderlyCameraScreen> {
     }
 
     if (state.cameras.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.videocam_off_outlined,
-                color: AppColors.textHint,
-                size: 56,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Chưa có camera nào được liên kết',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
-              ),
-              SizedBox(height: 6),
-              Text(
-                'Con của bạn có thể liên kết camera trong phần Gia đình.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textHint, fontSize: 13),
-              ),
+              Image.asset('assets/images/mascot/mascot_confused.jpg',
+                  width: 140, fit: BoxFit.contain),
+              const SizedBox(height: 8),
+              const Text('Chưa có camera nào được liên kết',
+                  style:
+                      TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+              const SizedBox(height: 6),
+              const Text('Con của bạn có thể liên kết camera trong phần Gia đình.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textHint, fontSize: 13)),
             ],
           ),
         ),
@@ -111,7 +101,8 @@ class _ElderlyCameraScreenState extends ConsumerState<ElderlyCameraScreen> {
 
     // Wireframe B3: coi là "đang bật" khi có ít nhất 1 camera online và
     // không ở chế độ riêng tư.
-    final anyActive = state.cameras.any((c) => c.isOnline && !c.privacyMode);
+    final anyActive =
+        state.cameras.any((c) => c.isOnline && !c.privacyMode);
     final allPrivate = state.cameras.every((c) => c.privacyMode);
 
     return RefreshIndicator(
@@ -145,19 +136,16 @@ class _ElderlyCameraScreenState extends ConsumerState<ElderlyCameraScreen> {
                       Text(
                         anyActive ? 'Camera đang bật' : 'Camera đang tắt',
                         style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary),
                       ),
                       Text(
                         anyActive
                             ? 'Con của bố/mẹ đang có thể nhìn thấy'
                             : 'Không ai có thể xem lúc này',
                         style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
+                            fontSize: 13, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -172,26 +160,20 @@ class _ElderlyCameraScreenState extends ConsumerState<ElderlyCameraScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () => _togglePrivacyForAll(!allPrivate),
-              icon: Icon(
-                allPrivate ? Icons.videocam : Icons.power_settings_new,
-                size: 22,
-              ),
+              icon: Icon(allPrivate ? Icons.videocam : Icons.power_settings_new,
+                  size: 22),
               label: Text(
                 allPrivate ? 'BẬT LẠI CAMERA' : 'TẮT CAMERA TẠM THỜI',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: allPrivate
-                    ? AppColors.success
-                    : AppColors.sosPrimary,
+                backgroundColor:
+                    allPrivate ? AppColors.success : AppColors.sosPrimary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                    borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ),
@@ -206,20 +188,17 @@ class _ElderlyCameraScreenState extends ConsumerState<ElderlyCameraScreen> {
           const Text(
             'Từng phòng',
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary),
           ),
           const SizedBox(height: 10),
-          ...state.cameras.map(
-            (cam) => _RoomTile(
-              cam: cam,
-              onToggle: (value) => ref
-                  .read(cameraProvider(elderlyId).notifier)
-                  .setPrivacyMode(cam.id, !value),
-            ),
-          ),
+          ...state.cameras.map((cam) => _RoomTile(
+                cam: cam,
+                onToggle: (value) => ref
+                    .read(cameraProvider(elderlyId).notifier)
+                    .setPrivacyMode(cam.id, !value),
+              )),
         ],
       ),
     );
@@ -246,21 +225,16 @@ class _RoomTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.videocam,
-            color: isActive ? AppColors.success : AppColors.textHint,
-            size: 22,
-          ),
+          Icon(Icons.videocam,
+              color: isActive ? AppColors.success : AppColors.textHint,
+              size: 22),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              cam.label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            child: Text(cam.label,
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary)),
           ),
           Text(
             isActive ? 'Đang bật' : 'Đã tắt',
