@@ -13,11 +13,15 @@ class ElderlyShell extends StatelessWidget {
       body: shell,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: shell.currentIndex,
-        onTap: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
+        onTap: (i) =>
+            shell.goBranch(i, initialLocation: i == shell.currentIndex),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textHint,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
+        ),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
         items: const [
           BottomNavigationBarItem(
@@ -29,6 +33,11 @@ class ElderlyShell extends StatelessWidget {
             icon: Icon(Icons.medication_outlined),
             activeIcon: Icon(Icons.medication),
             label: 'Meds',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.videocam_outlined),
+            activeIcon: Icon(Icons.videocam),
+            label: 'Camera',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite_outline),
