@@ -62,8 +62,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (next.success) {
         context.go('/home');
       } else if (next.needsEmailVerification) {
-        context.go('/verify-email-prompt',
-            extra: next.verificationContact ?? _emailController.text.trim());
+        // Go to verification choice screen (Email or SMS)
+        context.go('/verification-choice', extra: {
+          'email': _emailController.text.trim(),
+          'phone': _phoneController.text.trim().isNotEmpty
+              ? '+84${_phoneController.text.trim().replaceFirst(RegExp(r'^0'), '')}'
+              : '',
+          'userName': _nameController.text.trim(),
+        });
       }
     });
 
@@ -100,15 +106,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                 const SizedBox(height: 28),
 
-                _buildLabel('Email (optional)'),
+                _buildLabel('Email *'),
                 const SizedBox(height: 6),
                 _buildTextField(
                   controller: _emailController,
-                  hint: 'example@email.com (skip for phone-only)',
+                  hint: 'example@email.com',
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v != null && v.trim().isNotEmpty &&
-                        !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) {
+                    if (v == null || v.trim().isEmpty) return 'Email is required';
+                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim())) {
                       return 'Invalid email format';
                     }
                     return null;
@@ -130,15 +136,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                _buildLabel('Phone (optional)'),
+                _buildLabel('Phone *'),
                 const SizedBox(height: 6),
                 _buildTextField(
                   controller: _phoneController,
                   hint: '912 345 678',
                   keyboardType: TextInputType.phone,
                   validator: (v) {
-                    if (v != null && v.trim().isNotEmpty &&
-                        !RegExp(r'^\d{9,10}$').hasMatch(v.trim())) {
+                    if (v == null || v.trim().isEmpty) return 'Phone is required';
+                    if (!RegExp(r'^\d{9,10}$').hasMatch(v.trim())) {
                       return 'Phone must be 9-10 digits';
                     }
                     return null;

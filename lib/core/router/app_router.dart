@@ -13,6 +13,9 @@ import '../../features/auth/presentation/screens/forgot_password_phone_screen.da
 import '../../features/auth/presentation/screens/new_password_screen.dart';
 import '../../features/auth/presentation/screens/password_reset_success_screen.dart';
 import '../../features/auth/presentation/screens/verify_email_prompt_screen.dart';
+import '../../features/auth/presentation/screens/verification_choice_screen.dart';
+import '../../features/auth/presentation/screens/otp_verify_screen.dart';
+import '../../features/auth/presentation/screens/welcome_back_screen.dart';
 import '../../features/auth/presentation/screens/pin_setup_screen.dart';
 import '../../features/auth/presentation/screens/pin_verify_screen.dart';
 import '../../features/elderly/presentation/screens/health_report_screen.dart';
@@ -107,6 +110,44 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final token = state.uri.queryParameters['token'] ?? '';
         return _VerifyEmailScreen(token: token);
+      },
+    ),
+
+    // Verification choice (after registration) — pick Email or SMS
+    GoRoute(
+      path: '/verification-choice',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return VerificationChoiceScreen(
+          email: extra['email'] as String? ?? '',
+          phone: extra['phone'] as String? ?? '',
+          userName: extra['userName'] as String? ?? '',
+        );
+      },
+    ),
+
+    // OTP code entry
+    GoRoute(
+      path: '/verify-otp',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return OtpVerifyScreen(
+          target: extra['target'] as String,
+          method: extra['method'] as String,
+          userName: extra['userName'] as String? ?? '',
+        );
+      },
+    ),
+
+    // Welcome back (after successful verification)
+    GoRoute(
+      path: '/welcome',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return WelcomeBackScreen(
+          userName: extra?['userName'] as String? ?? 'User',
+          user: extra?['user'] as Map<String, dynamic>?,
+        );
       },
     ),
 
