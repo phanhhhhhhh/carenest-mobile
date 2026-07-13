@@ -31,4 +31,13 @@ public class LoginRequest {
      * Legacy: Firebase ID token from phone OTP login.
      */
     private String firebaseToken;
+
+    /**
+     * At least one credential must be provided.
+     */
+    public boolean hasCredentials() {
+        return (email != null && !email.isBlank() && password != null && !password.isBlank())
+            || (phone != null && !phone.isBlank() && password != null && !password.isBlank())
+            || (firebaseToken != null && !firebaseToken.isBlank());
+    }
 }
