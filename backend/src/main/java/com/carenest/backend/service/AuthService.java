@@ -1,6 +1,7 @@
 package com.carenest.backend.service;
 
 import com.carenest.backend.dto.auth.AuthResponse;
+import com.carenest.backend.dto.auth.ChangePasswordRequest;
 import com.carenest.backend.dto.auth.LoginRequest;
 import com.carenest.backend.dto.auth.RefreshRequest;
 import com.carenest.backend.dto.auth.RegisterRequest;
@@ -13,14 +14,18 @@ import com.carenest.backend.repository.RefreshTokenRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -29,44 +34,234 @@ public class AuthService {
 
     private final FirebaseService firebaseService;
     private final JwtService jwtService;
+    private final EmailService emailService;
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Value("${jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpirationMs;
 
-    @Transactional
-    public AuthResponse register(RegisterRequest request, String deviceInfo) {
-        String phone = firebaseService.verifyAndGetPhone(request.getFirebaseToken());
+    // ── Register ──────────────────────────────────────────────────────────
 
+    @Transactional
+    public Map<String, Object> register(RegisterRequest request) {
+        // Validate password match
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Password and confirm password do not match");
+        }
+
+        // Validate role
         if (request.getRole() == com.carenest.backend.entity.UserRole.ADMIN) {
             throw new UnauthorizedException("Cannot self-register ADMIN role");
         }
 
-        if (userRepository.existsByPhoneAndDeletedAtIsNull(phone)) {
-            throw new ConflictException("Phone number already registered: " + phone);
+        // Require at least email or phone
+        boolean hasEmail = request.getEmail() != null && !request.getEmail().isBlank();
+        boolean hasPhone = request.getPhone() != null && !request.getPhone().isBlank();
+        if (!hasEmail && !hasPhone) {
+            throw new IllegalArgumentException("Either email or phone number is required");
+        }
+
+        // Check email uniqueness
+        if (hasEmail) {
+            if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())) {
+                throw new ConflictException("Email already registered: " + request.getEmail());
+            }
+        }
+
+        // Check phone uniqueness
+        if (hasPhone) {
+            if (userRepository.existsByPhoneAndDeletedAtIsNull(request.getPhone().trim())) {
+                throw new ConflictException("Phone number already registered: " + request.getPhone());
+            }
+        }
+
+        // Generate verification token if email is provided
+        String verificationToken = null;
+        boolean needsVerification = hasEmail;
+        if (needsVerification) {
+            verificationToken = generateSecureToken();
         }
 
         User user = User.builder()
-            .phone(phone)
-            .name(request.getName())
+            .email(hasEmail ? request.getEmail().toLowerCase().trim() : null)
+            .passwordHash(passwordEncoder.encode(request.getPassword()))
+            .name(request.getName().trim())
             .role(request.getRole())
+            .phone(hasPhone ? request.getPhone().trim() : null)
             .dob(request.getDob())
+            .emailVerified(!needsVerification) // auto-verify if no email
+            .emailVerificationToken(verificationToken)
+            .emailVerificationExpiry(needsVerification ? OffsetDateTime.now().plusHours(24) : null)
             .build();
         userRepository.save(user);
 
-        return buildAuthResponse(user, deviceInfo);
+        // Send verification email if email provided
+        if (needsVerification) {
+            emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", user.getId());
+        if (needsVerification && !hasPhone) {
+            // Email-only: must verify before login
+            response.put("message", "Registration successful. Please check your email (" + user.getEmail()
+                + ") to verify your account before logging in.");
+            response.put("requiresVerification", true);
+        } else if (needsVerification) {
+            // Has both email and phone: auto-login via phone, email verification pending
+            response.put("message", "Registration successful. You can log in with your phone and password now. "
+                + "Check your email (" + user.getEmail() + ") to verify your email.");
+            response.put("requiresVerification", false);
+            // Return tokens so the user can auto-login
+            String rawRefreshToken = UUID.randomUUID().toString();
+            RefreshToken rt = RefreshToken.builder()
+                .user(user)
+                .tokenHash(sha256(rawRefreshToken))
+                .expiresAt(OffsetDateTime.now().plusSeconds(refreshTokenExpirationMs / 1000))
+                .build();
+            refreshTokenRepository.save(rt);
+            String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
+            response.put("accessToken", accessToken);
+            response.put("refreshToken", rawRefreshToken);
+            response.put("expiresIn", jwtService.getAccessTokenExpirationSeconds());
+            response.put("user", Map.of(
+                "id", user.getId(),
+                "name", user.getName(),
+                "email", user.getEmail(),
+                "phone", user.getPhone(),
+                "role", user.getRole().name(),
+                "dob", user.getDob() != null ? user.getDob().toString() : null,
+                "emailVerified", user.isEmailVerified()
+            ));
+        } else {
+            response.put("message", "Registration successful. You can now log in with your phone and password.");
+            response.put("requiresVerification", false);
+        }
+        return response;
     }
+
+    // ── Login (Phone + Password / Email + Password / Firebase Token) ──────
 
     @Transactional
     public AuthResponse login(LoginRequest request, String deviceInfo) {
-        String phone = firebaseService.verifyAndGetPhone(request.getFirebaseToken());
+        // Method 1: Phone + Password
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            return loginWithPhone(request, deviceInfo);
+        }
 
-        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
-            .orElseThrow(() -> new NotFoundException("Phone number not registered: " + phone));
+        // Method 2: Email + Password
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            return loginWithEmail(request, deviceInfo);
+        }
+
+        // Method 3: Firebase phone token (legacy)
+        if (request.getFirebaseToken() != null && !request.getFirebaseToken().isBlank()) {
+            return loginWithFirebase(request.getFirebaseToken(), deviceInfo);
+        }
+
+        throw new IllegalArgumentException("Either phone+password, email+password, or firebaseToken is required");
+    }
+
+    private AuthResponse loginWithPhone(LoginRequest request, String deviceInfo) {
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required for phone login");
+        }
+
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(request.getPhone().trim())
+            .orElseThrow(() -> new UnauthorizedException("Invalid phone or password"));
+
+        if (user.getPasswordHash() == null) {
+            throw new UnauthorizedException(
+                "No password set for this account. Use forgot-password to set a password, or login with Firebase OTP.");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid phone or password");
+        }
+
+        // If user has email set but not verified, block login
+        if (user.getEmail() != null && !user.getEmail().isBlank() && !user.isEmailVerified()) {
+            throw new UnauthorizedException(
+                "Email not verified. Please check your inbox or request a new verification email.");
+        }
 
         return buildAuthResponse(user, deviceInfo);
     }
+
+    private AuthResponse loginWithEmail(LoginRequest request, String deviceInfo) {
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required for email login");
+        }
+
+        User user = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())
+            .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Invalid email or password");
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new UnauthorizedException(
+                "Email not verified. Please check your inbox or request a new verification email.");
+        }
+
+        return buildAuthResponse(user, deviceInfo);
+    }
+
+    private AuthResponse loginWithFirebase(String firebaseToken, String deviceInfo) {
+        String phone = firebaseService.verifyAndGetPhone(firebaseToken);
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException("Phone number not registered: " + phone));
+        return buildAuthResponse(user, deviceInfo);
+    }
+
+    // ── Email Verification ──────────────────────────────────────────────────
+
+    @Transactional
+    public void verifyEmail(String token) {
+        User user = userRepository.findByEmailVerificationToken(token)
+            .orElseThrow(() -> new UnauthorizedException("Invalid or expired verification token"));
+
+        if (user.isEmailVerified()) {
+            return; // Already verified — idempotent
+        }
+
+        if (user.getEmailVerificationExpiry() != null
+            && user.getEmailVerificationExpiry().isBefore(OffsetDateTime.now())) {
+            throw new UnauthorizedException(
+                "Verification token has expired. Please request a new verification email.");
+        }
+
+        user.setEmailVerified(true);
+        user.setEmailVerificationToken(null);
+        user.setEmailVerificationExpiry(null);
+        userRepository.save(user);
+
+        emailService.sendWelcomeEmail(user.getEmail(), user.getName());
+    }
+
+    @Transactional
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmailAndDeletedAtIsNull(email.toLowerCase().trim())
+            .orElseThrow(() -> new NotFoundException("No account found with email: " + email));
+
+        if (user.isEmailVerified()) {
+            throw new ConflictException("Email is already verified. Please log in.");
+        }
+
+        // Generate new token
+        String newToken = generateSecureToken();
+        user.setEmailVerificationToken(newToken);
+        user.setEmailVerificationExpiry(OffsetDateTime.now().plusHours(24));
+        userRepository.save(user);
+
+        emailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
+    }
+
+    // ── Token Refresh ───────────────────────────────────────────────────────
 
     @Transactional
     public AuthResponse refresh(RefreshRequest request) {
@@ -83,12 +278,13 @@ public class AuthService {
         }
 
         User user = stored.getUser();
-
         stored.setRevokedAt(OffsetDateTime.now());
         refreshTokenRepository.save(stored);
 
         return buildAuthResponse(user, stored.getDeviceInfo());
     }
+
+    // ── Logout ──────────────────────────────────────────────────────────────
 
     @Transactional
     public void logout(Long userId) {
@@ -96,53 +292,99 @@ public class AuthService {
             .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
     }
 
-    // ── Forgot Password Flow ──────────────────────────────────────────────
+    // ── Change Password ─────────────────────────────────────────────────────
 
-    @Transactional(readOnly = true)
-    public void forgotPassword(String phone) {
-        userRepository.findByPhoneAndDeletedAtIsNull(phone)
-            .orElseThrow(() -> new NotFoundException(
-                "Phone number not registered: " + phone));
-        // Firebase OTP is sent client-side via Firebase SDK.
-        // Backend just confirms the phone is registered.
-    }
-
-    @Transactional(readOnly = true)
-    public String verifyResetOtp(String phone, String otpToken) {
-        // otpToken is a Firebase idToken obtained after OTP verification
-        String verifiedPhone = firebaseService.verifyAndGetPhone(otpToken);
-
-        if (!verifiedPhone.equals(phone)) {
-            throw new UnauthorizedException(
-                "Verified phone does not match request");
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
-        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
-            .orElseThrow(() -> new NotFoundException(
-                "Phone number not registered: " + phone));
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("User not found"));
 
-        // Return a short-lived reset token
-        return jwtService.generateAccessToken(user.getId(), user.getRole());
+        if (user.getPasswordHash() == null) {
+            throw new UnauthorizedException(
+                "No password set. Use forgot-password to set a password, or continue with phone login.");
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Current password is incorrect");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Revoke all other sessions
+        refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(userId)
+            .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
+    }
+
+    // ── Forgot Password Flow ────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public void forgotPassword(String email) {
+        // Security: always return "success" even if email not found
+        // to prevent email enumeration attacks.
+        userRepository.findByEmailAndDeletedAtIsNull(email.toLowerCase().trim())
+            .ifPresent(user -> {
+                // Generate password reset token (JWT, 15 min expiry)
+                String resetToken = jwtService.generatePasswordResetToken(user.getId(), user.getEmail());
+                emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
+            });
     }
 
     @Transactional
-    public AuthResponse resetPassword(String phone, String newPassword, String confirmPassword) {
-        if (newPassword != null && !newPassword.equals(confirmPassword)) {
-            throw new IllegalArgumentException(
-                "newPassword and confirmPassword do not match");
+    public void resetPassword(String token, String newPassword, String confirmPassword) {
+        if (!newPassword.equals(confirmPassword)) {
+            throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
-        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
-            .orElseThrow(() -> new NotFoundException(
-                "Phone number not registered: " + phone));
+        // Validate reset token
+        if (!jwtService.validateToken(token)) {
+            throw new UnauthorizedException("Invalid or expired reset token");
+        }
 
-        // Revoke all existing refresh tokens (force re-auth)
-        refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(user.getId())
-            .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
+        Long userId = jwtService.getUserIdFromToken(token);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("User not found"));
 
-        // Issue new tokens
-        return buildAuthResponse(user, "password-reset");
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Revoke all sessions
+        refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(userId)
+            .forEach(t -> t.setRevokedAt(OffsetDateTime.now()));
     }
+
+    // ── PIN Setup ───────────────────────────────────────────────────────────
+
+    @Transactional
+    public void setupPin(Long userId, String pin, String confirmPin) {
+        if (!pin.equals(confirmPin)) {
+            throw new IllegalArgumentException("PIN and confirm PIN do not match");
+        }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+        user.setPin(passwordEncoder.encode(pin));
+        userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean verifyPin(Long userId, String pin) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (user.getPin() == null) {
+            throw new UnauthorizedException("No PIN set. Please set up a PIN first.");
+        }
+
+        return passwordEncoder.matches(pin, user.getPin());
+    }
+
+    // ── Internal ────────────────────────────────────────────────────────────
 
     private AuthResponse buildAuthResponse(User user, String deviceInfo) {
         String rawRefreshToken = UUID.randomUUID().toString();
@@ -157,6 +399,12 @@ public class AuthService {
 
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getRole());
         return new AuthResponse(accessToken, rawRefreshToken, jwtService.getAccessTokenExpirationSeconds(), user);
+    }
+
+    private String generateSecureToken() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private String sha256(String input) {
