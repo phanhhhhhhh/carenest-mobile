@@ -277,10 +277,11 @@ class FamilyLinkNotifier extends StateNotifier<FamilyLinkRequestState> {
       state = state.copyWith(isLoading: false, success: true);
       return true;
     } on DioException catch (e) {
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Cannot send request')
+      final data = e.response?.data;
+      final msg = data is Map
+          ? ((data['error'] ?? data['message'])?.toString() ?? 'Cannot send request')
           : 'Cannot send connection request';
-      state = state.copyWith(isLoading: false, error: msg.toString());
+      state = state.copyWith(isLoading: false, error: msg);
       return false;
     } catch (_) {
       state = state.copyWith(
