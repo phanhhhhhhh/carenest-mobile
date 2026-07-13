@@ -76,6 +76,12 @@ public class EmailService {
         send(to, subject, body);
     }
 
+    /** Send a pre-built HTML email (used by OtpService). */
+    @Async
+    public void sendSimpleHtml(String to, String subject, String htmlBody) {
+        send(to, subject, htmlBody);
+    }
+
     // ── Private ──────────────────────────────────────────────────────────────
 
     private void send(String to, String subject, String htmlBody) {

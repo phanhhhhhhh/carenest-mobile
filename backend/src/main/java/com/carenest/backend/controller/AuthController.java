@@ -1,7 +1,13 @@
 package com.carenest.backend.controller;
 
 import com.carenest.backend.dto.auth.*;
+import com.carenest.backend.entity.User;
+import com.carenest.backend.repository.UserRepository;
 import com.carenest.backend.service.AuthService;
+import com.carenest.backend.service.JwtService;
+import com.carenest.backend.service.OtpService;
+import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.exception.ConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +17,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -18,6 +27,9 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final OtpService otpService;
+    private final UserRepository userRepository;
+    private final JwtService jwtService;
 
     // ═══════════════════════════════════════════════════════════════════════
     // Register & Login
@@ -114,6 +126,81 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
             "message", "Password reset successfully. You can now log in with your new password."
         ));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // OTP Verification (Email or SMS)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    @PostMapping("/send-otp")
+    public ResponseEntity<Map<String, String>> sendOtp(
+        @Valid @RequestBody SendOtpRequest request
+    ) {
+        String target = request.getTarget().trim();
+
+        // Check user exists
+        User user = findUserByTarget(target);
+        if (user.isEmailVerified()) {
+            throw new ConflictException("Account is already verified. Please log in.");
+        }
+
+        if ("SMS".equalsIgnoreCase(request.getMethod())) {
+            otpService.sendOtpViaSms(target, user.getName());
+        } else {
+            otpService.sendOtpViaEmail(target, user.getName());
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "message", "Verification code sent to " + target
+        ));
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<Map<String, Object>> verifyOtp(
+        @Valid @RequestBody VerifyOtpRequest request
+    ) {
+        String target = request.getTarget().trim();
+        boolean valid = otpService.verifyOtp(target, request.getCode());
+
+        if (!valid) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Invalid or expired verification code"));
+        }
+
+        // Mark user as verified
+        User user = findUserByTarget(target);
+        user.setEmailVerified(true);
+        user.setEmailVerificationToken(null);
+        user.setEmailVerificationExpiry(null);
+        userRepository.save(user);
+
+        // Auto-login: return tokens
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Verification successful! Welcome to CareNest, " + user.getName() + "!");
+        response.put("accessToken", jwtService.generateAccessToken(user.getId(), user.getRole()));
+        response.put("refreshToken", UUID.randomUUID().toString());
+        response.put("tokenType", "Bearer");
+        response.put("expiresIn", jwtService.getAccessTokenExpirationSeconds());
+        Map<String, Object> userMap = new java.util.HashMap<>();
+        userMap.put("id", user.getId());
+        userMap.put("name", user.getName());
+        userMap.put("email", user.getEmail());
+        userMap.put("phone", user.getPhone());
+        userMap.put("role", user.getRole().name());
+        userMap.put("dob", user.getDob() != null ? user.getDob().toString() : null);
+        userMap.put("emailVerified", true);
+        response.put("user", userMap);
+        return ResponseEntity.ok(response);
+    }
+
+    /** Find user by email or phone. */
+    private User findUserByTarget(String target) {
+        if (target.contains("@")) {
+            return userRepository.findByEmailAndDeletedAtIsNull(target.toLowerCase())
+                .orElseThrow(() -> new NotFoundException("No account found with email: " + target));
+        }
+        return userRepository.findByPhoneAndDeletedAtIsNull(target)
+            .orElseThrow(() -> new NotFoundException("No account found with phone: " + target));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
