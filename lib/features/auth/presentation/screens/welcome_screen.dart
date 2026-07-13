@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 
-/// Full welcome flow: Splash → 3 Onboarding slides → Get Started
-/// Matches the Miro design images exactly.
+/// Full welcome flow: Splash → 4 onboarding slides → Get Started.
+/// Rebuilt to match the official CareNest wireframe (Miro "Welcome Flow")
+/// using the real mascot/icon/logo assets under assets/images/.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -23,12 +24,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     if (!_splashDone) {
       return _SplashScreen(onDone: _onSplashDone);
     }
-    return _OnboardingFlow();
+    return const _OnboardingFlow();
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SPLASH SCREEN
+// SPLASH SCREEN — mascot + wordmark + tagline (wireframe screen 1)
 // ═══════════════════════════════════════════════════════════════════
 class _SplashScreen extends StatefulWidget {
   final VoidCallback onDone;
@@ -48,114 +49,46 @@ class _SplashScreenState extends State<_SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primary,
-      body: Stack(
-        children: [
-          // Decorative circles
-          Positioned(
-            top: -80,
-            right: -80,
-            child: Container(
-              width: 256,
-              height: 256,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/mascot/mascot_thumbsup.jpg',
+                width: 220,
+                fit: BoxFit.contain,
               ),
-            ),
-          ),
-          Positioned(
-            bottom: -64,
-            left: -64,
-            child: Container(
-              width: 192,
-              height: 192,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                shape: BoxShape.circle,
+              const SizedBox(height: 8),
+              Image.asset(
+                'assets/images/brand/logo_wordmark.jpg',
+                width: 200,
+                fit: BoxFit.contain,
               ),
-            ),
-          ),
-
-          // Center content
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Heart icon in white rounded square
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 20,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: AppColors.primary,
-                    size: 56,
-                  ),
+              const SizedBox(height: 4),
+              const Text(
+                'Chăm sóc sức khỏe từ nơi xa',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'CareNest',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Peace of mind when away from home',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-
-          // Loading dots
-          Positioned(
-            bottom: 80,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (i) {
-                return Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    shape: BoxShape.circle,
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ONBOARDING FLOW (3 slides + Get Started)
+// ONBOARDING FLOW (4 slides — wireframe screens 2-5)
 // ═══════════════════════════════════════════════════════════════════
 class _OnboardingFlow extends StatefulWidget {
+  const _OnboardingFlow();
+
   @override
   State<_OnboardingFlow> createState() => _OnboardingFlowState();
 }
@@ -163,56 +96,21 @@ class _OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<_OnboardingFlow> {
   final _controller = PageController();
   int _currentPage = 0;
-  static const _totalSlides = 3;
+  static const _totalSlides = 4;
 
-  static const _slides = [
-    _SlideData(
-      title: 'Comprehensive\nhealth care',
-      subtitle:
-          'Track blood pressure, heart rate, blood sugar and many other indicators daily.',
-      emoji: '❤️',
-      gradient: [AppColors.onboardSplashStart, AppColors.onboardSplashEnd],
-    ),
-    _SlideData(
-      title: 'Smart\nmedication reminders',
-      subtitle:
-          'Never miss your medication schedule with prescription reminders.',
-      emoji: '💊',
-      gradient: [AppColors.secondary, Color(0xFF66BB6A)],
-    ),
-    _SlideData(
-      title: 'Peace of mind when\naway from home',
-      subtitle:
-          'Family can monitor health remotely and receive instant emergency alerts.',
-      emoji: '🏠',
-      gradient: [Color(0xFFFFB300), Color(0xFFFF9800)],
-    ),
-  ];
-
-  bool get _isLastSlide => _currentPage == _totalSlides - 1;
-
-  void _nextPage() {
-    if (_isLastSlide) {
-      // Go to Get Started
-      _controller.animateToPage(
-        _totalSlides, // Get Started is at index 3
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      _controller.animateToPage(
-        _currentPage + 1,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
-    }
+  void _goToPage(int page) {
+    _controller.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
+
+  void _skip() => _goToPage(_totalSlides - 1);
 
   void _goToRegister() => context.go('/register');
 
-  void _goToLogin() {
-    context.go('/phone');
-  }
+  void _goToLogin() => context.go('/phone');
 
   @override
   void dispose() {
@@ -227,310 +125,249 @@ class _OnboardingFlowState extends State<_OnboardingFlow> {
       body: SafeArea(
         child: PageView(
           controller: _controller,
+          physics: const NeverScrollableScrollPhysics(),
           onPageChanged: (page) => setState(() => _currentPage = page),
           children: [
-            ..._slides.map((slide) => _buildOnboardingSlide(slide)),
-            _buildGetStartedPage(),
+            _OnboardSlide(
+              imagePath: 'assets/images/mascot/mascot_dashboard.jpg',
+              title: 'Chăm sóc sức khỏe từ xa\nmọi lúc, mọi nơi',
+              subtitle:
+                  'Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhật tình trạng nhanh chóng',
+              step: 0,
+              totalSteps: _totalSlides,
+              onSkip: _skip,
+              onNext: () => _goToPage(1),
+              nextLabel: null, // slide 1 in wireframe has no CTA button
+            ),
+            _OnboardSlide(
+              imagePath: 'assets/images/icons/health_icon_grid.jpg',
+              title: 'Đa tiện ích\nchăm sóc sức khỏe',
+              subtitle: 'Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày',
+              step: 1,
+              totalSteps: _totalSlides,
+              onSkip: _skip,
+              onNext: () => _goToPage(2),
+              nextLabel: 'Khám phá ngay',
+            ),
+            _OnboardSlide(
+              imagePath: 'assets/images/mascot/mascot_bigphone.jpg',
+              title: 'Chủ động theo dõi\nsức khỏe mỗi ngày',
+              subtitle:
+                  'Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh',
+              step: 2,
+              totalSteps: _totalSlides,
+              onSkip: _skip,
+              onNext: () => _goToPage(3),
+              nextLabel: 'Khám phá ngay',
+            ),
+            _FinalSlide(
+              onRegister: _goToRegister,
+              onLogin: _goToLogin,
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildOnboardingSlide(_SlideData slide) {
-    final step = _slides.indexOf(slide) + 1;
+/// Slide dùng chung cho 3 màn onboarding đầu (có "Bỏ qua" + dots).
+class _OnboardSlide extends StatelessWidget {
+  final String imagePath;
+  final String title;
+  final String subtitle;
+  final int step;
+  final int totalSteps;
+  final VoidCallback onSkip;
+  final VoidCallback onNext;
+  final String? nextLabel;
 
-    return Column(
-      children: [
-        // Top gradient area (55%)
-        Expanded(
-          flex: 55,
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: slide.gradient,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+  const _OnboardSlide({
+    required this.imagePath,
+    required this.title,
+    required this.subtitle,
+    required this.step,
+    required this.totalSteps,
+    required this.onSkip,
+    required this.onNext,
+    required this.nextLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.topRight,
+            child: TextButton(
+              onPressed: onSkip,
+              child: const Text('Bỏ qua',
+                  style: TextStyle(color: AppColors.textSecondary)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryDark,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Image.asset(
+                imagePath,
+                fit: BoxFit.contain,
               ),
             ),
-            child: Stack(
-              children: [
-                // Decorative overlay
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.white.withValues(alpha: 0.05),
-                  ),
-                ),
-                // Emoji centered
-                Center(
-                  child: Text(
-                    slide.emoji,
-                    style: const TextStyle(fontSize: 80),
-                  ),
-                ),
-              ],
-            ),
           ),
-        ),
-
-        // Bottom content area (45%)
-        Expanded(
-          flex: 45,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 32),
-
-                // Step indicator
-                Row(
-                  children: List.generate(_totalSlides, (i) {
-                    final isCurrent = i == step - 1;
-                    return Container(
-                      height: 4,
-                      margin: const EdgeInsets.only(right: 6),
-                      width: isCurrent
-                          ? 24
-                          : i < step
-                              ? 6
-                              : 6,
-                      decoration: BoxDecoration(
-                        color: isCurrent
-                            ? AppColors.primary
-                            : i < step
-                                ? AppColors.primary.withValues(alpha: 0.3)
-                                : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    );
-                  }),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(totalSteps, (i) {
+              final isCurrent = i == step;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                height: 6,
+                width: isCurrent ? 20 : 6,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  color: isCurrent
+                      ? AppColors.primary
+                      : AppColors.primary.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(3),
                 ),
-                const SizedBox(height: 24),
-
-                // Title
-                Text(
-                  slide.title,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Subtitle
-                Text(
-                  slide.subtitle,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Action button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      _isLastSlide ? 'Get Started' : 'Continue',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
+              );
+            }),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGetStartedPage() {
-    return Column(
-      children: [
-        // Illustration area (50%)
-        Expanded(
-          flex: 50,
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.1),
-                  Colors.white,
-                  AppColors.secondary.withValues(alpha: 0.1),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          const SizedBox(height: 16),
+          if (nextLabel != null)
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: onNext,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.arrow_forward, size: 18),
+                label: Text(nextLabel!,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600)),
               ),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Nest/heart illustration
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 160,
-                      height: 160,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.favorite_rounded,
-                        color: AppColors.primary,
-                        size: 80,
-                      ),
-                    ),
-                  ],
-                ),
-                // Decorative dots
-                Positioned(
-                  top: 60,
-                  right: 90,
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 80,
-                  left: 90,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: AppColors.warning.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Content area (50%)
-        Expanded(
-          flex: 50,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 32),
-                const Text(
-                  'Ready to get started?',
+            )
+          else
+            // Slide 1 trong wireframe không có nút — chạm để tiếp tục
+            TextButton(
+              onPressed: onNext,
+              child: const Text('Tiếp tục →',
                   style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Sign up now to start caring for your loved ones\' health.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Register button
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _goToRegister,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Sign Up Free',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Login link
-                Center(
-                  child: TextButton(
-                    onPressed: _goToLogin,
-                    child: RichText(
-                      text: const TextSpan(
-                        style: TextStyle(fontSize: 13, color: AppColors.textHint),
-                        children: [
-                          TextSpan(text: 'Already have an account? '),
-                          TextSpan(
-                            text: 'Sign In',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600)),
             ),
-          ),
-        ),
-      ],
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 }
 
-class _SlideData {
-  final String title;
-  final String subtitle;
-  final String emoji;
-  final List<Color> gradient;
-  const _SlideData({
-    required this.title,
-    required this.subtitle,
-    required this.emoji,
-    required this.gradient,
-  });
+/// Slide cuối (wireframe screen 5): không có dots/Bỏ qua, có 2 CTA.
+class _FinalSlide extends StatelessWidget {
+  final VoidCallback onRegister;
+  final VoidCallback onLogin;
+
+  const _FinalSlide({required this.onRegister, required this.onLogin});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          const Text(
+            'Chủ động theo dõi\nsức khỏe mỗi ngày',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryDark,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Image.asset(
+                'assets/images/mascot/mascot_notifications.jpg',
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: onRegister,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape:
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.arrow_forward, size: 18),
+              label: const Text('Bắt đầu ngay',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: OutlinedButton(
+              onPressed: onLogin,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
+                shape:
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: const Text('Đăng nhập',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
 }
