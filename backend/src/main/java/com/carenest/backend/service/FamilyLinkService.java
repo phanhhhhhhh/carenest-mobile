@@ -11,6 +11,7 @@ import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.exception.ConflictException;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.exception.PaymentRequiredException;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.NotificationRepository;
@@ -33,8 +34,17 @@ public class FamilyLinkService {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
     private final ElderlyProfileRepository elderlyProfileRepository;
+    private final SubscriptionService subscriptionService;
 
     public FamilyLinkResponse create(FamilyLinkRequest request) {
+        // UC-25: Free tier enforcement — check if family can add more elderly
+        if (!subscriptionService.canAddElderly(request.getFamilyId())) {
+            int current = subscriptionService.getActiveElderlyCount(request.getFamilyId());
+            int max = subscriptionService.getMaxElderlyProfiles(request.getFamilyId());
+            throw new PaymentRequiredException(
+                "Free tier limit reached: you can monitor " + max + " elderly profile(s). "
+                    + "You currently have " + current + ". Upgrade to Premium to add more.");
+        }
         User elderly = userRepository.findById(request.getElderlyId())
             .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 

@@ -29,7 +29,7 @@ import java.time.OffsetDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"createdAt", "updatedAt", "deletedAt"})
+@ToString(exclude = {"passwordHash", "emailVerificationToken", "pin", "createdAt", "updatedAt", "deletedAt"})
 public class User {
 
     @Id
@@ -40,13 +40,52 @@ public class User {
     @Column(nullable = false, length = 20)
     private UserRole role;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(unique = true, length = 20)
     private String phone;
+
+    /**
+     * Email for authentication, verification, and password reset.
+     * Must be unique among non-deleted users.
+     */
+    @Column(length = 255, unique = true)
+    private String email;
 
     @Column(nullable = false, length = 100)
     private String name;
 
     private LocalDate dob;
+
+    /**
+     * BCrypt hashed password for email+password login.
+     */
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
+    /**
+     * Whether the email has been verified.
+     */
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    /**
+     * Token sent to email for verification.
+     */
+    @Column(name = "email_verification_token", length = 128)
+    private String emailVerificationToken;
+
+    /**
+     * Expiry time for the email verification token.
+     */
+    @Column(name = "email_verification_expiry")
+    private OffsetDateTime emailVerificationExpiry;
+
+    /**
+     * 6-digit PIN for quick local auth (alternative to password).
+     * BCrypt hash is ~60 chars; length=255 accommodates future hash upgrades.
+     */
+    @Column(length = 255)
+    private String pin;
 
     @Column(name = "fcm_token", length = 255)
     private String fcmToken;
@@ -66,4 +105,11 @@ public class User {
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
+
+    /**
+     * Whether this user is active (email verified and not deleted).
+     */
+    public boolean isActive() {
+        return deletedAt == null && emailVerified;
+    }
 }

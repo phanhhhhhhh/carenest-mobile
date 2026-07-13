@@ -80,7 +80,12 @@ class HealthMetricNotifier extends StateNotifier<HealthMetricState> {
 
   Future<void> addMetric({required String type, required String value, String? unit}) async {
     try {
-      await _dio.post('/elderly/$elderlyId/health-metrics', data: {'type': type, 'value': value, 'unit': unit});
+      await _dio.post('/elderly/$elderlyId/health-metrics', data: {
+        'elderlyId': int.tryParse(elderlyId),
+        'type': type,
+        'value': value,
+        if (unit != null) 'unit': unit,
+      });
       await load();
     } on DioException catch (e) {
       state = state.copyWith(error: 'Error: ${e.message}');
