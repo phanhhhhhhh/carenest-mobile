@@ -36,6 +36,11 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(PaymentRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handlePaymentRequired(PaymentRequiredException ex) {
+        return error(HttpStatus.PAYMENT_REQUIRED, ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage());

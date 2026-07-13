@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -16,7 +17,7 @@ class EmergencyEventData {
   factory EmergencyEventData.fromJson(Map<String, dynamic> j) => EmergencyEventData(
     id: j['id'].toString(),
     type: j['type'] as String? ?? 'SOS',
-    description: j['description'] as String? ?? '',
+    description: j['description'] as String? ?? (j['notes'] as String? ?? ''),
     status: j['status'] as String? ?? 'ACTIVE',
     createdAt: DateTime.tryParse(j['createdAt'] as String? ?? '') ?? DateTime.now(),
   );
@@ -53,14 +54,32 @@ class EmergencyEventNotifier extends StateNotifier<EmergencyEventState> {
   Future<bool> createSosEvent() async {
     try {
       final resp = await _dio.post('/elderly/$elderlyId/emergency-events', data: {
+        'elderlyId': int.tryParse(elderlyId),
         'type': 'SOS',
         'description': 'User pressed emergency SOS button',
+        'latitude': null,
+        'longitude': null,
+        'address': null,
+        'notes': null,
       });
       if (resp.statusCode == 201 || resp.statusCode == 200) {
         await load(); // refresh list after creating
         return true;
       }
       return false;
+    } on DioException {
+      return false;
+    }
+  }
+
+  /// PATCH /api/emergency-events/{id}/acknowledge — acknowledge an emergency.
+  Future<bool> acknowledge(String eventId) async {
+    try {
+      final userId = await SecureStorage.getUserId();
+      if (userId == null) return false;
+      await _dio.patch('/emergency-events/$eventId/acknowledge');
+      await load();
+      return true;
     } on DioException {
       return false;
     }

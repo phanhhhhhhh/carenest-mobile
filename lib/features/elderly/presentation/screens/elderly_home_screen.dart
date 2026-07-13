@@ -292,7 +292,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
                   color: AppColors.sosPrimary,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.sosPrimary.withOpacity(0.4),
+                      color: AppColors.sosPrimary.withValues(alpha: 0.4),
                       blurRadius: 24,
                       spreadRadius: 6,
                     ),
@@ -595,7 +595,7 @@ class _HealthCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -663,7 +663,7 @@ class _MedicationTile extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppColors.textHint.withOpacity(0.2),
+          color: AppColors.textHint.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -672,7 +672,7 @@ class _MedicationTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -709,7 +709,7 @@ class _MedicationTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -730,11 +730,11 @@ class _MedicationTile extends StatelessWidget {
               border: Border.all(
                 color: medication.taken
                     ? AppColors.success
-                    : AppColors.textHint.withOpacity(0.5),
+                    : AppColors.textHint.withValues(alpha: 0.5),
                 width: 2,
               ),
               color: medication.taken
-                  ? AppColors.success.withOpacity(0.1)
+                  ? AppColors.success.withValues(alpha: 0.1)
                   : Colors.transparent,
             ),
             child: medication.taken
@@ -779,7 +779,7 @@ class _AppointmentTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -791,7 +791,7 @@ class _AppointmentTile extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
