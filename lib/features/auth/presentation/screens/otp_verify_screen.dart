@@ -23,8 +23,10 @@ class OtpVerifyScreen extends ConsumerStatefulWidget {
 }
 
 class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _isLoading = false;
   String? _error;
@@ -40,8 +42,12 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
 
   @override
   void dispose() {
-    for (var c in _controllers) { c.dispose(); }
-    for (var f in _focusNodes) { f.dispose(); }
+    for (var c in _controllers) {
+      c.dispose();
+    }
+    for (var f in _focusNodes) {
+      f.dispose();
+    }
     _timer?.cancel();
     super.dispose();
   }
@@ -57,7 +63,9 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
 
   Future<void> _sendOtp() async {
     try {
-      await ref.read(otpProvider.notifier).sendOtp(widget.target, widget.method);
+      await ref
+          .read(otpProvider.notifier)
+          .sendOtp(widget.target, widget.method);
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Could not send code. Try again.');
@@ -74,20 +82,26 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
       _error = null;
     });
 
-    ref.read(otpProvider.notifier).verifyOtp(widget.target, code).then((result) {
+    ref.read(otpProvider.notifier).verifyOtp(widget.target, code).then((
+      result,
+    ) {
       if (!mounted) return;
       if (result != null) {
-        // Success — navigate to welcome
-        context.go('/welcome', extra: {
-          'userName': result['name'] ?? widget.userName,
-          'accessToken': result['accessToken'],
-          'refreshToken': result['refreshToken'],
-          'user': result['user'],
-        });
+        // Success — navigate to welcome-back
+        context.go(
+          '/welcome-back',
+          extra: {
+            'userName': result['name'] ?? widget.userName,
+            'accessToken': result['accessToken'],
+            'refreshToken': result['refreshToken'],
+            'user': result['user'],
+          },
+        );
       } else {
         setState(() {
           _isLoading = false;
-          _error = ref.read(otpProvider).error ?? 'Invalid code. Please try again.';
+          _error =
+              ref.read(otpProvider).error ?? 'Invalid code. Please try again.';
         });
         // Clear input on error
         for (var c in _controllers) c.clear();
@@ -136,14 +150,22 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
               const SizedBox(height: 24),
               Icon(icon, size: 56, color: AppColors.primary),
               const SizedBox(height: 24),
-              Text('Enter Verification Code',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary)),
+              Text(
+                'Enter Verification Code',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
               const SizedBox(height: 10),
               Text(
                 'We sent a 6-digit code via $methodName to\n$maskedTarget',
-                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary,
-                    height: 1.5),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 36),
@@ -153,15 +175,19 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: List.generate(6, (i) {
                   return SizedBox(
-                    width: 48, height: 60,
+                    width: 48,
+                    height: 60,
                     child: TextField(
                       controller: _controllers[i],
                       focusNode: _focusNodes[i],
                       textAlign: TextAlign.center,
                       maxLength: 1,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                       decoration: InputDecoration(
                         counterText: '',
                         filled: true,
@@ -171,17 +197,21 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                           borderSide: BorderSide(
                             color: _error != null
                                 ? AppColors.error
-                                : AppColors.textHint.withValues(alpha: 0.3)),
+                                : AppColors.textHint.withValues(alpha: 0.3),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                              color: AppColors.textHint.withValues(alpha: 0.3)),
+                            color: AppColors.textHint.withValues(alpha: 0.3),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                              color: AppColors.primary, width: 2),
+                            color: AppColors.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
                       onChanged: (v) => _onChanged(i, v),
@@ -192,17 +222,21 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
               const SizedBox(height: 16),
 
               if (_error != null) ...[
-                Text(_error!,
-                    style: const TextStyle(color: AppColors.error, fontSize: 13),
-                    textAlign: TextAlign.center),
+                Text(
+                  _error!,
+                  style: const TextStyle(color: AppColors.error, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 12),
               ],
 
               if (_isLoading) ...[
                 const CircularProgressIndicator(),
                 const SizedBox(height: 8),
-                const Text('Verifying...',
-                    style: TextStyle(fontSize: 13, color: AppColors.textHint)),
+                const Text(
+                  'Verifying...',
+                  style: TextStyle(fontSize: 13, color: AppColors.textHint),
+                ),
               ],
 
               const SizedBox(height: 24),
@@ -215,7 +249,10 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                     _secondsLeft > 0
                         ? 'Resend in ${_secondsLeft}s'
                         : 'Didn\'t receive it?',
-                    style: const TextStyle(fontSize: 13, color: AppColors.textHint),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textHint,
+                    ),
                   ),
                   if (_secondsLeft == 0) ...[
                     const SizedBox(width: 6),
@@ -227,9 +264,14 @@ class _OtpVerifyScreenState extends ConsumerState<OtpVerifyScreen> {
                         });
                         _sendOtp();
                       },
-                      child: const Text('Resend',
-                          style: TextStyle(fontSize: 13, color: AppColors.primary,
-                              fontWeight: FontWeight.w600)),
+                      child: const Text(
+                        'Resend',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ],
