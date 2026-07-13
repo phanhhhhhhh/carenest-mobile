@@ -4,14 +4,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import '../../elderly/presentation/providers/medication_provider.dart';
 
-/// Singleton service that schedules local push-notification reminders
-/// for medication doses using [flutter_local_notifications].
-///
-/// Usage:
-/// ```dart
-/// await MedicationReminderService.instance.initialize();
-/// MedicationReminderService.instance.scheduleFrom(medications);
-/// ```
 class MedicationReminderService {
   static final MedicationReminderService instance =
       MedicationReminderService._();
@@ -22,16 +14,17 @@ class MedicationReminderService {
 
   bool _initialized = false;
 
-  /// Call once at app startup (after WidgetsFlutterBinding).
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
 
     tz_data.initializeTimeZones();
 
-    if (kIsWeb) return; // zonedSchedule not supported on web
+    if (kIsWeb) return;
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -39,21 +32,13 @@ class MedicationReminderService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
+      const InitializationSettings(android: androidSettings, iOS: iosSettings),
     );
   }
 
-  /// Schedule a daily repeating notification for every given medication time.
-  ///
-  /// Each notification id is derived from [MedicationItem.id.hashCode] plus
-  /// the time-slot index so the same medication can have multiple daily times.
   void scheduleFrom(List<MedicationItem> medications) {
     if (kIsWeb) return;
 
-    // Cancel all existing scheduled notifications first to avoid duplicates
     _plugin.cancelAll();
 
     for (final med in medications) {
@@ -81,7 +66,6 @@ class MedicationReminderService {
       minute,
     );
 
-    // If the time already passed today, schedule for tomorrow
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }
@@ -109,21 +93,67 @@ class MedicationReminderService {
         ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time, // repeats daily
+      matchDateTimeComponents: DateTimeComponents.time,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: 'type=MEDICATION_REMINDER&medicationId=${med.id}',
     );
   }
 
-  /// Remove all scheduled notifications for a single medication.
   void cancelForMedication(String medicationId) {
     if (kIsWeb) return;
     final hash = medicationId.hashCode.abs();
-    // Each medication can have up to ~10 time slots; cancel the range
     for (var slot = 0; slot < 20; slot++) {
       _plugin.cancel(hash * 100 + slot);
     }
+  }
+
+  Future<bool> snoozeOneOff(MedicationItem med, {int minutes = 10}) async {
+    if (kIsWeb) return false;
+    if (!_initialized) await initialize();
+
+    final fireAt = tz.TZDateTime.now(tz.local).add(Duration(minutes: minutes));
+    final id = _snoozeNotificationId(med);
+
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        '💊 Nhắc lại: ${med.name}',
+        '${med.dosage}${med.instructions != null ? ' — ${med.instructions}' : ''} · đã hoãn $minutes phút',
+        fireAt,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'carenest_medication_snooze',
+            'Medication Snooze Reminders',
+            channelDescription: 'One-off reminders after snoozing a dose',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'type=MEDICATION_SNOOZE&medicationId=${med.id}',
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void cancelSnooze(MedicationItem med) {
+    if (kIsWeb) return;
+    _plugin.cancel(_snoozeNotificationId(med));
+  }
+
+  int _snoozeNotificationId(MedicationItem med) {
+    return 900000 + (med.id.hashCode.abs() % 90000);
   }
 
   int _notificationId(MedicationItem med, int slot) {
