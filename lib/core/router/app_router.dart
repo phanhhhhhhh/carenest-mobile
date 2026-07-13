@@ -1,8 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import '../auth/token_notifier.dart';
 import '../navigation/elderly_shell.dart';
 import '../navigation/family_shell.dart';
 import '../storage/secure_storage.dart';
+import '../network/dio_client.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/phone_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -95,6 +98,15 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final email = state.extra as String? ?? '';
         return VerifyEmailPromptScreen(email: email);
+      },
+    ),
+
+    // Email verification deep link (from email link)
+    GoRoute(
+      path: '/verify-email',
+      builder: (context, state) {
+        final token = state.uri.queryParameters['token'] ?? '';
+        return _VerifyEmailScreen(token: token);
       },
     ),
 
@@ -275,3 +287,134 @@ final appRouter = GoRouter(
     ),
   ],
 );
+
+// ────────────────────────────────────────────────────────────────────────────
+// Auto-verification screen for email deep link
+// ────────────────────────────────────────────────────────────────────────────
+
+class _VerifyEmailScreen extends StatefulWidget {
+  final String token;
+  const _VerifyEmailScreen({required this.token});
+
+  @override
+  State<_VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+}
+
+class _VerifyEmailScreenState extends State<_VerifyEmailScreen> {
+  bool _loading = true;
+  String? _error;
+  bool _success = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _verify();
+  }
+
+  Future<void> _verify() async {
+    try {
+      final dio = DioClient.create();
+      await dio.post('/auth/verify-email', data: {'token': widget.token});
+      setState(() {
+        _loading = false;
+        _success = true;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = e is DioException
+            ? ((e.response?.data is Map
+                    ? ((e.response!.data['error'] ?? e.response!.data['message'])?.toString())
+                    : null) ??
+                'Invalid or expired verification link')
+            : 'Verification failed';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_loading) ...[
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 24),
+                  const Text('Verifying your email...',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF666666))),
+                ] else if (_success) ...[
+                  Container(
+                    width: 80, height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withAlpha(25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check_circle,
+                        color: Color(0xFF4CAF50), size: 48),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Email Verified!',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333))),
+                  const SizedBox(height: 12),
+                  const Text('Your account is now active.',
+                      style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity, height: 52,
+                    child: ElevatedButton(
+                      onPressed: () => context.go('/phone'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Go to Sign In',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ] else ...[
+                  Container(
+                    width: 80, height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE53935).withAlpha(25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.error_outline,
+                        color: Color(0xFFE53935), size: 48),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(_error ?? 'Verification failed',
+                      style: const TextStyle(fontSize: 14, color: Color(0xFFE53935)),
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: 40),
+                  SizedBox(
+                    width: double.infinity, height: 52,
+                    child: ElevatedButton(
+                      onPressed: () => context.go('/phone'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: const Text('Go to Sign In',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
