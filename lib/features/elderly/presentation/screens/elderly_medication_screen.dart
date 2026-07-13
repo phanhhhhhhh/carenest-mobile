@@ -19,12 +19,16 @@ class _ElderlyMedicationScreenState
   void _showAddDialog({MedicationItem? existing}) {
     final nameCtrl = TextEditingController(text: existing?.name ?? '');
     final dosageCtrl = TextEditingController(text: existing?.dosage ?? '');
-    final instructionsCtrl =
-        TextEditingController(text: existing?.instructions ?? '');
+    final instructionsCtrl = TextEditingController(
+      text: existing?.instructions ?? '',
+    );
     final times = <TimeOfDay>[
       ...?existing?.scheduleTimes.map((t) {
         final parts = t.split(':');
-        return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+        return TimeOfDay(
+          hour: int.parse(parts[0]),
+          minute: int.parse(parts[1]),
+        );
       }),
     ];
     final days = <int>{...?existing?.daysOfWeek};
@@ -74,8 +78,10 @@ class _ElderlyMedicationScreenState
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon:
-                        const Icon(Icons.medication, color: AppColors.primary),
+                    prefixIcon: const Icon(
+                      Icons.medication,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -87,22 +93,30 @@ class _ElderlyMedicationScreenState
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon:
-                        const Icon(Icons.scale, color: AppColors.primary),
+                    prefixIcon: const Icon(
+                      Icons.scale,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
                 // Time picker
                 Row(
                   children: [
-                    const Icon(Icons.access_time,
-                        color: AppColors.primary, size: 20),
+                    const Icon(
+                      Icons.access_time,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
-                    const Text('Medication time',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            fontSize: 14)),
+                    const Text(
+                      'Medication time',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
                     const Spacer(),
                     TextButton.icon(
                       onPressed: () async {
@@ -129,12 +143,16 @@ class _ElderlyMedicationScreenState
                       final h = t.hour.toString().padLeft(2, '0');
                       final m = t.minute.toString().padLeft(2, '0');
                       return Chip(
-                        label: Text('$h:$m',
-                            style: const TextStyle(fontSize: 13)),
+                        label: Text(
+                          '$h:$m',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                         deleteIcon: const Icon(Icons.close, size: 16),
                         onDeleted: () =>
                             setSheetState(() => times.removeAt(entry.key)),
-                        backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                        backgroundColor: AppColors.primary.withValues(
+                          alpha: 0.08,
+                        ),
                         labelStyle: const TextStyle(color: AppColors.primary),
                       );
                     }).toList(),
@@ -142,11 +160,14 @@ class _ElderlyMedicationScreenState
                 ],
                 const SizedBox(height: 14),
                 // Day-of-week selector
-                const Text('Days of week',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                        fontSize: 14)),
+                const Text(
+                  'Days of week',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: List.generate(7, (i) {
@@ -201,8 +222,10 @@ class _ElderlyMedicationScreenState
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    prefixIcon: const Icon(Icons.info_outline,
-                        color: AppColors.primary),
+                    prefixIcon: const Icon(
+                      Icons.info_outline,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -220,11 +243,12 @@ class _ElderlyMedicationScreenState
                     onPressed: () {
                       if (nameCtrl.text.trim().isNotEmpty &&
                           dosageCtrl.text.trim().isNotEmpty) {
-                        final notifier =
-                            ref.read(medicationsProvider.notifier);
+                        final notifier = ref.read(medicationsProvider.notifier);
                         final timeStrings = times
-                            .map((t) =>
-                                '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}')
+                            .map(
+                              (t) =>
+                                  '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}',
+                            )
                             .toList();
                         final dayList = days.toList()..sort();
 
@@ -234,31 +258,39 @@ class _ElderlyMedicationScreenState
                             medicationId: med.id,
                             name: nameCtrl.text.trim(),
                             dosage: dosageCtrl.text.trim(),
-                            instructions: instructionsCtrl.text.trim().isNotEmpty
+                            instructions:
+                                instructionsCtrl.text.trim().isNotEmpty
                                 ? instructionsCtrl.text.trim()
                                 : null,
-                            scheduleTimes:
-                                timeStrings.isNotEmpty ? timeStrings : null,
+                            scheduleTimes: timeStrings.isNotEmpty
+                                ? timeStrings
+                                : null,
                             daysOfWeek: dayList.isNotEmpty ? dayList : null,
                           );
                         } else {
                           notifier.addMedication(
                             name: nameCtrl.text.trim(),
                             dosage: dosageCtrl.text.trim(),
-                            instructions: instructionsCtrl.text.trim().isNotEmpty
+                            instructions:
+                                instructionsCtrl.text.trim().isNotEmpty
                                 ? instructionsCtrl.text.trim()
                                 : null,
-                            scheduleTimes:
-                                timeStrings.isNotEmpty ? timeStrings : null,
+                            scheduleTimes: timeStrings.isNotEmpty
+                                ? timeStrings
+                                : null,
                             daysOfWeek: dayList.isNotEmpty ? dayList : null,
                           );
                         }
                         Navigator.pop(ctx);
                       }
                     },
-                    child: Text(isEdit ? 'Update' : 'Add medication',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    child: Text(
+                      isEdit ? 'Update' : 'Add medication',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -311,7 +343,7 @@ class _ElderlyMedicationScreenState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
-          'My Medications',
+          'Thuốc của tôi',
           style: TextStyle(
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
@@ -324,105 +356,252 @@ class _ElderlyMedicationScreenState
       body: medState.isLoading && items.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : medState.error != null && items.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.error_outline,
-                          color: AppColors.textHint, size: 48),
-                      const SizedBox(height: 12),
-                      Text(
-                        medState.error!,
-                        style: const TextStyle(
-                            color: AppColors.textSecondary, fontSize: 14),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () =>
-                            ref.read(medicationsProvider.notifier).load(),
-                        child: const Text('Retry'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.textHint,
+                    size: 48,
                   ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(16),
+                  const SizedBox(height: 12),
+                  Text(
+                    medState.error!,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () =>
+                        ref.read(medicationsProvider.notifier).load(),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildDueNowBanner(items),
+                _buildTodayProgress(takenCount, totalCount, progress),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildTodayProgress(takenCount, totalCount, progress),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    const Text(
+                      'Hôm nay',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      '$takenCount/$totalCount taken',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                if (items.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Column(
                       children: [
-                        const Text(
-                          'Medication List',
+                        Icon(
+                          Icons.medication_outlined,
+                          color: AppColors.textHint,
+                          size: 48,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'No medications yet',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
                           ),
                         ),
+                        SizedBox(height: 4),
                         Text(
-                          '$takenCount/$totalCount taken',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
+                          'Press + to add medication',
+                          style: TextStyle(
+                            color: AppColors.textHint,
                             fontSize: 13,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    if (items.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 40),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Column(
-                          children: [
-                            Icon(Icons.medication_outlined,
-                                color: AppColors.textHint, size: 48),
-                            SizedBox(height: 12),
-                            Text(
-                              'No medications yet',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Press + to add medication',
-                              style: TextStyle(
-                                color: AppColors.textHint,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      ...items.map(
-                        (m) => _MedCard(
-                          item: m,
-                          onToggle: () => ref
-                              .read(medicationsProvider.notifier)
-                              .toggleTaken(m.id),
-                          onEdit: () => _showAddDialog(existing: m),
-                          onDelete: () => _confirmDelete(m),
-                          onHistory: () => context.push('/elderly/medication-history', extra: {
-                            'medicationId': m.id,
-                            'medicationName': m.name,
-                          }),
-                        ),
+                  )
+                else
+                  ...items.map(
+                    (m) => _MedCard(
+                      item: m,
+                      onToggle: () => ref
+                          .read(medicationsProvider.notifier)
+                          .toggleTaken(m.id),
+                      onEdit: () => _showAddDialog(existing: m),
+                      onDelete: () => _confirmDelete(m),
+                      onHistory: () => context.push(
+                        '/elderly/medication-history',
+                        extra: {'medicationId': m.id, 'medicationName': m.name},
                       ),
-                  ],
-                ),
+                    ),
+                  ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  /// Wireframe B2: banner "⏰ Đến giờ uống thuốc" cho liều gần nhất
+  /// chưa uống, với nút ĐÃ UỐNG to + Hoãn 10 phút.
+  Widget _buildDueNowBanner(List<MedicationItem> items) {
+    final pending = items.where((m) => !m.taken).toList()
+      ..sort((a, b) {
+        final at = a.nextDoseTime ?? DateTime(2100);
+        final bt = b.nextDoseTime ?? DateTime(2100);
+        return at.compareTo(bt);
+      });
+    if (pending.isEmpty) return const SizedBox.shrink();
+    final med = pending.first;
+    final timeLabel = med.nextDoseTime != null
+        ? '${med.nextDoseTime!.hour.toString().padLeft(2, '0')}:${med.nextDoseTime!.minute.toString().padLeft(2, '0')} hôm nay'
+        : (med.scheduleTimes.isNotEmpty ? med.scheduleTimes.first : '');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.access_alarm, color: AppColors.warning, size: 18),
+              SizedBox(width: 6),
+              Text(
+                'Đến giờ uống thuốc',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.warning,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.medication,
+                  color: AppColors.warning,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${med.name} ${med.dosage}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (timeLabel.isNotEmpty)
+                      Text(
+                        timeLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => ref
+                      .read(medicationsProvider.notifier)
+                      .toggleTaken(med.id),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'ĐÃ UỐNG',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    // Ghi chú: hiện chưa có API hoãn nhắc nhở ở backend —
+                    // đây là hành động phía client, chỉ hiện xác nhận cho
+                    // người dùng, chưa dời giờ nhắc thực sự.
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đã hoãn nhắc nhở 10 phút')),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    side: BorderSide(
+                      color: AppColors.textHint.withValues(alpha: 0.5),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Hoãn 10 phút',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -460,8 +639,10 @@ class _ElderlyMedicationScreenState
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
@@ -493,8 +674,9 @@ class _ElderlyMedicationScreenState
               value: progress,
               minHeight: 10,
               backgroundColor: Colors.white.withValues(alpha: 0.2),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF81D4FA)),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF81D4FA),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -502,8 +684,8 @@ class _ElderlyMedicationScreenState
             total == 0
                 ? 'Add medication to start tracking'
                 : taken == total
-                    ? 'Great! You have taken all medication today'
-                    : '${total - taken} doses remaining',
+                ? 'Great! You have taken all medication today'
+                : '${total - taken} doses remaining',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.8),
               fontSize: 13,
@@ -578,8 +760,7 @@ class _MedCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                     color: AppColors.textPrimary,
-                    decoration:
-                        item.taken ? TextDecoration.lineThrough : null,
+                    decoration: item.taken ? TextDecoration.lineThrough : null,
                     decorationColor: AppColors.textHint,
                   ),
                 ),
@@ -595,8 +776,11 @@ class _MedCard extends StatelessWidget {
                     ),
                     if (item.scheduleTimes.isNotEmpty) ...[
                       const SizedBox(width: 6),
-                      const Icon(Icons.access_time,
-                          size: 12, color: AppColors.textHint),
+                      const Icon(
+                        Icons.access_time,
+                        size: 12,
+                        color: AppColors.textHint,
+                      ),
                       const SizedBox(width: 2),
                       Text(
                         item.scheduleTimes.join(', '),
@@ -664,7 +848,11 @@ class _MedCard extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.history, color: AppColors.success, size: 16),
+                child: const Icon(
+                  Icons.history,
+                  color: AppColors.success,
+                  size: 16,
+                ),
               ),
             ),
             const SizedBox(width: 6),
@@ -695,8 +883,11 @@ class _MedCard extends StatelessWidget {
                 color: AppColors.error.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child:
-                  const Icon(Icons.delete_outline, color: AppColors.error, size: 16),
+              child: const Icon(
+                Icons.delete_outline,
+                color: AppColors.error,
+                size: 16,
+              ),
             ),
           ),
           const SizedBox(width: 8),

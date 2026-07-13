@@ -7,6 +7,7 @@ import '../providers/medication_provider.dart';
 import '../providers/health_metric_provider.dart';
 import '../../../family/presentation/providers/emergency_event_provider.dart';
 import '../../../family/presentation/providers/appointment_provider.dart';
+import '../../../family/presentation/providers/camera_provider.dart';
 import '../../../notifications/presentation/providers/notification_provider.dart';
 import 'package:go_router/go_router.dart';
 
@@ -87,11 +88,19 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            icon: const Icon(Icons.check_circle, color: AppColors.success, size: 56),
-            title: const Text('SOS Sent',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            icon: const Icon(
+              Icons.check_circle,
+              color: AppColors.success,
+              size: 56,
+            ),
+            title: const Text(
+              'SOS Sent',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             content: const Text(
               'Emergency signal has been sent. All family members have been notified.',
               textAlign: TextAlign.center,
@@ -103,7 +112,9 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Got it'),
@@ -115,7 +126,9 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Cannot send SOS. Please call your family directly in case of emergency!'),
+            content: Text(
+              'Cannot send SOS. Please call your family directly in case of emergency!',
+            ),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 5),
           ),
@@ -125,7 +138,9 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Cannot send SOS. Please call your family directly in case of emergency!'),
+            content: Text(
+              'Cannot send SOS. Please call your family directly in case of emergency!',
+            ),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 5),
           ),
@@ -139,8 +154,9 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final profileName = ref.watch(elderlyProfileProvider).profile?.name;
-    final displayName =
-        (profileName != null && profileName.isNotEmpty) ? profileName : _name;
+    final displayName = (profileName != null && profileName.isNotEmpty)
+        ? profileName
+        : _name;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -153,6 +169,10 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               _buildHeader(displayName),
               const SizedBox(height: 28),
               _buildSosButton(),
+              const SizedBox(height: 24),
+              _buildNextMedicationCard(),
+              const SizedBox(height: 20),
+              _buildCameraStatusCard(),
               const SizedBox(height: 28),
               _buildHealthSummary(),
               const SizedBox(height: 28),
@@ -193,41 +213,47 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
             ],
           ),
         ),
-        Builder(builder: (context) {
-          final notifState = ref.watch(notificationProvider);
-          final unread = notifState.unreadCount;
-          return Stack(
-            children: [
-              IconButton(
-                onPressed: () => context.push('/notifications'),
-                icon: const Icon(Icons.notifications_outlined,
-                    color: AppColors.textPrimary, size: 26),
-              ),
-              if (unread > 0)
-                Positioned(
-                  right: 6,
-                  top: 6,
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$unread',
-                        style: const TextStyle(
+        Builder(
+          builder: (context) {
+            final notifState = ref.watch(notificationProvider);
+            final unread = notifState.unreadCount;
+            return Stack(
+              children: [
+                IconButton(
+                  onPressed: () => context.push('/notifications'),
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: AppColors.textPrimary,
+                    size: 26,
+                  ),
+                ),
+                if (unread > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      width: 18,
+                      height: 18,
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$unread',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          );
-        }),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -275,10 +301,7 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
               icon: const Icon(Icons.close, color: AppColors.textSecondary),
               label: const Text(
                 'Cancel',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               ),
             ),
           ] else ...[
@@ -326,12 +349,170 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
             const SizedBox(height: 14),
             const Text(
               'Press and hold 3 seconds to send emergency signal',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// Wireframe B1: "Thuốc tiếp theo · giờ" — chỉ hiển thị 1 liều gần nhất
+  /// với nút "ĐÃ UỐNG" to, dễ bấm cho người cao tuổi.
+  Widget _buildNextMedicationCard() {
+    final medsState = ref.watch(medicationsProvider);
+    final items = List.of(medsState.items)
+      ..sort((a, b) {
+        if (a.taken != b.taken) return a.taken ? 1 : -1;
+        final at = a.nextDoseTime ?? DateTime(2100);
+        final bt = b.nextDoseTime ?? DateTime(2100);
+        return at.compareTo(bt);
+      });
+    if (items.isEmpty) return const SizedBox.shrink();
+    final med = items.first;
+    final timeLabel = med.nextDoseTime != null
+        ? '${med.nextDoseTime!.hour.toString().padLeft(2, '0')}:${med.nextDoseTime!.minute.toString().padLeft(2, '0')}'
+        : (med.scheduleTimes.isNotEmpty ? med.scheduleTimes.first : '');
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: med.taken
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.warning.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: (med.taken ? AppColors.success : AppColors.warning)
+                  .withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Icons.medication,
+              color: med.taken ? AppColors.success : AppColors.warning,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  timeLabel.isNotEmpty
+                      ? 'Thuốc tiếp theo · $timeLabel'
+                      : 'Thuốc tiếp theo',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${med.name} ${med.dosage}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: med.taken
+                ? null
+                : () => ref
+                      .read(medicationsProvider.notifier)
+                      .toggleTaken(med.id),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: med.taken
+                  ? AppColors.textHint
+                  : AppColors.success,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              med.taken ? 'Đã uống ✓' : 'ĐÃ UỐNG',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Wireframe B1: trạng thái camera (đang bật/tắt) + nút gọi cho con.
+  Widget _buildCameraStatusCard() {
+    final elderlyId = _elderlyId;
+    if (elderlyId == null) return const SizedBox.shrink();
+    final camState = ref.watch(cameraProvider(elderlyId));
+    final isOn = camState.status.hasCamera && camState.status.allOnline;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: isOn ? AppColors.success : AppColors.textHint,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isOn ? 'Camera đang bật' : 'Camera chưa bật',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  isOn ? 'Con đang xem được' : 'Chưa có ai theo dõi',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/elderly/emergency-contacts'),
+            icon: const Icon(Icons.phone, size: 16),
+            label: const Text('Gọi cho con'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -463,8 +644,11 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
             ),
             child: const Column(
               children: [
-                Icon(Icons.medication_outlined,
-                    color: AppColors.textHint, size: 36),
+                Icon(
+                  Icons.medication_outlined,
+                  color: AppColors.textHint,
+                  size: 36,
+                ),
                 SizedBox(height: 8),
                 Text(
                   'No medications yet',
@@ -541,19 +725,23 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
                   Text(
                     'No appointments',
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 13),
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
             ),
           )
         else
-          ...upcoming.map((apt) => _AppointmentTile(
-                doctor: apt.doctor,
-                specialty: apt.specialty,
-                date: apt.appointmentDate,
-                onTap: () => context.push('/elderly/appointments'),
-              )),
+          ...upcoming.map(
+            (apt) => _AppointmentTile(
+              doctor: apt.doctor,
+              specialty: apt.specialty,
+              date: apt.appointmentDate,
+              onTap: () => context.push('/elderly/appointments'),
+            ),
+          ),
       ],
     );
   }
@@ -561,8 +749,13 @@ class _ElderlyHomeScreenState extends ConsumerState<ElderlyHomeScreen> {
   String _formatDate() {
     final now = DateTime.now();
     const days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
     ];
     return '${days[now.weekday - 1]}, ${now.day}/${now.month}/${now.year}';
   }
@@ -662,9 +855,7 @@ class _MedicationTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.textHint.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.textHint.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -765,8 +956,18 @@ class _AppointmentTile extends StatelessWidget {
     final timeStr =
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
 
     return GestureDetector(
