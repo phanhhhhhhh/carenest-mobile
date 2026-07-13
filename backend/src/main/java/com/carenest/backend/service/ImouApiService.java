@@ -10,12 +10,6 @@ import org.springframework.web.client.RestClient;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Low-level REST client for Imou Open Platform API.
- * Handles device binding, live streaming, snapshots, and two-way audio.
- *
- * Imou API docs: https://open.imoulife.com
- */
 @Slf4j
 @Service
 public class ImouApiService {
@@ -42,37 +36,25 @@ public class ImouApiService {
             && appSecret != null && !appSecret.isBlank();
     }
 
-    /**
-     * UC-26: Bind a camera device to the application account.
-     */
     public Map<String, Object> bindDevice(String deviceSn, String accessToken) {
         Map<String, Object> params = Map.of("deviceId", deviceSn);
         return callImouApi("bindDevice", params, accessToken);
     }
 
-    /**
-     * UC-26: Unbind a camera device.
-     */
     public Map<String, Object> unbindDevice(String deviceSn, String accessToken) {
         Map<String, Object> params = Map.of("deviceId", deviceSn);
         return callImouApi("unBindDevice", params, accessToken);
     }
 
-    /**
-     * UC-27: Get live stream URL for a camera.
-     */
     public Map<String, Object> getLiveStreamUrl(String deviceSn, String accessToken) {
         Map<String, Object> params = Map.of(
             "deviceId", deviceSn,
             "channelId", "0",
-            "streamType", "0"  // 0=main stream, 1=sub stream
+            "streamType", "0"
         );
         return callImouApi("getLiveStreamInfo", params, accessToken);
     }
 
-    /**
-     * UC-28: Capture a snapshot from the camera.
-     */
     public Map<String, Object> captureSnapshot(String deviceSn, String accessToken) {
         Map<String, Object> params = Map.of(
             "deviceId", deviceSn,
@@ -81,9 +63,6 @@ public class ImouApiService {
         return callImouApi("captureCameraSnapshot", params, accessToken);
     }
 
-    /**
-     * UC-31: Open two-way audio channel.
-     */
     public Map<String, Object> startTwoWayAudio(String deviceSn, String accessToken) {
         Map<String, Object> params = Map.of(
             "deviceId", deviceSn,
@@ -92,9 +71,6 @@ public class ImouApiService {
         return callImouApi("startTwoWayAudio", params, accessToken);
     }
 
-    /**
-     * UC-31: Close two-way audio channel.
-     */
     public Map<String, Object> stopTwoWayAudio(String deviceSn, String accessToken) {
         Map<String, Object> params = Map.of(
             "deviceId", deviceSn,
@@ -103,9 +79,6 @@ public class ImouApiService {
         return callImouApi("stopTwoWayAudio", params, accessToken);
     }
 
-    /**
-     * UC-32: Set privacy mode (disable video streaming).
-     */
     public Map<String, Object> setPrivacyMode(String deviceSn, boolean enabled, String accessToken) {
         Map<String, Object> params = Map.of(
             "deviceId", deviceSn,
@@ -114,17 +87,11 @@ public class ImouApiService {
         return callImouApi("setPrivacyMode", params, accessToken);
     }
 
-    /**
-     * UC-33: Get device connection status.
-     */
     public Map<String, Object> getDeviceStatus(String deviceSn, String accessToken) {
         Map<String, Object> params = Map.of("deviceId", deviceSn);
         return callImouApi("getDeviceStatus", params, accessToken);
     }
 
-    /**
-     * UC-30: Query motion detection events.
-     */
     public Map<String, Object> getMotionEvents(String deviceSn, String beginTime, String endTime, String accessToken) {
         Map<String, Object> params = Map.of(
             "deviceId", deviceSn,
@@ -136,9 +103,16 @@ public class ImouApiService {
         return callImouApi("getMotionDetectEvents", params, accessToken);
     }
 
-    /**
-     * Get an access token for API calls.
-     */
+    public Map<String, Object> controlPtz(String deviceSn, String direction, String accessToken) {
+        Map<String, Object> params = Map.of(
+            "deviceId", deviceSn,
+            "channelId", "0",
+            "operation", direction.toUpperCase(),
+            "duration", "1000"
+        );
+        return callImouApi("ptzControl", params, accessToken);
+    }
+
     public String getAccessToken() {
         if (!isConfigured()) {
             log.warn("Imou API not configured");
@@ -148,8 +122,6 @@ public class ImouApiService {
         Map<String, Object> result = callImouApi("getAccessToken", params, null);
         return result != null ? (String) result.get("accessToken") : null;
     }
-
-    // ── Private ──────────────────────────────────────────────────────────────
 
     private Map<String, Object> callImouApi(String method, Map<String, Object> params, String accessToken) {
         if (!isConfigured()) {
@@ -182,7 +154,6 @@ public class ImouApiService {
                 return Map.of("error", msg, "code", code);
             }
 
-            // Return result data
             JsonNode data = json.path("result").path("data");
             if (data.isMissingNode()) {
                 return Map.of("success", true);
