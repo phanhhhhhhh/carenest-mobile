@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/utils/dio_utils.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../medication/services/medication_reminder_service.dart';
 
 class MedicationLogEntry {
   final String id;
@@ -44,7 +45,9 @@ class MedicationItem {
     this.daysOfWeek = const [],
     this.taken = false,
   });
-  factory MedicationItem.fromJson(Map<String, dynamic> j) => MedicationItem(
+  factory MedicationItem.fromJson(Map<String, dynamic> j) {
+    final schedule = j['schedule'] as Map<String, dynamic>?;
+    return MedicationItem(
         id: j['id'].toString(),
         name: j['name'] as String,
         dosage: j['dosage'] as String,
@@ -52,15 +55,17 @@ class MedicationItem {
         nextDoseTime: j['nextDoseTime'] != null
             ? DateTime.tryParse(j['nextDoseTime'] as String)
             : null,
-        scheduleTimes: (j['scheduleTimes'] as List<dynamic>?)
+        scheduleTimes: (schedule?['times'] as List<dynamic>?)
                 ?.map((e) => e.toString())
                 .toList() ??
             [],
-        daysOfWeek: (j['daysOfWeek'] as List<dynamic>?)
+        daysOfWeek: (schedule?['daysOfWeek'] as List<dynamic>?)
                 ?.map((e) => (e as num).toInt())
                 .toList() ??
             [],
       );
+  }
+
   MedicationItem copyWith({
     bool? taken,
     String? name,
@@ -129,6 +134,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
           .map((e) => MedicationItem.fromJson(e))
           .toList();
       state = state.copyWith(isLoading: false, items: items);
+      MedicationReminderService.instance.scheduleFrom(items);
     } on DioException catch (e) {
       state = state.copyWith(
           isLoading: false, error: 'Error loading medication: ${e.message}');
@@ -152,9 +158,11 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
         'dosage': dosage,
         'instructions': instructions,
         if (scheduleTimes != null && scheduleTimes.isNotEmpty)
-          'scheduleTimes': scheduleTimes,
-        if (daysOfWeek != null && daysOfWeek.isNotEmpty)
-          'daysOfWeek': daysOfWeek,
+          'schedule': {
+            'times': scheduleTimes,
+            if (daysOfWeek != null && daysOfWeek.isNotEmpty)
+              'daysOfWeek': daysOfWeek,
+          },
       });
       await load();
     } on DioException catch (e) {
@@ -175,8 +183,10 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
       if (name != null) data['name'] = name;
       if (dosage != null) data['dosage'] = dosage;
       if (instructions != null) data['instructions'] = instructions;
-      if (scheduleTimes != null) data['scheduleTimes'] = scheduleTimes;
-      if (daysOfWeek != null) data['daysOfWeek'] = daysOfWeek;
+      if (scheduleTimes != null) {
+        data['schedule'] = {'times': scheduleTimes};
+        if (daysOfWeek != null) data['schedule']['daysOfWeek'] = daysOfWeek;
+      }
       await _dio.patch('/medications/$medicationId', data: data);
       await load();
     } on DioException catch (e) {
@@ -223,6 +233,7 @@ class MedicationListNotifier extends StateNotifier<MedicationListState> {
 
     try {
       await _dio.post('/medications/$medicationId/logs', data: {
+        'medicationId': int.tryParse(medicationId),
         'status': newTaken ? 'TAKEN' : 'MISSED',
         'takenAt': DateTime.now().toIso8601String(),
       });

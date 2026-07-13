@@ -70,7 +70,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
           children: [
             CircleAvatar(
               radius: 50,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
               child: const Icon(Icons.person,
                   size: 56, color: AppColors.primary),
             ),
@@ -115,8 +115,8 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: _role == 'ELDERLY'
-                ? AppColors.primary.withOpacity(0.1)
-                : AppColors.secondary.withOpacity(0.1),
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : AppColors.secondary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -145,7 +145,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -252,9 +252,9 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: tagColor.withOpacity(0.1),
+            color: tagColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: tagColor.withOpacity(0.3)),
+            border: Border.all(color: tagColor.withValues(alpha: 0.3)),
           ),
           child: Text(
             c,
@@ -287,9 +287,9 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.08),
+                color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
               ),
               child: Text(
                 a,
@@ -317,7 +317,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -365,7 +365,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
                     radius: 22,
-                    backgroundColor: AppColors.secondary.withOpacity(0.1),
+                    backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
                     child: const Icon(Icons.person,
                         color: AppColors.secondary, size: 24),
                   ),
@@ -395,45 +395,42 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         Icons.edit,
         'Edit Profile',
         AppColors.primary,
-        AppColors.primary.withOpacity(0.08),
+        AppColors.primary.withValues(alpha: 0.08),
         () => context.go('/elderly/edit-profile'),
       ),
       (
         Icons.contact_emergency,
         'Emergency Contacts',
         AppColors.sosPrimary,
-        AppColors.sosPrimary.withOpacity(0.08),
+        AppColors.sosPrimary.withValues(alpha: 0.08),
         () => context.go('/elderly/emergency-contacts'),
       ),
       (
         Icons.notifications_outlined,
         'Notification Settings',
         AppColors.secondary,
-        AppColors.secondary.withOpacity(0.08),
-        () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Feature under development')),
-          );
-        }
+        AppColors.secondary.withValues(alpha: 0.08),
+        () => context.go('/notification-settings'),
       ),
       (
         Icons.workspace_premium_outlined,
         'Upgrade to Premium',
         AppColors.warning,
-        AppColors.warning.withOpacity(0.08),
-        () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Feature under development')),
-          );
-        }
+        AppColors.warning.withValues(alpha: 0.08),
+        () => context.go('/premium-plans'),
+      ),
+      (
+        Icons.lock_outline,
+        'Set PIN Lock',
+        AppColors.primary,
+        AppColors.primary.withValues(alpha: 0.08),
+        () => context.go('/pin-setup'),
       ),
       (
         Icons.help_outline,
         'Help & Support',
         AppColors.textSecondary,
-        AppColors.textHint.withOpacity(0.08),
+        AppColors.textHint.withValues(alpha: 0.08),
         () {}
       ),
     ];
@@ -444,7 +441,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -484,7 +481,7 @@ class _ElderlyProfileScreenState extends ConsumerState<ElderlyProfileScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.08),
+                color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.logout,

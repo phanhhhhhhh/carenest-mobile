@@ -4,6 +4,9 @@ import com.carenest.backend.dto.user.FcmTokenRequest;
 import com.carenest.backend.dto.user.NotificationPreferencesRequest;
 import com.carenest.backend.dto.user.NotificationPreferencesResponse;
 import com.carenest.backend.entity.NotificationPreferences;
+import com.carenest.backend.entity.User;
+import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.repository.UserRepository;
 import com.carenest.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,21 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
+
+    // ── Phone Lookup (for family link) ──────────────────────────────────────
+
+    @GetMapping("/users/by-phone/{phone}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> findByPhone(@PathVariable String phone) {
+        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
+            .orElseThrow(() -> new NotFoundException("User not found with phone: " + phone));
+        return ResponseEntity.ok(Map.of(
+            "id", user.getId(),
+            "name", user.getName(),
+            "role", user.getRole().name()
+        ));
+    }
 
     // ── Notification Preferences ──────────────────────────────────────────
 

@@ -55,6 +55,8 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             children: [
               _buildHeader(),
               const SizedBox(height: 24),
+              if (data != null && data.linkedElderly.length > 1)
+                _buildElderlySelector(data),
               _buildElderlyCard(data),
               const SizedBox(height: 20),
               _buildSummaryGrid(data, data?.elderlyId),
@@ -126,6 +128,69 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
     );
   }
 
+  Widget _buildElderlySelector(FamilyDashboardData data) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: data.linkedElderly.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final elder = data.linkedElderly[index];
+            final isSelected = index == data.selectedIndex;
+            return GestureDetector(
+              onTap: () {
+                ref
+                    .read(familyDashboardProvider.notifier)
+                    .selectElderly(index);
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textHint.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.elderly,
+                      size: 16,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      elder.elderlyName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildElderlyCard(dynamic data) {
     final hasElderly = data?.elderlyName != null && data!.elderlyName!.isNotEmpty;
 
@@ -140,7 +205,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -155,7 +220,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.elderly, color: Colors.white, size: 28),
@@ -190,7 +255,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
                 decoration: BoxDecoration(
                   color: hasElderly ? AppColors.success : AppColors.textHint,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                 ),
               ),
             ],
@@ -205,7 +270,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -260,7 +325,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             _SummaryCard(
               icon: Icons.medication,
               iconColor: AppColors.primary,
-              iconBgColor: AppColors.primary.withOpacity(0.08),
+              iconBgColor: AppColors.primary.withValues(alpha: 0.08),
               label: 'Meds',
               value: '$totalMeds',
               subtitle: 'taking',
@@ -445,7 +510,7 @@ class _FamilyDashboardScreenState extends ConsumerState<FamilyDashboardScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -508,7 +573,7 @@ class _SummaryCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -590,7 +655,7 @@ class _AppointmentPreviewCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -602,7 +667,7 @@ class _AppointmentPreviewCard extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -681,7 +746,7 @@ class _ActivityItem extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.08),
+            color: iconColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: iconColor, size: 20),

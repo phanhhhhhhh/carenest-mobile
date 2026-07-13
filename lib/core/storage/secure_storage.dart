@@ -8,6 +8,7 @@ class SecureStorage {
   static const _nameKey = 'user_name';
   static const _phoneKey = 'user_phone';
   static const _userIdKey = 'user_id';
+  static const _emailKey = 'user_email';
 
   static Future<void> saveToken(String token) =>
       _storage.write(key: _tokenKey, value: token);
@@ -39,6 +40,11 @@ class SecureStorage {
       _storage.write(key: _userIdKey, value: userId);
 
   static Future<String?> getUserId() => _storage.read(key: _userIdKey);
+
+  static Future<void> saveEmail(String email) =>
+      _storage.write(key: _emailKey, value: email);
+
+  static Future<String?> getEmail() => _storage.read(key: _emailKey);
 
   static Future<void> clearAll() => _storage.deleteAll();
 }
