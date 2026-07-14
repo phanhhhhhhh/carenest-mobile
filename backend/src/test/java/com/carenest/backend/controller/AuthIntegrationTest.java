@@ -30,6 +30,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Auth integration tests — updated for RN migration.
+ *
+ * Register: phone/email + password (no longer uses Firebase token).
+ * Login: supports phone + password, email + password, OR legacy firebaseToken.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("itest")
@@ -43,17 +49,28 @@ class AuthIntegrationTest {
     private static final String TEST_JWT_SECRET =
             "carenest-test-secret-key-for-testing-only-min-32-chars";
 
+    private static int phoneSuffix = 0;
+
+    private static synchronized String nextPhone() {
+        phoneSuffix++;
+        return String.format("+849000%05d", phoneSuffix);
+    }
+
     @BeforeEach
     void cleanDatabase() {
         jdbcTemplate.execute("DELETE FROM refresh_tokens");
         jdbcTemplate.execute("DELETE FROM users");
     }
 
-    private MvcResult doRegister(String firebaseToken, String name, UserRole role) throws Exception {
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    private MvcResult doRegister(String phone, String name, UserRole role) throws Exception {
         RegisterRequest req = new RegisterRequest();
-        req.setFirebaseToken(firebaseToken);
+        req.setPhone(phone);
         req.setName(name);
         req.setRole(role);
+        req.setPassword("Test@1234");
+        req.setConfirmPassword("Test@1234");
         return mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -75,14 +92,16 @@ class AuthIntegrationTest {
         return objectMapper.readTree(body).get("refreshToken").asText();
     }
 
+    // ── Register (phone + password) ──────────────────────────────────
+
     @Test
     void registerElderly_success() throws Exception {
-        when(firebaseService.verifyAndGetPhone("token-elderly")).thenReturn("+84900000001");
-
         RegisterRequest req = new RegisterRequest();
-        req.setFirebaseToken("token-elderly");
+        req.setPhone(nextPhone());
         req.setName("Nguyen Van A");
         req.setRole(UserRole.ELDERLY);
+        req.setPassword("Test@1234");
+        req.setConfirmPassword("Test@1234");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -94,12 +113,12 @@ class AuthIntegrationTest {
 
     @Test
     void registerFamily_success() throws Exception {
-        when(firebaseService.verifyAndGetPhone("token-family")).thenReturn("+84900000010");
-
         RegisterRequest req = new RegisterRequest();
-        req.setFirebaseToken("token-family");
+        req.setPhone(nextPhone());
         req.setName("Tran Thi B");
         req.setRole(UserRole.FAMILY);
+        req.setPassword("Test@1234");
+        req.setConfirmPassword("Test@1234");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -110,16 +129,34 @@ class AuthIntegrationTest {
     }
 
     @Test
-    void registerDuplicate_returns409() throws Exception {
-        when(firebaseService.verifyAndGetPhone("token-dup")).thenReturn("+84900000002");
+    void registerWithEmail_success() throws Exception {
+        RegisterRequest req = new RegisterRequest();
+        req.setEmail("testuser@carenest.dev");
+        req.setName("Email User");
+        req.setRole(UserRole.ELDERLY);
+        req.setPassword("Test@1234");
+        req.setConfirmPassword("Test@1234");
 
-        MvcResult first = doRegister("token-dup", "Phan C", UserRole.ELDERLY);
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
+    }
+
+    @Test
+    void registerDuplicatePhone_returns409() throws Exception {
+        String phone = nextPhone();
+
+        MvcResult first = doRegister(phone, "Phan C", UserRole.ELDERLY);
         assertEquals(201, first.getResponse().getStatus(), "first register must return 201");
 
         RegisterRequest req = new RegisterRequest();
-        req.setFirebaseToken("token-dup");
+        req.setPhone(phone);
         req.setName("Phan C Clone");
         req.setRole(UserRole.ELDERLY);
+        req.setPassword("Test@9999");
+        req.setConfirmPassword("Test@9999");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,13 +165,45 @@ class AuthIntegrationTest {
     }
 
     @Test
-    void login_success() throws Exception {
-        when(firebaseService.verifyAndGetPhone("token-login")).thenReturn("+84900000003");
+    void registerPasswordMismatch_returns400() throws Exception {
+        RegisterRequest req = new RegisterRequest();
+        req.setPhone(nextPhone());
+        req.setName("Mismatch User");
+        req.setRole(UserRole.ELDERLY);
+        req.setPassword("Test@1234");
+        req.setConfirmPassword("Different@5678");
 
-        doRegister("token-login", "Le D", UserRole.ELDERLY);
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void registerWeakPassword_returns400() throws Exception {
+        RegisterRequest req = new RegisterRequest();
+        req.setPhone(nextPhone());
+        req.setName("Weak Pass");
+        req.setRole(UserRole.ELDERLY);
+        req.setPassword("12345678");   // no uppercase, no lowercase mix
+        req.setConfirmPassword("12345678");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ── Login (phone + password) ─────────────────────────────────────
+
+    @Test
+    void loginWithPhone_success() throws Exception {
+        String phone = nextPhone();
+        doRegister(phone, "Le D", UserRole.ELDERLY);
 
         LoginRequest loginReq = new LoginRequest();
-        loginReq.setFirebaseToken("token-login");
+        loginReq.setPhone(phone);
+        loginReq.setPassword("Test@1234");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -142,6 +211,63 @@ class AuthIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+    }
+
+    @Test
+    void loginWithEmail_success() throws Exception {
+        RegisterRequest regReq = new RegisterRequest();
+        regReq.setEmail("login-test@carenest.dev");
+        regReq.setName("Email Login");
+        regReq.setRole(UserRole.FAMILY);
+        regReq.setPassword("Test@1234");
+        regReq.setConfirmPassword("Test@1234");
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(regReq)))
+                .andExpect(status().isCreated());
+
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setEmail("login-test@carenest.dev");
+        loginReq.setPassword("Test@1234");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
+    }
+
+    @Test
+    void loginWrongPassword_returns401() throws Exception {
+        String phone = nextPhone();
+        doRegister(phone, "Wrong Pass", UserRole.ELDERLY);
+
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setPhone(phone);
+        loginReq.setPassword("WrongPassword@1");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginReq)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ── Login (legacy firebaseToken) ─────────────────────────────────
+
+    @Test
+    void loginWithFirebaseToken_success() throws Exception {
+        when(firebaseService.verifyAndGetPhone("token-login-fb")).thenReturn(nextPhone());
+
+        doRegister(nextPhone(), "FB User", UserRole.ELDERLY);
+
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setFirebaseToken("token-login-fb");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
     @Test
@@ -158,11 +284,12 @@ class AuthIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ── Token refresh ────────────────────────────────────────────────
+
     @Test
     void refresh_success_issuesNewTokens() throws Exception {
-        when(firebaseService.verifyAndGetPhone("token-refresh")).thenReturn("+84900000004");
-
-        String refreshToken = extractRefreshToken(doRegister("token-refresh", "Hoang E", UserRole.ELDERLY));
+        String phone = nextPhone();
+        String refreshToken = extractRefreshToken(doRegister(phone, "Hoang E", UserRole.ELDERLY));
 
         RefreshRequest refreshReq = new RefreshRequest();
         refreshReq.setRefreshToken(refreshToken);
@@ -177,9 +304,8 @@ class AuthIntegrationTest {
 
     @Test
     void refreshOldTokenAfterRotation_returns401() throws Exception {
-        when(firebaseService.verifyAndGetPhone("token-rotation")).thenReturn("+84900000005");
-
-        String originalRefreshToken = extractRefreshToken(doRegister("token-rotation", "Vo F", UserRole.ELDERLY));
+        String phone = nextPhone();
+        String originalRefreshToken = extractRefreshToken(doRegister(phone, "Vo F", UserRole.ELDERLY));
 
         RefreshRequest firstRefreshReq = new RefreshRequest();
         firstRefreshReq.setRefreshToken(originalRefreshToken);
@@ -195,6 +321,8 @@ class AuthIntegrationTest {
                         .content(objectMapper.writeValueAsString(secondRefreshReq)))
                 .andExpect(status().isUnauthorized());
     }
+
+    // ── Authorization guards ─────────────────────────────────────────
 
     @Test
     void protectedEndpoint_withoutToken_returns401() throws Exception {
