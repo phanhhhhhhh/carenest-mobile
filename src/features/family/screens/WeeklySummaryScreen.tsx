@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   statMiniValue: { fontSize: 15, fontWeight: '700' },
   statMiniLabel: { color: Colors.textHint, fontSize: 11 },
 
-  divider: { height: 1, backgroundColor: '#F0F0F0' },
+  divider: { height: 1, backgroundColor: Colors.divider },
   cardContent: { color: Colors.textSecondary, fontSize: 14, lineHeight: 22 },
 
   fab: {

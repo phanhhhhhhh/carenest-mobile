@@ -13,7 +13,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
@@ -32,6 +31,7 @@ export default function OtpVerifyScreen() {
 
   // ── Verify OTP ─────────────────────────────────────────────────
   const verifyOtpAction = useAuthStore((s) => s.verifyOtp);
+  const sendOtpAction = useAuthStore((s) => s.sendOtp);
 
   const verifyOtp = useCallback(async (otpCode: string) => {
     if (otpCode.length !== OTP_LENGTH) return;
@@ -99,13 +99,13 @@ export default function OtpVerifyScreen() {
 
   // ── Resend ────────────────────────────────────────────────────
   const handleResend = useCallback(async () => {
-    try {
-      await api.post('/auth/send-otp', { target, method });
+    const ok = await sendOtpAction(target, method);
+    if (ok) {
       Alert.alert('Code Sent', 'A new verification code has been sent.');
-    } catch {
+    } else {
       Alert.alert('Error', 'Could not resend code. Please try again.');
     }
-  }, [target, method]);
+  }, [target, method, sendOtpAction]);
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
     textAlign: 'center',
     fontSize: 22,
     fontWeight: '700',

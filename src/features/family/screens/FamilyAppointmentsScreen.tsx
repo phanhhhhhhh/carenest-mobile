@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: Colors.divider,
   },
   tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   tabText: { fontSize: 14, fontWeight: '600', color: Colors.textHint },
@@ -743,7 +743,7 @@ const styles = StyleSheet.create({
   infoRowText: { color: Colors.textSecondary, fontSize: 13, marginLeft: 8 },
   notesBox: { width: '100%', padding: 10, backgroundColor: Colors.background, borderRadius: 10 },
   notesText: { color: Colors.textSecondary, fontSize: 13, fontStyle: 'italic' },
-  divider: { height: 1, backgroundColor: '#F0F0F0' },
+  divider: { height: 1, backgroundColor: Colors.divider },
   actionsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   actionsGroup: { flexDirection: 'row' },
   actionChip: {

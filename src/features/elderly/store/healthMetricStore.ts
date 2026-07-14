@@ -1,6 +1,7 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import api from '../../../core/api/client';
 import type { HealthMetric } from '../../../shared/types';
+import { getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 
 /**
  * Port of Flutter's health_metric_provider.dart (HealthMetricNotifier).
@@ -27,21 +28,6 @@ interface HealthMetricState {
 }
 
 type HealthMetricStoreHook = UseBoundStore<StoreApi<HealthMetricState>>;
-
-// ── Helpers ──────────────────────────────────────────────────────
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
-
-function asListOfMaps(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) {
-    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
-  }
-  return [];
-}
 
 function parseMetric(j: Record<string, unknown>): HealthMetric {
   const rawValue = j.value;
@@ -119,11 +105,11 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
 }
 
 /** Get (or lazily create) the health metric store for a given elderlyId. */
-export function useHealthMetricStore(elderlyId: string): HealthMetricState {
+export function useHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
   let hook = stores.get(elderlyId);
   if (!hook) {
     hook = createHealthMetricStore(elderlyId);
     stores.set(elderlyId, hook);
   }
-  return hook();
+  return hook;
 }

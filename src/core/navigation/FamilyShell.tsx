@@ -8,6 +8,8 @@ import FamilyHealthScreen from '../../features/family/screens/FamilyHealthScreen
 import FamilyAlertsScreen from '../../features/family/screens/FamilyAlertsScreen';
 import FamilyProfileScreen from '../../features/family/screens/FamilyProfileScreen';
 
+// Note: would add a typed param list here (e.g. `createBottomTabNavigator<FamilyTabParamList>()`)
+// but the nested tab params aren't modeled yet — see RootStackParamList.
 const Tab = createBottomTabNavigator();
 
 export default function FamilyShell() {

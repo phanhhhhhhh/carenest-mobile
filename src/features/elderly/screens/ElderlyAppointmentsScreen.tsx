@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: Colors.divider,
   },
   tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   tabText: { fontSize: 14, fontWeight: '600', color: Colors.textHint },

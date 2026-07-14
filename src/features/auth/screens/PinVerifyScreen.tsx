@@ -2,7 +2,6 @@ import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
 import { useAuthStore } from '../store/authStore';
 
 export default function PinVerifyScreen() {
@@ -35,23 +34,21 @@ export default function PinVerifyScreen() {
     }
   };
 
+  const verifyPinAction = useAuthStore((s) => s.verifyPin);
+
   const verifyPin = async (pinStr: string) => {
     setLoading(true);
-    try {
-      const res = await api.post('/auth/verify-pin', { pin: pinStr });
-      // Backend returns { valid: boolean } — a 200 with valid:false is
-      // still a wrong PIN (Flutter parity).
-      if (res.data?.valid !== true) throw new Error('invalid pin');
+    const result = await verifyPinAction(pinStr);
+    if (result.valid) {
       // Shells are only registered when authenticated — flip the flag and
       // AppNavigator mounts the correct role shell automatically.
       useAuthStore.getState().completeLogin();
-    } catch {
+    } else {
       Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect. Please try again.');
       setPin(['', '', '', '']);
       inputs.current[0]?.focus();
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
@@ -125,7 +122,7 @@ const styles = StyleSheet.create({
     height: 68,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
     textAlign: 'center',
     fontSize: 28,
     fontWeight: '700',
