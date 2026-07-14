@@ -19,6 +19,16 @@ export const Colors = {
   sosPrimary: '#D32F2F',
   sosLight: '#FFEBEE',
 
+  // Onboarding gradients (from Miro designs)
+  onboardSplashStart: '#FF8A80',
+  onboardSplashEnd: '#FFAB91',
+  onboardHealthStart: '#4FC3F7',
+  onboardHealthEnd: '#29B6F6',
+  onboardMedStart: '#81D4FA',
+  onboardMedEnd: '#4FC3F7',
+  onboardFamilyStart: '#7E57C2',
+  onboardFamilyEnd: '#5C6BC0',
+
   socialBorder: '#DADCE0',
   socialGoogle: '#4285F4',
   socialFacebook: '#1877F2',
