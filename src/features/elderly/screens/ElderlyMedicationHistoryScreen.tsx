@@ -11,15 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useMedicationStore } from '../store/medicationStore';
 import type { MedicationLogEntry } from '../../../shared/types';
-
-// TODO(routing): 'ElderlyMedicationHistory' route + params
-// { medicationId: string; medicationName: string } needs to be registered in
-// RootStackParamList by the navigation owner. Using a loose route type here
-// until that lands.
-type HistoryRouteParams = { medicationId: string; medicationName: string };
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -42,8 +38,8 @@ function pad2(n: number): string {
 }
 
 export default function ElderlyMedicationHistoryScreen() {
-  const route = useRoute();
-  const { medicationId, medicationName } = (route.params ?? {}) as HistoryRouteParams;
+  const route = useRoute<RouteProp<RootStackParamList, 'ElderlyMedicationHistory'>>();
+  const { medicationId, medicationName } = route.params;
 
   const logs = useMedicationStore((s) => s.logs);
   const isLoadingStore = useMedicationStore((s) => s.isLoading);

@@ -13,9 +13,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import * as storage from '../../../core/storage/secureStorage';
-import api from '../../../core/api/client';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore, useFamilyLinkStore } from '../store/familyStore';
 
@@ -46,7 +46,7 @@ import { useFamilyDashboardStore, useFamilyLinkStore } from '../store/familyStor
  *   matching the pattern used by HealthThresholdScreen.tsx.
  */
 
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FamilyProfileScreen() {
   const navigation = useNavigation<Nav>();
@@ -66,6 +66,7 @@ export default function FamilyProfileScreen() {
   const linkIsLoading = useFamilyLinkStore((s) => s.isLoading);
   const linkError = useFamilyLinkStore((s) => s.error);
   const sendLinkRequest = useFamilyLinkStore((s) => s.sendLinkRequest);
+  const lookupUserByPhone = useFamilyLinkStore((s) => s.lookupUserByPhone);
 
   useEffect(() => {
     (async () => {
@@ -91,19 +92,13 @@ export default function FamilyProfileScreen() {
     const rawPhone = phoneInput.trim();
     if (!rawPhone) return;
 
-    let elderlyId: string | null = null;
-    try {
-      let normalized = rawPhone;
-      if (normalized.startsWith('0')) {
-        normalized = `+84${normalized.substring(1)}`;
-      } else if (!normalized.startsWith('+')) {
-        normalized = `+84${normalized}`;
-      }
-      const lookupResp = await api.get(`/users/by-phone/${normalized}`);
-      elderlyId = lookupResp.data?.id != null ? String(lookupResp.data.id) : null;
-    } catch {
-      // lookup failed
+    let normalized = rawPhone;
+    if (normalized.startsWith('0')) {
+      normalized = `+84${normalized.substring(1)}`;
+    } else if (!normalized.startsWith('+')) {
+      normalized = `+84${normalized}`;
     }
+    const elderlyId = await lookupUserByPhone(normalized);
 
     if (elderlyId == null) {
       Alert.alert('', 'No user found with that phone number');
@@ -389,7 +384,7 @@ const styles = StyleSheet.create({
   },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardHeaderTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  divider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 12 },
+  divider: { height: 1, backgroundColor: Colors.divider, marginVertical: 12 },
   elderlyRow: { flexDirection: 'row', alignItems: 'center' },
   elderlyAvatar: {
     width: 48,
@@ -448,7 +443,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   settingLabel: { flex: 1, marginLeft: 14, fontSize: 15, fontWeight: '500', color: Colors.textPrimary },
-  settingDivider: { height: 1, backgroundColor: '#F0F0F0', marginLeft: 72 },
+  settingDivider: { height: 1, backgroundColor: Colors.divider, marginLeft: 72 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

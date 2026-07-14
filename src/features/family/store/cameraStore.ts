@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
+import { getStatus, getErrorMessage } from '../../../core/api/errors';
 
 /**
  * Port of Flutter's camera_provider.dart (CameraNotifier).
@@ -116,20 +117,6 @@ interface CameraState {
   refresh: (elderlyId: string) => void;
 }
 
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
-
 export const useCameraStore = create<CameraState>((set, get) => ({
   isLoading: false,
   error: null,
@@ -222,7 +209,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       await get().load(elderlyId);
       set({ isProcessing: false });
       return url.length > 0 ? url : null;
-    } catch {
+    } catch (e) {
+      console.warn('[cameraStore.captureSosSnapshot]', e);
       set({ isProcessing: false });
       return null;
     }
@@ -233,7 +221,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       await api.post(`/cameras/${deviceId}/voice/start`);
       set({ voiceActive: true });
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[cameraStore.startVoiceCall]', e);
       return false;
     }
   },
@@ -243,7 +232,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       await api.post(`/cameras/${deviceId}/voice/stop`);
       set({ voiceActive: false });
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[cameraStore.stopVoiceCall]', e);
       return false;
     }
   },
@@ -253,7 +243,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       await api.post(`/cameras/${deviceId}/privacy`, { enabled });
       await get().load(elderlyId);
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[cameraStore.setPrivacyMode]', e);
       return false;
     }
   },
@@ -263,7 +254,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       await api.put(`/cameras/${deviceId}/motion-detection`, { enabled });
       await get().load(elderlyId);
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[cameraStore.toggleMotionDetection]', e);
       return false;
     }
   },
@@ -273,7 +265,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       const resp = await api.post(`/cameras/${deviceId}/ptz`, { direction });
       const status = resp.data && typeof resp.data === 'object' ? (resp.data as Record<string, unknown>).status : null;
       return status === 'OK';
-    } catch {
+    } catch (e) {
+      console.warn('[cameraStore.controlPtz]', e);
       return false;
     }
   },
