@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
+import { getStatus, getErrorMessage } from '../../../core/api/errors';
 
 /**
  * Port of Flutter's health_threshold_provider.dart (ThresholdNotifier).
@@ -135,20 +136,6 @@ interface ThresholdState {
   getRecommendations: (elderlyId: string) => Promise<RecommendData[] | null>;
   clearRecommendations: () => void;
   findFor: (metricType: string) => ThresholdItem | null;
-}
-
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
 }
 
 export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({

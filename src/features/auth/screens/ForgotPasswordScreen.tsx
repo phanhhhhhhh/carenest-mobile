@@ -13,8 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
+import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -24,6 +24,7 @@ export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const forgotPassword = useAuthStore((s) => s.forgotPassword);
 
   const handleSend = async () => {
     if (!email.trim()) {
@@ -32,19 +33,13 @@ export default function ForgotPasswordScreen() {
     }
 
     setLoading(true);
-    try {
-      await api.post('/auth/forgot-password', { email: email.trim() });
+    const result = await forgotPassword(email.trim());
+    if (result.success) {
       setSent(true);
-    } catch (error: unknown) {
-      const message =
-        error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: { message?: string } } }).response?.data
-              ?.message
-          : undefined;
-      Alert.alert('Error', message || 'Could not send reset email. Please try again.');
-    } finally {
-      setLoading(false);
+    } else {
+      Alert.alert('Error', result.error || 'Could not send reset email. Please try again.');
     }
+    setLoading(false);
   };
 
   return (
@@ -111,27 +106,27 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
-  scroll: { padding: 24, flexGrow: 1 },
-  backBtn: { marginBottom: 24 },
-  backText: { fontSize: 16, color: Colors.textSecondary },
-  title: { fontSize: 28, fontWeight: '800', color: Colors.textPrimary, marginBottom: 8 },
-  subtitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 24, lineHeight: 20 },
-  inputWrap: { marginBottom: 24 },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
+  scroll: { padding: Spacing.xxl, flexGrow: 1 },
+  backBtn: { marginBottom: Spacing.xxl },
+  backText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
+  title: { fontSize: Typography.h1.fontSize, fontWeight: '800', color: Colors.textPrimary, marginBottom: Spacing.sm },
+  subtitle: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, marginBottom: Spacing.xxl, lineHeight: 20 },
+  inputWrap: { marginBottom: Spacing.xxl },
+  label: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
   input: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     padding: 14,
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
   },
-  btn: { backgroundColor: Colors.primary, borderRadius: 14, padding: 16, alignItems: 'center' },
+  btn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, padding: Spacing.lg, alignItems: 'center' },
   btnDisabled: { opacity: 0.6 },
-  btnText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  btnText: { color: 'white', fontSize: Typography.button.fontSize, fontWeight: '700' },
   successWrap: { alignItems: 'center', marginTop: 60 },
   successIcon: { fontSize: 56, marginBottom: 20 },
   successTitle: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center' },
-  successSub: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  successSub: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
 });

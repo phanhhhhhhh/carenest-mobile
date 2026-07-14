@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import {
@@ -61,15 +62,9 @@ import {
  *   either. The actual stream URL (fetched on-demand via "Live View") is
  *   surfaced via `liveStreamUrl` state; see the `// TODO: video rendering`
  *   comment below.
- * - This screen has no navigation route registered yet in
- *   RootStackParamList (navigation files are off-limits for this port), so
- *   `useNavigation` is typed loosely, matching ElderlyEditProfileScreen.tsx /
- *   HealthThresholdScreen.tsx for the same situation.
  */
 
-// TODO(routing): expected to be pushed as 'Camera' from the family dashboard.
-// Route needs to be registered in RootStackParamList by the navigation owner.
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CameraScreen() {
   const navigation = useNavigation<Nav>();
