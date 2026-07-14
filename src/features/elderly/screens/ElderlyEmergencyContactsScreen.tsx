@@ -13,8 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
-import { getUserId } from '../../../core/storage/secureStorage';
+import { useElderlyProfileStore } from '../store/elderlyStore';
 
 /**
  * Port of Flutter's elderly_emergency_contacts_screen.dart.
@@ -66,41 +65,17 @@ export default function ElderlyEmergencyContactsScreen() {
 
   const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
 
+  const loadEmergencyContacts = useElderlyProfileStore((s) => s.loadEmergencyContacts);
+  const updateEmergencyContacts = useElderlyProfileStore((s) => s.updateEmergencyContacts);
+
   useEffect(() => {
-    loadContacts();
-  }, []);
-
-  const loadContacts = async () => {
-    setIsLoading(true);
-    try {
-      const userId = await getUserId();
-      if (!userId) return;
-
-      const resp = await api.get(`/elderly-profiles/${userId}`);
-      const data = (resp.data && typeof resp.data === 'object' ? resp.data : {}) as Record<
-        string,
-        unknown
-      >;
-      const emergencyContacts = Array.isArray(data.emergencyContacts)
-        ? (data.emergencyContacts as unknown[])
-        : [];
-      setContacts(
-        emergencyContacts.map((c) => {
-          const contact = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
-          return {
-            id: contact.id != null ? String(contact.id) : undefined,
-            name: (contact.name as string) ?? '',
-            phone: (contact.phone as string) ?? '',
-            relationship: (contact.relationship as string) ?? '',
-          };
-        }),
-      );
-    } catch {
-      // If API fails, use empty list
-    } finally {
+    (async () => {
+      setIsLoading(true);
+      const result = await loadEmergencyContacts();
+      setContacts(result);
       setIsLoading(false);
-    }
-  };
+    })();
+  }, [loadEmergencyContacts]);
 
   const openAddDialog = () => {
     setNameInput('');
@@ -115,42 +90,45 @@ export default function ElderlyEmergencyContactsScreen() {
     const relationship = relationshipInput.trim();
     if (!name || !phone) return;
 
-    try {
-      const userId = await getUserId();
-      await api.put(`/elderly-profiles/${userId}`, {
-        emergencyContacts: [
-          ...contacts.map((c) => ({
-            ...(c.id != null ? { id: c.id } : {}),
-            name: c.name,
-            phone: c.phone,
-            relationship: c.relationship,
-          })),
-          { name, phone, relationship },
-        ],
-      });
+    const updated = [
+      ...contacts.map((c) => ({
+        ...(c.id != null ? { id: c.id } : {}),
+        name: c.name,
+        phone: c.phone,
+        relationship: c.relationship,
+      })),
+      { name, phone, relationship },
+    ];
+
+    const ok = await updateEmergencyContacts(updated);
+    if (ok) {
       setAddModalVisible(false);
-      loadContacts();
-    } catch (e) {
-      Alert.alert('Error', `Error: ${e instanceof Error ? e.message : String(e)}`);
+      const result = await loadEmergencyContacts();
+      setContacts(result);
+    } else {
+      const errMsg = useElderlyProfileStore.getState().error || 'Could not save contact';
+      Alert.alert('Error', errMsg);
     }
   };
 
   const removeContact = async (index: number) => {
     const contact = contacts[index];
-    try {
-      const userId = await getUserId();
-      const remaining = contacts
-        .filter((c) => c.id !== contact.id || c.name !== contact.name)
-        .map((c) => ({
-          ...(c.id != null ? { id: c.id } : {}),
-          name: c.name,
-          phone: c.phone,
-          relationship: c.relationship,
-        }));
-      await api.put(`/elderly-profiles/${userId}`, { emergencyContacts: remaining });
-      loadContacts();
-    } catch (e) {
-      Alert.alert('Error', `Error: ${e instanceof Error ? e.message : String(e)}`);
+    const remaining = contacts
+      .filter((c) => c.id !== contact.id || c.name !== contact.name)
+      .map((c) => ({
+        ...(c.id != null ? { id: c.id } : {}),
+        name: c.name,
+        phone: c.phone,
+        relationship: c.relationship,
+      }));
+
+    const ok = await updateEmergencyContacts(remaining);
+    if (ok) {
+      const result = await loadEmergencyContacts();
+      setContacts(result);
+    } else {
+      const errMsg = useElderlyProfileStore.getState().error || 'Could not remove contact';
+      Alert.alert('Error', errMsg);
     }
   };
 

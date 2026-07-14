@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
+import { asListOfMaps, getErrorMessage } from '../../../core/api/errors';
 import type { EmergencyEvent } from '../../../shared/types';
 
 /**
@@ -14,21 +15,6 @@ import type { EmergencyEvent } from '../../../shared/types';
  * Note: the Flutter notifier called `load()` from its constructor. Callers
  * here should invoke `load(elderlyId)` from a screen's mount effect instead.
  */
-
-// ── Helpers ──────────────────────────────────────────────────────
-function asListOfMaps(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) {
-    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
-  }
-  return [];
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
 
 function parseEmergencyEvent(j: Record<string, unknown>): EmergencyEvent {
   return {
@@ -89,7 +75,8 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
         return true;
       }
       return false;
-    } catch {
+    } catch (e) {
+      console.warn('[emergencyEventStore.createSosEvent]', e);
       return false;
     }
   },
@@ -102,7 +89,8 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       await api.patch(`/emergency-events/${eventId}/acknowledge`);
       await get().load(elderlyId);
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[emergencyEventStore.acknowledge]', e);
       return false;
     }
   },
@@ -113,7 +101,8 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       await api.patch(`/users/${userId}/emergency-events/read-all`);
       await get().load(elderlyId);
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[emergencyEventStore.markAllRead]', e);
       return false;
     }
   },

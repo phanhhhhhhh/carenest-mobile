@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
+import { getStatus, getErrorMessage } from '../../../core/api/errors';
 import type { ChatMessage } from '../../../shared/types';
 
 /**
@@ -42,20 +43,6 @@ const PAGE_SIZE = 50;
 let currentPage = 0;
 
 // ── Helpers ──────────────────────────────────────────────────────
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
-
 function parseMessage(j: Record<string, unknown>): ChatMessage {
   return {
     messageId: Number(j.messageId ?? 0),
@@ -174,8 +161,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       await api.delete('/chat/history');
       set({ messages: [], totalMessages: 0, hasMore: false });
-    } catch {
-      // Silently fail
+    } catch (e) {
+      console.warn('[chatStore.clearHistory]', e);
     }
   },
 
@@ -231,7 +218,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const resp = await api.get('/chat/voice/health');
       const data = (resp.data ?? {}) as Record<string, unknown>;
       return data.sttAvailable === true;
-    } catch {
+    } catch (e) {
+      console.warn('[chatStore.checkVoiceHealth]', e);
       return false;
     }
   },
