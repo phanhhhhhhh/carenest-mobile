@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getUserId } from '../../../core/storage/secureStorage';
 import type { MedicationItem, MedicationLogEntry } from '../../../shared/types';
+import { getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 import { scheduleFrom } from '../../medication/services/medicationReminderService';
 
 /**
@@ -43,21 +44,6 @@ interface MedicationListState {
     medicationId: string,
     onError?: (error: string) => void,
   ) => Promise<boolean>;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
-
-function asListOfMaps(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) {
-    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
-  }
-  return [];
 }
 
 function parseMedicationItem(j: Record<string, unknown>): MedicationItem {
@@ -160,7 +146,8 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       await api.delete(`/medications/${medicationId}`);
       await get().load();
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[medicationStore.deleteMedication]', e);
       return false;
     }
   },
