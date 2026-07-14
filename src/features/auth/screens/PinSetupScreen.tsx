@@ -23,7 +23,6 @@ const PIN_LENGTH = 4;
 
 export default function PinSetupScreen() {
   const navigation = useNavigation<Nav>();
-  const user = useAuthStore((s) => s.user);
 
   const [pin, setPin] = useState<string[]>(Array(PIN_LENGTH).fill(''));
   const [step, setStep] = useState<'setup' | 'confirm'>('setup');
@@ -97,11 +96,9 @@ export default function PinSetupScreen() {
       setLoading(true);
       try {
         await api.post('/auth/setup-pin', { pin: finalPin, confirmPin: finalPin });
-        const role = user?.role || 'ELDERLY';
-        navigation.reset({
-          index: 0,
-          routes: [{ name: role === 'ELDERLY' ? 'ElderlyShell' : 'FamilyShell' }],
-        });
+        // Shells are only registered when authenticated — flip the flag and
+        // AppNavigator mounts the correct role shell automatically.
+        useAuthStore.getState().completeLogin();
       } catch {
         Alert.alert('Error', 'Could not set up PIN. Please try again.', [
           { text: 'OK', onPress: clearPin },
