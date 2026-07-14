@@ -21,7 +21,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function PhoneScreen() {
   const navigation = useNavigation<Nav>();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [usePhone, setUsePhone] = useState(false);
@@ -38,12 +38,17 @@ export default function PhoneScreen() {
       return;
     }
 
-    const ok = await login(
+    const result = await login(
       usePhone ? { phone, password } : { email, password },
     );
 
-    if (!ok) {
-      Alert.alert('Login Failed', error || 'Invalid credentials. Please try again.');
+    if (result.type === 'needsVerification') {
+      // Email not verified yet — send user to the verify-email prompt (Flutter parity)
+      navigation.navigate('VerifyEmailPrompt', { email: result.email });
+      return;
+    }
+    if (result.type === 'error') {
+      Alert.alert('Login Failed', result.message || 'Invalid credentials. Please try again.');
     }
   };
 
