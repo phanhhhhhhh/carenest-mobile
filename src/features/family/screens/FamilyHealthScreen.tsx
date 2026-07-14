@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useHealthThresholdStore } from '../store/healthThresholdStore';
@@ -77,7 +78,7 @@ function formatTime(iso: string): string {
   return `${dt.getDate()}/${dt.getMonth() + 1}`;
 }
 
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FamilyHealthScreen() {
   const navigation = useNavigation<Nav>();
@@ -129,12 +130,16 @@ function HealthBody({
   period: 'week' | 'month';
   setPeriod: (p: 'week' | 'month') => void;
 }) {
-  const healthState = useHealthMetricStore(elderlyId);
+  const healthStore = useHealthMetricStore(elderlyId);
+  const healthIsLoading = healthStore((s) => s.isLoading);
+  const healthError = healthStore((s) => s.error);
+  const latestByType = healthStore((s) => s.latestByType);
+  const healthMetrics = healthStore((s) => s.metrics);
   const findFor = useHealthThresholdStore((s) => s.findFor);
   const loadThresholds = useHealthThresholdStore((s) => s.load);
 
   useEffect(() => {
-    healthState.load();
+    healthStore.getState().load();
     loadThresholds(elderlyId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
@@ -172,10 +177,10 @@ function HealthBody({
 
   const onSelectPeriod = (p: 'week' | 'month') => {
     setPeriod(p);
-    healthState.loadPeriod(p);
+    healthStore.getState().loadPeriod(p);
   };
 
-  if (healthState.isLoading && Object.keys(healthState.latestByType).length === 0) {
+  if (healthIsLoading && Object.keys(latestByType).length === 0) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={Colors.primary} />
@@ -183,14 +188,14 @@ function HealthBody({
     );
   }
 
-  if (healthState.error && Object.keys(healthState.latestByType).length === 0) {
+  if (healthError && Object.keys(latestByType).length === 0) {
     return (
       <View style={styles.center}>
         <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
         <View style={{ height: 16 }} />
-        <Text style={styles.errorText}>{healthState.error}</Text>
+        <Text style={styles.errorText}>{healthError}</Text>
         <View style={{ height: 16 }} />
-        <TouchableOpacity style={styles.retryButton} onPress={() => healthState.load()}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => healthStore.getState().load()}>
           <Ionicons name="refresh" size={18} color="#FFFFFF" />
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
@@ -198,7 +203,7 @@ function HealthBody({
     );
   }
 
-  if (Object.keys(healthState.latestByType).length === 0) {
+  if (Object.keys(latestByType).length === 0) {
     return (
       <View style={styles.center}>
         <Ionicons name="fitness" size={56} color={Colors.textHint} />
@@ -214,7 +219,7 @@ function HealthBody({
       refreshControl={
         <RefreshControl
           refreshing={false}
-          onRefresh={() => healthState.load()}
+          onRefresh={() => healthStore.getState().load()}
           colors={[Colors.primary]}
           tintColor={Colors.primary}
         />
@@ -228,9 +233,9 @@ function HealthBody({
       <View style={{ height: 16 }} />
 
       {METRIC_ORDER.map((type) => {
-        const latest = healthState.latestByType[type];
+        const latest = latestByType[type];
         if (!latest) return null;
-        const all = healthState.metrics.filter((m) => m.type === type);
+        const all = healthMetrics.filter((m) => m.type === type);
         return (
           <View key={type}>
             <MetricSection type={type} latest={latest} all={all} status={deriveStatus(type, latest)} />

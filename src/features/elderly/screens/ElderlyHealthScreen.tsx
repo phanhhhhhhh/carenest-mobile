@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { getUserId } from '../../../core/storage/secureStorage';
@@ -38,7 +39,7 @@ import type { HealthMetric } from '../../../shared/types';
  *   ElderlyEditProfileScreen.tsx (no bottom-sheet dependency available).
  */
 
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 interface MetricConfig {
   label: string;
@@ -126,11 +127,15 @@ export default function ElderlyHealthScreen() {
   const [valueInput, setValueInput] = useState('');
   const [fitSheetVisible, setFitSheetVisible] = useState(false);
 
-  const healthState = useHealthMetricStore(elderlyId);
+  const healthStore = useHealthMetricStore(elderlyId);
+  const healthIsLoading = healthStore((s) => s.isLoading);
+  const healthError = healthStore((s) => s.error);
+  const latestByTypeStore = healthStore((s) => s.latestByType);
+  const healthMetrics = healthStore((s) => s.metrics);
   const findThresholdFor = useHealthThresholdStore((s) => s.findFor);
   const loadThresholds = useHealthThresholdStore((s) => s.load);
 
-  const fitState = useGoogleFitStore(elderlyId || 'unknown');
+  const fitStore = useGoogleFitStore(elderlyId || 'unknown');
 
   useEffect(() => {
     (async () => {
@@ -142,9 +147,9 @@ export default function ElderlyHealthScreen() {
 
   useEffect(() => {
     if (elderlyId) {
-      healthState.load();
+      healthStore.getState().load();
       loadThresholds(elderlyId);
-      fitState.loadStatus();
+      fitStore.getState().loadStatus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
@@ -171,7 +176,7 @@ export default function ElderlyHealthScreen() {
   };
 
   const ruleBasedInsight = (): string => {
-    const entries = Object.entries(healthState.latestByType);
+    const entries = Object.entries(latestByTypeStore);
     const abnormal = entries.filter(([, v]) => getStatus(v) !== 'normal');
     if (abnormal.length === 0) {
       return 'All your readings today are within normal range. Keep up the healthy lifestyle!';
@@ -184,7 +189,7 @@ export default function ElderlyHealthScreen() {
     const lines: string[] = [
       'Briefly analyze the following health metrics for an elderly person (reply in English, max 3-4 sentences, friendly tone like a care assistant):',
     ];
-    for (const [type, data] of Object.entries(healthState.latestByType)) {
+    for (const [type, data] of Object.entries(latestByTypeStore)) {
       const config = METRIC_CONFIGS[type];
       if (config) {
         const display = data.valueSecondary ? `${data.value}/${data.valueSecondary}` : data.value;
@@ -200,7 +205,7 @@ export default function ElderlyHealthScreen() {
   };
 
   const loadAiInsight = async () => {
-    if (Object.keys(healthState.latestByType).length === 0) {
+    if (Object.keys(latestByTypeStore).length === 0) {
       setAiInsight(
         'Start tracking your health by adding your first reading. ' +
           'I will help you analyze trends and provide personalized advice!',
@@ -236,23 +241,23 @@ export default function ElderlyHealthScreen() {
   };
 
   useEffect(() => {
-    if (!aiLoading && aiInsight == null && Object.keys(healthState.latestByType).length > 0) {
+    if (!aiLoading && aiInsight == null && Object.keys(latestByTypeStore).length > 0) {
       loadAiInsight();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [healthState.latestByType]);
+  }, [latestByTypeStore]);
 
   const handlePeriodChange = (p: 'week' | 'month') => {
     setPeriod(p);
-    if (elderlyId) healthState.loadPeriod(p);
+    if (elderlyId) healthStore.getState().loadPeriod(p);
   };
 
   const handleGoogleFit = async () => {
     if (!elderlyId) return;
-    if (fitState.isConnected) {
+    if (fitStore.getState().isConnected) {
       setFitSheetVisible(true);
     } else {
-      const url = await fitState.connect();
+      const url = await fitStore.getState().connect();
       if (url) {
         try {
           await Linking.openURL(url);
@@ -265,13 +270,13 @@ export default function ElderlyHealthScreen() {
 
   const handleFitSync = async () => {
     setFitSheetVisible(false);
-    await fitState.syncNow();
-    healthState.load();
+    await fitStore.getState().syncNow();
+    healthStore.getState().load();
   };
 
   const handleFitDisconnect = async () => {
     setFitSheetVisible(false);
-    await fitState.disconnect();
+    await fitStore.getState().disconnect();
   };
 
   const openValueDialog = (type: string) => {
@@ -285,31 +290,31 @@ export default function ElderlyHealthScreen() {
     if (!valueDialog) return;
     const trimmed = valueInput.trim();
     if (trimmed.length === 0) return;
-    await healthState.addMetric({ type: valueDialog.type, value: trimmed, unit: valueDialog.unit });
+    await healthStore.getState().addMetric({ type: valueDialog.type, value: trimmed, unit: valueDialog.unit });
     setValueDialog(null);
   };
 
   const displayText = aiInsight ?? ruleBasedInsight();
-  const hasLatest = Object.keys(healthState.latestByType).length > 0;
+  const hasLatest = Object.keys(latestByTypeStore).length > 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
         <Text style={styles.appBarTitle}>Health Metrics</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('HealthReport' as never)}>
+        <TouchableOpacity onPress={() => navigation.navigate('HealthReport')}>
           <Ionicons name="stats-chart" size={22} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
-      {!idLoaded || (healthState.isLoading && !hasLatest) ? (
+      {!idLoaded || (healthIsLoading && !hasLatest) ? (
         <View style={styles.center}>
           <ActivityIndicator color={Colors.primary} />
         </View>
-      ) : healthState.error && !hasLatest ? (
+      ) : healthError && !hasLatest ? (
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textHint} />
-          <Text style={styles.errorText}>{healthState.error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => healthState.load()}>
+          <Text style={styles.errorText}>{healthError}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => healthStore.getState().load()}>
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -364,8 +369,8 @@ export default function ElderlyHealthScreen() {
               <Text style={styles.sectionTitle}>Latest Readings</Text>
               <View style={{ height: 14 }} />
               {METRIC_KEYS.map((key) => {
-                const data = healthState.latestByType[key];
-                const metricsForType = healthState.metrics.filter((m) => m.type === key);
+                const data = latestByTypeStore[key];
+                const metricsForType = healthMetrics.filter((m) => m.type === key);
                 return (
                   <MetricSection
                     key={key}

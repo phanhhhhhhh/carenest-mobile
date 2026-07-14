@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getUserId } from '../../../core/storage/secureStorage';
+import { getStatus, getErrorMessage } from '../../../core/api/errors';
 import type { ElderlyProfile } from '../../../shared/types';
 
 /**
@@ -13,6 +14,13 @@ import type { ElderlyProfile } from '../../../shared/types';
  */
 
 // ── Types ────────────────────────────────────────────────────────
+export interface EmergencyContact {
+  id?: string;
+  name: string;
+  phone: string;
+  relationship: string;
+}
+
 interface ElderlyProfileState {
   isLoading: boolean;
   isUpdating: boolean;
@@ -20,6 +28,8 @@ interface ElderlyProfileState {
   profile: ElderlyProfile | null;
 
   load: () => Promise<void>;
+  loadEmergencyContacts: () => Promise<EmergencyContact[]>;
+  updateEmergencyContacts: (contacts: EmergencyContact[]) => Promise<boolean>;
   updateProfile: (params: {
     name?: string;
     healthConditions?: string[];
@@ -45,20 +55,6 @@ function parseProfile(j: Record<string, unknown>): ElderlyProfile {
     allergies: Array.isArray(j.allergies) ? (j.allergies as string[]) : [],
     notes: (j.notes as string) ?? undefined,
   };
-}
-
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
 }
 
 // ── Store ────────────────────────────────────────────────────────
@@ -88,6 +84,63 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
         isLoading: false,
         error: status === 404 ? null : 'Error loading profile',
       });
+    }
+  },
+
+  loadEmergencyContacts: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const userId = await getUserId();
+      if (!userId) {
+        set({ isLoading: false, error: 'Not logged in' });
+        return [];
+      }
+      const resp = await api.get(`/elderly-profiles/${userId}`);
+      const data = (resp.data && typeof resp.data === 'object' ? resp.data : {}) as Record<
+        string,
+        unknown
+      >;
+      const emergencyContacts = Array.isArray(data.emergencyContacts)
+        ? (data.emergencyContacts as unknown[])
+        : [];
+      const contacts: EmergencyContact[] = emergencyContacts.map((c) => {
+        const contact = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
+        return {
+          id: contact.id != null ? String(contact.id) : undefined,
+          name: (contact.name as string) ?? '',
+          phone: (contact.phone as string) ?? '',
+          relationship: (contact.relationship as string) ?? '',
+        };
+      });
+      set({ isLoading: false });
+      return contacts;
+    } catch (e) {
+      set({ isLoading: false, error: `Error loading contacts: ${getErrorMessage(e)}` });
+      return [];
+    }
+  },
+
+  updateEmergencyContacts: async (contacts) => {
+    set({ isUpdating: true, error: null });
+    try {
+      const userId = await getUserId();
+      if (!userId) {
+        set({ isUpdating: false, error: 'Not logged in' });
+        return false;
+      }
+      await api.put(`/elderly-profiles/${userId}`, {
+        emergencyContacts: contacts.map((c) => ({
+          ...(c.id != null ? { id: c.id } : {}),
+          name: c.name,
+          phone: c.phone,
+          relationship: c.relationship,
+        })),
+      });
+      set({ isUpdating: false });
+      return true;
+    } catch (e) {
+      set({ isUpdating: false, error: `Update error: ${getErrorMessage(e)}` });
+      return false;
     }
   },
 

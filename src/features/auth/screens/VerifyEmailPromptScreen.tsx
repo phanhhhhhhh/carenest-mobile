@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
+import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -17,13 +17,16 @@ export default function VerifyEmailPromptScreen() {
   const route = useRoute<Route>();
   const email = route.params.email;
   const [resending, setResending] = useState(false);
+  const resendVerification = useAuthStore((s) => s.resendVerification);
 
   const handleResend = async () => {
     setResending(true);
-    try {
-      await api.post('/auth/resend-verification', { email });
+    const ok = await resendVerification(email);
+    if (ok) {
       Alert.alert('Sent', 'Verification email sent. Check your inbox.');
-    } catch { Alert.alert('Error', 'Could not resend verification email'); }
+    } else {
+      Alert.alert('Error', 'Could not resend verification email');
+    }
     setResending(false);
   };
 
