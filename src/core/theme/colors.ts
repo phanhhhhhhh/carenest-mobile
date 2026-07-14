@@ -32,4 +32,12 @@ export const Colors = {
   socialBorder: '#DADCE0',
   socialGoogle: '#4285F4',
   socialFacebook: '#1877F2',
+
+  // Shared UI tokens (centralized from scattered hardcoded values)
+  border: '#E5E7EB',
+  borderLight: '#D9DCE1',
+  divider: '#F0F0F0',
+  overlay: 'rgba(0, 0, 0, 0.4)',
+  overlayLight: 'rgba(0, 0, 0, 0.2)',
+  skeleton: '#E0E0E0',
 } as const;

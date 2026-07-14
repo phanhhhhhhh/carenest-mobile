@@ -5,7 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
+import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -18,15 +18,18 @@ export default function NewPasswordScreen() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
+  const resetPassword = useAuthStore((s) => s.resetPassword);
 
   const handleReset = async () => {
     if (!password || !confirm) { Alert.alert('Error', 'Please fill all fields'); return; }
     if (password !== confirm) { Alert.alert('Error', 'Passwords do not match'); return; }
     setLoading(true);
-    try {
-      await api.post('/auth/reset-password', { token, newPassword: password, confirmPassword: confirm });
+    const ok = await resetPassword(token, password, confirm);
+    if (ok) {
       navigation.replace('PasswordResetSuccess');
-    } catch { Alert.alert('Error', 'Could not reset password'); }
+    } else {
+      Alert.alert('Error', 'Could not reset password');
+    }
     setLoading(false);
   };
 
@@ -57,7 +60,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800', color: Colors.textPrimary },
   subtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 4, marginBottom: 24 },
   label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
-  input: { backgroundColor: Colors.surface, borderRadius: 12, padding: 14, fontSize: 15, color: Colors.textPrimary, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 16 },
+  input: { backgroundColor: Colors.surface, borderRadius: 12, padding: 14, fontSize: 15, color: Colors.textPrimary, borderWidth: 1, borderColor: Colors.border, marginBottom: 16 },
   btn: { backgroundColor: Colors.primary, borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 10 },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: 'white', fontSize: 16, fontWeight: '700' },

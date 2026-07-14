@@ -11,8 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../../core/theme/colors';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { getName, getUserId } from '../../../core/storage/secureStorage';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 import { useMedicationStore } from '../store/medicationStore';
@@ -41,7 +42,7 @@ import type { MedicationItem, AppointmentItem } from '../../../shared/types';
  *   `context.go('/elderly/medication')` route.
  */
 
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 function formatDateHeader(): string {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -84,7 +85,8 @@ export default function ElderlyHomeScreen() {
   const loadMedications = useMedicationStore((s) => s.load);
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
 
-  const healthState = useHealthMetricStore(elderlyId ?? '');
+  const healthStore = useHealthMetricStore(elderlyId ?? '');
+  const latestByType = healthStore((s) => s.latestByType);
 
   const cameraStatus = useCameraStore((s) => s.status);
   const loadCamera = useCameraStore((s) => s.load);
@@ -119,7 +121,7 @@ export default function ElderlyHomeScreen() {
 
   useEffect(() => {
     if (elderlyId) {
-      healthState.load();
+      healthStore.getState().load();
       loadCamera(elderlyId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,13 +198,13 @@ export default function ElderlyHomeScreen() {
 
   const isCameraOn = cameraStatus.hasCamera && cameraStatus.allOnline;
 
-  const bp = healthState.latestByType['BLOOD_PRESSURE'];
+  const bp = latestByType['BLOOD_PRESSURE'];
   const bloodPressure = bp
     ? `${bp.value}${bp.valueSecondary ? `/${bp.valueSecondary}` : ''}${bp.unit ? ` ${bp.unit}` : ''}`
     : undefined;
-  const bs = healthState.latestByType['BLOOD_GLUCOSE'];
+  const bs = latestByType['BLOOD_GLUCOSE'];
   const bloodSugar = bs ? `${bs.value}${bs.unit ? ` ${bs.unit}` : ''}` : undefined;
-  const hr = healthState.latestByType['HEART_RATE'];
+  const hr = latestByType['HEART_RATE'];
   const heartRate = hr ? `${hr.value}${hr.unit ? ` ${hr.unit}` : ''}` : undefined;
 
   const upcoming = upcomingAppointments().slice(0, 3);
@@ -216,7 +218,7 @@ export default function ElderlyHomeScreen() {
             <Text style={styles.greeting}>{`${greeting()}, ${displayName}!`}</Text>
             <Text style={styles.dateText}>{formatDateHeader()}</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications' as never)}>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
             <View>
               <Ionicons name="notifications-outline" size={26} color={Colors.textPrimary} />
               {unreadCount > 0 && (
@@ -274,7 +276,7 @@ export default function ElderlyHomeScreen() {
             </View>
             <TouchableOpacity
               style={styles.callButton}
-              onPress={() => navigation.navigate('ElderlyEmergencyContacts' as never)}
+              onPress={() => navigation.navigate('ElderlyEmergencyContacts')}
             >
               <Ionicons name="call" size={16} color={Colors.primary} />
               <Text style={styles.callButtonText}>Gọi cho con</Text>
@@ -319,7 +321,7 @@ export default function ElderlyHomeScreen() {
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Today's Medications</Text>
           {medItems.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate('ElderlyMeds' as never)}>
+            <TouchableOpacity onPress={() => navigation.navigate('ElderlyMeds')}>
               <Text style={styles.viewAll}>View all</Text>
             </TouchableOpacity>
           )}
@@ -344,7 +346,7 @@ export default function ElderlyHomeScreen() {
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
           {upcoming.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate('ElderlyAppointments' as never)}>
+            <TouchableOpacity onPress={() => navigation.navigate('ElderlyAppointments')}>
               <Text style={styles.viewAll}>View all</Text>
             </TouchableOpacity>
           )}
@@ -357,7 +359,7 @@ export default function ElderlyHomeScreen() {
         ) : upcoming.length === 0 ? (
           <TouchableOpacity
             style={styles.emptyCardBig}
-            onPress={() => navigation.navigate('ElderlyAppointments' as never)}
+            onPress={() => navigation.navigate('ElderlyAppointments')}
           >
             <Ionicons name="calendar-outline" size={32} color={Colors.textHint} />
             <Text style={styles.emptyTextSmall}>No appointments</Text>
@@ -367,7 +369,7 @@ export default function ElderlyHomeScreen() {
             <AppointmentTile
               key={apt.id}
               appointment={apt}
-              onPress={() => navigation.navigate('ElderlyAppointments' as never)}
+              onPress={() => navigation.navigate('ElderlyAppointments')}
             />
           ))
         )}
@@ -516,8 +518,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: 20 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  greeting: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
-  dateText: { marginTop: 4, color: Colors.textSecondary, fontSize: 14 },
+  greeting: { fontSize: Typography.h2.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  dateText: { marginTop: 4, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },
   badge: {
     position: 'absolute',
     right: -2,
@@ -529,10 +531,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  badgeText: { color: '#FFFFFF', fontSize: Typography.badge.fontSize, fontWeight: '700' },
 
   sosWrap: { alignItems: 'center' },
-  sosSendingText: { fontSize: 16, fontWeight: '600', color: Colors.sosPrimary },
+  sosSendingText: { fontSize: Typography.button.fontSize, fontWeight: '600', color: Colors.sosPrimary },
   sosRing: {
     width: 160,
     height: 160,
@@ -541,11 +543,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.sosLight,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.surface,
   },
   sosCountdownNumber: { fontSize: 48, fontWeight: '700', color: Colors.sosPrimary },
   cancelBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8 },
-  cancelText: { fontSize: 16, color: Colors.textSecondary },
+  cancelText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
   sosCircle: {
     width: 160,
     height: 160,
@@ -561,32 +563,32 @@ const styles = StyleSheet.create({
   },
   sosText: { color: '#FFFFFF', fontSize: 32, fontWeight: '700', letterSpacing: 4 },
   sosSubText: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
-  sosHint: { color: Colors.textSecondary, fontSize: 13, textAlign: 'center' },
+  sosHint: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize, textAlign: 'center' },
 
   nextMedCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    borderRadius: 18,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
   },
   nextMedIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  nextMedLabel: { fontSize: 12, color: Colors.textSecondary },
-  nextMedName: { marginTop: 2, fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  nextMedLabel: { fontSize: 12, color: Colors.textSecondary }, // 12 deliberately smaller than bodySmall
+  nextMedName: { marginTop: 2, fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
   takeBtn: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, marginLeft: 8 },
-  takeBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  takeBtnText: { color: '#FFFFFF', fontSize: Typography.bodySmall.fontSize, fontWeight: '700' },
 
   cameraCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 18,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
   },
   cameraDot: { width: 12, height: 12, borderRadius: 6 },
-  cameraTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
-  cameraSubtitle: { fontSize: 12, color: Colors.textSecondary },
+  cameraTitle: { fontSize: Typography.buttonSmall.fontSize, fontWeight: '600', color: Colors.textPrimary },
+  cameraSubtitle: { fontSize: 12, color: Colors.textSecondary }, // 12 deliberately smaller
   callButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -597,18 +599,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(46, 125, 154, 0.4)',
   },
-  callButtonText: { color: Colors.primary, fontSize: 13, fontWeight: '600' },
+  callButtonText: { color: Colors.primary, fontSize: Typography.bodySmall.fontSize, fontWeight: '600' },
 
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  sectionTitle: { fontSize: Typography.sectionTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  viewAll: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
+  viewAll: { color: Colors.primary, fontSize: Typography.buttonSmall.fontSize, fontWeight: '600' },
 
   healthRow: { flexDirection: 'row' },
   healthCard: {
     flex: 1,
     paddingHorizontal: 10,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     elevation: 1,
@@ -618,34 +620,34 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   healthIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  healthValue: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
-  healthLabel: { marginTop: 2, fontSize: 11, color: Colors.textSecondary, textAlign: 'center' },
+  healthValue: { fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
+  healthLabel: { marginTop: 2, fontSize: Typography.caption.fontSize, color: Colors.textSecondary, textAlign: 'center' },
 
   centerPad: { alignItems: 'center', paddingVertical: 16 },
   emptyCard: {
     width: '100%',
-    paddingVertical: 24,
-    borderRadius: 14,
+    paddingVertical: Spacing.xxl,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     alignItems: 'center',
   },
   emptyCardBig: {
     width: '100%',
-    padding: 20,
-    borderRadius: 14,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     alignItems: 'center',
   },
-  emptyText: { marginTop: 8, color: Colors.textSecondary, fontSize: 14 },
-  emptyTextSmall: { marginTop: 8, color: Colors.textSecondary, fontSize: 13 },
+  emptyText: { marginTop: 8, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },
+  emptyTextSmall: { marginTop: 8, color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
 
   medTile: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: 'rgba(173, 181, 189, 0.2)',
@@ -658,15 +660,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  medTileName: { fontWeight: '600', color: Colors.textPrimary, fontSize: 15 },
-  medTileDosage: { marginTop: 2, color: Colors.textSecondary, fontSize: 13 },
+  medTileName: { fontWeight: '600', color: Colors.textPrimary, fontSize: Typography.body.fontSize },
+  medTileDosage: { marginTop: 2, color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
   medTileTimeBadge: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: 'rgba(46, 125, 154, 0.08)',
   },
-  medTileTimeText: { color: Colors.primary, fontSize: 13, fontWeight: '600' },
+  medTileTimeText: { color: Colors.primary, fontSize: Typography.bodySmall.fontSize, fontWeight: '600' },
   medTileCheck: {
     width: 24,
     height: 24,
@@ -679,9 +681,9 @@ const styles = StyleSheet.create({
   aptTile: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     elevation: 1,
     shadowColor: '#000',
@@ -697,8 +699,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  aptDateDay: { fontWeight: '700', fontSize: 16, color: Colors.primary },
-  aptDateMonth: { fontSize: 10, color: Colors.primary },
-  aptDoctor: { fontWeight: '600', fontSize: 14, color: Colors.textPrimary },
-  aptDetail: { marginTop: 2, fontSize: 12, color: Colors.textSecondary },
+  aptDateDay: { fontWeight: '700', fontSize: Typography.cardTitle.fontSize, color: Colors.primary },
+  aptDateMonth: { fontSize: 10, color: Colors.primary }, // 10 deliberately smaller for month label
+  aptDoctor: { fontWeight: '600', fontSize: Typography.buttonSmall.fontSize, color: Colors.textPrimary },
+  aptDetail: { marginTop: 2, fontSize: 12, color: Colors.textSecondary }, // 12 deliberately smaller than bodySmall
 });

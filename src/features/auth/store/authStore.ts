@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { onSessionExpired } from '../../../core/auth/sessionEvents';
+import { getStatus, extractError, getResponseData, getErrorMessage } from '../../../core/api/errors';
 import type { AuthResponse, User } from '../../../shared/types';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -22,6 +23,13 @@ interface AuthState {
     newPassword: string;
     confirmPassword: string;
   }) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (token: string, newPassword: string, confirmPassword: string) => Promise<boolean>;
+  verifyEmail: (token: string) => Promise<{ success: boolean; error?: string }>;
+  resendVerification: (email: string) => Promise<boolean>;
+  sendOtp: (target: string, method: string) => Promise<boolean>;
+  setupPin: (pin: string, confirmPin: string) => Promise<boolean>;
+  verifyPin: (pin: string) => Promise<{ valid: boolean }>;
   logout: () => Promise<void>;
   loadSession: () => Promise<void>;
   clearError: () => void;
@@ -46,33 +54,6 @@ type RegisterResult =
   | { type: 'success' }
   | { type: 'needsVerification'; contact: string; message?: string }
   | { type: 'error'; message: string };
-
-// ── Helpers ──────────────────────────────────────────────────────
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getResponseData(e: unknown): Record<string, unknown> | null {
-  if (e && typeof e === 'object' && 'response' in e) {
-    const data = (e as { response?: { data?: unknown } }).response?.data;
-    if (data && typeof data === 'object') return data as Record<string, unknown>;
-  }
-  return null;
-}
-
-function extractError(e: unknown, fallback: string): string {
-  if (e && typeof e === 'object' && 'response' in e) {
-    const resp = (e as { response?: { data?: unknown } }).response;
-    if (resp?.data && typeof resp.data === 'object') {
-      const data = resp.data as Record<string, unknown>;
-      return String(data.error || data.message || fallback);
-    }
-  }
-  return fallback;
-}
 
 async function persistAuth(data: AuthResponse) {
   await storage.saveToken(data.accessToken);
@@ -109,8 +90,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           role: (role as User['role']) || 'ELDERLY',
         },
       });
-    } catch {
-      // session invalid
+    } catch (e) {
+      console.warn('[authStore.loadSession]', e);
     }
   },
 
@@ -136,7 +117,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         return { type: 'error', message: msg };
       }
       if (status === 401) {
-        const data = getResponseData(e);
+        const data = getResponseData(e) as Record<string, unknown> | undefined;
         const rawMsg = String(data?.error ?? data?.message ?? '');
         if (rawMsg.includes('verify')) {
           set({ isLoading: false });
@@ -154,6 +135,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   // Dev mode: bypass real OTP auth (parity with Flutter loginDev)
   loginDev: async (phoneNumber) => {
+    if (!__DEV__) {
+      return { type: 'error' as const, message: 'Dev login unavailable in production' };
+    }
     set({ isLoading: true, error: null });
     try {
       const res = await api.post('/auth/login', {
@@ -205,6 +189,97 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  forgotPassword: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/forgot-password', { email });
+      set({ isLoading: false });
+      return { success: true };
+    } catch (e) {
+      const msg = getErrorMessage(e) || 'Could not send reset email. Please try again.';
+      set({ isLoading: false, error: msg });
+      return { success: false, error: msg };
+    }
+  },
+
+  resetPassword: async (token, newPassword, confirmPassword) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/reset-password', { token, newPassword, confirmPassword });
+      set({ isLoading: false });
+      return true;
+    } catch (e) {
+      const msg = extractError(e, 'Could not reset password');
+      set({ isLoading: false, error: msg });
+      return false;
+    }
+  },
+
+  verifyEmail: async (token) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/verify-email', { token });
+      set({ isLoading: false });
+      return { success: true };
+    } catch (e) {
+      const msg = getErrorMessage(e) || 'Invalid or expired verification link';
+      set({ isLoading: false, error: msg });
+      return { success: false, error: msg };
+    }
+  },
+
+  resendVerification: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/resend-verification', { email });
+      set({ isLoading: false });
+      return true;
+    } catch (e) {
+      const msg = extractError(e, 'Could not resend verification email');
+      set({ isLoading: false, error: msg });
+      return false;
+    }
+  },
+
+  sendOtp: async (target, method) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/send-otp', { target, method });
+      set({ isLoading: false });
+      return true;
+    } catch (e) {
+      const msg = extractError(e, 'Could not send OTP');
+      set({ isLoading: false, error: msg });
+      return false;
+    }
+  },
+
+  setupPin: async (pin, confirmPin) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/setup-pin', { pin, confirmPin });
+      set({ isLoading: false });
+      return true;
+    } catch (e) {
+      const msg = extractError(e, 'Could not set up PIN');
+      set({ isLoading: false, error: msg });
+      return false;
+    }
+  },
+
+  verifyPin: async (pin) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.post('/auth/verify-pin', { pin });
+      const valid = res.data?.valid === true;
+      set({ isLoading: false, error: valid ? null : 'Invalid PIN' });
+      return { valid };
+    } catch (e) {
+      set({ isLoading: false, error: 'Could not verify PIN' });
+      return { valid: false };
+    }
+  },
+
   register: async (params): Promise<RegisterResult> => {
     set({ isLoading: true, error: null });
     try {
@@ -243,8 +318,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     try {
       await api.post('/auth/logout');
-    } catch {
-      // ignore
+    } catch (e) {
+      console.warn('[authStore.logout]', e);
     }
     await storage.clearAll();
     set({ isAuthenticated: false, user: null, error: null });
