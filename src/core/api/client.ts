@@ -1,7 +1,12 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getToken, getRefreshToken, saveToken, saveRefreshToken, clearAll } from '../storage/secureStorage';
+import {
+  getToken, getRefreshToken, saveToken, saveRefreshToken, clearAll,
+  saveRole, saveName, saveUserId, savePhone, saveEmail,
+} from '../storage/secureStorage';
+import { AppConfig } from '../config/appConfig';
+import { emitSessionExpired } from '../auth/sessionEvents';
 
-const BASE_URL = process.env.API_BASE_URL || 'http://localhost:8080/api';
+const BASE_URL = AppConfig.apiBaseUrl;
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -35,6 +40,17 @@ async function doRefresh(): Promise<string | null> {
     const newRefresh = res.data.refreshToken;
     await saveToken(newAccess);
     await saveRefreshToken(newRefresh);
+
+    // Also refresh persisted user data on token refresh (parity with dio_client)
+    const user = res.data.user;
+    if (user) {
+      if (user.role) await saveRole(user.role);
+      if (user.name) await saveName(user.name);
+      if (user.id != null) await saveUserId(String(user.id));
+      if (user.phone) await savePhone(user.phone);
+      if (user.email) await saveEmail(user.email);
+    }
+
     return newAccess;
   } catch {
     return null;
@@ -80,6 +96,7 @@ api.interceptors.response.use(
 
         if (!newToken) {
           await clearAll();
+          emitSessionExpired();
           return Promise.reject(error);
         }
 
@@ -89,6 +106,7 @@ api.interceptors.response.use(
       } catch {
         pendingRefresh = null;
         await clearAll();
+        emitSessionExpired();
         return Promise.reject(error);
       }
     }
