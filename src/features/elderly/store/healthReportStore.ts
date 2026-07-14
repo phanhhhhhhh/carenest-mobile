@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getUserId } from '../../../core/storage/secureStorage';
+import { getStatus, getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 
 /**
  * Port of Flutter's health_report_provider.dart (HealthReportNotifier).
@@ -80,28 +81,6 @@ export function trendLabel(trend: string): string {
     default:
       return '— Insufficient data';
   }
-}
-
-// ── Helpers ──────────────────────────────────────────────────────
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
-
-function asListOfMaps(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) {
-    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
-  }
-  return [];
 }
 
 function parseDataPoint(m: Record<string, unknown>): DataPoint {

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import {
@@ -79,10 +80,7 @@ function colorFor(type: string): string {
   }
 }
 
-// TODO(routing): this screen is expected to be pushed as 'HealthThreshold'
-// from the family dashboard. Route needs to be registered in
-// RootStackParamList by the navigation owner.
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HealthThresholdScreen() {
   const navigation = useNavigation<Nav>();

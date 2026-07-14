@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
+import { asListOfMaps, getErrorMessage, getStatus, getResponseData } from '../../../core/api/errors';
 import type { ElderlySummary } from '../../../shared/types';
 
 /**
@@ -19,36 +20,6 @@ import type { ElderlySummary } from '../../../shared/types';
  * FamilyLinkNotifier/LinkedFamilyNotifier's constructor-time `load()` should
  * be triggered from the screen's mount effect.
  */
-
-// ── Helpers ──────────────────────────────────────────────────────
-function asListOfMaps(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) {
-    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
-  }
-  return [];
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
-
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getResponseData(e: unknown): Record<string, unknown> | null {
-  if (e && typeof e === 'object' && 'response' in e) {
-    const data = (e as { response?: { data?: unknown } }).response?.data;
-    if (data && typeof data === 'object') return data as Record<string, unknown>;
-  }
-  return null;
-}
 
 function parseElderlySummary(j: Record<string, unknown>): ElderlySummary {
   return {
@@ -218,6 +189,7 @@ interface FamilyLinkState {
   success: boolean;
 
   sendLinkRequest: (elderlyId: string) => Promise<boolean>;
+  lookupUserByPhone: (phone: string) => Promise<string | null>;
 }
 
 export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
@@ -241,7 +213,7 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
       set({ isLoading: false, success: true });
       return true;
     } catch (e) {
-      const data = getResponseData(e);
+      const data = getResponseData(e) as Record<string, unknown> | undefined;
       if (data) {
         const msg = String(data.error ?? data.message ?? 'Cannot send request');
         set({ isLoading: false, error: msg });
@@ -249,6 +221,16 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
         set({ isLoading: false, error: 'Connection error' });
       }
       return false;
+    }
+  },
+
+  lookupUserByPhone: async (phone) => {
+    try {
+      const resp = await api.get(`/users/by-phone/${phone}`);
+      const id = resp.data?.id != null ? String(resp.data.id) : null;
+      return id;
+    } catch {
+      return null;
     }
   },
 }));

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 import { getName, saveName } from '../../../core/storage/secureStorage';
@@ -34,10 +35,7 @@ import { getName, saveName } from '../../../core/storage/secureStorage';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
-// TODO(routing): this screen is expected to be pushed as 'ElderlyEditProfile'
-// from ElderlyProfileScreen's "Edit Profile" menu item. Route needs to be
-// registered in RootStackParamList by the navigation owner.
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ElderlyEditProfileScreen() {
   const navigation = useNavigation<Nav>();
@@ -541,7 +539,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: Colors.divider,
   },
   modalOptionText: { fontSize: 15, color: Colors.textPrimary },
 });
