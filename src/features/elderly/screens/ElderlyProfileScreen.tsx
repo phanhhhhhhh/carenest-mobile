@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { useAuthStore } from '../../auth/store/authStore';
@@ -14,18 +15,10 @@ import { getName, getPhone, getRole } from '../../../core/storage/secureStorage'
  * Port of Flutter's elderly_profile_screen.dart.
  *
  * Deviations:
- *  - "Upgrade to Premium", "Notification Settings" and "Set PIN Lock" menu
- *    items navigate by route name ('PremiumPlans', 'NotificationSettings',
- *    'PinSetup') just like Flutter's context.go() calls, but (besides
- *    PinSetup, which already exists in RootStackParamList for the
- *    unauthenticated stack) these routes are not yet registered inside the
- *    authenticated ElderlyShell stack — navigation is off-limits to edit
- *    here, so wiring them up is left to the navigation owner (same TODO
- *    pattern used in ElderlyEditProfileScreen / ElderlyMedicationHistoryScreen).
  *  - "Help & Support" is a no-op, matching Flutter's `() {}`.
  */
 
-type Nav = NativeStackNavigationProp<any>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ElderlyProfileScreen() {
   const navigation = useNavigation<Nav>();
@@ -370,7 +363,7 @@ const styles = StyleSheet.create({
   },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardHeaderText: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  divider: { height: 1, backgroundColor: '#F0F0F0', marginVertical: 14 },
+  divider: { height: 1, backgroundColor: Colors.divider, marginVertical: 14 },
 
   centerPad: { alignItems: 'center', paddingVertical: 16 },
   centerPadSmall: { alignItems: 'center', paddingVertical: 8 },
@@ -424,5 +417,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   menuLabel: { marginLeft: 14, fontSize: 15, fontWeight: '500', color: Colors.textPrimary },
-  menuDivider: { height: 1, backgroundColor: '#F0F0F0', marginLeft: 54 },
+  menuDivider: { height: 1, backgroundColor: Colors.divider, marginLeft: 54 },
 });

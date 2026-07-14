@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
@@ -28,6 +27,7 @@ export default function PinSetupScreen() {
   const [step, setStep] = useState<'setup' | 'confirm'>('setup');
   const [firstPin, setFirstPin] = useState('');
   const [loading, setLoading] = useState(false);
+  const setupPin = useAuthStore((s) => s.setupPin);
 
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -94,18 +94,17 @@ export default function PinSetupScreen() {
         return;
       }
       setLoading(true);
-      try {
-        await api.post('/auth/setup-pin', { pin: finalPin, confirmPin: finalPin });
+      const ok = await setupPin(finalPin, finalPin);
+      if (ok) {
         // Shells are only registered when authenticated — flip the flag and
         // AppNavigator mounts the correct role shell automatically.
         useAuthStore.getState().completeLogin();
-      } catch {
+      } else {
         Alert.alert('Error', 'Could not set up PIN. Please try again.', [
           { text: 'OK', onPress: clearPin },
         ]);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     }
   };
 
@@ -273,7 +272,7 @@ const styles = StyleSheet.create({
     height: 66,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
     textAlign: 'center',
     fontSize: 26,
     fontWeight: '700',

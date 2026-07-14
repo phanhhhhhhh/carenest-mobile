@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
+import { getStatus, extractError } from '../../../core/api/errors';
 
 // ── Types ────────────────────────────────────────────────────────
 export interface NotificationSettingsData {
@@ -46,20 +47,6 @@ function settingsToJson(d: NotificationSettingsData): Record<string, unknown> {
 
 export function quietHoursEnabled(d: NotificationSettingsData): boolean {
   return d.quietHoursStart.length > 0 && d.quietHoursEnd.length > 0;
-}
-
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function extractError(e: unknown, fallback: string): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return `${fallback}: ${(e as { message?: string }).message ?? ''}`;
-  }
-  return fallback;
 }
 
 interface NotificationSettingsState {
@@ -141,7 +128,8 @@ export const useNotificationSettingsStore = create<NotificationSettingsState>((s
       await api.put(`/users/${userId}/fcm-token`, { fcmToken: token });
       set({ fcmTokenSaved: true });
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[notificationSettingsStore.registerFcmToken]', e);
       return false;
     }
   },
