@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'flex-end' },
   priceText: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary },
   periodText: { marginLeft: 4, marginBottom: 4, color: Colors.textSecondary, fontSize: 14 },
-  divider: { height: 1, backgroundColor: '#F0F0F0' },
+  divider: { height: 1, backgroundColor: Colors.divider },
   featureRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   featureText: { flex: 1, marginLeft: 10, color: Colors.textPrimary, fontSize: 14 },
 

@@ -1,5 +1,6 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import api from '../../../core/api/client';
+import { getStatus, getResponseData, getErrorMessage } from '../../../core/api/errors';
 
 /**
  * Port of Flutter's google_fit_provider.dart (GoogleFitNotifier).
@@ -38,29 +39,6 @@ interface GoogleFitState {
 }
 
 type GoogleFitStoreHook = UseBoundStore<StoreApi<GoogleFitState>>;
-
-// ── Helpers ──────────────────────────────────────────────────────
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getResponseData(e: unknown): Record<string, unknown> | null {
-  if (e && typeof e === 'object' && 'response' in e) {
-    const data = (e as { response?: { data?: unknown } }).response?.data;
-    if (data && typeof data === 'object') return data as Record<string, unknown>;
-  }
-  return null;
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
 
 // ── Store factory (family) ────────────────────────────────────────
 const stores = new Map<string, GoogleFitStoreHook>();
@@ -127,7 +105,7 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
         set({ isSyncing: false, lastSyncResult: 'Sync completed successfully' });
         return data;
       } catch (e) {
-        const respData = getResponseData(e);
+        const respData = getResponseData(e) as Record<string, unknown> | undefined;
         const msg = respData && typeof respData.message === 'string' ? respData.message : 'Sync failed';
         set({ isSyncing: false, error: msg });
         return null;
@@ -155,11 +133,11 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
 }
 
 /** Get (or lazily create) the Google Fit store for a given elderlyId. */
-export function useGoogleFitStore(elderlyId: string): GoogleFitState {
+export function useGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
   let hook = stores.get(elderlyId);
   if (!hook) {
     hook = createGoogleFitStore(elderlyId);
     stores.set(elderlyId, hook);
   }
-  return hook();
+  return hook;
 }

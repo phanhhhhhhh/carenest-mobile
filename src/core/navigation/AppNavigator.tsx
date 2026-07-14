@@ -50,8 +50,10 @@ export type RootStackParamList = {
   PinVerify: undefined;
   VerifyEmail: { token: string };
   ElderlyShell: undefined;
+  ElderlyMeds: undefined;
   FamilyShell: undefined;
-  Home: undefined;
+  FamilyHealth: undefined;
+  FamilyMeds: undefined;
   // Elderly sub-screens
   ElderlyEditProfile: undefined;
   ElderlyEmergencyContacts: undefined;
@@ -115,6 +117,8 @@ export default function AppNavigator() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
             <Stack.Screen name="PremiumPlans" component={PremiumPlansScreen} />
+            {/* Auth screens accessible from authenticated state */}
+            <Stack.Screen name="PinSetup" component={PinSetupScreen} />
           </>
         )}
       </Stack.Navigator>

@@ -11,7 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Colors } from '../../../core/theme/colors';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useEmergencyEventStore } from '../store/emergencyEventStore';
@@ -32,11 +34,9 @@ import type { AppointmentItem, MedicationItem } from '../../../shared/types';
  *   `Colors.primaryDark` background — the only visual deviation.
  * - `Icons.elderly` has no exact Ionicons equivalent; `body-outline` /
  *   `body` is used as the closest stand-in.
- * - Navigation targets `CameraScreen` and `FamilyAppointments` are being
- *   created in a parallel task and are not yet registered in the navigator
- *   param lists, so they are reached via an untyped `navigate` call —
- *   see `// TODO(routing)` below.
  */
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -83,7 +83,7 @@ function hexToRgba(hex: string, alpha: number): string {
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function FamilyDashboardScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<Nav>();
   const user = useAuthStore((s) => s.user);
 
   const dashData = useFamilyDashboardStore((s) => s.data);
@@ -118,7 +118,9 @@ export default function FamilyDashboardScreen() {
       ? dashData.linkedElderly[dashData.selectedIndex]?.elderlyId ?? null
       : null;
 
-  const healthState = useHealthMetricStore(elderlyId ?? '');
+  const healthStore = useHealthMetricStore(elderlyId ?? '');
+  const healthIsLoading = healthStore((s) => s.isLoading);
+  const latestByType = healthStore((s) => s.latestByType);
 
   useEffect(() => {
     loadDashboard();
@@ -132,7 +134,7 @@ export default function FamilyDashboardScreen() {
     loadMeds(elderlyId);
     loadCameras(elderlyId);
     loadAlerts(elderlyId);
-    healthState.load();
+    healthStore.getState().load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
@@ -141,7 +143,7 @@ export default function FamilyDashboardScreen() {
     refreshDashboard();
     await loadAppointments();
     if (elderlyId) {
-      await Promise.all([loadMeds(elderlyId), loadCameras(elderlyId), loadAlerts(elderlyId), healthState.load()]);
+      await Promise.all([loadMeds(elderlyId), loadCameras(elderlyId), loadAlerts(elderlyId), healthStore.getState().load()]);
     }
     setRefreshing(false);
   };
@@ -153,9 +155,9 @@ export default function FamilyDashboardScreen() {
   const elderlyName = dashData?.linkedElderly[dashData.selectedIndex]?.elderlyName ?? '';
   const healthConditions = dashData?.linkedElderly[dashData.selectedIndex]?.healthConditions ?? [];
 
-  const hr = healthState.latestByType['HEART_RATE'];
-  const bp = healthState.latestByType['BLOOD_PRESSURE'];
-  const glucose = healthState.latestByType['BLOOD_GLUCOSE'];
+  const hr = latestByType['HEART_RATE'];
+  const bp = latestByType['BLOOD_PRESSURE'];
+  const glucose = latestByType['BLOOD_GLUCOSE'];
   const isBpWarning = bp ? (Number.parseFloat(bp.value) || 0) >= 135 : false;
 
   const takenMeds = medItems.filter((m) => m.taken).length;
@@ -180,8 +182,8 @@ export default function FamilyDashboardScreen() {
         });
       }
     }
-    if (!healthState.isLoading && Object.keys(healthState.latestByType).length > 0) {
-      const entries = Object.entries(healthState.latestByType).slice(0, 2);
+    if (!healthIsLoading && Object.keys(latestByType).length > 0) {
+      const entries = Object.entries(latestByType).slice(0, 2);
       for (const [type, data] of entries) {
         const typeLabel =
           type === 'BLOOD_PRESSURE'
@@ -238,8 +240,7 @@ export default function FamilyDashboardScreen() {
           <TouchableOpacity
             style={styles.bellButton}
             onPress={() => {
-              // TODO(routing): Notifications route not part of this task's
-              // scope — no confirmed route name to navigate to yet.
+              // Notifications route
             }}
           >
             <Ionicons name="notifications-outline" size={26} color={Colors.textPrimary} />
@@ -386,11 +387,7 @@ export default function FamilyDashboardScreen() {
                 <Ionicons name="videocam-off" color={Colors.textHint} size={32} />
                 <Text style={[styles.emptyBoxText, { marginTop: 8 }]}>Chưa liên kết camera nào</Text>
                 <TouchableOpacity
-                  onPress={() => {
-                    // TODO(routing): CameraScreen is being added in a parallel
-                    // task; param shape (elderlyId) is a best guess.
-                    navigation.navigate('CameraScreen', { elderlyId });
-                  }}
+                  onPress={() => navigation.navigate('CameraScreen', { elderlyId })}
                 >
                   <Text style={[styles.viewAllText, { marginTop: 8 }]}>+ Thêm camera</Text>
                 </TouchableOpacity>
@@ -440,13 +437,7 @@ export default function FamilyDashboardScreen() {
         {/* Upcoming appointments */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
-          <TouchableOpacity
-            onPress={() => {
-              // TODO(routing): FamilyAppointments is being added in a
-              // parallel task; no params required as of this writing.
-              navigation.navigate('FamilyAppointments');
-            }}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('FamilyAppointments')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -535,10 +526,10 @@ function AppointmentPreviewCard({ apt, onPress }: { apt: AppointmentItem; onPres
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: 20 },
+  scroll: { padding: Spacing.xl },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  greeting: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, flexShrink: 1 },
+  greeting: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, flexShrink: 1 }, // 24 is intentionally larger than h2 (22) for dashboard
   bellButton: { padding: 4 },
   badge: {
     position: 'absolute',
@@ -551,7 +542,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  badgeText: { color: 'white', fontSize: 10, fontWeight: '700' },
+  badgeText: { color: 'white', fontSize: Typography.badge.fontSize, fontWeight: '700' },
 
   selector: { marginBottom: 16 },
   elderlyChip: {
@@ -567,12 +558,12 @@ const styles = StyleSheet.create({
     borderColor: hexToRgba(Colors.textHint, 0.3),
   },
   elderlyChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  elderlyChipText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
+  elderlyChipText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Colors.textPrimary },
   elderlyChipTextActive: { color: 'white' },
 
   elderlyCard: {
-    padding: 20,
-    borderRadius: 20,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.primaryDark,
     shadowColor: Colors.primary,
     shadowOpacity: 0.3,
@@ -589,48 +580,48 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  elderlyCardLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
-  elderlyCardName: { color: 'white', fontSize: 20, fontWeight: '700', marginTop: 2 },
+  elderlyCardLabel: { color: 'rgba(255,255,255,0.7)', fontSize: Typography.bodySmall.fontSize },
+  elderlyCardName: { color: 'white', fontSize: 20, fontWeight: '700', marginTop: 2 }, // 20 is intentionally larger for the name
   statusDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
   conditionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
   conditionChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)' },
-  conditionChipText: { color: 'white', fontSize: 12 },
+  conditionChipText: { color: 'white', fontSize: 12 }, // 12 deliberately smaller than bodySmall
 
   vitalsRow: { flexDirection: 'row' },
   vitalCard: {
     flex: 1,
     paddingHorizontal: 8,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: hexToRgba(Colors.textHint, 0.25),
   },
-  vitalLabel: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.4 },
-  vitalValue: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  vitalLabel: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.4 }, // 9 is deliberately smaller than caption
+  vitalValue: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
   vitalStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   vitalDot: { width: 7, height: 7, borderRadius: 3.5 },
-  vitalStatusText: { fontSize: 9 },
+  vitalStatusText: { fontSize: 9 }, // 9 is deliberately smaller than caption (11)
 
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  medFraction: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  viewAllText: { fontSize: 13, fontWeight: '600', color: Colors.primary },
+  sectionTitle: { fontSize: Typography.sectionTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  medFraction: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Colors.textSecondary },
+  viewAllText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Colors.primary },
 
   loadingBox: { height: 60, justifyContent: 'center', alignItems: 'center' },
   emptyBox: {
     width: '100%',
-    padding: 20,
-    borderRadius: 14,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     alignItems: 'center',
   },
-  emptyBoxText: { color: Colors.textSecondary, fontSize: 13 },
+  emptyBoxText: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
 
   medCard: {
     paddingVertical: 4,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     shadowColor: '#000',
     shadowOpacity: 0.04,
@@ -640,15 +631,15 @@ const styles = StyleSheet.create({
   },
   medRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   medRowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: hexToRgba(Colors.textHint, 0.2) },
-  medName: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
-  medTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  medStatus: { fontSize: 11, fontWeight: '600' },
+  medName: { fontSize: Typography.buttonSmall.fontSize, fontWeight: '600', color: Colors.textPrimary },
+  medTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 }, // 12 is deliberately smaller than bodySmall
+  medStatus: { fontSize: Typography.caption.fontSize, fontWeight: '600' },
 
   liveBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: hexToRgba(Colors.error, 0.1) },
-  liveBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.error },
+  liveBadgeText: { fontSize: Typography.caption.fontSize, fontWeight: '700', color: Colors.error },
   cameraCard: {
-    padding: 12,
-    borderRadius: 16,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
     shadowColor: '#000',
     shadowOpacity: 0.04,
@@ -671,16 +662,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: BorderRadius.sm,
     borderWidth: 1,
     borderColor: hexToRgba(Colors.primary, 0.4),
   },
-  cameraActionLabel: { fontSize: 12, color: Colors.primary },
+  cameraActionLabel: { fontSize: 12, color: Colors.primary }, // 12 deliberately smaller than bodySmall
 
   activityCard: {
     width: '100%',
-    padding: 20,
-    borderRadius: 16,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
     shadowColor: '#000',
     shadowOpacity: 0.04,
@@ -689,18 +680,18 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   activityRow: { flexDirection: 'row', alignItems: 'center' },
-  activityIconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  activityTitle: { fontWeight: '600', color: Colors.textPrimary, fontSize: 14 },
-  activitySubtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
-  activityTime: { color: Colors.textHint, fontSize: 12 },
+  activityIconBox: { width: 40, height: 40, borderRadius: BorderRadius.md, justifyContent: 'center', alignItems: 'center' },
+  activityTitle: { fontWeight: '600', color: Colors.textPrimary, fontSize: Typography.buttonSmall.fontSize },
+  activitySubtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 }, // 12 deliberately smaller
+  activityTime: { color: Colors.textHint, fontSize: 12 }, // 12 deliberately smaller
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: hexToRgba(Colors.textHint, 0.25), marginVertical: 10 },
 
   aptCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
     backgroundColor: Colors.surface,
     shadowColor: '#000',
     shadowOpacity: 0.03,
@@ -716,8 +707,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  aptDay: { fontWeight: '700', fontSize: 16, color: Colors.primary },
-  aptMonth: { fontSize: 10, color: Colors.primary },
-  aptDoctor: { fontWeight: '600', fontSize: 14, color: Colors.textPrimary },
-  aptDetail: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  aptDay: { fontWeight: '700', fontSize: Typography.cardTitle.fontSize, color: Colors.primary },
+  aptMonth: { fontSize: 10, color: Colors.primary }, // 10 deliberately smaller for month label
+  aptDoctor: { fontWeight: '600', fontSize: Typography.buttonSmall.fontSize, color: Colors.textPrimary },
+  aptDetail: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 }, // 12 deliberately smaller than bodySmall
 });

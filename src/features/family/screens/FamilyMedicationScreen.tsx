@@ -17,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { useMedicationStore } from '../../elderly/store/medicationStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
-import { useAuthStore } from '../../auth/store/authStore';
 import type { MedicationItem } from '../../../shared/types';
 
 /**
@@ -63,9 +62,6 @@ function formatLogDate(iso: string): string {
 }
 
 export default function FamilyMedicationScreen() {
-  // Auth (kept for parity with other family screens / potential greeting use)
-  useAuthStore((s) => s.user);
-
   // Medication store (elderly-side store, driven remotely by family here)
   const items = useMedicationStore((s) => s.items);
   const isLoading = useMedicationStore((s) => s.isLoading);
@@ -628,7 +624,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 6 },
   addBtnText: { color: Colors.primary, fontWeight: '600', fontSize: 14 },
-  tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
   tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   tabLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   tabLabelActive: { color: Colors.primary },
@@ -749,7 +745,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
   },
   historyChipSelected: { backgroundColor: 'rgba(46,125,154,0.15)', borderColor: Colors.primary },
   historyChipText: { color: Colors.textSecondary, fontWeight: '600', fontSize: 13 },
@@ -788,7 +784,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#D9DCE1',
+    borderColor: Colors.borderLight,
     borderRadius: 12,
     paddingHorizontal: 12,
     marginBottom: 14,

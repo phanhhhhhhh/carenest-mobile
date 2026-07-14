@@ -9,8 +9,8 @@ import { Platform } from 'react-native';
 
 function defaultBaseUrl(): string {
   // Android emulator reaches host machine via 10.0.2.2; web/iOS simulator via localhost
-  if (Platform.OS === 'android') return 'http://10.0.2.2:8082/api';
-  return 'http://localhost:8082/api';
+  if (Platform.OS === 'android') return 'https://10.0.2.2:8443/api';
+  return 'https://localhost:8443/api';
 }
 
 export const AppConfig = {
