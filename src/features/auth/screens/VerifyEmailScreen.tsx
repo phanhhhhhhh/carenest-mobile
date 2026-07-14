@@ -1,0 +1,84 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../../core/theme/colors';
+import api from '../../../core/api/client';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Route = RouteProp<RootStackParamList, 'VerifyEmail'>;
+
+export default function VerifyEmailScreen() {
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<Route>();
+  const token = route.params.token;
+  const [state, setState] = useState<'loading' | 'success' | 'error'>('loading');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await api.post('/auth/verify-email', { token });
+        setState('success');
+      } catch (e: unknown) {
+        const msg = e && typeof e === 'object' && 'response' in e
+          ? (e as { response?: { data?: { error?: string; message?: string } } }).response?.data?.error
+            || (e as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+        setErrorMsg(String(msg || 'Invalid or expired verification link'));
+        setState('error');
+      }
+    })();
+  }, [token]);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {state === 'loading' ? (
+          <>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Verifying your email...</Text>
+          </>
+        ) : state === 'success' ? (
+          <>
+            <View style={styles.iconSuccess}>
+              <Ionicons name="checkmark-circle" size={50} color={Colors.success} />
+            </View>
+            <Text style={styles.title}>Email Verified!</Text>
+            <Text style={styles.subtitle}>Your account is now active</Text>
+            <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('Phone')}>
+              <Text style={styles.btnText}>Go to Sign In</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <View style={styles.iconError}>
+              <Ionicons name="close-circle" size={50} color={Colors.error} />
+            </View>
+            <Text style={styles.errorText}>{errorMsg}</Text>
+            <TouchableOpacity style={[styles.btn, { backgroundColor: Colors.success }]} onPress={() => navigation.navigate('Phone')}>
+              <Text style={styles.btnText}>Go to Sign In</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  loadingText: { fontSize: 16, color: Colors.textSecondary, marginTop: 20 },
+  iconSuccess: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.success + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  iconError: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.error + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  title: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  subtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 8, marginBottom: 32 },
+  errorText: { fontSize: 14, color: Colors.error, textAlign: 'center', marginBottom: 32 },
+  btn: { backgroundColor: Colors.success, borderRadius: 14, padding: 16, width: '100%', alignItems: 'center' },
+  btnText: { color: 'white', fontSize: 16, fontWeight: '700' },
+});
