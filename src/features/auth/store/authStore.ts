@@ -12,12 +12,25 @@ interface AuthState {
   isAuthenticated: boolean;
 
   // Actions
-  login: (params: { email?: string; phone?: string; password: string }) => Promise<boolean>;
+  login: (params: { email?: string; phone?: string; password: string }) => Promise<LoginResult>;
+  loginDev: (phoneNumber: string) => Promise<LoginResult>;
   register: (params: RegisterParams) => Promise<RegisterResult>;
+  verifyOtp: (target: string, code: string) => Promise<boolean>;
+  completeLogin: () => void;
+  changePassword: (params: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => Promise<boolean>;
   logout: () => Promise<void>;
   loadSession: () => Promise<void>;
   clearError: () => void;
 }
+
+type LoginResult =
+  | { type: 'success' }
+  | { type: 'needsVerification'; email: string }
+  | { type: 'error'; message: string };
 
 interface RegisterParams {
   email?: string;
@@ -35,6 +48,21 @@ type RegisterResult =
   | { type: 'error'; message: string };
 
 // ── Helpers ──────────────────────────────────────────────────────
+function getStatus(e: unknown): number | undefined {
+  if (e && typeof e === 'object' && 'response' in e) {
+    return (e as { response?: { status?: number } }).response?.status;
+  }
+  return undefined;
+}
+
+function getResponseData(e: unknown): Record<string, unknown> | null {
+  if (e && typeof e === 'object' && 'response' in e) {
+    const data = (e as { response?: { data?: unknown } }).response?.data;
+    if (data && typeof data === 'object') return data as Record<string, unknown>;
+  }
+  return null;
+}
+
 function extractError(e: unknown, fallback: string): string {
   if (e && typeof e === 'object' && 'response' in e) {
     const resp = (e as { response?: { data?: unknown } }).response;
@@ -97,9 +125,81 @@ export const useAuthStore = create<AuthState>((set) => ({
       const res = await api.post('/auth/login', body);
       await persistAuth(res.data);
       set({ isLoading: false, isAuthenticated: true, user: res.data.user });
+      return { type: 'success' };
+    } catch (e) {
+      // Parity with Flutter auth_repository: 404 → user not found;
+      // 401 with "verify" in message → unverified email.
+      const status = getStatus(e);
+      if (status === 404) {
+        const msg = 'No account found. Please register first.';
+        set({ isLoading: false, error: msg });
+        return { type: 'error', message: msg };
+      }
+      if (status === 401) {
+        const data = getResponseData(e);
+        const rawMsg = String(data?.error ?? data?.message ?? '');
+        if (rawMsg.includes('verify')) {
+          set({ isLoading: false });
+          return {
+            type: 'needsVerification',
+            email: String(data?.email ?? params.email ?? ''),
+          };
+        }
+      }
+      const msg = extractError(e, 'Invalid credentials');
+      set({ isLoading: false, error: msg });
+      return { type: 'error', message: msg };
+    }
+  },
+
+  // Dev mode: bypass real OTP auth (parity with Flutter loginDev)
+  loginDev: async (phoneNumber) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.post('/auth/login', {
+        firebaseToken: `DEV_PHONE:${phoneNumber}`,
+      });
+      await persistAuth(res.data);
+      set({ isLoading: false, isAuthenticated: true, user: res.data.user });
+      return { type: 'success' };
+    } catch (e) {
+      const status = getStatus(e);
+      const msg = status === 404
+        ? `DEV_NEEDS_REGISTER:${phoneNumber}`
+        : 'Cannot connect to backend';
+      set({ isLoading: false, error: msg });
+      return { type: 'error', message: msg };
+    }
+  },
+
+  // Verify OTP — persists tokens like Flutter's verifyOtp, but defers the
+  // isAuthenticated flip so the WelcomeBack screen can still be shown
+  // (flipping immediately would unmount the entire auth stack).
+  verifyOtp: async (target, code) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.post('/auth/verify-otp', { target, code });
+      await persistAuth(res.data);
+      set({ isLoading: false, user: res.data.user ?? null });
       return true;
     } catch (e) {
-      const msg = extractError(e, 'Invalid credentials');
+      const msg = extractError(e, 'Invalid or expired code');
+      set({ isLoading: false, error: msg });
+      return false;
+    }
+  },
+
+  // Flip to authenticated — AppNavigator then switches to the role shell.
+  completeLogin: () => set({ isAuthenticated: true }),
+
+  changePassword: async (params) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/change-password', params);
+      set({ isLoading: false });
+      return true;
+    } catch (e) {
+      const msg = extractError(e, 'Cannot change password');
       set({ isLoading: false, error: msg });
       return false;
     }

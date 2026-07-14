@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import api from '../../../core/api/client';
+import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -30,20 +31,22 @@ export default function OtpVerifyScreen() {
   const inputs = useRef<(TextInput | null)[]>([]);
 
   // ── Verify OTP ─────────────────────────────────────────────────
+  const verifyOtpAction = useAuthStore((s) => s.verifyOtp);
+
   const verifyOtp = useCallback(async (otpCode: string) => {
     if (otpCode.length !== OTP_LENGTH) return;
     setLoading(true);
-    try {
-      await api.post('/auth/verify-otp', { target, code: otpCode });
+    // Store action persists tokens + user (Flutter persistAuth parity)
+    const ok = await verifyOtpAction(target, otpCode);
+    setLoading(false);
+    if (ok) {
       navigation.replace('WelcomeBack', { userName });
-    } catch {
+    } else {
       Alert.alert('Error', 'Invalid or expired verification code');
       setCode(Array(OTP_LENGTH).fill(''));
       inputs.current[0]?.focus();
-    } finally {
-      setLoading(false);
     }
-  }, [target, userName, navigation]);
+  }, [target, userName, navigation, verifyOtpAction]);
 
   // ── Handle text change (single digit or paste) ────────────────
   const handleChange = useCallback((text: string, index: number) => {

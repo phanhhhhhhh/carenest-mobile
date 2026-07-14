@@ -1,18 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../../../core/theme/colors';
 import api from '../../../core/api/client';
 import { useAuthStore } from '../store/authStore';
-import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
-
-type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function PinVerifyScreen() {
-  const navigation = useNavigation<Nav>();
-  const user = useAuthStore((s) => s.user);
   const [pin, setPin] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
   const inputs = useRef<(TextInput | null)[]>([]);
@@ -45,12 +38,13 @@ export default function PinVerifyScreen() {
   const verifyPin = async (pinStr: string) => {
     setLoading(true);
     try {
-      await api.post('/auth/verify-pin', { pin: pinStr });
-      const role = user?.role || 'ELDERLY';
-      navigation.reset({
-        index: 0,
-        routes: [{ name: role === 'ELDERLY' ? 'ElderlyShell' : 'FamilyShell' }],
-      });
+      const res = await api.post('/auth/verify-pin', { pin: pinStr });
+      // Backend returns { valid: boolean } — a 200 with valid:false is
+      // still a wrong PIN (Flutter parity).
+      if (res.data?.valid !== true) throw new Error('invalid pin');
+      // Shells are only registered when authenticated — flip the flag and
+      // AppNavigator mounts the correct role shell automatically.
+      useAuthStore.getState().completeLogin();
     } catch {
       Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect. Please try again.');
       setPin(['', '', '', '']);
