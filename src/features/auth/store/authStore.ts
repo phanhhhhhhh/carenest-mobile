@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
+import { onSessionExpired } from '../../../core/auth/sessionEvents';
 import type { AuthResponse, User } from '../../../shared/types';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -151,3 +152,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   clearError: () => set({ error: null }),
 }));
+
+// ── Session expiry (port of Flutter TokenNotifier) ───────────────
+// When the API client fails to refresh the token it clears storage and
+// emits this event; resetting the store makes AppNavigator show Welcome.
+onSessionExpired(() => {
+  useAuthStore.setState({ isAuthenticated: false, user: null, error: null });
+});
