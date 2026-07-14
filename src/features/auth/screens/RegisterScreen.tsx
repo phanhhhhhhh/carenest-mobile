@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors } from '../../../core/theme/colors';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scroll: {
-    padding: 24,
+    padding: Spacing.xxl,
     paddingBottom: 50,
   },
 
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   backText: {
-    fontSize: 16,
+    fontSize: Typography.button.fontSize,
     color: Colors.textSecondary,
   },
 
@@ -429,15 +429,15 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: Typography.buttonSmall.fontSize,
     color: Colors.textSecondary,
     marginTop: 4,
-    marginBottom: 24,
+    marginBottom: Spacing.xxl,
   },
 
   // ── Field label ──────────────────────────────────────────────────
   label: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     fontWeight: '600',
     color: Colors.textSecondary,
     marginTop: 14,
@@ -447,18 +447,18 @@ const styles = StyleSheet.create({
   // ── Text input ───────────────────────────────────────────────────
   input: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     padding: 14,
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
   },
   inputError: {
     borderColor: Colors.error,
   },
   fieldError: {
-    fontSize: 12,
+    fontSize: 12, // deliberately smaller than bodySmall for error messages
     color: Colors.error,
     marginTop: 4,
     marginLeft: 2,
@@ -471,27 +471,27 @@ const styles = StyleSheet.create({
   },
   prefixBadge: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
     paddingHorizontal: 12,
     paddingVertical: 14,
     marginRight: 8,
   },
   prefixText: {
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     fontWeight: '600',
     color: Colors.textSecondary,
   },
   phoneInput: {
     flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     padding: 14,
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
   },
 
   // ── Role picker ──────────────────────────────────────────────────
@@ -503,10 +503,10 @@ const styles = StyleSheet.create({
   roleBtn: {
     flex: 1,
     padding: 14,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
     backgroundColor: Colors.surface,
   },
   roleActive: {
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary + '12',
   },
   roleText: {
-    fontSize: 14,
+    fontSize: Typography.buttonSmall.fontSize,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
@@ -528,8 +528,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.xl,
   },
   checkbox: {
     width: 20,
@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   termsText: {
-    fontSize: 13,
+    fontSize: Typography.bodySmall.fontSize,
     color: Colors.textSecondary,
     flex: 1,
   },
@@ -563,8 +563,8 @@ const styles = StyleSheet.create({
   // ── Submit button ────────────────────────────────────────────────
   registerBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
     alignItems: 'center',
     shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   registerBtnText: {
     color: Colors.surface,
-    fontSize: 16,
+    fontSize: Typography.button.fontSize,
     fontWeight: '700',
   },
 });

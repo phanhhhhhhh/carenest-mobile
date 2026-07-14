@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { Colors } from '../../../core/theme/colors';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
@@ -54,10 +54,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: Spacing.xxl,
   },
   mascotWrapper: {
-    marginBottom: 32,
+    marginBottom: Spacing.xxxl,
     alignItems: 'center',
   },
   mascotCircle: {
@@ -81,10 +81,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: Typography.buttonSmall.fontSize,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
@@ -93,9 +93,9 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: Colors.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xxxl,
     width: '100%',
     alignItems: 'center',
     shadowColor: Colors.primaryDark,
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   },
   btnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: Typography.button.fontSize,
     fontWeight: '700',
   },
 });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
+import { asListOfMaps, getErrorMessage } from '../../../core/api/errors';
 import type { AppointmentItem } from '../../../shared/types';
 
 /**
@@ -9,21 +10,6 @@ import type { AppointmentItem } from '../../../shared/types';
  * Note: the Flutter notifier called `load()` from its constructor. Callers
  * here should invoke `load()` from a screen's mount effect instead.
  */
-
-// ── Helpers ──────────────────────────────────────────────────────
-function asListOfMaps(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) {
-    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
-  }
-  return [];
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
-}
 
 function isValidIsoDate(s: string): boolean {
   return s !== '' && !Number.isNaN(new Date(s).getTime());
@@ -43,11 +29,11 @@ function parseAppointmentItem(j: Record<string, unknown>): AppointmentItem {
   };
 }
 
-export function isUpcoming(a: AppointmentItem): boolean {
+function isUpcoming(a: AppointmentItem): boolean {
   return a.status === 'SCHEDULED' || a.status === 'RESCHEDULED';
 }
 
-export function isPast(a: AppointmentItem): boolean {
+function isPast(a: AppointmentItem): boolean {
   return a.status === 'COMPLETED' || a.status === 'CANCELLED';
 }
 

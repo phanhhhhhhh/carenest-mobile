@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
+import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -18,22 +18,19 @@ export default function VerifyEmailScreen() {
   const token = route.params.token;
   const [state, setState] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
+  const verifyEmail = useAuthStore((s) => s.verifyEmail);
 
   useEffect(() => {
     (async () => {
-      try {
-        await api.post('/auth/verify-email', { token });
+      const result = await verifyEmail(token);
+      if (result.success) {
         setState('success');
-      } catch (e: unknown) {
-        const msg = e && typeof e === 'object' && 'response' in e
-          ? (e as { response?: { data?: { error?: string; message?: string } } }).response?.data?.error
-            || (e as { response?: { data?: { message?: string } } }).response?.data?.message
-          : undefined;
-        setErrorMsg(String(msg || 'Invalid or expired verification link'));
+      } else {
+        setErrorMsg(result.error || 'Invalid or expired verification link');
         setState('error');
       }
     })();
-  }, [token]);
+  }, [token, verifyEmail]);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
+import { asListOfMaps, extractError } from '../../../core/api/errors';
 
 // ── Types ────────────────────────────────────────────────────────
 export interface NotificationData {
@@ -24,20 +25,6 @@ function notificationFromJson(j: Record<string, unknown>): NotificationData {
         ? j.createdAt
         : new Date().toISOString(),
   };
-}
-
-function asListOfMaps(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) {
-    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
-  }
-  return [];
-}
-
-function extractError(e: unknown, fallback: string): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return `${fallback}: ${(e as { message?: string }).message ?? ''}`;
-  }
-  return fallback;
 }
 
 interface NotificationState {
@@ -83,8 +70,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         n.id === notificationId ? { ...n, read: true } : n
       );
       set({ items: updated });
-    } catch {
-      // silent
+    } catch (e) {
+      console.warn('[notificationStore.markAsRead]', e);
     }
   },
 
@@ -95,8 +82,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       await api.patch(`/users/${userId}/notifications/read-all`);
       const updated = get().items.map((n) => ({ ...n, read: true }));
       set({ items: updated });
-    } catch {
-      // silent
+    } catch (e) {
+      console.warn('[notificationStore.markAllRead]', e);
     }
   },
 }));
