@@ -1,0 +1,222 @@
+import React, { useRef, useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Keyboard,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import { Colors } from '../../../core/theme/colors';
+import api from '../../../core/api/client';
+import { useAuthStore } from '../store/authStore';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Route = RouteProp<RootStackParamList, 'OtpVerify'>;
+
+const OTP_LENGTH = 6;
+
+export default function OtpVerifyScreen() {
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<Route>();
+  const { target, method, userName } = route.params;
+  const [code, setCode] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [loading, setLoading] = useState(false);
+  const inputs = useRef<(TextInput | null)[]>([]);
+
+  // ── Verify OTP ─────────────────────────────────────────────────
+  const verifyOtpAction = useAuthStore((s) => s.verifyOtp);
+
+  const verifyOtp = useCallback(async (otpCode: string) => {
+    if (otpCode.length !== OTP_LENGTH) return;
+    setLoading(true);
+    // Store action persists tokens + user (Flutter persistAuth parity)
+    const ok = await verifyOtpAction(target, otpCode);
+    setLoading(false);
+    if (ok) {
+      navigation.replace('WelcomeBack', { userName });
+    } else {
+      Alert.alert('Error', 'Invalid or expired verification code');
+      setCode(Array(OTP_LENGTH).fill(''));
+      inputs.current[0]?.focus();
+    }
+  }, [target, userName, navigation, verifyOtpAction]);
+
+  // ── Handle text change (single digit or paste) ────────────────
+  const handleChange = useCallback((text: string, index: number) => {
+    const sanitized = text.replace(/[^0-9]/g, '');
+
+    // Paste — fill all fields from the pasted string
+    if (sanitized.length > 1) {
+      const digits = sanitized.slice(0, OTP_LENGTH).split('');
+      const newCode = Array(OTP_LENGTH).fill('');
+      digits.forEach((d, i) => { newCode[i] = d; });
+      setCode(newCode);
+
+      const nextEmpty = newCode.findIndex((d) => !d);
+      if (nextEmpty !== -1) {
+        inputs.current[nextEmpty]?.focus();
+      } else {
+        Keyboard.dismiss();
+        verifyOtp(newCode.join(''));
+      }
+      return;
+    }
+
+    // Single character
+    const newCode = [...code];
+    newCode[index] = sanitized.slice(0, 1);
+    setCode(newCode);
+
+    if (sanitized && index < OTP_LENGTH - 1) {
+      inputs.current[index + 1]?.focus();
+    }
+
+    // Auto-submit when last digit is entered
+    if (index === OTP_LENGTH - 1 && sanitized) {
+      Keyboard.dismiss();
+      verifyOtp(newCode.join(''));
+    }
+  }, [code, verifyOtp]);
+
+  // ── Backspace — clear previous field when current is empty ────
+  const handleKeyPress = useCallback((key: string, index: number) => {
+    if (key !== 'Backspace') return;
+    if (code[index]) return; // Let onChangeText handle clearing
+    if (index > 0) {
+      const newCode = [...code];
+      newCode[index - 1] = '';
+      setCode(newCode);
+      inputs.current[index - 1]?.focus();
+    }
+  }, [code]);
+
+  // ── Resend ────────────────────────────────────────────────────
+  const handleResend = useCallback(async () => {
+    try {
+      await api.post('/auth/send-otp', { target, method });
+      Alert.alert('Code Sent', 'A new verification code has been sent.');
+    } catch {
+      Alert.alert('Error', 'Could not resend code. Please try again.');
+    }
+  }, [target, method]);
+
+  // ── Render ────────────────────────────────────────────────────
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <TouchableOpacity onPress={() => navigation.goBack()} disabled={loading}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Enter Verification Code</Text>
+        <Text style={styles.subtitle}>
+          Enter the code sent to {target}
+        </Text>
+
+        <View style={styles.otpRow}>
+          {code.map((digit, i) => (
+            <TextInput
+              key={i}
+              ref={(ref) => { inputs.current[i] = ref; }}
+              style={[styles.otpBox, digit ? styles.otpBoxFilled : null]}
+              value={digit}
+              onChangeText={(t) => handleChange(t, i)}
+              onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
+              keyboardType="number-pad"
+              maxLength={OTP_LENGTH}
+              editable={!loading}
+              selectTextOnFocus
+              autoComplete="one-time-code"
+            />
+          ))}
+        </View>
+
+        {loading && <Text style={styles.loading}>Verifying...</Text>}
+
+        <TouchableOpacity
+          onPress={handleResend}
+          style={styles.resendBtn}
+          disabled={loading}
+        >
+          <Text style={[styles.resendText, loading && styles.resendTextDisabled]}>
+            Resend Code
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// ── Styles ──────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+  },
+  backText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginTop: 4,
+    marginBottom: 28,
+  },
+  otpRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+  otpBox: {
+    width: 48,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    textAlign: 'center',
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    backgroundColor: Colors.surface,
+  },
+  otpBoxFilled: {
+    borderColor: Colors.primary,
+  },
+  loading: {
+    textAlign: 'center',
+    color: Colors.primary,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  resendBtn: {
+    alignSelf: 'center',
+  },
+  resendText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  resendTextDisabled: {
+    opacity: 0.5,
+  },
+});
