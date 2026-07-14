@@ -1,31 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'WelcomeBack'>;
 
 export default function WelcomeBackScreen() {
-  const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const authStoreUser = useAuthStore((s) => s.user);
+  const completeLogin = useAuthStore((s) => s.completeLogin);
 
   // Prefer route params, fall back to auth store
   const userName = route.params?.userName || authStoreUser?.name || 'User';
-  const user = route.params?.user || authStoreUser;
 
   const handleContinue = () => {
-    const role = user?.role || 'ELDERLY';
-    navigation.reset({
-      index: 0,
-      routes: [{ name: role === 'ELDERLY' ? 'ElderlyShell' : 'FamilyShell' }],
-    });
+    // Flipping isAuthenticated makes AppNavigator mount the correct role
+    // shell — the shells are not registered in the unauthenticated stack,
+    // so a navigation.reset to them would throw.
+    completeLogin();
   };
 
   return (
