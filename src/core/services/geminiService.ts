@@ -1,4 +1,6 @@
+import axios from 'axios';
 import { AppConfig } from '../config/appConfig';
+import { getErrorMessage } from '../api/errors';
 
 /**
  * Gemini AI chat service — port of Flutter's gemini_service.dart.
@@ -27,20 +29,18 @@ export class GeminiService {
     this.history.push({ role: 'user', parts: [{ text }] });
 
     try {
-      const res = await fetch(`${ENDPOINT}?key=${AppConfig.geminiApiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const res = await axios.post(
+        `${ENDPOINT}?key=${AppConfig.geminiApiKey}`,
+        {
           systemInstruction: {
             parts: [{ text: AppConfig.geminiSystemPrompt }],
           },
           contents: this.history,
-        }),
-      });
+        },
+        { timeout: 15000 },
+      );
 
-      if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
-
-      const data = await res.json();
+      const data = res.data;
       const reply: string | undefined =
         data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
@@ -53,8 +53,9 @@ export class GeminiService {
       const trimmed = reply.trim();
       this.history.push({ role: 'model', parts: [{ text: trimmed }] });
       return trimmed;
-    } catch {
+    } catch (e) {
       this.history.pop();
+      console.warn(`Gemini API error: ${getErrorMessage(e)}`);
       return 'Sorry, I cannot answer right now.';
     }
   }
