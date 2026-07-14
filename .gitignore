@@ -4,13 +4,6 @@
 .omc/
 **/.omc/
 
-# Design assets — keep local only, not pushed to remote
-assets/
-
-# Docs — keep local only, not pushed to remote
-docs/
-backend/docs/database-schema.md
-
 # Environment & secrets — NEVER commit these
 .env
 .env.*
@@ -23,12 +16,38 @@ backend/src/main/resources/application-prod.properties
 backend/src/main/resources/application-secret*.yml
 backend/src/main/resources/application-secret*.properties
 
+# Backend build output
+backend/target/
+
 # Firebase config (contains API keys)
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 
-# Backend build output
-backend/target/
+# Expo / React Native
+node_modules/
+.expo/
+dist/
+dist2/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Android
+android/app/debug
+android/app/profile
+android/app/release
+android/app/build/
+android/.gradle/
+android/build/
+
+# iOS
+ios/Pods/
+ios/build/
 
 # Miscellaneous
 *.class
@@ -44,20 +63,7 @@ backend/target/
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Dart/Flutter leftovers (being removed)
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
@@ -65,13 +71,18 @@ migrate_working_dir/
 /build/
 /coverage/
 
-# Symbolication related
-app.*.symbols
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
 
-# Obfuscation related
-app.*.map.json
+# macOS
+.macos/
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Docs — keep local only
+docs/
+backend/docs/database-schema.md
+
+# Design assets — keep local only, not pushed to remote
+assets/
