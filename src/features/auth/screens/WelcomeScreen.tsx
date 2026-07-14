@@ -15,7 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../core/navigation/AppNavigator';
-import { Colors } from '../../../core/theme/colors';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
+import { AppStrings } from '../../../core/constants/strings';
 
 const { width, height } = Dimensions.get('window');
 
@@ -271,11 +272,11 @@ export default function WelcomeScreen() {
           </Animated.View>
 
           {/* App logo / name */}
-          <Text style={styles.splashAppName}>CareNest</Text>
+          <Text style={styles.splashAppName}>{AppStrings.appName}</Text>
 
           {/* Tagline */}
           <Text style={styles.splashTagline}>
-            Peace of mind when away from home
+            {AppStrings.tagline}
           </Text>
         </SafeAreaView>
       </Animated.View>
@@ -337,10 +338,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: Spacing.xxxl,
   },
   splashMascotWrapper: {
-    marginBottom: 40,
+    marginBottom: 40, // Spacing.xxxxl equivalent — keeping for visual balance
   },
   splashMascotCircle: {
     width: 140,
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   splashTagline: {
-    fontSize: 16,
+    fontSize: Typography.button.fontSize,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
@@ -391,7 +392,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   skipButtonText: {
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
@@ -402,7 +403,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: Spacing.xxxl,
     paddingBottom: 80,
   },
 
@@ -435,13 +436,13 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     textAlign: 'center',
     lineHeight: 34,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   slideSubtitle: {
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: Typography.body.lineHeight,
     marginBottom: 40,
   },
 
@@ -478,8 +479,8 @@ const styles = StyleSheet.create({
   primaryButton: {
     width: '100%',
     backgroundColor: Colors.primary,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
     shadowColor: Colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
@@ -496,8 +497,8 @@ const styles = StyleSheet.create({
   secondaryButton: {
     width: '100%',
     backgroundColor: Colors.surface,
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Colors.primary,
