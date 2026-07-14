@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../features/auth/store/authStore';
+import { navigationRef } from './navigationRef';
 
 // Screens
 import WelcomeScreen from '../../features/auth/screens/WelcomeScreen';
@@ -46,7 +47,7 @@ export default function AppNavigator() {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           // ── Auth flow ──────────────────────────────────────────
