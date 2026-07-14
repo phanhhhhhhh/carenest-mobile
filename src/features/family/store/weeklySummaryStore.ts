@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
+import { getStatus, getErrorMessage } from '../../../core/api/errors';
 
 /**
  * Port of Flutter's weekly_summary_provider.dart (WeeklySummaryNotifier).
@@ -66,20 +67,6 @@ interface WeeklySummaryState {
 
   load: (elderlyId: string) => Promise<void>;
   generateNow: (elderlyId: string) => Promise<WeeklySummaryData | null>;
-}
-
-function getStatus(e: unknown): number | undefined {
-  if (e && typeof e === 'object' && 'response' in e) {
-    return (e as { response?: { status?: number } }).response?.status;
-  }
-  return undefined;
-}
-
-function getErrorMessage(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return String((e as { message?: unknown }).message);
-  }
-  return 'unknown error';
 }
 
 export const useWeeklySummaryStore = create<WeeklySummaryState>((set) => ({

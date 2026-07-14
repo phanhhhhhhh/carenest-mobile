@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors } from '../../../core/theme/colors';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
@@ -171,37 +171,37 @@ export default function PhoneScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: 24, flexGrow: 1, justifyContent: 'center' },
-  backBtn: { marginBottom: 24 },
-  backText: { fontSize: 16, color: Colors.textSecondary },
-  title: { fontSize: 28, fontWeight: '800', color: Colors.textPrimary },
-  subtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 6, marginBottom: 28 },
+  scroll: { padding: Spacing.xxl, flexGrow: 1, justifyContent: 'center' },
+  backBtn: { marginBottom: Spacing.xxl },
+  backText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
+  title: { fontSize: Typography.h1.fontSize, fontWeight: '800', color: Colors.textPrimary },
+  subtitle: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, marginTop: 6, marginBottom: 28 },
   toggleRow: {
     flexDirection: 'row',
-    backgroundColor: '#E5E7EB',
-    borderRadius: 12,
+    backgroundColor: Colors.border,
+    borderRadius: BorderRadius.md,
     padding: 4,
-    marginBottom: 20,
+    marginBottom: Spacing.xl,
   },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   toggleActive: { backgroundColor: Colors.surface },
-  toggleText: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
+  toggleText: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, fontWeight: '500' },
   toggleTextActive: { color: Colors.primary, fontWeight: '700' },
-  inputWrap: { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
+  inputWrap: { marginBottom: Spacing.lg },
+  label: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
   input: {
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: BorderRadius.md,
     padding: 14,
-    fontSize: 15,
+    fontSize: Typography.body.fontSize,
     color: Colors.textPrimary,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
   },
-  forgotText: { textAlign: 'right', color: Colors.primary, fontSize: 13, marginBottom: 24 },
-  loginBtn: { backgroundColor: Colors.primary, borderRadius: 14, padding: 16, alignItems: 'center' },
+  forgotText: { textAlign: 'right', color: Colors.primary, fontSize: Typography.bodySmall.fontSize, marginBottom: Spacing.xxl },
+  loginBtn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, padding: Spacing.lg, alignItems: 'center' },
   loginBtnDisabled: { opacity: 0.6 },
-  loginBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  loginBtnText: { color: 'white', fontSize: Typography.button.fontSize, fontWeight: '700' },
   registerLink: { marginTop: 20, alignItems: 'center' },
-  registerText: { fontSize: 14, color: Colors.textSecondary },
+  registerText: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary },
 });

@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
-import api from '../../../core/api/client';
+import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -17,6 +17,7 @@ export default function VerificationChoiceScreen() {
   const route = useRoute<Route>();
   const { email, phone, userName } = route.params;
   const [loading, setLoading] = useState('');
+  const sendOtpAction = useAuthStore((s) => s.sendOtp);
 
   const sendOtp = async (method: string) => {
     const target = method === 'EMAIL' ? email : phone;
@@ -25,10 +26,10 @@ export default function VerificationChoiceScreen() {
       return;
     }
     setLoading(method);
-    try {
-      await api.post('/auth/send-otp', { target, method });
+    const ok = await sendOtpAction(target, method);
+    if (ok) {
       navigation.navigate('OtpVerify', { target, method, userName });
-    } catch {
+    } else {
       Alert.alert('Error', `Could not send ${method === 'EMAIL' ? 'email' : 'SMS'}`);
     }
     setLoading('');
