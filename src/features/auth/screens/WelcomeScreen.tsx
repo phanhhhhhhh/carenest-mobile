@@ -307,25 +307,35 @@ export default function WelcomeScreen() {
       <View style={styles.footer}>
         {renderDots()}
 
-        {currentIndex === slides.length - 1 && (
-          <View style={styles.buttonSlot}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => navigation.navigate('Register')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.primaryButtonLabel}>Bắt đầu ngay</Text>
-            </TouchableOpacity>
+        <Animated.View
+          style={[
+            styles.buttonSlot,
+            {
+              opacity: scrollX.interpolate({
+                inputRange: [(slides.length - 2) * width, (slides.length - 1) * width],
+                outputRange: [0, 1],
+                extrapolate: 'clamp',
+              }),
+            },
+          ]}
+          pointerEvents={currentIndex === slides.length - 1 ? 'auto' : 'none'}
+        >
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('Register')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryButtonLabel}>Bắt đầu ngay</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => navigation.navigate('Phone')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.secondaryButtonLabel}>Đăng nhập</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Phone')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.secondaryButtonLabel}>Đăng nhập</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
