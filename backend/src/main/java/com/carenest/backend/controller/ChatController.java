@@ -30,9 +30,8 @@ public class ChatController {
     @PostMapping("/message")
     @PreAuthorize("hasRole('ELDERLY') and #userId == authentication.principal")
     public ResponseEntity<ChatResponse> sendMessage(
-        @AuthenticationPrincipal Long userId,
-        @Valid @RequestBody ChatRequest request
-    ) {
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody ChatRequest request) {
         ChatResponse response = chatService.sendMessage(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -44,11 +43,10 @@ public class ChatController {
     @GetMapping("/history")
     @PreAuthorize("hasRole('ELDERLY') and #userId == authentication.principal")
     public ResponseEntity<ChatHistoryResponse> getHistory(
-        @AuthenticationPrincipal Long userId,
-        @RequestParam(required = false) String sessionId,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "50") int size
-    ) {
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(required = false) String sessionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         return ResponseEntity.ok(chatService.getHistory(userId, sessionId, page, size));
     }
 
@@ -58,8 +56,7 @@ public class ChatController {
     @DeleteMapping("/history")
     @PreAuthorize("hasRole('ELDERLY') and #userId == authentication.principal")
     public ResponseEntity<Map<String, String>> clearHistory(
-        @AuthenticationPrincipal Long userId
-    ) {
+            @AuthenticationPrincipal Long userId) {
         chatService.clearHistory(userId);
         return ResponseEntity.ok(Map.of("message", "Chat history cleared"));
     }
@@ -70,10 +67,8 @@ public class ChatController {
     @GetMapping("/health")
     @PreAuthorize("hasRole('ELDERLY')")
     public ResponseEntity<Map<String, Object>> health() {
-        boolean available = chatService != null; // simplified — GeminiApiService.isAvailable() is package-private
         return ResponseEntity.ok(Map.of(
-            "status", "UP",
-            "aiService", "ChatController active"
-        ));
+                "status", "UP",
+                "aiService", "ChatController active"));
     }
 }

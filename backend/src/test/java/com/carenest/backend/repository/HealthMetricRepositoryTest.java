@@ -63,7 +63,7 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
                         elderly.getId(), HealthMetricType.HEART_RATE,
                         base.minusHours(3), base.plusHours(3));
 
-        assertThat(results).extracting(HealthMetric::getId)
+        assertThat(results).extracting(hm -> hm.getId())
                 .containsExactly(late.getId(), middle.getId(), early.getId());
     }
 
@@ -98,7 +98,7 @@ class HealthMetricRepositoryTest extends BaseRepositoryTest {
                         elderly.getId(), HealthMetricType.HEART_RATE,
                         base.minusHours(1), base.plusHours(1));
 
-        assertThat(results).extracting(HealthMetric::getId).doesNotContain(metric.getId());
+        assertThat(results).extracting(hm -> hm.getId()).doesNotContain(metric.getId());
     }
 
     @Test
