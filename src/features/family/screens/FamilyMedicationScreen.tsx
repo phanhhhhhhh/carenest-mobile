@@ -11,6 +11,7 @@ import {
   FlatList,
   Alert,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -213,7 +214,11 @@ export default function FamilyMedicationScreen() {
     if (items.length === 0) {
       return (
         <View style={styles.emptyBox}>
-          <Ionicons name="medkit-outline" size={48} color={Colors.textHint} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_confused.jpg')}
+            style={{ width: 110, height: 110 }}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>{emptyHint}</Text>
         </View>
       );

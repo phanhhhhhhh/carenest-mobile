@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -208,7 +209,7 @@ export default function ElderlyHealthScreen() {
     if (Object.keys(latestByTypeStore).length === 0) {
       setAiInsight(
         'Start tracking your health by adding your first reading. ' +
-          'I will help you analyze trends and provide personalized advice!',
+        'I will help you analyze trends and provide personalized advice!',
       );
       setAiLoading(false);
       setAiError(null);
@@ -524,10 +525,12 @@ function PeriodChip({ label, selected, onPress }: { label: string; selected: boo
 function EmptyState() {
   return (
     <View style={styles.emptyState}>
-      <View style={styles.emptyIconWrap}>
-        <Ionicons name="pulse-outline" size={40} color={Colors.primary} />
-      </View>
-      <View style={{ height: 16 }} />
+      <Image
+        source={require('../../../../assets/mascot/mascot_confused.jpg')}
+        style={{ width: 130, height: 130 }}
+        resizeMode="contain"
+      />
+      <View style={{ height: 4 }} />
       <Text style={styles.emptyTitle}>No health data yet</Text>
       <View style={{ height: 6 }} />
       <Text style={styles.emptySubtitle}>Press + to add your first reading</Text>
