@@ -98,6 +98,8 @@ public class ReminderService {
                 case MONTHLY:
                     reminder.setRemindAt(reminder.getRemindAt().plusMonths(1));
                     break;
+                case NONE:
+                    break;
             }
         }
         reminderRepository.save(reminder);

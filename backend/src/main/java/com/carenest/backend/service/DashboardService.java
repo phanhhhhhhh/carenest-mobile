@@ -8,7 +8,6 @@ import com.carenest.backend.dto.dashboard.LatestMetricItem;
 import com.carenest.backend.dto.dashboard.MedicationAdherenceSummary;
 import com.carenest.backend.entity.Appointment;
 import com.carenest.backend.entity.AppointmentStatus;
-import com.carenest.backend.entity.ElderlyProfile;
 import com.carenest.backend.entity.FamilyLink;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.HealthMetricType;
@@ -52,7 +51,7 @@ public class DashboardService {
 
     public FamilyDashboardResponse getFamilyDashboard(Long familyId) {
         List<FamilyLink> links = familyLinkRepository
-            .findAllElderlyByFamilyIdAndStatus(familyId, FamilyLinkStatus.ACTIVE);
+                .findAllElderlyByFamilyIdAndStatus(familyId, FamilyLinkStatus.ACTIVE);
 
         List<ElderlyDashboardItem> items = new ArrayList<>();
         int totalAlerts = 0;
@@ -70,15 +69,15 @@ public class DashboardService {
         }
 
         return FamilyDashboardResponse.builder()
-            .familyId(familyId)
-            .elderly(items)
-            .summary(FamilyDashboardResponse.DashboardSummary.builder()
-                .totalElderly(items.size())
-                .totalActiveAlerts(totalAlerts)
-                .totalUpcomingAppointments(totalAppointments)
-                .totalMedicationsDue(totalMedsDue)
-                .build())
-            .build();
+                .familyId(familyId)
+                .elderly(items)
+                .summary(FamilyDashboardResponse.DashboardSummary.builder()
+                        .totalElderly(items.size())
+                        .totalActiveAlerts(totalAlerts)
+                        .totalUpcomingAppointments(totalAppointments)
+                        .totalMedicationsDue(totalMedsDue)
+                        .build())
+                .build();
     }
 
     private ElderlyDashboardItem buildElderlyItem(User elderly) {
@@ -104,16 +103,16 @@ public class DashboardService {
         }
 
         return ElderlyDashboardItem.builder()
-            .elderlyId(elderlyId)
-            .elderlyName(elderly.getName())
-            .healthConditions(getHealthConditions(elderlyId))
-            .latestMetrics(getLatestMetrics(elderlyId))
-            .medicationAdherence(adherence)
-            .upcomingAppointments(getUpcomingAppointments(elderlyId))
-            .activeAlerts(alerts)
-            .statusColor(statusColor)
-            .statusMessage(statusMessage)
-            .build();
+                .elderlyId(elderlyId)
+                .elderlyName(elderly.getName())
+                .healthConditions(getHealthConditions(elderlyId))
+                .latestMetrics(getLatestMetrics(elderlyId))
+                .medicationAdherence(adherence)
+                .upcomingAppointments(getUpcomingAppointments(elderlyId))
+                .activeAlerts(alerts)
+                .statusColor(statusColor)
+                .statusMessage(statusMessage)
+                .build();
     }
 
     /**
@@ -121,15 +120,15 @@ public class DashboardService {
      */
     private boolean hasEmergencyAlert(Long elderlyId) {
         return !emergencyEventRepository
-            .findByElderlyIdAndStatusOrderByTriggeredAtDesc(elderlyId,
-                com.carenest.backend.entity.EmergencyStatus.ACTIVE)
-            .isEmpty();
+                .findByElderlyIdAndStatusOrderByTriggeredAtDesc(elderlyId,
+                        com.carenest.backend.entity.EmergencyStatus.ACTIVE)
+                .isEmpty();
     }
 
     private List<String> getHealthConditions(Long elderlyId) {
         return elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(elderlyId)
-            .map(ElderlyProfile::getHealthConditions)
-            .orElse(Collections.emptyList());
+                .map(profile -> profile.getHealthConditions())
+                .orElse(Collections.emptyList());
     }
 
     // ── Latest Metrics ──────────────────────────────────────────────────────
@@ -138,12 +137,12 @@ public class DashboardService {
         Map<String, LatestMetricItem> metrics = new LinkedHashMap<>();
         for (HealthMetricType type : HealthMetricType.values()) {
             healthMetricRepository.findLatestByElderlyIdAndType(elderlyId, type)
-                .ifPresent(m -> metrics.put(type.name(), LatestMetricItem.builder()
-                    .value(m.getValue())
-                    .valueSecondary(m.getValueSecondary())
-                    .unit(m.getUnit())
-                    .recordedAt(m.getRecordedAt())
-                    .build()));
+                    .ifPresent(m -> metrics.put(type.name(), LatestMetricItem.builder()
+                            .value(m.getValue())
+                            .valueSecondary(m.getValueSecondary())
+                            .unit(m.getUnit())
+                            .recordedAt(m.getRecordedAt())
+                            .build()));
         }
         return metrics;
     }
@@ -152,41 +151,41 @@ public class DashboardService {
 
     private MedicationAdherenceSummary getMedicationAdherence(Long elderlyId) {
         OffsetDateTime startOfDay = OffsetDateTime.now()
-            .withHour(0).withMinute(0).withSecond(0).withNano(0);
+                .withHour(0).withMinute(0).withSecond(0).withNano(0);
         OffsetDateTime endOfDay = startOfDay.plusDays(1);
 
         // Count scheduled medications for today
         List<com.carenest.backend.entity.Medication> todayMeds = medicationRepository
-            .findUpcomingByElderlyId(elderlyId, startOfDay, endOfDay);
+                .findUpcomingByElderlyId(elderlyId, startOfDay, endOfDay);
         // Also count overdue
         List<com.carenest.backend.entity.Medication> overdue = medicationRepository
-            .findAllOverdueMedications(OffsetDateTime.now())
-            .stream()
-            .filter(m -> m.getElderly().getId().equals(elderlyId))
-            .collect(Collectors.toList());
+                .findAllOverdueMedications(OffsetDateTime.now())
+                .stream()
+                .filter(m -> m.getElderly().getId().equals(elderlyId))
+                .collect(Collectors.toList());
 
         long totalDue = todayMeds.size() + overdue.size();
 
         // Get all logs for today
         List<MedicationLog> logs = medicationLogRepository
-            .findAllByElderlyIdAndDateRange(elderlyId, startOfDay, endOfDay);
+                .findAllByElderlyIdAndDateRange(elderlyId, startOfDay, endOfDay);
 
         long taken = logs.stream()
-            .filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
+                .filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
         long missed = logs.stream()
-            .filter(l -> l.getStatus() == MedicationLogStatus.MISSED).count();
+                .filter(l -> l.getStatus() == MedicationLogStatus.MISSED).count();
         long skipped = logs.stream()
-            .filter(l -> l.getStatus() == MedicationLogStatus.SKIPPED).count();
+                .filter(l -> l.getStatus() == MedicationLogStatus.SKIPPED).count();
 
         double rate = totalDue > 0 ? (double) taken / totalDue : 1.0;
 
         return MedicationAdherenceSummary.builder()
-            .totalDue(totalDue)
-            .taken(taken)
-            .missed(missed)
-            .skipped(skipped)
-            .adherenceRate(Math.min(rate, 1.0))
-            .build();
+                .totalDue(totalDue)
+                .taken(taken)
+                .missed(missed)
+                .skipped(skipped)
+                .adherenceRate(Math.min(rate, 1.0))
+                .build();
     }
 
     // ── Upcoming Appointments ───────────────────────────────────────────────
@@ -194,13 +193,13 @@ public class DashboardService {
     private List<AppointmentResponse> getUpcomingAppointments(Long elderlyId) {
         OffsetDateTime now = OffsetDateTime.now();
         return appointmentRepository
-            .findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
-                elderlyId, now, now.plusMonths(3))
-            .stream()
-            .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
-            .map(this::toAppointmentResponse)
-            .limit(5)
-            .collect(Collectors.toList());
+                .findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
+                        elderlyId, now, now.plusMonths(3))
+                .stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .map(this::toAppointmentResponse)
+                .limit(5)
+                .collect(Collectors.toList());
     }
 
     // ── Active Alerts ───────────────────────────────────────────────────────
@@ -211,7 +210,7 @@ public class DashboardService {
         String latestTitle = null;
         String latestType = null;
         var page = notificationRepository
-            .findByUserIdOrderByCreatedAtDesc(elderlyId, PageRequest.of(0, 1));
+                .findByUserIdOrderByCreatedAtDesc(elderlyId, PageRequest.of(0, 1));
         if (!page.isEmpty()) {
             Notification latest = page.getContent().get(0);
             latestTitle = latest.getTitle();
@@ -219,27 +218,27 @@ public class DashboardService {
         }
 
         return ActiveAlertSummary.builder()
-            .count((int) unreadCount)
-            .latestTitle(latestTitle)
-            .latestType(latestType)
-            .build();
+                .count((int) unreadCount)
+                .latestTitle(latestTitle)
+                .latestType(latestType)
+                .build();
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     private AppointmentResponse toAppointmentResponse(Appointment a) {
         return AppointmentResponse.builder()
-            .id(a.getId())
-            .elderlyId(a.getElderly().getId())
-            .elderlyName(a.getElderly().getName())
-            .doctor(a.getDoctor())
-            .specialty(a.getSpecialty())
-            .location(a.getLocation())
-            .datetime(a.getDatetime())
-            .notes(a.getNotes())
-            .status(a.getStatus())
-            .createdAt(a.getCreatedAt())
-            .updatedAt(a.getUpdatedAt())
-            .build();
+                .id(a.getId())
+                .elderlyId(a.getElderly().getId())
+                .elderlyName(a.getElderly().getName())
+                .doctor(a.getDoctor())
+                .specialty(a.getSpecialty())
+                .location(a.getLocation())
+                .datetime(a.getDatetime())
+                .notes(a.getNotes())
+                .status(a.getStatus())
+                .createdAt(a.getCreatedAt())
+                .updatedAt(a.getUpdatedAt())
+                .build();
     }
 }

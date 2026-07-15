@@ -39,7 +39,7 @@ public class SubscriptionService {
                 Subscription.SubscriptionStatus.ACTIVE,
                 List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
             )
-            .map(Subscription::isPremium)
+            .map(s -> s.isPremium())
             .orElse(false);
 
         if (isPremium) {
@@ -73,7 +73,7 @@ public class SubscriptionService {
                 Subscription.SubscriptionStatus.ACTIVE,
                 List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
             )
-            .map(Subscription::isPremium)
+            .map(s -> s.isPremium())
             .orElse(false);
 
         return isPremium ? Integer.MAX_VALUE : 1;

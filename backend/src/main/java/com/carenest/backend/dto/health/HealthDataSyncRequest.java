@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -40,7 +41,7 @@ public class HealthDataSyncRequest {
         private String unit;
 
         @NotNull(message = "recordedAt is required")
-        private java.time.OffsetDateTime recordedAt;
+        private OffsetDateTime recordedAt;
 
         private String notes;
     }

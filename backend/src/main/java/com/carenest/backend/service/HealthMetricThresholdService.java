@@ -5,7 +5,6 @@ import com.carenest.backend.entity.ElderlyProfile;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.HealthMetric;
 import com.carenest.backend.entity.HealthMetricThreshold;
-import com.carenest.backend.entity.HealthMetricType;
 import com.carenest.backend.entity.Notification;
 import com.carenest.backend.entity.NotificationType;
 import com.carenest.backend.entity.User;
@@ -39,28 +38,27 @@ public class HealthMetricThresholdService {
     private final FcmService fcmService;
     private final GeminiApiService geminiApiService;
 
-
     public HealthMetricThresholdResponse create(Long elderlyId, HealthMetricThresholdRequest request) {
         User elderly = userRepository.findById(elderlyId)
-            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + elderlyId));
+                .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + elderlyId));
 
         // Check if threshold already exists for this type
         thresholdRepository.findByElderlyIdAndMetricType(elderlyId, request.getMetricType())
-            .ifPresent(existing -> {
-                throw new IllegalArgumentException(
-                    "Threshold already exists for metricType=" + request.getMetricType() +
-                    " for elderlyId=" + elderlyId);
-            });
+                .ifPresent(existing -> {
+                    throw new IllegalArgumentException(
+                            "Threshold already exists for metricType=" + request.getMetricType() +
+                                    " for elderlyId=" + elderlyId);
+                });
 
         HealthMetricThreshold threshold = HealthMetricThreshold.builder()
-            .elderly(elderly)
-            .metricType(request.getMetricType())
-            .minValue(request.getMinValue())
-            .maxValue(request.getMaxValue())
-            .minValueSecondary(request.getMinValueSecondary())
-            .maxValueSecondary(request.getMaxValueSecondary())
-            .alertFamily(request.getAlertFamily())
-            .build();
+                .elderly(elderly)
+                .metricType(request.getMetricType())
+                .minValue(request.getMinValue())
+                .maxValue(request.getMaxValue())
+                .minValueSecondary(request.getMinValueSecondary())
+                .maxValueSecondary(request.getMaxValueSecondary())
+                .alertFamily(request.getAlertFamily())
+                .build();
 
         return toResponse(thresholdRepository.save(threshold));
     }
@@ -68,9 +66,9 @@ public class HealthMetricThresholdService {
     @Transactional(readOnly = true)
     public List<HealthMetricThresholdResponse> getByElderlyId(Long elderlyId) {
         return thresholdRepository.findByElderlyId(elderlyId)
-            .stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     public HealthMetricThresholdResponse update(Long id, HealthMetricThresholdRequest request) {
@@ -99,78 +97,78 @@ public class HealthMetricThresholdService {
     public void checkAndAlert(HealthMetric metric) {
         thresholdRepository.findByElderlyIdAndMetricType(
                 metric.getElderly().getId(), metric.getType())
-            .ifPresent(threshold -> {
-                boolean breached = isValueOutOfRange(metric.getValue(),
-                    threshold.getMinValue(), threshold.getMaxValue());
+                .ifPresent(threshold -> {
+                    boolean breached = isValueOutOfRange(metric.getValue(),
+                            threshold.getMinValue(), threshold.getMaxValue());
 
-                boolean secondaryBreached = metric.getValueSecondary() != null
-                    && isValueOutOfRange(metric.getValueSecondary(),
-                        threshold.getMinValueSecondary(), threshold.getMaxValueSecondary());
+                    boolean secondaryBreached = metric.getValueSecondary() != null
+                            && isValueOutOfRange(metric.getValueSecondary(),
+                                    threshold.getMinValueSecondary(), threshold.getMaxValueSecondary());
 
-                if (breached || secondaryBreached) {
-                    String body = buildAlertBody(metric, threshold, breached, secondaryBreached);
+                    if (breached || secondaryBreached) {
+                        String body = buildAlertBody(metric, threshold, breached, secondaryBreached);
 
-                    Notification notification = Notification.builder()
-                        .user(metric.getElderly())
-                        .type(NotificationType.HEALTH_ALERT)
-                        .title("Health Alert: " + metric.getType())
-                        .body(body)
-                        .data(java.util.Map.of(
-                            "metricId", metric.getId(),
-                            "elderlyId", metric.getElderly().getId(),
-                            "metricType", metric.getType().name(),
-                            "value", metric.getValue(),
-                            "thresholdId", threshold.getId()
-                        ))
-                        .build();
-                    notificationRepository.save(notification);
+                        Notification notification = Notification.builder()
+                                .user(metric.getElderly())
+                                .type(NotificationType.HEALTH_ALERT)
+                                .title("Health Alert: " + metric.getType())
+                                .body(body)
+                                .data(Map.of(
+                                        "metricId", metric.getId(),
+                                        "elderlyId", metric.getElderly().getId(),
+                                        "metricType", metric.getType().name(),
+                                        "value", metric.getValue(),
+                                        "thresholdId", threshold.getId()))
+                                .build();
+                        notificationRepository.save(notification);
 
-                    // Send push to the elderly user
-                    fcmService.sendToUser(metric.getElderly().getId(),
-                        "Health Alert: " + metric.getType(),
-                        body,
-                        Map.of(
-                            "type", "HEALTH_ALERT",
-                            "metricId", metric.getId().toString(),
-                            "elderlyId", metric.getElderly().getId().toString()
-                        ));
-
-                    // Send push to linked family members if alertFamily is enabled
-                    if (Boolean.TRUE.equals(threshold.getAlertFamily())) {
-                        List<Long> familyUserIds = familyLinkRepository
-                            .findAllFamilyByElderlyIdAndStatus(
-                                metric.getElderly().getId(), FamilyLinkStatus.ACTIVE)
-                            .stream()
-                            .map(fl -> fl.getFamily().getId())
-                            .collect(Collectors.toList());
-
-                        if (!familyUserIds.isEmpty()) {
-                            fcmService.sendToUsers(familyUserIds,
-                                "Health Alert: " + metric.getElderly().getName(),
-                                metric.getElderly().getName() + " - " + body,
+                        // Send push to the elderly user
+                        fcmService.sendToUser(metric.getElderly().getId(),
+                                "Health Alert: " + metric.getType(),
+                                body,
                                 Map.of(
-                                    "type", "HEALTH_ALERT",
-                                    "metricId", metric.getId().toString(),
-                                    "elderlyId", metric.getElderly().getId().toString()
-                                ));
-                        }
-                    }
+                                        "type", "HEALTH_ALERT",
+                                        "metricId", metric.getId().toString(),
+                                        "elderlyId", metric.getElderly().getId().toString()));
 
-                    log.info("Health alert created for elderly={} metricType={} value={}",
-                        metric.getElderly().getId(), metric.getType(), metric.getValue());
-                }
-            });
+                        // Send push to linked family members if alertFamily is enabled
+                        if (Boolean.TRUE.equals(threshold.getAlertFamily())) {
+                            List<Long> familyUserIds = familyLinkRepository
+                                    .findAllFamilyByElderlyIdAndStatus(
+                                            metric.getElderly().getId(), FamilyLinkStatus.ACTIVE)
+                                    .stream()
+                                    .map(fl -> fl.getFamily().getId())
+                                    .collect(Collectors.toList());
+
+                            if (!familyUserIds.isEmpty()) {
+                                fcmService.sendToUsers(familyUserIds,
+                                        "Health Alert: " + metric.getElderly().getName(),
+                                        metric.getElderly().getName() + " - " + body,
+                                        Map.of(
+                                                "type", "HEALTH_ALERT",
+                                                "metricId", metric.getId().toString(),
+                                                "elderlyId", metric.getElderly().getId().toString()));
+                            }
+                        }
+
+                        log.info("Health alert created for elderly={} metricType={} value={}",
+                                metric.getElderly().getId(), metric.getType(), metric.getValue());
+                    }
+                });
     }
 
     private boolean isValueOutOfRange(BigDecimal value, BigDecimal min, BigDecimal max) {
-        if (value == null) return false;
-        if (min != null && value.compareTo(min) < 0) return true;
-        if (max != null && value.compareTo(max) > 0) return true;
+        if (value == null)
+            return false;
+        if (min != null && value.compareTo(min) < 0)
+            return true;
+        if (max != null && value.compareTo(max) > 0)
+            return true;
         return false;
     }
 
     private String buildAlertBody(HealthMetric metric, HealthMetricThreshold threshold,
-                                   boolean primaryBreached, boolean secondaryBreached) {
+            boolean primaryBreached, boolean secondaryBreached) {
         StringBuilder sb = new StringBuilder();
         sb.append("Metric out of range: ").append(metric.getType()).append(" out of range: ");
 
@@ -178,12 +176,13 @@ public class HealthMetricThresholdService {
             sb.append(metric.getValue()).append(" ").append(metric.getUnit());
             if (threshold.getMinValue() != null && threshold.getMaxValue() != null) {
                 sb.append(" (threshold: ").append(threshold.getMinValue())
-                    .append(" - ").append(threshold.getMaxValue()).append(")");
+                        .append(" - ").append(threshold.getMaxValue()).append(")");
             }
         }
 
         if (secondaryBreached && metric.getValueSecondary() != null) {
-            if (primaryBreached) sb.append("; ");
+            if (primaryBreached)
+                sb.append("; ");
             sb.append("secondary value: ").append(metric.getValueSecondary());
         }
 
@@ -196,32 +195,31 @@ public class HealthMetricThresholdService {
      */
     public Map<String, Object> recommendThresholds(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         Optional<ElderlyProfile> profileOpt = elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(userId);
 
         if (!geminiApiService.isAvailable()) {
             return Map.of("aiRecommended", false, "recommendations",
-                List.of(
-                    Map.of("metricType", "BLOOD_PRESSURE", "minValue", 90, "maxValue", 140, "unit", "mmHg"),
-                    Map.of("metricType", "HEART_RATE", "minValue", 60, "maxValue", 100, "unit", "bpm"),
-                    Map.of("metricType", "BLOOD_GLUCOSE", "minValue", 3.9, "maxValue", 7.0, "unit", "mmol/L"),
-                    Map.of("metricType", "TEMPERATURE", "minValue", 36.1, "maxValue", 37.5, "unit", "C"),
-                    Map.of("metricType", "SPO2", "minValue", 95, "maxValue", 100, "unit", "%")
-                ));
+                    List.of(
+                            Map.of("metricType", "BLOOD_PRESSURE", "minValue", 90, "maxValue", 140, "unit", "mmHg"),
+                            Map.of("metricType", "HEART_RATE", "minValue", 60, "maxValue", 100, "unit", "bpm"),
+                            Map.of("metricType", "BLOOD_GLUCOSE", "minValue", 3.9, "maxValue", 7.0, "unit", "mmol/L"),
+                            Map.of("metricType", "TEMPERATURE", "minValue", 36.1, "maxValue", 37.5, "unit", "C"),
+                            Map.of("metricType", "SPO2", "minValue", 95, "maxValue", 100, "unit", "%")));
         }
 
         try {
             String context = "Patient: " + user.getName() + "\n"
-                + (profileOpt.isPresent()
-                    ? "Conditions: " + String.join(", ", profileOpt.get().getHealthConditions())
-                    : "No chronic conditions recorded.");
+                    + (profileOpt.isPresent()
+                            ? "Conditions: " + String.join(", ", profileOpt.get().getHealthConditions())
+                            : "No chronic conditions recorded.");
 
             String aiResponse = geminiApiService.generateHealthAnalysis(
-                "Recommend personalized health thresholds for this elderly patient. "
-                    + "Consider their chronic conditions. Output thresholds for: "
-                    + "BLOOD_PRESSURE, HEART_RATE, BLOOD_GLUCOSE, TEMPERATURE, SPO2.",
-                context);
+                    "Recommend personalized health thresholds for this elderly patient. "
+                            + "Consider their chronic conditions. Output thresholds for: "
+                            + "BLOOD_PRESSURE, HEART_RATE, BLOOD_GLUCOSE, TEMPERATURE, SPO2.",
+                    context);
             return Map.of("aiRecommended", true, "recommendations", aiResponse);
         } catch (Exception e) {
             log.warn("Gemini threshold recommendation failed: {}", e.getMessage());
@@ -231,21 +229,21 @@ public class HealthMetricThresholdService {
 
     private HealthMetricThreshold findOrThrow(Long id) {
         return thresholdRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("HealthMetricThreshold not found: " + id));
+                .orElseThrow(() -> new NotFoundException("HealthMetricThreshold not found: " + id));
     }
 
     private HealthMetricThresholdResponse toResponse(HealthMetricThreshold t) {
         return HealthMetricThresholdResponse.builder()
-            .id(t.getId())
-            .elderlyId(t.getElderly().getId())
-            .metricType(t.getMetricType())
-            .minValue(t.getMinValue())
-            .maxValue(t.getMaxValue())
-            .minValueSecondary(t.getMinValueSecondary())
-            .maxValueSecondary(t.getMaxValueSecondary())
-            .alertFamily(t.getAlertFamily())
-            .createdAt(t.getCreatedAt())
-            .updatedAt(t.getUpdatedAt())
-            .build();
+                .id(t.getId())
+                .elderlyId(t.getElderly().getId())
+                .metricType(t.getMetricType())
+                .minValue(t.getMinValue())
+                .maxValue(t.getMaxValue())
+                .minValueSecondary(t.getMinValueSecondary())
+                .maxValueSecondary(t.getMaxValueSecondary())
+                .alertFamily(t.getAlertFamily())
+                .createdAt(t.getCreatedAt())
+                .updatedAt(t.getUpdatedAt())
+                .build();
     }
 }
