@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -139,7 +140,11 @@ export default function ElderlyAppointmentsScreen() {
     if (items.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <Ionicons name="document-text-outline" color={Colors.textHint} size={56} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_confused.jpg')}
+            style={{ width: 130, height: 130 }}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>No appointments yet</Text>
         </View>
       );

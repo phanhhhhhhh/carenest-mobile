@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -92,7 +93,11 @@ export default function ElderlyMedicationHistoryScreen() {
         </View>
       ) : logs.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="time-outline" color={Colors.textHint} size={48} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_confused.jpg')}
+            style={{ width: 120, height: 120 }}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>No medication history yet</Text>
         </View>
       ) : (
