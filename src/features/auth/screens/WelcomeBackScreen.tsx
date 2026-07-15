@@ -1,20 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Route = RouteProp<RootStackParamList, 'WelcomeBack'>;
+
+const Teal = '#12A79C';
+const TealDark = '#0E8A81';
+const SubtitleGray = '#8E8E8E';
+const White = '#FFFFFF';
 
 export default function WelcomeBackScreen() {
   const route = useRoute<Route>();
   const authStoreUser = useAuthStore((s) => s.user);
   const completeLogin = useAuthStore((s) => s.completeLogin);
 
-  const userName = route.params?.userName || authStoreUser?.name || 'User';
+  const userName = route.params?.userName || authStoreUser?.name || 'bạn';
 
   const handleContinue = () => {
     completeLogin();
@@ -23,17 +27,26 @@ export default function WelcomeBackScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.mascotWrapper}>
-          <View style={styles.mascotCircle}>
-            <Text style={styles.mascotEmoji}>{'👶'}</Text>
-          </View>
-        </View>
+        <Image
+          source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
+          style={styles.mascot}
+          resizeMode="contain"
+        />
 
-        <Text style={styles.title}>Welcome back, {userName}!</Text>
-        <Text style={styles.subtitle}>Your account has been verified successfully</Text>
+        <Text style={styles.title}>
+          Chào mừng trở lại,{'\n'}
+          {userName}!
+        </Text>
+        <Text style={styles.subtitle}>
+          Tài khoản của bạn đã được xác thực thành công
+        </Text>
 
-        <TouchableOpacity style={styles.btn} onPress={handleContinue} activeOpacity={0.8}>
-          <Text style={styles.btnText}>Continue</Text>
+        <TouchableOpacity
+          style={styles.btn}
+          onPress={handleContinue}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.btnText}>Tiếp tục</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -43,65 +56,50 @@ export default function WelcomeBackScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: White,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.xxl,
+    paddingHorizontal: 32,
   },
-  mascotWrapper: {
-    marginBottom: Spacing.xxxl,
-    alignItems: 'center',
-  },
-  mascotCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  mascotEmoji: {
-    fontSize: 64,
+  mascot: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: Colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '700',
+    color: Teal,
     textAlign: 'center',
-    marginBottom: Spacing.md,
+    lineHeight: 32,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: Typography.buttonSmall.fontSize,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: SubtitleGray,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 48,
+    lineHeight: 21,
+    marginBottom: 40,
     paddingHorizontal: 16,
   },
   btn: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.xxxl,
-    width: '100%',
+    backgroundColor: Teal,
+    borderRadius: 9999,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
     alignItems: 'center',
-    shadowColor: Colors.primaryDark,
+    shadowColor: TealDark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 5,
   },
   btnText: {
-    color: '#FFFFFF',
-    fontSize: Typography.button.fontSize,
+    color: White,
+    fontSize: 16,
     fontWeight: '700',
   },
 });

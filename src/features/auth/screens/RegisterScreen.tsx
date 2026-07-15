@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,106 +9,140 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
+// Teal palette matching the mockup
+const Teal = '#12A79C';
+const TealDark = '#0E8A81';
+const LabelGray = '#6B7280';
+const HintGray = '#B4BAC0';
+const BorderGray = '#C9CED4';
+const ErrorRed = '#E53935';
+const White = '#FFFFFF';
+const TextDark = '#37404A';
 
 interface FieldErrors {
   name?: string;
-  email?: string;
   phone?: string;
   password?: string;
   confirmPassword?: string;
-  role?: string;
   terms?: string;
 }
 
+// ── Validators (mirror backend rules) ─────────────────────────────
+
 function validateName(v: string): string | undefined {
-  if (!v.trim()) return 'Full name is required';
-  if (v.trim().length < 2) return 'Name must be at least 2 characters';
+  if (!v.trim()) return 'Vui lòng nhập họ và tên';
+  if (v.trim().length < 2) return 'Họ tên phải có ít nhất 2 ký tự';
   return undefined;
 }
 
-function validateEmail(v: string): string | undefined {
-  if (!v.trim()) return undefined;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return 'Enter a valid email address';
-  return undefined;
-}
-
+/**
+ * Phone is entered as local digits, displayed next to a fixed +84 prefix.
+ * Accepts "0768554948" or "768554948" -> normalized to +84768554948.
+ */
 function validatePhone(v: string): string | undefined {
-  if (!v.trim()) return undefined;
-  const digits = v.replace(/\D/g, '');
-  if (digits.length < 7 || digits.length > 11) return 'Enter a valid phone number';
+  if (!v.trim()) return 'Vui lòng nhập số điện thoại';
+  const digits = v.replace(/\D/g, '').replace(/^0+/, '');
+  if (digits.length !== 9 || !/^[35789]/.test(digits)) {
+    return 'Số điện thoại không đúng định dạng (VD: 0768554948)';
+  }
   return undefined;
 }
 
+function normalizePhone(v: string): string {
+  return '+84' + v.replace(/\D/g, '').replace(/^0+/, '');
+}
+
+/** Backend: >= 8 chars, at least 1 uppercase, 1 lowercase, 1 digit */
 function validatePassword(v: string): string | undefined {
-  if (!v) return 'Password is required';
-  if (v.length < 6) return 'Password must be at least 6 characters';
+  if (!v) return 'Vui lòng nhập mật khẩu';
+  if (v.length < 8) return 'Mật khẩu phải có ít nhất 8 ký tự';
+  if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/.test(v)) {
+    return 'Mật khẩu cần ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số';
+  }
   return undefined;
 }
 
 function validateConfirmPassword(pw: string, confirm: string): string | undefined {
-  if (!confirm) return 'Please confirm your password';
-  if (pw !== confirm) return 'Passwords do not match';
+  if (!confirm) return 'Vui lòng nhập lại mật khẩu';
+  if (pw !== confirm) return 'Mật khẩu nhập lại không khớp';
   return undefined;
 }
 
+// ── Reusable field ────────────────────────────────────────────────
+
+interface PillFieldProps {
+  label: string;
+  error?: string;
+  touched?: boolean;
+  children: React.ReactNode;
+}
+
+function PillField({ label, error, touched, children }: PillFieldProps) {
+  const showError = !!(touched && error);
+  return (
+    <View style={styles.fieldBlock}>
+      <Text style={[styles.label, showError && styles.labelError]}>{label}</Text>
+      <View style={[styles.inputPill, showError && styles.inputPillError]}>
+        {children}
+      </View>
+      {showError && <Text style={styles.fieldError}>{error}</Text>}
+    </View>
+  );
+}
+
+// ── Screen ────────────────────────────────────────────────────────
 
 export default function RegisterScreen() {
   const navigation = useNavigation<Nav>();
-  const { register, isLoading } = useAuthStore();
+  const { register, sendOtp, isLoading } = useAuthStore();
 
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [role, setRole] = useState<'ELDERLY' | 'FAMILY'>('ELDERLY');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const emailRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
-  const runValidation = (fields?: Record<string, string>): FieldErrors => {
-    const e: FieldErrors = {};
-    const n = fields?.name ?? name;
-    const em = fields?.email ?? email;
-    const ph = fields?.phone ?? phone;
-    const pw = fields?.password ?? password;
-    const cp = fields?.confirmPassword ?? confirmPassword;
-
-    e.name = validateName(n);
-    e.email = validateEmail(em);
-    e.phone = validatePhone(ph);
-    e.password = validatePassword(pw);
-    e.confirmPassword = validateConfirmPassword(pw, cp);
-
-    if (!agreedToTerms) e.terms = 'You must agree to the Terms of Service';
-
-    Object.keys(e).forEach((k) => {
-      if (e[k as keyof FieldErrors] === undefined) delete e[k as keyof FieldErrors];
+  const runValidation = useCallback((): FieldErrors => {
+    const e: FieldErrors = {
+      name: validateName(name),
+      phone: validatePhone(phone),
+      password: validatePassword(password),
+      confirmPassword: validateConfirmPassword(password, confirmPassword),
+      terms: agreedToTerms
+        ? undefined
+        : 'Bạn cần đồng ý với Điều khoản sử dụng và Chính sách bảo mật',
+    };
+    (Object.keys(e) as (keyof FieldErrors)[]).forEach((k) => {
+      if (e[k] === undefined) delete e[k];
     });
     return e;
-  };
+  }, [name, phone, password, confirmPassword, agreedToTerms]);
 
+  // Validate on blur (user leaves the field)
   const handleBlur = (field: keyof FieldErrors) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    setErrors((prev) => {
-      const fresh = runValidation();
-      return { ...prev, [field]: fresh[field] };
-    });
+    setErrors((prev) => ({ ...prev, [field]: runValidation()[field] }));
   };
 
   const handleRegister = async () => {
@@ -116,43 +150,45 @@ export default function RegisterScreen() {
     setErrors(allErrors);
     setTouched({
       name: true,
-      email: true,
       phone: true,
       password: true,
       confirmPassword: true,
       terms: true,
     });
+    if (Object.keys(allErrors).length > 0) return;
 
-    if (Object.keys(allErrors).length > 0) {
-      const firstKey = Object.keys(allErrors)[0];
-      Alert.alert('Validation Error', allErrors[firstKey as keyof FieldErrors]);
-      return;
-    }
-
-    const normalizedPhone = phone.trim()
-      ? '+84' + phone.replace(/\D/g, '').replace(/^0+/, '')
-      : undefined;
+    const normalizedPhone = normalizePhone(phone);
+    setSubmitting(true);
 
     const result = await register({
       name: name.trim(),
-      email: email.trim() || undefined,
       phone: normalizedPhone,
       password,
       confirmPassword,
       role,
     });
 
-    if (result.type === 'success') {
-    } else if (result.type === 'needsVerification') {
-      navigation.navigate('VerificationChoice', {
-        email: email.trim() || '',
-        phone: normalizedPhone || '',
+    if (result.type === 'needsVerification') {
+      const sent = await sendOtp(normalizedPhone, 'SMS');
+      setSubmitting(false);
+      if (!sent) {
+        Alert.alert('Lỗi', 'Không thể gửi mã xác thực. Vui lòng thử lại.');
+        return;
+      }
+      navigation.navigate('OtpVerify', {
+        target: normalizedPhone,
+        method: 'SMS',
         userName: name.trim(),
       });
+    } else if (result.type === 'success') {
+      setSubmitting(false);
     } else {
-      Alert.alert('Registration Failed', result.message);
+      setSubmitting(false);
+      Alert.alert('Đăng ký thất bại', result.message);
     }
   };
+
+  const busy = isLoading || submitting;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -168,384 +204,396 @@ export default function RegisterScreen() {
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backBtn}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <Text style={styles.backText}>{'← Back'}</Text>
+            <Ionicons name="arrow-back" size={20} color={White} />
           </TouchableOpacity>
 
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>
-            Fill in your details to complete registration
-          </Text>
+          <View style={styles.mascotWrapper}>
+            <Image
+              source={require('../../../../assets/mascot/mascot_phone.jpg')}
+              style={styles.mascot}
+              resizeMode="contain"
+            />
+          </View>
 
-          <Text style={styles.label}>Full Name *</Text>
-          <TextInput
-            style={[styles.input, touched.name && errors.name && styles.inputError]}
-            value={name}
-            onChangeText={(v) => {
-              setName(v);
-              if (touched.name) setErrors((prev) => ({ ...prev, name: validateName(v) }));
-            }}
-            onBlur={() => handleBlur('name')}
-            placeholder="Full Name"
-            placeholderTextColor={Colors.textHint}
-            autoCapitalize="words"
-            returnKeyType="next"
-            onSubmitEditing={() => emailRef.current?.focus()}
-            blurOnSubmit={false}
-            editable={!isLoading}
-          />
-          {touched.name && errors.name && (
-            <Text style={styles.fieldError}>{errors.name}</Text>
-          )}
+          {/* Họ và tên — backend yêu cầu, style đồng bộ mockup */}
+          <PillField label="Họ và tên" error={errors.name} touched={touched.name}>
+            <Ionicons name="person-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={(v) => {
+                setName(v);
+                if (touched.name) {
+                  setErrors((prev) => ({ ...prev, name: validateName(v) }));
+                }
+              }}
+              onBlur={() => handleBlur('name')}
+              placeholder="Nhập họ và tên"
+              placeholderTextColor={HintGray}
+              autoCapitalize="words"
+              returnKeyType="next"
+              onSubmitEditing={() => phoneRef.current?.focus()}
+              blurOnSubmit={false}
+              editable={!busy}
+            />
+          </PillField>
 
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            ref={emailRef}
-            style={[styles.input, touched.email && errors.email && styles.inputError]}
-            value={email}
-            onChangeText={(v) => {
-              setEmail(v);
-              if (touched.email) setErrors((prev) => ({ ...prev, email: validateEmail(v) }));
-            }}
-            onBlur={() => handleBlur('email')}
-            placeholder="example@email.com"
-            placeholderTextColor={Colors.textHint}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="next"
-            onSubmitEditing={() => phoneRef.current?.focus()}
-            blurOnSubmit={false}
-            editable={!isLoading}
-          />
-          {touched.email && errors.email && (
-            <Text style={styles.fieldError}>{errors.email}</Text>
-          )}
-
-          <Text style={styles.label}>Phone</Text>
-          <View style={styles.phoneWrap}>
-            <View style={styles.prefixBadge}>
-              <Text style={styles.prefixText}>+84</Text>
-            </View>
+          <PillField label="Số điện thoại" error={errors.phone} touched={touched.phone}>
+            <Ionicons name="phone-portrait-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <Text style={styles.phonePrefix}>+84</Text>
+            <View style={styles.prefixDivider} />
             <TextInput
               ref={phoneRef}
-              style={[
-                styles.phoneInput,
-                touched.phone && errors.phone && styles.inputError,
-              ]}
+              style={styles.input}
               value={phone}
               onChangeText={(v) => {
                 const cleaned = v.replace(/\D/g, '');
                 setPhone(cleaned);
-                if (touched.phone) setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
+                if (touched.phone) {
+                  setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
+                }
               }}
               onBlur={() => handleBlur('phone')}
-              placeholder="Phone number"
-              placeholderTextColor={Colors.textHint}
+              placeholder="Nhập số điện thoại"
+              placeholderTextColor={HintGray}
               keyboardType="phone-pad"
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               blurOnSubmit={false}
-              editable={!isLoading}
+              editable={!busy}
+              maxLength={10}
             />
-          </View>
-          {touched.phone && errors.phone && (
-            <Text style={styles.fieldError}>{errors.phone}</Text>
-          )}
+          </PillField>
 
-          <Text style={styles.label}>I am a *</Text>
+          <PillField label="Mật khẩu" error={errors.password} touched={touched.password}>
+            <Ionicons name="lock-closed-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <TextInput
+              ref={passwordRef}
+              style={styles.input}
+              value={password}
+              onChangeText={(v) => {
+                setPassword(v);
+                if (touched.password) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    password: validatePassword(v),
+                    confirmPassword: touched.confirmPassword
+                      ? validateConfirmPassword(v, confirmPassword)
+                      : prev.confirmPassword,
+                  }));
+                }
+              }}
+              onBlur={() => handleBlur('password')}
+              placeholder="Nhập mật khẩu"
+              placeholderTextColor={HintGray}
+              secureTextEntry={!showPassword}
+              returnKeyType="next"
+              onSubmitEditing={() => confirmRef.current?.focus()}
+              blurOnSubmit={false}
+              editable={!busy}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword((s) => !s)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={18}
+                color={HintGray}
+              />
+            </TouchableOpacity>
+          </PillField>
+
+          <PillField
+            label="Nhập lại mật khẩu"
+            error={errors.confirmPassword}
+            touched={touched.confirmPassword}
+          >
+            <Ionicons name="lock-closed-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <TextInput
+              ref={confirmRef}
+              style={styles.input}
+              value={confirmPassword}
+              onChangeText={(v) => {
+                setConfirmPassword(v);
+                if (touched.confirmPassword) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    confirmPassword: validateConfirmPassword(password, v),
+                  }));
+                }
+              }}
+              onBlur={() => handleBlur('confirmPassword')}
+              placeholder="Nhập mật khẩu"
+              placeholderTextColor={HintGray}
+              secureTextEntry={!showConfirm}
+              returnKeyType="done"
+              editable={!busy}
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirm((s) => !s)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
+                size={18}
+                color={HintGray}
+              />
+            </TouchableOpacity>
+          </PillField>
+
+          {/* Vai trò — backend yêu cầu */}
+          <Text style={styles.label}>Bạn là</Text>
           <View style={styles.roleRow}>
-            {(['ELDERLY', 'FAMILY'] as const).map((r) => (
+            {(
+              [
+                ['ELDERLY', 'Người cao tuổi'],
+                ['FAMILY', 'Người thân'],
+              ] as const
+            ).map(([value, text]) => (
               <TouchableOpacity
-                key={r}
-                style={[styles.roleBtn, role === r && styles.roleActive]}
-                onPress={() => setRole(r)}
-                activeOpacity={0.7}
-                disabled={isLoading}
+                key={value}
+                style={[styles.roleBtn, role === value && styles.roleBtnActive]}
+                onPress={() => setRole(value)}
+                activeOpacity={0.8}
+                disabled={busy}
               >
-                <Text style={[styles.roleText, role === r && styles.roleTextActive]}>
-                  {r === 'ELDERLY' ? '👴  Elderly' : '👨‍👩‍👧  Family'}
+                <Text style={[styles.roleText, role === value && styles.roleTextActive]}>
+                  {text}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-
-          <Text style={styles.label}>Password *</Text>
-          <TextInput
-            ref={passwordRef}
-            style={[styles.input, touched.password && errors.password && styles.inputError]}
-            value={password}
-            onChangeText={(v) => {
-              setPassword(v);
-              if (touched.password) {
-                const pwErr = validatePassword(v);
-                const cpErr = touched.confirmPassword
-                  ? validateConfirmPassword(v, confirmPassword)
-                  : undefined;
-                setErrors((prev) => ({ ...prev, password: pwErr, confirmPassword: cpErr }));
-              }
-            }}
-            onBlur={() => handleBlur('password')}
-            placeholder="••••••••"
-            placeholderTextColor={Colors.textHint}
-            secureTextEntry
-            returnKeyType="next"
-            onSubmitEditing={() => confirmRef.current?.focus()}
-            blurOnSubmit={false}
-            editable={!isLoading}
-          />
-          {touched.password && errors.password && (
-            <Text style={styles.fieldError}>{errors.password}</Text>
-          )}
-
-          <Text style={styles.label}>Confirm Password *</Text>
-          <TextInput
-            ref={confirmRef}
-            style={[
-              styles.input,
-              touched.confirmPassword && errors.confirmPassword && styles.inputError,
-            ]}
-            value={confirmPassword}
-            onChangeText={(v) => {
-              setConfirmPassword(v);
-              if (touched.confirmPassword) {
-                setErrors((prev) => ({
-                  ...prev,
-                  confirmPassword: validateConfirmPassword(password, v),
-                }));
-              }
-            }}
-            onBlur={() => handleBlur('confirmPassword')}
-            placeholder="••••••••"
-            placeholderTextColor={Colors.textHint}
-            secureTextEntry
-            returnKeyType="done"
-            editable={!isLoading}
-          />
-          {touched.confirmPassword && errors.confirmPassword && (
-            <Text style={styles.fieldError}>{errors.confirmPassword}</Text>
-          )}
 
           <TouchableOpacity
             style={styles.termsRow}
             onPress={() => {
               const next = !agreedToTerms;
               setAgreedToTerms(next);
-              if (touched.terms) {
-                setErrors((prev) => ({
-                  ...prev,
-                  terms: next ? undefined : 'You must agree to the Terms of Service',
-                }));
-              }
+              setTouched((prev) => ({ ...prev, terms: true }));
+              setErrors((prev) => ({
+                ...prev,
+                terms: next
+                  ? undefined
+                  : 'Bạn cần đồng ý với Điều khoản sử dụng và Chính sách bảo mật',
+              }));
             }}
             activeOpacity={0.7}
-            disabled={isLoading}
+            disabled={busy}
           >
             <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
-              {agreedToTerms && (
-                <Text style={styles.checkMark}>{'✓'}</Text>
-              )}
+              {agreedToTerms && <Ionicons name="checkmark" size={13} color={White} />}
             </View>
             <Text style={styles.termsText}>
-              I agree to the{' '}
-              <Text style={styles.termsLink}>Terms of Service</Text>
+              Tôi đồng ý với <Text style={styles.termsLink}>Điều khoản sử dụng</Text> và{'\n'}
+              <Text style={styles.termsLink}>Chính sách bảo mật</Text>
             </Text>
           </TouchableOpacity>
           {touched.terms && errors.terms && (
-            <Text style={[styles.fieldError, { marginTop: -12, marginBottom: 12 }]}>
-              {errors.terms}
-            </Text>
+            <Text style={[styles.fieldError, styles.termsError]}>{errors.terms}</Text>
           )}
 
           <TouchableOpacity
-            style={[styles.registerBtn, isLoading && styles.registerBtnDisabled]}
+            style={[styles.registerBtn, busy && styles.registerBtnDisabled]}
             onPress={handleRegister}
-            disabled={isLoading}
-            activeOpacity={0.8}
+            disabled={busy}
+            activeOpacity={0.85}
           >
             <Text style={styles.registerBtnText}>
-              {isLoading ? 'Creating Account...' : 'Create Account'}
+              {busy ? 'Đang xử lý...' : 'Đăng Ký'}
             </Text>
           </TouchableOpacity>
+
+          <View style={styles.loginRow}>
+            <Text style={styles.loginHint}>Đã có tài khoản? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Phone')} disabled={busy}>
+              <Text style={styles.loginLink}>Đăng nhập tài khoản ngay</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
+  flex: { flex: 1 },
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: White,
   },
   scroll: {
-    padding: Spacing.xxl,
-    paddingBottom: 50,
+    paddingHorizontal: 28,
+    paddingTop: 8,
+    paddingBottom: 40,
   },
-
   backBtn: {
-    marginBottom: 20,
-    alignSelf: 'flex-start',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  backText: {
-    fontSize: Typography.button.fontSize,
-    color: Colors.textSecondary,
+  mascotWrapper: {
+    alignItems: 'center',
+    marginBottom: 8,
   },
-
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: Typography.buttonSmall.fontSize,
-    color: Colors.textSecondary,
-    marginTop: 4,
-    marginBottom: Spacing.xxl,
+  mascot: {
+    width: 170,
+    height: 170,
   },
 
+  fieldBlock: {
+    marginBottom: 14,
+  },
   label: {
-    fontSize: Typography.bodySmall.fontSize,
+    fontSize: 13,
     fontWeight: '600',
-    color: Colors.textSecondary,
-    marginTop: 14,
+    color: LabelGray,
     marginBottom: 6,
   },
-
-  input: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: 14,
-    fontSize: Typography.body.fontSize,
-    color: Colors.textPrimary,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  labelError: {
+    color: ErrorRed,
   },
-  inputError: {
-    borderColor: Colors.error,
+  inputPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: BorderGray,
+    borderRadius: 9999,
+    paddingHorizontal: 16,
+    height: 46,
+    backgroundColor: White,
+  },
+  inputPillError: {
+    borderColor: ErrorRed,
+  },
+  leftIcon: {
+    marginRight: 8,
+  },
+  phonePrefix: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: TextDark,
+  },
+  prefixDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: BorderGray,
+    marginHorizontal: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    color: TextDark,
+    paddingVertical: 0,
   },
   fieldError: {
     fontSize: 12,
-    color: Colors.error,
-    marginTop: 4,
-    marginLeft: 2,
-  },
-
-  phoneWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  prefixBadge: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    marginRight: 8,
-  },
-  prefixText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  phoneInput: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: 14,
-    fontSize: Typography.body.fontSize,
-    color: Colors.textPrimary,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    color: ErrorRed,
+    marginTop: 5,
+    marginLeft: 16,
   },
 
   roleRow: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 2,
+    marginBottom: 16,
   },
   roleBtn: {
     flex: 1,
-    padding: 14,
-    borderRadius: BorderRadius.md,
+    borderWidth: 1.2,
+    borderColor: BorderGray,
+    borderRadius: 9999,
+    paddingVertical: 10,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    backgroundColor: White,
   },
-  roleActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary + '12',
+  roleBtnActive: {
+    borderColor: Teal,
+    backgroundColor: '#E8F7F5',
   },
   roleText: {
-    fontSize: Typography.buttonSmall.fontSize,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    color: LabelGray,
   },
   roleTextActive: {
-    color: Colors.primary,
-    fontWeight: '700',
+    color: Teal,
   },
 
   termsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.xl,
+    alignItems: 'flex-start',
+    marginBottom: 4,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
+    width: 18,
+    height: 18,
+    borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: Colors.textHint,
-    justifyContent: 'center',
+    borderColor: BorderGray,
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 1,
   },
   checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  checkMark: {
-    color: Colors.surface,
-    fontSize: 12,
-    fontWeight: '700',
+    backgroundColor: Teal,
+    borderColor: Teal,
   },
   termsText: {
-    fontSize: Typography.bodySmall.fontSize,
-    color: Colors.textSecondary,
     flex: 1,
+    fontSize: 12.5,
+    color: TextDark,
+    lineHeight: 19,
   },
   termsLink: {
-    fontWeight: '700',
-    color: Colors.primary,
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
+  termsError: {
+    marginLeft: 28,
+    marginBottom: 4,
   },
 
   registerBtn: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.lg,
+    backgroundColor: Teal,
+    borderRadius: 9999,
+    paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: Colors.primaryDark,
+    marginTop: 14,
+    shadowColor: TealDark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 5,
   },
   registerBtnDisabled: {
     opacity: 0.6,
   },
   registerBtnText: {
-    color: Colors.surface,
-    fontSize: Typography.button.fontSize,
+    fontSize: 16,
     fontWeight: '700',
+    color: White,
+  },
+
+  loginRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  loginHint: {
+    fontSize: 12.5,
+    color: TextDark,
+  },
+  loginLink: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: TextDark,
   },
 });
