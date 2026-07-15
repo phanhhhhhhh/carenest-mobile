@@ -31,7 +31,7 @@ const BorderGray = '#C9CED4';
 const TextDark = '#37404A';
 const White = '#FFFFFF';
 
-/** +84768554948 -> 0768554948 for display */
+/** +84987654321 -> 0987654321 for display */
 function displayPhone(target: string): string {
   if (target.startsWith('+84')) return '0' + target.slice(3);
   return target;
