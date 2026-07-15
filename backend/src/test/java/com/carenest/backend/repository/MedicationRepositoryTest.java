@@ -51,7 +51,7 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
 
         List<Medication> results = medicationRepository.findAllOverdueMedications(now);
 
-        assertThat(results).extracting(Medication::getId).contains(overdue.getId());
+        assertThat(results).extracting(m -> m.getId()).contains(overdue.getId());
         assertThat(results).allMatch(m -> !m.getNextDoseTime().isAfter(now));
     }
 
@@ -67,7 +67,7 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
 
         List<Medication> results = medicationRepository.findAllOverdueMedications(now);
 
-        assertThat(results).extracting(Medication::getId).doesNotContain(overdue.getId());
+        assertThat(results).extracting(m -> m.getId()).doesNotContain(overdue.getId());
     }
 
     @Test
@@ -97,7 +97,7 @@ class MedicationRepositoryTest extends BaseRepositoryTest {
 
         List<Medication> results = medicationRepository.findUpcomingByElderlyId(elderly.getId(), from, to);
 
-        assertThat(results).extracting(Medication::getId).containsExactly(inside.getId());
+        assertThat(results).extracting(m -> m.getId()).containsExactly(inside.getId());
     }
 
     @Test
