@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -121,7 +122,7 @@ public class HealthMetricController {
         if (summary == null) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(java.util.Map.of(
+        return ResponseEntity.ok(Map.of(
             "title", summary.getTitle(),
             "body", summary.getBody(),
             "data", summary.getData(),
@@ -133,7 +134,7 @@ public class HealthMetricController {
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
     public ResponseEntity<?> generateWeeklySummary(@PathVariable Long elderlyId) {
         String summary = weeklySummaryService.generateWeeklySummary(elderlyId);
-        return ResponseEntity.ok(java.util.Map.of(
+        return ResponseEntity.ok(Map.of(
             "message", "Weekly summary generated",
             "summary", summary
         ));

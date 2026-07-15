@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -130,7 +131,7 @@ public class ImouApiService {
         }
 
         try {
-            Map<String, Object> body = new java.util.LinkedHashMap<>();
+            Map<String, Object> body = new LinkedHashMap<>();
             body.put("id", UUID.randomUUID().toString());
             body.put("system", Map.of("ver", "1.0", "appId", appId));
             body.put("method", method);

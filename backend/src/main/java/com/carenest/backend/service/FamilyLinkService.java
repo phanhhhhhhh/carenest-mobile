@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,7 +80,7 @@ public class FamilyLinkService {
             .type(NotificationType.FAMILY_LINK_REQUEST)
             .title("Family Link Request")
             .body(family.getName() + " wants to link to monitor your health")
-            .data(java.util.Map.of(
+            .data(Map.of(
                 "linkId", saved.getId(),
                 "familyId", family.getId(),
                 "familyName", family.getName(),

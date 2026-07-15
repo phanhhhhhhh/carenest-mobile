@@ -94,7 +94,7 @@ public class EmergencyEventService {
         EmergencyEvent event = emergencyEventRepository.findById(eventId)
             .orElseThrow(() -> new NotFoundException("EmergencyEvent not found: " + eventId));
 
-        User family = userRepository.findById(familyUserId)
+        userRepository.findById(familyUserId)
             .orElseThrow(() -> new NotFoundException("User (family) not found: " + familyUserId));
 
         event.setAcknowledgedAt(OffsetDateTime.now());
@@ -159,7 +159,7 @@ public class EmergencyEventService {
         String acknowledgedByName = null;
         if (e.getAcknowledgedBy() != null) {
             acknowledgedByName = userRepository.findById(e.getAcknowledgedBy())
-                .map(User::getName)
+                .map(user -> user.getName())
                 .orElse(null);
         }
 

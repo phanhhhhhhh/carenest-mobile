@@ -5,7 +5,6 @@ import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.SubscriptionRepository;
 import com.carenest.backend.repository.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,8 +59,8 @@ public class PaymentService {
     private String momoPayUrl;
 
     // Plans
-    private static final BigDecimal PREMIUM_MONTHLY_PRICE = new BigDecimal("49000");  // 49,000 VND
-    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("399000");  // 399,000 VND
+    private static final BigDecimal PREMIUM_MONTHLY_PRICE = new BigDecimal("49000"); // 49,000 VND
+    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("399000"); // 399,000 VND
 
     /**
      * Create a VNPay payment URL for premium subscription.
@@ -69,23 +68,24 @@ public class PaymentService {
     @Transactional
     public Map<String, String> createVnpayPayment(Long userId, String planType, String clientIp) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         Subscription.PlanType plan = Subscription.PlanType.valueOf(planType);
         BigDecimal amount = plan == Subscription.PlanType.PREMIUM_YEARLY
-            ? PREMIUM_YEARLY_PRICE : PREMIUM_MONTHLY_PRICE;
+                ? PREMIUM_YEARLY_PRICE
+                : PREMIUM_MONTHLY_PRICE;
 
         // Create pending subscription
         String txnRef = generateTxnRef(userId);
         Subscription sub = Subscription.builder()
-            .user(user)
-            .planType(plan)
-            .status(Subscription.SubscriptionStatus.PENDING)
-            .paymentProvider("VNPAY")
-            .transactionId(txnRef)
-            .amount(amount)
-            .startDate(Instant.now())
-            .build();
+                .user(user)
+                .planType(plan)
+                .status(Subscription.SubscriptionStatus.PENDING)
+                .paymentProvider("VNPAY")
+                .transactionId(txnRef)
+                .amount(amount)
+                .startDate(Instant.now())
+                .build();
         subscriptionRepository.save(sub);
 
         // Build VNPay payment URL
@@ -93,11 +93,10 @@ public class PaymentService {
         log.info("VNPay payment URL created: userId={} txnRef={}", userId, txnRef);
 
         return Map.of(
-            "paymentUrl", paymentUrl,
-            "transactionId", txnRef,
-            "amount", amount.toString(),
-            "planType", planType
-        );
+                "paymentUrl", paymentUrl,
+                "transactionId", txnRef,
+                "amount", amount.toString(),
+                "planType", planType);
     }
 
     /**
@@ -154,51 +153,52 @@ public class PaymentService {
     @Transactional
     public Map<String, String> createMomoPayment(Long userId, String planType) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         Subscription.PlanType plan = Subscription.PlanType.valueOf(planType);
         BigDecimal amount = plan == Subscription.PlanType.PREMIUM_YEARLY
-            ? PREMIUM_YEARLY_PRICE : PREMIUM_MONTHLY_PRICE;
+                ? PREMIUM_YEARLY_PRICE
+                : PREMIUM_MONTHLY_PRICE;
 
         String orderId = generateTxnRef(userId);
         String requestId = UUID.randomUUID().toString();
 
         // Create pending subscription
         Subscription sub = Subscription.builder()
-            .user(user)
-            .planType(plan)
-            .status(Subscription.SubscriptionStatus.PENDING)
-            .paymentProvider("MOMO")
-            .transactionId(orderId)
-            .amount(amount)
-            .startDate(Instant.now())
-            .build();
+                .user(user)
+                .planType(plan)
+                .status(Subscription.SubscriptionStatus.PENDING)
+                .paymentProvider("MOMO")
+                .transactionId(orderId)
+                .amount(amount)
+                .startDate(Instant.now())
+                .build();
         subscriptionRepository.save(sub);
 
         // Build MoMo request body
         try {
             String rawSignature = "accessKey=" + momoAccessKey
-                + "&amount=" + amount
-                + "&extraData="
-                + "&ipnUrl=" + URLEncoder.encode(vnpayReturnUrl.replace("vnpay", "momo"), StandardCharsets.UTF_8)
-                + "&orderId=" + orderId
-                + "&orderInfo=" + URLEncoder.encode("CareNest Premium Subscription", StandardCharsets.UTF_8)
-                + "&partnerCode=" + momoPartnerCode
-                + "&redirectUrl=" + URLEncoder.encode(vnpayReturnUrl.replace("vnpay", "momo"), StandardCharsets.UTF_8)
-                + "&requestId=" + requestId
-                + "&requestType=captureWallet";
+                    + "&amount=" + amount
+                    + "&extraData="
+                    + "&ipnUrl=" + URLEncoder.encode(vnpayReturnUrl.replace("vnpay", "momo"), StandardCharsets.UTF_8)
+                    + "&orderId=" + orderId
+                    + "&orderInfo=" + URLEncoder.encode("CareNest Premium Subscription", StandardCharsets.UTF_8)
+                    + "&partnerCode=" + momoPartnerCode
+                    + "&redirectUrl="
+                    + URLEncoder.encode(vnpayReturnUrl.replace("vnpay", "momo"), StandardCharsets.UTF_8)
+                    + "&requestId=" + requestId
+                    + "&requestType=captureWallet";
 
             String signature = hmacSHA256(momoSecretKey, rawSignature);
 
             log.info("MoMo payment created: userId={} orderId={}", userId, orderId);
             return Map.of(
-                "payUrl", momoPayUrl,
-                "orderId", orderId,
-                "requestId", requestId,
-                "amount", amount.toString(),
-                "planType", planType,
-                "signature", signature
-            );
+                    "payUrl", momoPayUrl,
+                    "orderId", orderId,
+                    "requestId", requestId,
+                    "amount", amount.toString(),
+                    "planType", planType,
+                    "signature", signature);
         } catch (Exception e) {
             log.error("Failed to create MoMo payment: {}", e.getMessage());
             throw new RuntimeException("Failed to create MoMo payment", e);
@@ -253,17 +253,17 @@ public class PaymentService {
     public String verifyMomoSignature(Map<String, String> params) {
         try {
             String rawSignature = "accessKey=" + momoAccessKey
-                + "&amount=" + params.getOrDefault("amount", "")
-                + "&extraData=" + params.getOrDefault("extraData", "")
-                + "&message=" + params.getOrDefault("message", "")
-                + "&orderId=" + params.getOrDefault("orderId", "")
-                + "&orderInfo=" + params.getOrDefault("orderInfo", "")
-                + "&partnerCode=" + params.getOrDefault("partnerCode", "")
-                + "&payType=" + params.getOrDefault("payType", "")
-                + "&requestId=" + params.getOrDefault("requestId", "")
-                + "&responseTime=" + params.getOrDefault("responseTime", "")
-                + "&resultCode=" + params.getOrDefault("resultCode", "")
-                + "&transId=" + params.getOrDefault("transId", "");
+                    + "&amount=" + params.getOrDefault("amount", "")
+                    + "&extraData=" + params.getOrDefault("extraData", "")
+                    + "&message=" + params.getOrDefault("message", "")
+                    + "&orderId=" + params.getOrDefault("orderId", "")
+                    + "&orderInfo=" + params.getOrDefault("orderInfo", "")
+                    + "&partnerCode=" + params.getOrDefault("partnerCode", "")
+                    + "&payType=" + params.getOrDefault("payType", "")
+                    + "&requestId=" + params.getOrDefault("requestId", "")
+                    + "&responseTime=" + params.getOrDefault("responseTime", "")
+                    + "&resultCode=" + params.getOrDefault("resultCode", "")
+                    + "&transId=" + params.getOrDefault("transId", "");
 
             return hmacSHA256(momoSecretKey, rawSignature);
         } catch (Exception e) {
@@ -278,15 +278,14 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public Map<String, Object> getSubscriptionStatus(Long userId) {
         Optional<Subscription> activeSub = subscriptionRepository.findByUserIdAndStatus(
-            userId, Subscription.SubscriptionStatus.ACTIVE);
+                userId, Subscription.SubscriptionStatus.ACTIVE);
 
         boolean isPremium = activeSub.isPresent() && activeSub.get().isPremium();
 
         return Map.of(
-            "isPremium", isPremium,
-            "planType", activeSub.map(s -> s.getPlanType().name()).orElse("FREE"),
-            "expiresAt", activeSub.map(Subscription::getEndDate).orElse(null)
-        );
+                "isPremium", isPremium,
+                "planType", activeSub.map(s -> s.getPlanType().name()).orElse("FREE"),
+                "expiresAt", activeSub.map(s -> s.getEndDate()).orElse(null));
     }
 
     /**
@@ -295,10 +294,10 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public boolean hasPremiumAccess(Long userId) {
         return subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
-            userId,
-            Subscription.SubscriptionStatus.ACTIVE,
-            List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
-        ).map(Subscription::isPremium).orElse(false);
+                userId,
+                Subscription.SubscriptionStatus.ACTIVE,
+                List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY))
+                .map(s -> s.isPremium()).orElse(false);
     }
 
     /**
@@ -307,12 +306,12 @@ public class PaymentService {
     @Transactional
     public void cancelSubscription(Long userId) {
         subscriptionRepository.findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
-            .ifPresent(sub -> {
-                sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
-                sub.setCancelledAt(Instant.now());
-                subscriptionRepository.save(sub);
-                log.info("Subscription cancelled: userId={}", userId);
-            });
+                .ifPresent(sub -> {
+                    sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                    sub.setCancelledAt(Instant.now());
+                    subscriptionRepository.save(sub);
+                    log.info("Subscription cancelled: userId={}", userId);
+                });
     }
 
     // ── Private Helpers ─────────────────────────────────────────────────────
@@ -360,7 +359,8 @@ public class PaymentService {
     private String buildVnpayQueryString(Map<String, String> params) {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (sb.length() > 0) sb.append("&");
+            if (sb.length() > 0)
+                sb.append("&");
             sb.append(entry.getKey()).append("=").append(entry.getValue());
         }
         return sb.toString();
