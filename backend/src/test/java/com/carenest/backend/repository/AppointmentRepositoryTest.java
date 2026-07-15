@@ -78,7 +78,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
                 .findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
                         elderly.getId(), base, base.plusHours(6));
 
-        assertThat(results).extracting(Appointment::getId)
+        assertThat(results).extracting(a -> a.getId())
                 .containsExactly(first.getId(), second.getId(), third.getId());
     }
 
@@ -111,7 +111,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
                 .findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
                         elderly.getId(), base, base.plusHours(6));
 
-        assertThat(results).extracting(Appointment::getId).doesNotContain(appointment.getId());
+        assertThat(results).extracting(a -> a.getId()).doesNotContain(appointment.getId());
     }
 
     @Test
@@ -129,7 +129,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
         List<Appointment> results = appointmentRepository
                 .findUpcomingForFamilyMember(family.getId(), now);
 
-        assertThat(results).extracting(Appointment::getId).contains(upcoming.getId());
+        assertThat(results).extracting(a -> a.getId()).contains(upcoming.getId());
         assertThat(results).allMatch(a -> !a.getDatetime().isBefore(now));
     }
 
@@ -149,7 +149,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
         List<Appointment> results = appointmentRepository
                 .findUpcomingForFamilyMember(family.getId(), now);
 
-        assertThat(results).extracting(Appointment::getId).doesNotContain(appointment.getId());
+        assertThat(results).extracting(a -> a.getId()).doesNotContain(appointment.getId());
     }
 
     @Test
@@ -203,7 +203,7 @@ class AppointmentRepositoryTest extends BaseRepositoryTest {
         List<Appointment> results = appointmentRepository
                 .findUpcomingForFamilyMember(family.getId(), now);
 
-        assertThat(results).extracting(Appointment::getId)
+        assertThat(results).extracting(a -> a.getId())
                 .containsExactly(sooner.getId(), later.getId());
     }
 }
