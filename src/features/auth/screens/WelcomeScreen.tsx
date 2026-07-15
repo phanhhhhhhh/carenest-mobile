@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  Image,
+  ImageSourcePropType,
   ListRenderItemInfo,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -28,7 +30,7 @@ interface SlideData {
   id: string;
   title: string;
   subtitle: string;
-  mascotEmoji: string;
+  mascotImage: ImageSourcePropType;
   isFinal: boolean;
 }
 
@@ -38,7 +40,7 @@ const slides: SlideData[] = [
     title: 'Chăm s\xf3c sức khỏe từ xa\nmọi l\xfac, mọi nơi',
     subtitle:
       'Kết nối v\xe0 theo d\xf5i sức khỏe\nngười th\xe2n dễ d\xe0ng qua ứng dụng',
-    mascotEmoji: '🏥',
+    mascotImage: require('../../../../assets/mascot/mascot_dashboard.jpg'),
     isFinal: false,
   },
   {
@@ -46,7 +48,7 @@ const slides: SlideData[] = [
     title: 'Đa tiện \xedch chăm s\xf3c sức khỏe',
     subtitle:
       'Quản l\xfd thuốc, lịch hẹn v\xe0 c\xe1c\nchỉ số sức khỏe to\xe0n diện',
-    mascotEmoji: '📊',
+    mascotImage: require('../../../../assets/icons/health_icon_grid.jpg'),
     isFinal: false,
   },
   {
@@ -54,7 +56,7 @@ const slides: SlideData[] = [
     title: 'Chủ động theo d\xf5i\nsức khỏe mỗi ng\xe0y',
     subtitle:
       'Nhận th\xf4ng b\xe1o v\xe0 b\xe1o c\xe1o\nsức khỏe chi tiết h\xe0ng ng\xe0y',
-    mascotEmoji: '💓',
+    mascotImage: require('../../../../assets/mascot/mascot_bigphone.jpg'),
     isFinal: false,
   },
   {
@@ -62,7 +64,7 @@ const slides: SlideData[] = [
     title: 'Chủ động theo d\xf5i\nsức khỏe mỗi ng\xe0y',
     subtitle:
       'Nhận th\xf4ng b\xe1o v\xe0 b\xe1o c\xe1o\nsức khỏe chi tiết h\xe0ng ng\xe0y',
-    mascotEmoji: '💓',
+    mascotImage: require('../../../../assets/mascot/mascot_notifications.jpg'),
     isFinal: true,
   },
 ];
@@ -163,9 +165,11 @@ export default function WelcomeScreen() {
         <View style={styles.slide}>
           {/* Mascot / illustration area */}
           <View style={styles.mascotWrapper}>
-            <View style={styles.mascotCircle}>
-              <Text style={styles.mascotEmoji}>{item.mascotEmoji}</Text>
-            </View>
+            <Image
+              source={item.mascotImage}
+              style={styles.mascotImage}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Title */}
@@ -266,13 +270,19 @@ export default function WelcomeScreen() {
               { transform: [{ translateY: bounceInterpolate }] },
             ]}
           >
-            <View style={styles.splashMascotCircle}>
-              <Text style={styles.splashMascotEmoji}>{'👶'}</Text>
-            </View>
+            <Image
+              source={require('../../../../assets/mascot/mascot_thumbsup.jpg')}
+              style={styles.splashMascotImage}
+              resizeMode="contain"
+            />
           </Animated.View>
 
-          {/* App logo / name */}
-          <Text style={styles.splashAppName}>{AppStrings.appName}</Text>
+          {/* App logo / name — dùng wordmark thật thay vì text render tay */}
+          <Image
+            source={require('../../../../assets/brand/logo_wordmark.jpg')}
+            style={styles.splashLogo}
+            resizeMode="contain"
+          />
 
           {/* Tagline */}
           <Text style={styles.splashTagline}>
@@ -341,30 +351,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xxxl,
   },
   splashMascotWrapper: {
-    marginBottom: 40, // Spacing.xxxxl equivalent — keeping for visual balance
+    marginBottom: 8,
   },
-  splashMascotCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+  splashMascotImage: {
+    width: 200,
+    height: 200,
   },
-  splashMascotEmoji: {
-    fontSize: 64,
-  },
-  splashAppName: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: Colors.primaryDark,
-    letterSpacing: 1,
-    marginBottom: 12,
+  splashLogo: {
+    width: 200,
+    height: 60,
+    marginBottom: 4,
   },
   splashTagline: {
     fontSize: Typography.button.fontSize,
@@ -409,24 +405,12 @@ const styles = StyleSheet.create({
 
   // ── Mascot illustration ───────────────────────────────────────────────
   mascotWrapper: {
-    marginBottom: 48,
+    marginBottom: 32,
     alignItems: 'center',
   },
-  mascotCircle: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: Colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  mascotEmoji: {
-    fontSize: 72,
+  mascotImage: {
+    width: 240,
+    height: 240,
   },
 
   // ── Slide text ────────────────────────────────────────────────────────

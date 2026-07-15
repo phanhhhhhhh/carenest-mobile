@@ -12,6 +12,7 @@ import {
   ScrollView,
   Alert,
   KeyboardAvoidingView,
+  Image,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -214,7 +215,11 @@ export default function FamilyAppointmentsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
           }
         >
-          <Ionicons name="document-text-outline" color={Colors.textHint} size={56} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_confused.jpg')}
+            style={{ width: 130, height: 130 }}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>No appointments yet</Text>
           <Text style={styles.emptySubtext}>Tap + to add appointment</Text>
         </ScrollView>

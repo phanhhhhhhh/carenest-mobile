@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -68,7 +69,7 @@ function formatTime(iso: string): string {
   const diffDays = Math.floor(
     (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
       new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()) /
-      86400000,
+    86400000,
   );
 
   if (diffMin < 1) return 'Just now';
@@ -110,8 +111,11 @@ export default function FamilyHealthScreen() {
 
       {elderlyId == null ? (
         <View style={styles.center}>
-          <Ionicons name="people-outline" size={56} color={Colors.textHint} />
-          <View style={{ height: 16 }} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
+            style={{ width: 140, height: 140 }}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>No elderly person linked yet</Text>
         </View>
       ) : (
@@ -206,8 +210,12 @@ function HealthBody({
   if (Object.keys(latestByType).length === 0) {
     return (
       <View style={styles.center}>
-        <Ionicons name="fitness" size={56} color={Colors.textHint} />
-        <View style={{ height: 16 }} />
+        <Image
+          source={require('../../../../assets/mascot/mascot_confused.jpg')}
+          style={{ width: 130, height: 130 }}
+          resizeMode="contain"
+        />
+        <View style={{ height: 4 }} />
         <Text style={styles.emptyText}>No health data yet</Text>
       </View>
     );
