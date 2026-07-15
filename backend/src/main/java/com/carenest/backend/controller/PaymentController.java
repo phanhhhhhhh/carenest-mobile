@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -108,12 +109,12 @@ public class PaymentController {
     @GetMapping("/plans")
     public ResponseEntity<Map<String, Object>> getPlans() {
         return ResponseEntity.ok(Map.of(
-            "plans", java.util.List.of(
+            "plans", List.of(
                 Map.of(
                     "id", "FREE",
                     "name", "Free Plan",
                     "price", 0,
-                    "features", java.util.List.of(
+                    "features", List.of(
                         "Monitor 1 elderly profile",
                         "7-day data history",
                         "Basic health tracking",
@@ -125,7 +126,7 @@ public class PaymentController {
                     "name", "Premium Monthly",
                     "price", 49000,
                     "currency", "VND",
-                    "features", java.util.List.of(
+                    "features", List.of(
                         "Monitor multiple elderly profiles",
                         "Unlimited data history",
                         "AI Weekly Summary Reports",
@@ -138,7 +139,7 @@ public class PaymentController {
                     "name", "Premium Yearly",
                     "price", 399000,
                     "currency", "VND",
-                    "features", java.util.List.of(
+                    "features", List.of(
                         "All Premium Monthly features",
                         "2 months free (save 17%)"
                     )

@@ -22,6 +22,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.Map;
 
 @Entity
@@ -55,7 +56,7 @@ public class Notification {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column
     @Builder.Default
-    private Map<String, Object> data = java.util.Collections.emptyMap();
+    private Map<String, Object> data = Collections.emptyMap();
 
     @Column(name = "read_at")
     private OffsetDateTime readAt;

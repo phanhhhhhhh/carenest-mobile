@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -328,7 +328,7 @@ public class CameraService {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
             .orElseThrow(() -> new NotFoundException("Camera not found"));
 
-        Map<String, Object> result = imouApiService.setPrivacyMode(device.getDeviceSn(), enabled, device.getAccessToken());
+        imouApiService.setPrivacyMode(device.getDeviceSn(), enabled, device.getAccessToken());
         device.setPrivacyMode(enabled);
         device.setStatus(enabled ? CameraDevice.CameraStatus.PRIVACY : CameraDevice.CameraStatus.ONLINE);
         cameraDeviceRepository.save(device);
@@ -420,7 +420,7 @@ public class CameraService {
     @Transactional
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Ho_Chi_Minh")
     public void cleanupOldSnapshots() {
-        Instant cutoff = Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);
+        Instant cutoff = Instant.now().minus(30, ChronoUnit.DAYS);
         log.debug("Snapshot cleanup: cutoff={}", cutoff);
     }
 }

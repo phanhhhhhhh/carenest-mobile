@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -63,33 +62,29 @@ public class GeminiApiService {
             String fullPrompt = buildFullPrompt(systemPrompt, userMessage);
 
             Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                    Map.of("parts", List.of(
-                        Map.of("text", fullPrompt)
-                    ))
-                ),
-                "generationConfig", Map.of(
-                    "temperature", overrideTemp,
-                    "maxOutputTokens", overrideMaxTokens,
-                    "topP", 0.95
-                ),
-                "safetySettings", List.of(
-                    Map.of("category", "HARM_CATEGORY_HARASSMENT", "threshold", "BLOCK_ONLY_HIGH"),
-                    Map.of("category", "HARM_CATEGORY_HATE_SPEECH", "threshold", "BLOCK_ONLY_HIGH"),
-                    Map.of("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold", "BLOCK_ONLY_HIGH"),
-                    Map.of("category", "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold", "BLOCK_ONLY_HIGH")
-                )
-            );
+                    "contents", List.of(
+                            Map.of("parts", List.of(
+                                    Map.of("text", fullPrompt)))),
+                    "generationConfig", Map.of(
+                            "temperature", overrideTemp,
+                            "maxOutputTokens", overrideMaxTokens,
+                            "topP", 0.95),
+                    "safetySettings", List.of(
+                            Map.of("category", "HARM_CATEGORY_HARASSMENT", "threshold", "BLOCK_ONLY_HIGH"),
+                            Map.of("category", "HARM_CATEGORY_HATE_SPEECH", "threshold", "BLOCK_ONLY_HIGH"),
+                            Map.of("category", "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold", "BLOCK_ONLY_HIGH"),
+                            Map.of("category", "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold", "BLOCK_ONLY_HIGH")));
 
             String responseJson = restClient.post()
-                .uri(GEMINI_BASE_URL + "/models/" + model + ":generateContent?key=" + apiKey)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(requestBody))
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, (req, res) -> {
-                    log.error("Gemini API error: {} — body: {}", res.getStatusCode(), new String(res.getBody().readAllBytes()));
-                })
-                .body(String.class);
+                    .uri(GEMINI_BASE_URL + "/models/" + model + ":generateContent?key=" + apiKey)
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(requestBody))
+                    .retrieve()
+                    .onStatus(status -> status != null && status.isError(), (req, res) -> {
+                        log.error("Gemini API error: {} — body: {}", res.getStatusCode(),
+                                new String(res.getBody().readAllBytes()));
+                    })
+                    .body(String.class);
 
             return extractText(responseJson);
         } catch (Exception e) {
@@ -137,38 +132,33 @@ public class GeminiApiService {
             String base64Audio = Base64.getEncoder().encodeToString(audioData);
 
             Map<String, Object> inlineData = Map.of(
-                "mimeType", mimeType != null ? mimeType : "audio/webm",
-                "data", base64Audio
-            );
+                    "mimeType", mimeType != null ? mimeType : "audio/webm",
+                    "data", base64Audio);
 
             Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                    Map.of("parts", List.of(
-                        Map.of("inlineData", inlineData),
-                        Map.of("text", "Transcribe the spoken words in this audio clip. "
-                            + "Return ONLY the transcribed text, nothing else. "
-                            + "If the audio is in Vietnamese, transcribe in Vietnamese. "
-                            + "If the audio is in English, transcribe in English. "
-                            + "Do not add explanations, punctuation corrections, or commentary.")
-                    ))
-                ),
-                "generationConfig", Map.of(
-                    "temperature", 0.1,
-                    "maxOutputTokens", 1024,
-                    "topP", 0.95
-                )
-            );
+                    "contents", List.of(
+                            Map.of("parts", List.of(
+                                    Map.of("inlineData", inlineData),
+                                    Map.of("text", "Transcribe the spoken words in this audio clip. "
+                                            + "Return ONLY the transcribed text, nothing else. "
+                                            + "If the audio is in Vietnamese, transcribe in Vietnamese. "
+                                            + "If the audio is in English, transcribe in English. "
+                                            + "Do not add explanations, punctuation corrections, or commentary.")))),
+                    "generationConfig", Map.of(
+                            "temperature", 0.1,
+                            "maxOutputTokens", 1024,
+                            "topP", 0.95));
 
             String responseJson = restClient.post()
-                .uri(GEMINI_BASE_URL + "/models/" + model + ":generateContent?key=" + apiKey)
-                .header("Content-Type", "application/json")
-                .body(objectMapper.writeValueAsString(requestBody))
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, (req, res) -> {
-                    log.error("Gemini STT error: {} — body: {}",
-                        res.getStatusCode(), new String(res.getBody().readAllBytes()));
-                })
-                .body(String.class);
+                    .uri(GEMINI_BASE_URL + "/models/" + model + ":generateContent?key=" + apiKey)
+                    .header("Content-Type", "application/json")
+                    .body(objectMapper.writeValueAsString(requestBody))
+                    .retrieve()
+                    .onStatus(status -> status != null && status.isError(), (req, res) -> {
+                        log.error("Gemini STT error: {} — body: {}",
+                                res.getStatusCode(), new String(res.getBody().readAllBytes()));
+                    })
+                    .body(String.class);
 
             return extractText(responseJson);
         } catch (Exception e) {
@@ -203,7 +193,8 @@ public class GeminiApiService {
                 log.warn("Gemini response blocked: {}", promptFeedback.path("blockReason").asText());
                 return "[Response blocked by safety filter]";
             }
-            log.warn("Unexpected Gemini response structure: {}", responseJson.substring(0, Math.min(300, responseJson.length())));
+            log.warn("Unexpected Gemini response structure: {}",
+                    responseJson.substring(0, Math.min(300, responseJson.length())));
             return "[Unexpected AI response format]";
         } catch (Exception e) {
             log.error("Failed to parse Gemini response: {}", e.getMessage());

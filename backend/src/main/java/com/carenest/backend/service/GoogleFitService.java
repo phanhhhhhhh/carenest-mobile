@@ -34,7 +34,6 @@ public class GoogleFitService {
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final HealthMetricService healthMetricService;
-    private final AnomalyDetectionService anomalyDetectionService;
     private final GoogleFitTokenRepository googleFitTokenRepository;
 
     @Value("${google.fit.client-id:}")
@@ -52,12 +51,10 @@ public class GoogleFitService {
     public GoogleFitService(ObjectMapper objectMapper,
                             UserRepository userRepository,
                             HealthMetricService healthMetricService,
-                            AnomalyDetectionService anomalyDetectionService,
                             GoogleFitTokenRepository googleFitTokenRepository) {
         this.objectMapper = objectMapper;
         this.userRepository = userRepository;
         this.healthMetricService = healthMetricService;
-        this.anomalyDetectionService = anomalyDetectionService;
         this.googleFitTokenRepository = googleFitTokenRepository;
     }
 

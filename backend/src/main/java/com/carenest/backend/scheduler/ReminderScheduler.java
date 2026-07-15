@@ -50,7 +50,7 @@ public class ReminderScheduler {
                 .type(NotificationType.MEDICATION_REMINDER)
                 .title("Reminder: " + reminder.getTitle())
                 .body("Time for: " + reminder.getTitle())
-                .data(java.util.Map.of(
+                .data(Map.of(
                     "reminderId", reminder.getId(),
                     "elderlyId", reminder.getElderly().getId()
                 ))
