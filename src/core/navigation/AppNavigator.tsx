@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { navigationRef } from './navigationRef';
 
-// Screens
 import WelcomeScreen from '../../features/auth/screens/WelcomeScreen';
 import PhoneScreen from '../../features/auth/screens/PhoneScreen';
 import RegisterScreen from '../../features/auth/screens/RegisterScreen';
@@ -20,17 +19,16 @@ import PinVerifyScreen from '../../features/auth/screens/PinVerifyScreen';
 import VerifyEmailScreen from '../../features/auth/screens/VerifyEmailScreen';
 import ElderlyShell from './ElderlyShell';
 import FamilyShell from './FamilyShell';
-// Elderly sub-screens
 import ElderlyEditProfileScreen from '../../features/elderly/screens/ElderlyEditProfileScreen';
 import ElderlyEmergencyContactsScreen from '../../features/elderly/screens/ElderlyEmergencyContactsScreen';
 import ElderlyMedicationHistoryScreen from '../../features/elderly/screens/ElderlyMedicationHistoryScreen';
 import ElderlyAppointmentsScreen from '../../features/elderly/screens/ElderlyAppointmentsScreen';
 import HealthReportScreen from '../../features/elderly/screens/HealthReportScreen';
-// Family sub-screens
 import CameraScreen from '../../features/family/screens/CameraScreen';
 import FamilyAppointmentsScreen from '../../features/family/screens/FamilyAppointmentsScreen';
 import HealthThresholdScreen from '../../features/family/screens/HealthThresholdScreen';
-// Shared sub-screens
+import FamilyHealthScreen from '../../features/family/screens/FamilyHealthScreen';
+import FamilyAlertsScreen from '../../features/family/screens/FamilyAlertsScreen';
 import PremiumPlansScreen from '../../features/family/screens/PremiumPlansScreen';
 import NotificationsScreen from '../../features/notifications/screens/NotificationsScreen';
 import NotificationSettingsScreen from '../../features/notifications/screens/NotificationSettingsScreen';
@@ -53,18 +51,16 @@ export type RootStackParamList = {
   ElderlyMeds: undefined;
   FamilyShell: undefined;
   FamilyHealth: undefined;
+  FamilyAlerts: undefined;
   FamilyMeds: undefined;
-  // Elderly sub-screens
   ElderlyEditProfile: undefined;
   ElderlyEmergencyContacts: undefined;
   ElderlyMedicationHistory: { medicationId: string; medicationName: string };
   ElderlyAppointments: undefined;
   HealthReport: undefined;
-  // Family sub-screens
   CameraScreen: { elderlyId: string };
   FamilyAppointments: undefined;
   HealthThreshold: undefined;
-  // Shared sub-screens
   Notifications: undefined;
   NotificationSettings: undefined;
   PremiumPlans: undefined;
@@ -80,7 +76,6 @@ export default function AppNavigator() {
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
-          // ── Auth flow ──────────────────────────────────────────
           <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Phone" component={PhoneScreen} />
@@ -103,21 +98,19 @@ export default function AppNavigator() {
             ) : (
               <Stack.Screen name="FamilyShell" component={FamilyShell} />
             )}
-            {/* Elderly sub-screens */}
             <Stack.Screen name="ElderlyEditProfile" component={ElderlyEditProfileScreen} />
             <Stack.Screen name="ElderlyEmergencyContacts" component={ElderlyEmergencyContactsScreen} />
             <Stack.Screen name="ElderlyMedicationHistory" component={ElderlyMedicationHistoryScreen} />
             <Stack.Screen name="ElderlyAppointments" component={ElderlyAppointmentsScreen} />
             <Stack.Screen name="HealthReport" component={HealthReportScreen} />
-            {/* Family sub-screens */}
             <Stack.Screen name="CameraScreen" component={CameraScreen} />
             <Stack.Screen name="FamilyAppointments" component={FamilyAppointmentsScreen} />
             <Stack.Screen name="HealthThreshold" component={HealthThresholdScreen} />
-            {/* Shared sub-screens */}
+            <Stack.Screen name="FamilyHealth" component={FamilyHealthScreen} />
+            <Stack.Screen name="FamilyAlerts" component={FamilyAlertsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
             <Stack.Screen name="PremiumPlans" component={PremiumPlansScreen} />
-            {/* Auth screens accessible from authenticated state */}
             <Stack.Screen name="PinSetup" component={PinSetupScreen} />
           </>
         )}

@@ -2,18 +2,8 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getStatus, getErrorMessage } from '../../../core/api/errors';
 
-/**
- * Port of Flutter's payment_provider.dart (PaymentNotifier).
- *
- * Note: the Flutter notifier called `load()` from its constructor. Callers
- * here should invoke `load()` from a screen's mount effect instead.
- *
- * The Flutter provider only stores the returned `paymentUrl` in state — it
- * does not launch it. Opening the URL (e.g. via `Linking.openURL`) is left
- * to the screen, matching the original architecture.
- */
 
-// ── Models ────────────────────────────────────────────────────────────
+
 
 export interface PlanData {
   id: string;
@@ -49,7 +39,7 @@ export function getPeriodLabel(p: PlanData): string | null {
 
 export interface SubscriptionData {
   planId: string;
-  status: string; // ACTIVE, CANCELLED, EXPIRED
+  status: string;
   startDate?: string;
   endDate?: string;
   autoRenew: boolean;
@@ -103,7 +93,6 @@ const DEFAULT_PLANS: PlanData[] = [
   },
 ];
 
-// ── State ──────────────────────────────────────────────────────────────
 
 interface PaymentState {
   isLoading: boolean;
@@ -154,7 +143,6 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
       set({ isLoading: false, plans, subscription: sub });
     } catch (e) {
-      // If backend 404, use hardcoded defaults
       if (getStatus(e) === 404) {
         set({ isLoading: false, plans: DEFAULT_PLANS });
         return;
@@ -176,7 +164,6 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         return url;
       }
 
-      // Some gateways return a deep-link or QR code
       set({
         isProcessing: false,
         paymentSuccess: 'Payment initiated. Please complete in your banking app.',

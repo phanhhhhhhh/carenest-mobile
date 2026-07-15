@@ -55,11 +55,9 @@ public class JwtService {
                 .compact();
     }
 
-    /**
-     * Generate a short-lived password reset token (15 min).
-     */
+    
     public String generatePasswordResetToken(Long userId, String email) {
-        long resetExpirationMs = 15 * 60 * 1000; // 15 minutes
+        long resetExpirationMs = 15 * 60 * 1000;
         return Jwts.builder()
                 .subject(userId.toString())
                 .claim("email", email)

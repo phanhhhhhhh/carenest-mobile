@@ -15,8 +15,6 @@ public class ChatRequest {
     @Size(max = 2000, message = "Message must be at most 2000 characters")
     private String message;
 
-    /**
-     * Optional session ID. If not provided, defaults to the user's default session.
-     */
+    
     private String sessionId;
 }

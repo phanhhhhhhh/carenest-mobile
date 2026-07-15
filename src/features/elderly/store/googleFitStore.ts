@@ -2,25 +2,8 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import api from '../../../core/api/client';
 import { getStatus, getResponseData, getErrorMessage } from '../../../core/api/errors';
 
-/**
- * Port of Flutter's google_fit_provider.dart (GoogleFitNotifier).
- *
- * This provider is a thin client over the backend's /google-fit REST
- * endpoints (status/connect/sync/disconnect) — the actual Google Fit OAuth
- * and data sync happen server-side, so there is no native Google Fit /
- * Health Connect SDK involved here and nothing to stub out.
- *
- * The Flutter provider was a `StateNotifierProvider.family<..., String>`
- * keyed by elderlyId — one notifier instance per elderly user. Zustand has
- * no built-in "family" concept, so we memoize one store per elderlyId here,
- * the same pattern used in healthMetricStore.ts.
- *
- * Note: the Flutter notifier called `loadStatus()` automatically from its
- * constructor. Callers here should invoke `loadStatus()` from a screen's
- * mount effect instead.
- */
 
-// ── Types ────────────────────────────────────────────────────────
+
 interface GoogleFitState {
   isLoading: boolean;
   error: string | null;
@@ -40,7 +23,6 @@ interface GoogleFitState {
 
 type GoogleFitStoreHook = UseBoundStore<StoreApi<GoogleFitState>>;
 
-// ── Store factory (family) ────────────────────────────────────────
 const stores = new Map<string, GoogleFitStoreHook>();
 
 function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
@@ -53,7 +35,6 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
     lastSyncResult: null,
     authUrl: null,
 
-    // GET /api/google-fit/status/{userId}
     loadStatus: async () => {
       set({ isLoading: true, error: null });
       try {
@@ -77,7 +58,6 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
       }
     },
 
-    // GET /api/google-fit/connect/{userId} → returns auth URL
     connect: async () => {
       set({ isLoading: true, error: null, authUrl: null });
       try {
@@ -96,7 +76,6 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
       }
     },
 
-    // POST /api/google-fit/sync/{userId}
     syncNow: async () => {
       set({ isSyncing: true, error: null });
       try {
@@ -112,7 +91,6 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
       }
     },
 
-    // POST /api/google-fit/disconnect/{userId}
     disconnect: async () => {
       set({ isLoading: true, error: null });
       try {
@@ -132,7 +110,7 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
   }));
 }
 
-/** Get (or lazily create) the Google Fit store for a given elderlyId. */
+
 export function useGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
   let hook = stores.get(elderlyId);
   if (!hook) {

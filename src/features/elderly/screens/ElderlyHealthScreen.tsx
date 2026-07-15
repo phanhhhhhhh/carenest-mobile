@@ -27,18 +27,7 @@ import { useGoogleFitStore } from '../store/googleFitStore';
 import { useHealthThresholdStore } from '../../family/store/healthThresholdStore';
 import type { HealthMetric } from '../../../shared/types';
 
-/**
- * Port of Flutter's elderly_health_screen.dart.
- *
- * Notes on fidelity:
- * - No chart library is available, so the Flutter `CustomPaint` mini line
- *   chart is rebuilt as a plain flex-height bar chart (same approach used
- *   in HealthReportScreen.tsx), rather than a smooth line/gradient fill.
- * - The Google Fit "already connected" action sheet and the metric-type
- *   picker / value-entry dialogs are rebuilt as simple centered Modals,
- *   matching the pattern already used for the blood-type picker in
- *   ElderlyEditProfileScreen.tsx (no bottom-sheet dependency available).
- */
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -152,7 +141,6 @@ export default function ElderlyHealthScreen() {
       loadThresholds(elderlyId);
       fitStore.getState().loadStatus();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const getStatus = (data: HealthMetric): Status => {
@@ -245,7 +233,6 @@ export default function ElderlyHealthScreen() {
     if (!aiLoading && aiInsight == null && Object.keys(latestByTypeStore).length > 0) {
       loadAiInsight();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestByTypeStore]);
 
   const handlePeriodChange = (p: 'week' | 'month') => {
@@ -321,7 +308,6 @@ export default function ElderlyHealthScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
-          {/* Period selector */}
           <View style={styles.periodRow}>
             <PeriodChip label="7 days" selected={period === 'week'} onPress={() => handlePeriodChange('week')} />
             <View style={{ width: 8 }} />
@@ -330,7 +316,6 @@ export default function ElderlyHealthScreen() {
 
           <View style={{ height: 16 }} />
 
-          {/* AI Insight */}
           <View style={styles.aiCard}>
             <View style={styles.aiRow}>
               <View
@@ -390,7 +375,6 @@ export default function ElderlyHealthScreen() {
         </ScrollView>
       )}
 
-      {/* Floating action buttons */}
       <View style={styles.fabColumn}>
         <TouchableOpacity style={styles.fabSmall} onPress={handleGoogleFit}>
           <Ionicons name="sync" size={20} color="#FFFFFF" />
@@ -401,7 +385,6 @@ export default function ElderlyHealthScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Add metric sheet */}
       <Modal
         visible={addSheetVisible}
         transparent
@@ -436,7 +419,6 @@ export default function ElderlyHealthScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Value entry dialog */}
       <Modal
         visible={valueDialog != null}
         transparent
@@ -470,7 +452,6 @@ export default function ElderlyHealthScreen() {
         </View>
       </Modal>
 
-      {/* Google Fit already-connected action sheet */}
       <Modal
         visible={fitSheetVisible}
         transparent

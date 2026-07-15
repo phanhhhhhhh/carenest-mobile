@@ -31,13 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Auth integration tests — updated for RN migration flow.
- *
- * Register: returns userId + requiresVerification (no tokens).
- * Login: requires email verified (if email provided) or phone-only (auto-verified).
- * Tokens are returned from login, not register.
- */
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("itest")
@@ -61,14 +55,12 @@ class AuthIntegrationTest {
 
     @BeforeEach
     void cleanDatabase() {
-        // RateLimitService is mocked — all methods are no-ops by default
         jdbcTemplate.execute("DELETE FROM refresh_tokens");
         jdbcTemplate.execute("DELETE FROM users");
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────
 
-    /** Register phone-only (auto-verified, no email → no verification needed). */
+    
     private MvcResult registerPhoneOnly(String phone, String name, UserRole role) throws Exception {
         RegisterRequest req = new RegisterRequest();
         req.setPhone(phone);
@@ -82,7 +74,7 @@ class AuthIntegrationTest {
                 .andReturn();
     }
 
-    /** Register with email (requires verification before login). */
+    
     private MvcResult registerWithEmail(String email, String name, UserRole role) throws Exception {
         RegisterRequest req = new RegisterRequest();
         req.setEmail(email);
@@ -96,7 +88,7 @@ class AuthIntegrationTest {
                 .andReturn();
     }
 
-    /** Login and extract tokens. */
+    
     private MvcResult doLogin(String phone, String password) throws Exception {
         LoginRequest loginReq = new LoginRequest();
         loginReq.setPhone(phone);
@@ -125,9 +117,6 @@ class AuthIntegrationTest {
         return objectMapper.readTree(body).get("refreshToken").asText();
     }
 
-    // ── Register ─────────────────────────────────────────────────────
-    // After RN migration: register returns userId + requiresVerification.
-    // Tokens are obtained via login, not register.
 
     @Test
     void registerPhoneOnly_success() throws Exception {
@@ -229,7 +218,6 @@ class AuthIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ── Login (phone + password) ─────────────────────────────────────
 
     @Test
     void loginWithPhone_success() throws Exception {
@@ -250,11 +238,9 @@ class AuthIntegrationTest {
 
     @Test
     void loginWithEmail_verified_success() throws Exception {
-        // Phone-only register (auto-verified), then manually set email + mark verified
         String phone = nextPhone();
         registerPhoneOnly(phone, "Email Login", UserRole.FAMILY);
 
-        // Verify user can login with phone immediately (phone-only = auto-verified)
         LoginRequest loginReq = new LoginRequest();
         loginReq.setPhone(phone);
         loginReq.setPassword("Test@1234");
@@ -268,7 +254,6 @@ class AuthIntegrationTest {
 
     @Test
     void loginUnverifiedEmail_returns401() throws Exception {
-        // Register with email → not verified → login should fail
         registerWithEmail("unverified@carenest.dev", "Unverified", UserRole.ELDERLY);
 
         LoginRequest loginReq = new LoginRequest();
@@ -296,15 +281,12 @@ class AuthIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ── Login (legacy firebaseToken) ─────────────────────────────────
 
     @Test
     void loginWithFirebaseToken_success() throws Exception {
-        // Register a phone-only user first
         String phone = nextPhone();
         registerPhoneOnly(phone, "FB User", UserRole.ELDERLY);
 
-        // Mock Firebase to return the SAME phone that was registered
         when(firebaseService.verifyAndGetPhone("token-login-fb")).thenReturn(phone);
 
         LoginRequest loginReq = new LoginRequest();
@@ -331,7 +313,6 @@ class AuthIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    // ── Token refresh ────────────────────────────────────────────────
 
     @Test
     void refresh_success_issuesNewTokens() throws Exception {
@@ -356,7 +337,6 @@ class AuthIntegrationTest {
         registerPhoneOnly(phone, "Vo F", UserRole.ELDERLY);
         String originalRefreshToken = extractRefreshToken(doLogin(phone, "Test@1234"));
 
-        // First refresh consumes the original token
         RefreshRequest firstRefreshReq = new RefreshRequest();
         firstRefreshReq.setRefreshToken(originalRefreshToken);
         mockMvc.perform(post("/api/auth/refresh")
@@ -364,7 +344,6 @@ class AuthIntegrationTest {
                         .content(objectMapper.writeValueAsString(firstRefreshReq)))
                 .andExpect(status().isOk());
 
-        // Second refresh with the same (now invalid) token → 401
         RefreshRequest secondRefreshReq = new RefreshRequest();
         secondRefreshReq.setRefreshToken(originalRefreshToken);
         mockMvc.perform(post("/api/auth/refresh")
@@ -373,7 +352,6 @@ class AuthIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    // ── Authorization guards ─────────────────────────────────────────
 
     @Test
     void protectedEndpoint_withoutToken_returns401() throws Exception {

@@ -36,7 +36,6 @@ public class EmergencyEventService {
         User elderly = userRepository.findById(request.getElderlyId())
             .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
-        // Build notes with type prefix for categorization
         String enrichedNotes = request.getNotes();
         if (request.getType() != null && !request.getType().isBlank()) {
             String typePrefix = "[" + request.getType() + "]";
@@ -60,7 +59,6 @@ public class EmergencyEventService {
 
         EmergencyEvent saved = emergencyEventRepository.save(event);
 
-        // Send push notifications to all linked family members
         List<Long> familyUserIds = familyLinkRepository
             .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
             .stream()
@@ -80,7 +78,6 @@ public class EmergencyEventService {
                 familyUserIds.size(), elderly.getId());
         }
 
-        // UC-28: Capture camera snapshot in parallel (non-blocking)
         try {
             cameraService.captureSosSnapshot(elderly.getId(), saved.getId());
         } catch (Exception e) {
@@ -163,7 +160,6 @@ public class EmergencyEventService {
                 .orElse(null);
         }
 
-        // Derive type from notes prefix [TYPE] if present
         String type = "SOS";
         String description = "";
         String displayNotes = e.getNotes();

@@ -24,7 +24,6 @@ function withAlpha(hex: string, alpha: number): string {
   return `${hex}${a}`;
 }
 
-// ── Section wrapper (parity with _buildSection) ───────────────────
 function Section({
   title,
   subtitle,
@@ -43,7 +42,6 @@ function Section({
   );
 }
 
-// ── Toggle row (parity with _ToggleTile) ──────────────────────────
 function ToggleTile({
   icon,
   iconColor,
@@ -87,7 +85,6 @@ function ToggleTile({
   );
 }
 
-// ── Reminder minutes selector (parity with _ReminderMinutesTile) ──
 function ReminderMinutesTile({
   value,
   onChanged,
@@ -132,7 +129,6 @@ function ReminderMinutesTile({
   );
 }
 
-// ── Time picker tile (parity with _TimePickerTile + showTimePicker) ──
 function TimePickerTile({
   label,
   time,
@@ -226,7 +222,6 @@ export default function NotificationSettingsScreen() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading) {

@@ -17,10 +17,7 @@ public class ElderlyDashboardItem {
     private MedicationAdherenceSummary medicationAdherence;
     private List<AppointmentResponse> upcomingAppointments;
     private ActiveAlertSummary activeAlerts;
-    /**
-     * UC-22: Color-coded status for multi-elderly dashboard.
-     * GREEN = all good, YELLOW = needs attention, RED = critical/emergency.
-     */
+    
     @Builder.Default
     private String statusColor = "GREEN";
     private String statusMessage;

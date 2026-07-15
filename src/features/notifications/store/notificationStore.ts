@@ -3,14 +3,13 @@ import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { asListOfMaps, extractError } from '../../../core/api/errors';
 
-// ── Types ────────────────────────────────────────────────────────
 export interface NotificationData {
   id: string;
   title: string;
   body: string;
   type: string;
   read: boolean;
-  createdAt: string; // ISO date string
+  createdAt: string;
 }
 
 function notificationFromJson(j: Record<string, unknown>): NotificationData {
@@ -32,13 +31,11 @@ interface NotificationState {
   error: string | null;
   items: NotificationData[];
 
-  // Actions
   load: () => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllRead: () => Promise<void>;
 }
 
-// ── Store ────────────────────────────────────────────────────────
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   isLoading: false,
   error: null,
@@ -88,7 +85,6 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 }));
 
-// Derived value helper (parity with Flutter's NotificationState.unreadCount getter)
 export function selectUnreadCount(items: NotificationData[]): number {
   return items.filter((n) => !n.read).length;
 }

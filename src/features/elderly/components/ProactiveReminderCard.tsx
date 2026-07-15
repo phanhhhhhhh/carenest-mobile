@@ -4,24 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { useMedicationStore } from '../store/medicationStore';
 
-/**
- * Inline proactive reminder card shown above the chat messages area.
- *
- * Displays the next upcoming medication dose that is still pending,
- * with a quick "Take" action button that logs the dose via
- * medicationStore.toggleTaken.
- *
- * Port of proactive_reminder_card.dart.
- */
+
 export default function ProactiveReminderCard() {
   const items = useMedicationStore((s) => s.items);
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
 
-  // Show only pending (not yet taken) medications
   const pending = items.filter((m) => !m.taken);
   if (pending.length === 0) return null;
 
-  // Show the first pending medication as a proactive nudge
   const next = pending[0];
 
   return (

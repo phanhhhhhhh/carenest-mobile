@@ -21,9 +21,7 @@ public class FcmService {
 
     private final UserRepository userRepository;
 
-    /**
-     * Send push notification to a single user by their user ID.
-     */
+    
     public void sendToUser(Long userId, String title, String body, Map<String, String> data) {
         if (FirebaseApp.getApps().isEmpty()) {
             log.debug("Firebase not initialized — skipping push to userId={}", userId);
@@ -35,9 +33,7 @@ public class FcmService {
         });
     }
 
-    /**
-     * Send push notification to multiple users by their user IDs.
-     */
+    
     public void sendToUsers(List<Long> userIds, String title, String body, Map<String, String> data) {
         if (FirebaseApp.getApps().isEmpty()) {
             log.debug("Firebase not initialized — skipping push to {} users", userIds.size());

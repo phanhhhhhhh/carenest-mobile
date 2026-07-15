@@ -21,12 +21,7 @@ public class ChatController {
 
     private final ChatService chatService;
 
-    /**
-     * Send a message to the AI companion.
-     * UC-16: Chat with AI Companion
-     * The AI responds with context-aware, personalized replies using
-     * the elderly's health profile, medications, and appointments.
-     */
+    
     @PostMapping("/message")
     @PreAuthorize("hasRole('ELDERLY') and #userId == authentication.principal")
     public ResponseEntity<ChatResponse> sendMessage(
@@ -36,10 +31,7 @@ public class ChatController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Get paginated chat history.
-     * UC-16: Chat history retrieval
-     */
+    
     @GetMapping("/history")
     @PreAuthorize("hasRole('ELDERLY') and #userId == authentication.principal")
     public ResponseEntity<ChatHistoryResponse> getHistory(
@@ -50,9 +42,7 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getHistory(userId, sessionId, page, size));
     }
 
-    /**
-     * Clear all chat history for the authenticated elderly user.
-     */
+    
     @DeleteMapping("/history")
     @PreAuthorize("hasRole('ELDERLY') and #userId == authentication.principal")
     public ResponseEntity<Map<String, String>> clearHistory(
@@ -61,9 +51,7 @@ public class ChatController {
         return ResponseEntity.ok(Map.of("message", "Chat history cleared"));
     }
 
-    /**
-     * Health check to verify Gemini API connectivity.
-     */
+    
     @GetMapping("/health")
     @PreAuthorize("hasRole('ELDERLY')")
     public ResponseEntity<Map<String, Object>> health() {

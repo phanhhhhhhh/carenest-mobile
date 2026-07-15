@@ -7,22 +7,15 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * In-memory rate limiter for auth endpoints.
- *
- * - Tracks requests per IP using a sliding window (ConcurrentHashMap).
- * - Tracks failed login attempts per userId with lockout after 5 failures.
- * - Thread-safe, no external dependencies.
- */
+
 @Slf4j
 @Service
 public class RateLimitService {
 
     private static final int MAX_REQUESTS_PER_MINUTE = 5;
     private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final long LOCKOUT_DURATION_SECONDS = 15 * 60; // 15 min
+    private static final long LOCKOUT_DURATION_SECONDS = 15 * 60;
 
-    // ── Per-IP rate limiting ──────────────────────────────────────────────
 
     private final ConcurrentHashMap<String, RateWindow> ipWindows = new ConcurrentHashMap<>();
 
@@ -46,16 +39,13 @@ public class RateLimitService {
         }
     }
 
-    // ── Failed login tracking & lockout ────────────────────────────────────
 
     private record LockoutState(int failedCount, Instant lockedUntil, Instant lastAttempt) {
     }
 
     private final ConcurrentHashMap<Long, LockoutState> failedLogins = new ConcurrentHashMap<>();
 
-    /**
-     * Check if the user is currently locked out. Throws if locked.
-     */
+    
     public void checkLockout(Long userId) {
         LockoutState state = failedLogins.get(userId);
         if (state == null)
@@ -70,9 +60,7 @@ public class RateLimitService {
         }
     }
 
-    /**
-     * Record a failed login attempt. Returns true if account is now locked.
-     */
+    
     public void recordFailedAttempt(Long userId) {
         failedLogins.compute(userId, (id, existing) -> {
             int newCount = (existing != null) ? existing.failedCount() + 1 : 1;
@@ -86,17 +74,14 @@ public class RateLimitService {
         });
     }
 
-    /**
-     * Clear failed attempts on successful login.
-     */
+    
     public void clearFailedAttempts(Long userId) {
         failedLogins.remove(userId);
     }
 
-    // ── Cleanup (optional — old entries auto-expire via compute logic) ─────
 
     public void evictStaleEntries() {
-        Instant cutoff = Instant.now().minusSeconds(3600); // 1 hour
+        Instant cutoff = Instant.now().minusSeconds(3600);
         ipWindows.entrySet().removeIf(e -> e.getValue().windowStart().plusSeconds(60).isBefore(cutoff));
         failedLogins.entrySet().removeIf(e -> {
             LockoutState s = e.getValue();

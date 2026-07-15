@@ -40,8 +40,6 @@ export default function PinVerifyScreen() {
     setLoading(true);
     const result = await verifyPinAction(pinStr);
     if (result.valid) {
-      // Shells are only registered when authenticated — flip the flag and
-      // AppNavigator mounts the correct role shell automatically.
       useAuthStore.getState().completeLogin();
     } else {
       Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect. Please try again.');

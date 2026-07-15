@@ -10,9 +10,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-/**
- * Email service for verification, password reset, and notifications.
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -26,9 +24,7 @@ public class EmailService {
     @Value("${carenest.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
-    /**
-     * Send email verification link.
-     */
+    
     @Async
     public void sendVerificationEmail(String to, String userName, String token) {
         String verifyUrl = frontendUrl + "/verify-email?token=" + token;
@@ -43,9 +39,7 @@ public class EmailService {
         send(to, subject, body);
     }
 
-    /**
-     * Send password reset email.
-     */
+    
     @Async
     public void sendPasswordResetEmail(String to, String userName, String token) {
         String resetUrl = frontendUrl + "/reset-password?token=" + token;
@@ -60,9 +54,7 @@ public class EmailService {
         send(to, subject, body);
     }
 
-    /**
-     * Send welcome email after successful verification.
-     */
+    
     @Async
     public void sendWelcomeEmail(String to, String userName) {
         String subject = "Welcome to CareNest! 🎉";
@@ -76,13 +68,12 @@ public class EmailService {
         send(to, subject, body);
     }
 
-    /** Send a pre-built HTML email (used by OtpService). */
+    
     @Async
     public void sendSimpleHtml(String to, String subject, String htmlBody) {
         send(to, subject, htmlBody);
     }
 
-    // ── Private ──────────────────────────────────────────────────────────────
 
     private void send(String to, String subject, String htmlBody) {
         if (fromEmail == null || fromEmail.isBlank()) {

@@ -14,20 +14,15 @@ export default function WelcomeBackScreen() {
   const authStoreUser = useAuthStore((s) => s.user);
   const completeLogin = useAuthStore((s) => s.completeLogin);
 
-  // Prefer route params, fall back to auth store
   const userName = route.params?.userName || authStoreUser?.name || 'User';
 
   const handleContinue = () => {
-    // Flipping isAuthenticated makes AppNavigator mount the correct role
-    // shell — the shells are not registered in the unauthenticated stack,
-    // so a navigation.reset to them would throw.
     completeLogin();
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Mascot image placeholder */}
         <View style={styles.mascotWrapper}>
           <View style={styles.mascotCircle}>
             <Text style={styles.mascotEmoji}>{'👶'}</Text>

@@ -24,23 +24,7 @@ import { useEmergencyEventStore } from '../../family/store/emergencyEventStore';
 import { useNotificationStore, selectUnreadCount } from '../../notifications/store/notificationStore';
 import type { MedicationItem, AppointmentItem } from '../../../shared/types';
 
-/**
- * Port of Flutter's elderly_home_screen.dart.
- *
- * Notes on fidelity:
- * - The Flutter "SOS Sent" confirmation used a custom rounded AlertDialog
- *   with a large check-circle icon. This codebase's house style (see
- *   ElderlyEditProfileScreen) uses RN's built-in `Alert.alert` for all
- *   confirmation/snackbar-equivalent messaging, so the same convention is
- *   used here instead of a bespoke Modal.
- * - The Flutter SOS button showed a true circular countdown progress ring
- *   (`CircularProgressIndicator`). No chart/SVG library is available here,
- *   so the countdown ring is approximated with a plain bordered circle;
- *   the countdown number and cancel behavior are otherwise identical.
- * - "View all" on Today's Medications navigates to the medication tab
- *   (`ElderlyMeds`), the direct RN equivalent of Flutter's
- *   `context.go('/elderly/medication')` route.
- */
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -116,7 +100,6 @@ export default function ElderlyHomeScreen() {
     loadMedications();
     loadNotifications();
     loadAppointments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -124,7 +107,6 @@ export default function ElderlyHomeScreen() {
       healthStore.getState().load();
       loadCamera(elderlyId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   useEffect(() => {
@@ -212,7 +194,6 @@ export default function ElderlyHomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Header */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.greeting}>{`${greeting()}, ${displayName}!`}</Text>
@@ -232,7 +213,6 @@ export default function ElderlyHomeScreen() {
 
         <View style={{ height: 28 }} />
 
-        {/* SOS button */}
         <View style={styles.sosWrap}>
           {sosCountdown ? (
             <>
@@ -261,12 +241,10 @@ export default function ElderlyHomeScreen() {
 
         <View style={{ height: 24 }} />
 
-        {/* Next medication card */}
         {nextMed && <NextMedicationCard medication={nextMed} onToggleTaken={toggleTaken} />}
 
         <View style={{ height: 20 }} />
 
-        {/* Camera status card */}
         {elderlyId && (
           <View style={styles.cameraCard}>
             <View style={[styles.cameraDot, { backgroundColor: isCameraOn ? Colors.success : Colors.textHint }]} />
@@ -286,7 +264,6 @@ export default function ElderlyHomeScreen() {
 
         <View style={{ height: 28 }} />
 
-        {/* Health summary */}
         <Text style={styles.sectionTitle}>Today's Readings</Text>
         <View style={{ height: 14 }} />
         <View style={styles.healthRow}>
@@ -317,7 +294,6 @@ export default function ElderlyHomeScreen() {
 
         <View style={{ height: 28 }} />
 
-        {/* Today's medications */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Today's Medications</Text>
           {medItems.length > 0 && (
@@ -342,7 +318,6 @@ export default function ElderlyHomeScreen() {
 
         <View style={{ height: 28 }} />
 
-        {/* Upcoming appointments */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
           {upcoming.length > 0 && (
@@ -574,7 +549,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   nextMedIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  nextMedLabel: { fontSize: 12, color: Colors.textSecondary }, // 12 deliberately smaller than bodySmall
+  nextMedLabel: { fontSize: 12, color: Colors.textSecondary },
   nextMedName: { marginTop: 2, fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
   takeBtn: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, marginLeft: 8 },
   takeBtnText: { color: '#FFFFFF', fontSize: Typography.bodySmall.fontSize, fontWeight: '700' },
@@ -588,7 +563,7 @@ const styles = StyleSheet.create({
   },
   cameraDot: { width: 12, height: 12, borderRadius: 6 },
   cameraTitle: { fontSize: Typography.buttonSmall.fontSize, fontWeight: '600', color: Colors.textPrimary },
-  cameraSubtitle: { fontSize: 12, color: Colors.textSecondary }, // 12 deliberately smaller
+  cameraSubtitle: { fontSize: 12, color: Colors.textSecondary },
   callButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -700,7 +675,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   aptDateDay: { fontWeight: '700', fontSize: Typography.cardTitle.fontSize, color: Colors.primary },
-  aptDateMonth: { fontSize: 10, color: Colors.primary }, // 10 deliberately smaller for month label
+  aptDateMonth: { fontSize: 10, color: Colors.primary },
   aptDoctor: { fontWeight: '600', fontSize: Typography.buttonSmall.fontSize, color: Colors.textPrimary },
-  aptDetail: { marginTop: 2, fontSize: 12, color: Colors.textSecondary }, // 12 deliberately smaller than bodySmall
+  aptDetail: { marginTop: 2, fontSize: 12, color: Colors.textSecondary },
 });

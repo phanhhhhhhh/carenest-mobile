@@ -22,10 +22,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-/**
- * UC-25: Premium Plan payment processing.
- * Supports VNPay and MoMo payment gateways.
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -58,13 +55,10 @@ public class PaymentService {
     @Value("${payment.momo.pay-url:https://test-payment.momo.vn/v2/gateway/api/create}")
     private String momoPayUrl;
 
-    // Plans
-    private static final BigDecimal PREMIUM_MONTHLY_PRICE = new BigDecimal("49000"); // 49,000 VND
-    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("399000"); // 399,000 VND
+    private static final BigDecimal PREMIUM_MONTHLY_PRICE = new BigDecimal("49000");
+    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("399000");
 
-    /**
-     * Create a VNPay payment URL for premium subscription.
-     */
+    
     @Transactional
     public Map<String, String> createVnpayPayment(Long userId, String planType, String clientIp) {
         User user = userRepository.findById(userId)
@@ -75,7 +69,6 @@ public class PaymentService {
                 ? PREMIUM_YEARLY_PRICE
                 : PREMIUM_MONTHLY_PRICE;
 
-        // Create pending subscription
         String txnRef = generateTxnRef(userId);
         Subscription sub = Subscription.builder()
                 .user(user)
@@ -88,7 +81,6 @@ public class PaymentService {
                 .build();
         subscriptionRepository.save(sub);
 
-        // Build VNPay payment URL
         String paymentUrl = buildVnpayUrl(txnRef, amount, clientIp);
         log.info("VNPay payment URL created: userId={} txnRef={}", userId, txnRef);
 
@@ -99,14 +91,10 @@ public class PaymentService {
                 "planType", planType);
     }
 
-    /**
-     * Handle VNPay return/redirect.
-     * Verify signature, activate subscription if payment successful.
-     */
+    
     @Transactional
     public Map<String, String> handleVnpayReturn(Map<String, String> params) {
         String vnpSecureHash = params.get("vnp_SecureHash");
-        // Remove hash params for verification
         Map<String, String> verifyParams = new HashMap<>(params);
         verifyParams.remove("vnp_SecureHash");
         verifyParams.remove("vnp_SecureHashType");
@@ -129,7 +117,6 @@ public class PaymentService {
             return Map.of("status", "SUCCESS", "message", "Payment successful — Premium activated!");
         } else {
             log.info("VNPay payment failed/cancelled: txnRef={} code={}", txnRef, responseCode);
-            // Mark subscription as cancelled
             subscriptionRepository.findByTransactionId(txnRef).ifPresent(sub -> {
                 sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
                 subscriptionRepository.save(sub);
@@ -138,18 +125,13 @@ public class PaymentService {
         }
     }
 
-    /**
-     * Handle VNPay IPN (Instant Payment Notification) callback.
-     */
+    
     @Transactional
     public Map<String, String> handleVnpayIpn(Map<String, String> params) {
-        // Same verification as return, but for server-to-server callback
         return handleVnpayReturn(params);
     }
 
-    /**
-     * Create a MoMo payment request.
-     */
+    
     @Transactional
     public Map<String, String> createMomoPayment(Long userId, String planType) {
         User user = userRepository.findById(userId)
@@ -163,7 +145,6 @@ public class PaymentService {
         String orderId = generateTxnRef(userId);
         String requestId = UUID.randomUUID().toString();
 
-        // Create pending subscription
         Subscription sub = Subscription.builder()
                 .user(user)
                 .planType(plan)
@@ -175,7 +156,6 @@ public class PaymentService {
                 .build();
         subscriptionRepository.save(sub);
 
-        // Build MoMo request body
         try {
             String rawSignature = "accessKey=" + momoAccessKey
                     + "&amount=" + amount
@@ -205,15 +185,11 @@ public class PaymentService {
         }
     }
 
-    /**
-     * Handle MoMo return/callback (IPN).
-     * Verifies the MoMo signature, checks resultCode, and activates subscription.
-     */
+    
     @Transactional
     public Map<String, String> handleMomoReturn(Map<String, String> params) {
         String receivedSignature = params.get("signature");
 
-        // Verify signature
         String computedSignature = verifyMomoSignature(params);
         boolean valid = computedSignature != null && computedSignature.equals(receivedSignature);
 
@@ -227,12 +203,10 @@ public class PaymentService {
         String message = params.getOrDefault("message", "");
 
         if ("0".equals(resultCode)) {
-            // Payment successful
             activateSubscription(orderId, "MOMO");
             log.info("MoMo payment success: orderId={}", orderId);
             return Map.of("status", "SUCCESS", "message", "Payment successful — Premium activated!");
         } else {
-            // Payment failed
             log.info("MoMo payment failed: orderId={} resultCode={} message={}", orderId, resultCode, message);
             subscriptionRepository.findByTransactionId(orderId).ifPresent(sub -> {
                 sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
@@ -242,14 +216,7 @@ public class PaymentService {
         }
     }
 
-    /**
-     * Verify MoMo signature using HMAC-SHA256.
-     * MoMo signature string format:
-     * accessKey={accessKey}&amount={amount}&extraData={extraData}&message={message}
-     * &orderId={orderId}&orderInfo={orderInfo}&partnerCode={partnerCode}
-     * &payType={payType}&requestId={requestId}&responseTime={responseTime}
-     * &resultCode={resultCode}&transId={transId}
-     */
+    
     public String verifyMomoSignature(Map<String, String> params) {
         try {
             String rawSignature = "accessKey=" + momoAccessKey
@@ -272,9 +239,7 @@ public class PaymentService {
         }
     }
 
-    /**
-     * Get current subscription status for a user.
-     */
+    
     @Transactional(readOnly = true)
     public Map<String, Object> getSubscriptionStatus(Long userId) {
         Optional<Subscription> activeSub = subscriptionRepository.findByUserIdAndStatus(
@@ -288,9 +253,7 @@ public class PaymentService {
                 "expiresAt", activeSub.map(s -> s.getEndDate()).orElse(null));
     }
 
-    /**
-     * Check if a user has premium access. Used for feature gating.
-     */
+    
     @Transactional(readOnly = true)
     public boolean hasPremiumAccess(Long userId) {
         return subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
@@ -300,9 +263,7 @@ public class PaymentService {
                 .map(s -> s.isPremium()).orElse(false);
     }
 
-    /**
-     * Cancel a premium subscription.
-     */
+    
     @Transactional
     public void cancelSubscription(Long userId) {
         subscriptionRepository.findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
@@ -314,13 +275,11 @@ public class PaymentService {
                 });
     }
 
-    // ── Private Helpers ─────────────────────────────────────────────────────
 
     private void activateSubscription(String txnRef, String provider) {
         subscriptionRepository.findByTransactionId(txnRef).ifPresent(sub -> {
             sub.setStatus(Subscription.SubscriptionStatus.ACTIVE);
             sub.setPaymentProvider(provider);
-            // Set end date based on plan
             int months = sub.getPlanType() == Subscription.PlanType.PREMIUM_YEARLY ? 12 : 1;
             sub.setEndDate(Instant.now().plus(30L * months, ChronoUnit.DAYS));
             subscriptionRepository.save(sub);
@@ -332,7 +291,7 @@ public class PaymentService {
         vnpParams.put("vnp_Version", "2.1.0");
         vnpParams.put("vnp_Command", "pay");
         vnpParams.put("vnp_TmnCode", vnpayTmnCode);
-        vnpParams.put("vnp_Amount", String.valueOf(amount.multiply(new BigDecimal("100")).longValue())); // VND * 100
+        vnpParams.put("vnp_Amount", String.valueOf(amount.multiply(new BigDecimal("100")).longValue()));
         vnpParams.put("vnp_CurrCode", "VND");
         vnpParams.put("vnp_TxnRef", txnRef);
         vnpParams.put("vnp_OrderInfo", "CareNest Premium Subscription");
@@ -373,7 +332,6 @@ public class PaymentService {
         return "CN" + sdf.format(new Date()) + "_" + userId + "_" + random;
     }
 
-    // ── Crypto ─────────────────────────────────────────────────────────────
 
     private String hmacSHA512(String key, String data) {
         try {

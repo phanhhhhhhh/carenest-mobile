@@ -13,10 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 
-/**
- * Applies rate limiting to auth endpoints: login, forgot-password.
- * Runs BEFORE the JWT filter so unauthenticated requests are also rate-limited.
- */
+
 @Component
 @RequiredArgsConstructor
 @Order(1)
@@ -30,7 +27,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
 
-        // Only rate-limit specific auth endpoints
         if (path.endsWith("/auth/login") || path.endsWith("/auth/forgot-password")) {
             String ip = getClientIp(request);
             String endpoint = path.substring(path.lastIndexOf('/') + 1);

@@ -6,10 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * Generates weekly health summaries for all elderly users.
- * Runs every Monday at 8:00 AM Vietnam time.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
