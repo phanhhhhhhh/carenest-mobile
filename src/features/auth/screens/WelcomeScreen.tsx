@@ -20,7 +20,7 @@ import { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { AppStrings } from '../../../core/constants/strings';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,29 +35,37 @@ interface SlideData {
 const slides: SlideData[] = [
   {
     id: '1',
-    title: 'Chăm sóc sức khỏe từ xa\nmọi lúc, mọi nơi',
-    subtitle: 'Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhật tình trạng nhanh chóng',
+    title: `Chăm sóc sức khỏe từ xa
+mọi lúc, mọi nơi`,
+    subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe
+và cập nhật tình trạng nhanh chóng`,
     mascotImage: require('../../../../assets/mascot/mascot_dashboard.jpg'),
     isFinal: false,
   },
   {
     id: '2',
-    title: 'Đa tiện ích\nchăm sóc sức khỏe',
-    subtitle: 'Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày',
+    title: `Đa tiện ích
+chăm sóc sức khỏe`,
+    subtitle: `Theo dõi, quản lý và cải thiện
+sức khỏe mỗi ngày`,
     mascotImage: require('../../../../assets/icons/health_icon_grid.jpg'),
     isFinal: false,
   },
   {
     id: '3',
-    title: 'Chủ động theo dõi\nsức khỏe mỗi ngày',
-    subtitle: 'Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh',
+    title: `Luôn kết nối
+trong tầm tay`,
+    subtitle: `Xem chỉ số sức khỏe và nhắn tin
+với bác sĩ ngay trên điện thoại`,
     mascotImage: require('../../../../assets/mascot/mascot_bigphone.jpg'),
     isFinal: false,
   },
   {
     id: '4',
-    title: 'Chủ động theo dõi\nsức khỏe mỗi ngày',
-    subtitle: 'Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh',
+    title: `Chủ động theo dõi
+sức khỏe mỗi ngày`,
+    subtitle: `Nhắc nhở thông minh, kết nối bác sĩ
+và người thân luôn bên cạnh`,
     mascotImage: require('../../../../assets/mascot/mascot_notifications.jpg'),
     isFinal: true,
   },
