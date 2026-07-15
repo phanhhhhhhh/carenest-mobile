@@ -20,10 +20,9 @@ import { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { AppStrings } from '../../../core/constants/strings';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
 
 interface SlideData {
   id: string;
@@ -36,38 +35,33 @@ interface SlideData {
 const slides: SlideData[] = [
   {
     id: '1',
-    title: 'Chăm s\xf3c sức khỏe từ xa\nmọi l\xfac, mọi nơi',
-    subtitle:
-      'Kết nối v\xe0 theo d\xf5i sức khỏe\nngười th\xe2n dễ d\xe0ng qua ứng dụng',
+    title: 'Chăm sóc sức khỏe từ xa\nmọi lúc, mọi nơi',
+    subtitle: 'Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhật tình trạng nhanh chóng',
     mascotImage: require('../../../../assets/mascot/mascot_dashboard.jpg'),
     isFinal: false,
   },
   {
     id: '2',
-    title: 'Đa tiện \xedch chăm s\xf3c sức khỏe',
-    subtitle:
-      'Quản l\xfd thuốc, lịch hẹn v\xe0 c\xe1c\nchỉ số sức khỏe to\xe0n diện',
+    title: 'Đa tiện ích\nchăm sóc sức khỏe',
+    subtitle: 'Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày',
     mascotImage: require('../../../../assets/icons/health_icon_grid.jpg'),
     isFinal: false,
   },
   {
     id: '3',
-    title: 'Chủ động theo d\xf5i\nsức khỏe mỗi ng\xe0y',
-    subtitle:
-      'Nhận th\xf4ng b\xe1o v\xe0 b\xe1o c\xe1o\nsức khỏe chi tiết h\xe0ng ng\xe0y',
+    title: 'Chủ động theo dõi\nsức khỏe mỗi ngày',
+    subtitle: 'Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh',
     mascotImage: require('../../../../assets/mascot/mascot_bigphone.jpg'),
     isFinal: false,
   },
   {
     id: '4',
-    title: 'Chủ động theo d\xf5i\nsức khỏe mỗi ng\xe0y',
-    subtitle:
-      'Nhận th\xf4ng b\xe1o v\xe0 b\xe1o c\xe1o\nsức khỏe chi tiết h\xe0ng ng\xe0y',
+    title: 'Chủ động theo dõi\nsức khỏe mỗi ngày',
+    subtitle: 'Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh',
     mascotImage: require('../../../../assets/mascot/mascot_notifications.jpg'),
     isFinal: true,
   },
 ];
-
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -186,9 +180,7 @@ export default function WelcomeScreen() {
                 onPress={handleNext}
                 activeOpacity={0.8}
               >
-                <Text style={styles.primaryButtonLabel}>
-                  Kh\xe1m ph\xe1 ngay
-                </Text>
+                <Text style={styles.primaryButtonLabel}>Khám phá ngay</Text>
               </TouchableOpacity>
             )}
 
@@ -316,7 +308,6 @@ export default function WelcomeScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   splashContainer: {
     flex: 1,
@@ -346,7 +337,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-
   container: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -354,7 +344,6 @@ const styles = StyleSheet.create({
   flatListWrapper: {
     flex: 1,
   },
-
   skipButton: {
     position: 'absolute',
     top: 12,
@@ -368,7 +357,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: '500',
   },
-
   slide: {
     width,
     flex: 1,
@@ -377,7 +365,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xxxl,
     paddingBottom: 80,
   },
-
   mascotWrapper: {
     marginBottom: 32,
     alignItems: 'center',
@@ -386,7 +373,6 @@ const styles = StyleSheet.create({
     width: 240,
     height: 240,
   },
-
   slideTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -402,7 +388,6 @@ const styles = StyleSheet.create({
     lineHeight: Typography.body.lineHeight,
     marginBottom: 40,
   },
-
   dotContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -415,12 +400,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginHorizontal: 0,
   },
-
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
   },
-
   textButton: {
     paddingVertical: 14,
     paddingHorizontal: 32,
@@ -430,7 +413,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.primary,
   },
-
   primaryButton: {
     width: '100%',
     backgroundColor: Colors.primary,
@@ -448,7 +430,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.surface,
   },
-
   secondaryButton: {
     width: '100%',
     backgroundColor: Colors.surface,
@@ -464,7 +445,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.primary,
   },
-
   finalButtonGroup: {
     width: '100%',
     alignItems: 'center',
