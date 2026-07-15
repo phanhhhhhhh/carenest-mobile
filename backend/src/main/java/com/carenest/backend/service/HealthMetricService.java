@@ -47,10 +47,8 @@ public class HealthMetricService {
 
         HealthMetric saved = healthMetricRepository.save(metric);
 
-        // Check thresholds and create alert if exceeded
         thresholdService.checkAndAlert(saved);
 
-        // Run statistical anomaly detection
         anomalyDetectionService.analyze(saved);
 
         return toResponse(saved);

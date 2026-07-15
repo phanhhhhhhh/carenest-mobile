@@ -20,24 +20,7 @@ import {
   type PlanData,
 } from '../store/paymentStore';
 
-/**
- * Port of Flutter's premium_plans_screen.dart (PremiumPlansScreen).
- *
- * Notes on fidelity:
- * - Flutter opened the payment URL via `url_launcher`'s `launchUrl` (with a
- *   SnackBar fallback showing the raw URL when the URL couldn't be
- *   launched). No webview/url_launcher package is available here, so
- *   `Linking.openURL`/`Linking.canOpenURL` from react-native is used
- *   instead, matching the task's instruction to avoid new deps. The
- *   SnackBar-equivalent messaging uses `Alert.alert`, per this codebase's
- *   house style (see ElderlyEditProfileScreen / ElderlyHomeScreen).
- * - This screen has no navigation route registered yet in
- *   RootStackParamList (navigation files are off-limits for this port), so
- *   it renders its own in-screen app bar without a back button, matching
- *   the original AppBar (which had no explicit `leading`); if pushed from a
- *   stack navigator, the native header would supply the back affordance —
- *   here there is none, mirroring what the Dart source actually renders.
- */
+
 
 function formatDate(dt: Date): string {
   const months = [
@@ -69,11 +52,9 @@ export default function PremiumPlansScreen() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubscribe = async () => {
-    // Find first non-free plan
     const premiumPlan = plans.find((p) => !isFreePlan(p));
     if (!premiumPlan) {
       Alert.alert('', 'No premium plans available');
@@ -139,7 +120,6 @@ export default function PremiumPlansScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
-          {/* Current plan banner */}
           <CurrentPlanBanner
             isPremium={isPremium}
             currentPlanLabel={currentPlanLabel}
@@ -224,7 +204,6 @@ export default function PremiumPlansScreen() {
   );
 }
 
-// ── Current plan banner ─────────────────────────────────────────────
 
 function CurrentPlanBanner({
   isPremium,
@@ -246,8 +225,7 @@ function CurrentPlanBanner({
         },
       ]}
     >
-      {/* Simple two-tone approximation of the Flutter LinearGradient (no
-          gradient dependency available here / no new deps allowed). */}
+      {}
       <View style={[styles.currentPlanOverlay, { backgroundColor: colors[1] }]} />
       <View style={styles.currentPlanRow}>
         <Ionicons
@@ -274,7 +252,6 @@ function CurrentPlanBanner({
   );
 }
 
-// ── Plan card ─────────────────────────────────────────────────────────
 
 function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boolean }) {
   const isRecommended = plan.id === 'PREMIUM_YEARLY';
@@ -327,7 +304,6 @@ function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boolean }) {
   );
 }
 
-// ── Payment method card ─────────────────────────────────────────────
 
 function MethodCard({
   icon,

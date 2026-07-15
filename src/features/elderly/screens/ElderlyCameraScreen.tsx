@@ -16,14 +16,7 @@ import { Colors } from '../../../core/theme/colors';
 import { getUserId } from '../../../core/storage/secureStorage';
 import { useCameraStore, type CameraDeviceData } from '../../family/store/cameraStore';
 
-/**
- * Port of Flutter's elderly_camera_screen.dart (Wireframe B3 — "Camera trong nhà").
- *
- * The elderly resident can see per-room camera on/off status and toggle
- * privacy mode for all cameras at once (or per-room). No live video stream
- * is rendered here — the Flutter original didn't render a stream on this
- * screen either, it only surfaced on/off + privacy status from the API.
- */
+
 export default function ElderlyCameraScreen() {
   const [elderlyId, setElderlyId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,7 +32,6 @@ export default function ElderlyCameraScreen() {
       setElderlyId(id);
       if (id) load(id);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onRefresh = async () => {
@@ -52,12 +44,8 @@ export default function ElderlyCameraScreen() {
   const togglePrivacyForAll = async (turnOff: boolean) => {
     if (!elderlyId) return;
     for (const cam of cameras) {
-      // eslint-disable-next-line no-await-in-loop
       await setPrivacyMode(elderlyId, cam.id, turnOff);
     }
-    // Note: Flutter showed a SnackBar here ("Đã tắt camera tạm thời..." /
-    // "Đã bật lại camera."). No SnackBar/Toast primitive is wired up in this
-    // RN port yet, so the confirmation text is omitted.
   };
 
   if (elderlyId === null) {
@@ -107,7 +95,6 @@ export default function ElderlyCameraScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
           }
         >
-          {/* Overall status */}
           <View style={styles.statusCard}>
             <View
               style={[
@@ -129,7 +116,6 @@ export default function ElderlyCameraScreen() {
 
           <View style={{ height: 20 }} />
 
-          {/* Main privacy toggle */}
           <TouchableOpacity
             style={[
               styles.mainToggleButton,

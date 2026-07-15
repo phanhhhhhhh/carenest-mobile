@@ -55,7 +55,6 @@ public class HealthSyncService {
             healthMetricRepository.save(metric);
             imported++;
 
-            // Check thresholds + trigger alerts if needed
             try {
                 thresholdService.checkAndAlert(metric);
             } catch (Exception e) {
@@ -74,23 +73,17 @@ public class HealthSyncService {
             .build();
     }
 
-    /**
-     * Maps external data type strings to our internal HealthMetricType enum.
-     * Supports Google Fit, Health Connect, and Apple Health naming conventions.
-     */
+    
     private HealthMetricType resolveType(String typeStr) {
         if (typeStr == null) return null;
 
         String t = typeStr.toUpperCase().replace(".", "_").replace(" ", "_");
 
-        // Direct match
         try {
             return HealthMetricType.valueOf(t);
         } catch (IllegalArgumentException ignored) {
-            // fall through to fuzzy matching
         }
 
-        // Google Fit / Health Connect data type mapping
         if (t.contains("HEART_RATE") || t.contains("HEARTRATE") || t.equals("HEART_RATE_BPM"))
             return HealthMetricType.HEART_RATE;
         if (t.contains("BLOOD_PRESSURE") || t.contains("BLOODPRESSURE"))

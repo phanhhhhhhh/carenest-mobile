@@ -11,12 +11,7 @@ import { useElderlyProfileStore } from '../store/elderlyStore';
 import { useLinkedFamilyStore } from '../../family/store/familyStore';
 import { getName, getPhone, getRole } from '../../../core/storage/secureStorage';
 
-/**
- * Port of Flutter's elderly_profile_screen.dart.
- *
- * Deviations:
- *  - "Help & Support" is a no-op, matching Flutter's `() {}`.
- */
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,7 +41,6 @@ export default function ElderlyProfileScreen() {
     })();
     loadProfile();
     loadFamily();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isElderlyRole = role === 'ELDERLY';
@@ -109,7 +103,6 @@ export default function ElderlyProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatarCircle}>
@@ -142,7 +135,6 @@ export default function ElderlyProfileScreen() {
 
         <View style={{ height: 28 }} />
 
-        {/* Health Profile */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="medical" size={22} color={Colors.primary} />
@@ -201,7 +193,6 @@ export default function ElderlyProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        {/* Connected Family */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="people" size={22} color={Colors.secondary} />
@@ -237,7 +228,6 @@ export default function ElderlyProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        {/* Settings menu */}
         <View style={styles.card}>
           {menuItems.map((item, i) => (
             <View key={item.label}>

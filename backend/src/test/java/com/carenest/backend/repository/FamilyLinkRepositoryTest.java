@@ -154,14 +154,11 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
         Long linkId = link.getId();
         familyLinkRepository.flush();
 
-        // Soft-delete the elderly user (app uses soft deletes)
         elderly.setDeletedAt(OffsetDateTime.now());
         userRepository.save(elderly);
         userRepository.flush();
 
-        // Family link should still exist (soft-delete doesn't cascade)
         assertThat(familyLinkRepository.findById(linkId)).isPresent();
-        // But queries that filter deleted users should exclude it
         assertThat(userRepository.findByPhoneAndDeletedAtIsNull("0904000015")).isEmpty();
     }
 }

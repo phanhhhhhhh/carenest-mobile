@@ -111,10 +111,7 @@ public class AuthorizationService {
             .orElse(false);
     }
 
-    /**
-     * Check access to a camera device.
-     * Family members linked to the elderly who owns the camera can access.
-     */
+    
     public boolean canAccessCamera(Long principalId, Long cameraId) {
         if (principalId == null || cameraId == null) return false;
         return cameraDeviceRepository.findById(cameraId)

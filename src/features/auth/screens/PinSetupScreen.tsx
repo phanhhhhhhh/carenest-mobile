@@ -32,7 +32,6 @@ export default function PinSetupScreen() {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
-    // Auto-focus the first box on mount and on step change
     const timer = setTimeout(() => {
       inputRefs.current[0]?.focus();
     }, 200);
@@ -40,7 +39,6 @@ export default function PinSetupScreen() {
   }, [step]);
 
   const handleChange = (text: string, index: number) => {
-    // Allow only digits
     const digit = text.replace(/[^0-9]/g, '');
     if (digit.length > 1) return;
 
@@ -48,12 +46,10 @@ export default function PinSetupScreen() {
     newPin[index] = digit;
     setPin(newPin);
 
-    // Advance to next box
     if (digit && index < PIN_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when the last digit is entered
     if (digit && index === PIN_LENGTH - 1) {
       const pinStr = [...newPin.slice(0, index), digit].join('');
       handleSubmit(pinStr);
@@ -62,7 +58,6 @@ export default function PinSetupScreen() {
 
   const handleKeyPress = (key: string, index: number) => {
     if (key === 'Backspace' && !pin[index] && index > 0) {
-      // Go back to previous box on backspace if current is empty
       const newPin = [...pin];
       newPin[index - 1] = '';
       setPin(newPin);
@@ -96,8 +91,6 @@ export default function PinSetupScreen() {
       setLoading(true);
       const ok = await setupPin(finalPin, finalPin);
       if (ok) {
-        // Shells are only registered when authenticated — flip the flag and
-        // AppNavigator mounts the correct role shell automatically.
         useAuthStore.getState().completeLogin();
       } else {
         Alert.alert('Error', 'Could not set up PIN. Please try again.', [
@@ -115,7 +108,6 @@ export default function PinSetupScreen() {
         style={styles.flex}
       >
         <View style={styles.content}>
-          {/* Back */}
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backBtn}
@@ -124,14 +116,12 @@ export default function PinSetupScreen() {
             <Text style={styles.backText}>{'← Back'}</Text>
           </TouchableOpacity>
 
-          {/* Step indicator */}
           <View style={styles.stepRow}>
             <View style={[styles.stepDot, step === 'setup' && styles.stepDotActive]} />
             <View style={styles.stepLine} />
             <View style={[styles.stepDot, step === 'confirm' && styles.stepDotActive]} />
           </View>
 
-          {/* Heading */}
           <Text style={styles.title}>
             {step === 'setup' ? 'Set Up PIN' : 'Confirm PIN'}
           </Text>
@@ -141,7 +131,6 @@ export default function PinSetupScreen() {
               : 'Re-enter your PIN to confirm'}
           </Text>
 
-          {/* PIN boxes */}
           <View style={styles.pinRow}>
             {pin.map((digit, i) => (
               <TextInput
@@ -161,7 +150,6 @@ export default function PinSetupScreen() {
             ))}
           </View>
 
-          {/* Action button */}
           <TouchableOpacity
             style={[styles.btn, loading && styles.btnDisabled]}
             onPress={() => handleSubmit()}
@@ -177,7 +165,6 @@ export default function PinSetupScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Reset / start over when confirming */}
           {step === 'confirm' && (
             <TouchableOpacity
               style={styles.resetBtn}
@@ -219,7 +206,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 
-  /* Step indicator */
+  
   stepRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -245,7 +232,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
 
-  /* Typography */
+  
   title: {
     fontSize: 26,
     fontWeight: '800',
@@ -260,7 +247,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* PIN boxes */
+  
   pinRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -284,7 +271,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F7FA',
   },
 
-  /* Button */
+  
   btn: {
     backgroundColor: Colors.primary,
     borderRadius: 14,
@@ -300,7 +287,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  /* Reset link */
+  
   resetBtn: {
     marginTop: 18,
     alignItems: 'center',

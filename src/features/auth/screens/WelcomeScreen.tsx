@@ -24,7 +24,6 @@ const { width, height } = Dimensions.get('window');
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-// ── Slide data ───────────────────────────────────────────────────────────────
 
 interface SlideData {
   id: string;
@@ -69,7 +68,6 @@ const slides: SlideData[] = [
   },
 ];
 
-// ── Component ────────────────────────────────────────────────────────────────
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -77,15 +75,12 @@ export default function WelcomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList<SlideData>>(null);
 
-  // Animation values
   const splashOpacity = useRef(new Animated.Value(1)).current;
   const splashScale = useRef(new Animated.Value(1)).current;
   const mascotBounce = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
-  // ── Splash timer & transition ─────────────────────────────────────────
   useEffect(() => {
-    // Mascot bounce animation during splash
     Animated.loop(
       Animated.sequence([
         Animated.timing(mascotBounce, {
@@ -127,7 +122,6 @@ export default function WelcomeScreen() {
     return () => clearTimeout(timer);
   }, [splashOpacity, splashScale, mascotBounce, contentOpacity]);
 
-  // ── FlatList pagination ───────────────────────────────────────────────
   const onMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const index = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -136,7 +130,6 @@ export default function WelcomeScreen() {
     []
   );
 
-  // ── Navigation handlers ───────────────────────────────────────────────
   const handleNext = useCallback(() => {
     if (currentIndex < slides.length - 1) {
       flatListRef.current?.scrollToIndex({
@@ -153,7 +146,6 @@ export default function WelcomeScreen() {
     });
   }, []);
 
-  // ── Render helpers ────────────────────────────────────────────────────
   const bounceInterpolate = mascotBounce.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -8],
@@ -163,7 +155,6 @@ export default function WelcomeScreen() {
     ({ item, index }: ListRenderItemInfo<SlideData>) => {
       return (
         <View style={styles.slide}>
-          {/* Mascot / illustration area */}
           <View style={styles.mascotWrapper}>
             <Image
               source={item.mascotImage}
@@ -172,13 +163,10 @@ export default function WelcomeScreen() {
             />
           </View>
 
-          {/* Title */}
           <Text style={styles.slideTitle}>{item.title}</Text>
 
-          {/* Subtitle */}
           <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
 
-          {/* Action button(s) */}
           <View style={styles.buttonContainer}>
             {index === 0 && (
               <TouchableOpacity
@@ -253,7 +241,6 @@ export default function WelcomeScreen() {
     );
   }, [currentIndex]);
 
-  // ── Splash screen ─────────────────────────────────────────────────────
   if (showSplash) {
     return (
       <Animated.View
@@ -263,7 +250,6 @@ export default function WelcomeScreen() {
         ]}
       >
         <SafeAreaView style={styles.splashSafeArea}>
-          {/* Mascot image with bounce animation */}
           <Animated.View
             style={[
               styles.splashMascotWrapper,
@@ -277,14 +263,12 @@ export default function WelcomeScreen() {
             />
           </Animated.View>
 
-          {/* App logo / name — dùng wordmark thật thay vì text render tay */}
           <Image
             source={require('../../../../assets/brand/logo_wordmark.jpg')}
             style={styles.splashLogo}
             resizeMode="contain"
           />
 
-          {/* Tagline */}
           <Text style={styles.splashTagline}>
             {AppStrings.tagline}
           </Text>
@@ -293,10 +277,8 @@ export default function WelcomeScreen() {
     );
   }
 
-  // ── Onboarding screens ────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
-      {/* Skip button (hidden on last slide) */}
       {currentIndex < slides.length - 1 && (
         <TouchableOpacity
           style={styles.skipButton}
@@ -307,7 +289,6 @@ export default function WelcomeScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Onboarding slides */}
       <Animated.View style={[styles.flatListWrapper, { opacity: contentOpacity }]}>
         <FlatList
           ref={flatListRef}
@@ -330,16 +311,13 @@ export default function WelcomeScreen() {
         />
       </Animated.View>
 
-      {/* Dot indicators */}
       {renderDots()}
     </SafeAreaView>
   );
 }
 
-// ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // ── Splash ────────────────────────────────────────────────────────────
   splashContainer: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -369,7 +347,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  // ── Onboarding ────────────────────────────────────────────────────────
   container: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -378,7 +355,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ── Skip button ───────────────────────────────────────────────────────
   skipButton: {
     position: 'absolute',
     top: 12,
@@ -393,7 +369,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Slide ─────────────────────────────────────────────────────────────
   slide: {
     width,
     flex: 1,
@@ -403,7 +378,6 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
 
-  // ── Mascot illustration ───────────────────────────────────────────────
   mascotWrapper: {
     marginBottom: 32,
     alignItems: 'center',
@@ -413,7 +387,6 @@ const styles = StyleSheet.create({
     height: 240,
   },
 
-  // ── Slide text ────────────────────────────────────────────────────────
   slideTitle: {
     fontSize: 24,
     fontWeight: '700',
@@ -430,7 +403,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
 
-  // ── Dot indicators ────────────────────────────────────────────────────
   dotContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -444,7 +416,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
   },
 
-  // ── Buttons ───────────────────────────────────────────────────────────
   buttonContainer: {
     width: '100%',
     alignItems: 'center',
@@ -494,7 +465,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  // ── Final slide button group ──────────────────────────────────────────
   finalButtonGroup: {
     width: '100%',
     alignItems: 'center',

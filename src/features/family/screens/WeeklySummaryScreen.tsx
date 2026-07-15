@@ -15,22 +15,7 @@ import { Colors } from '../../../core/theme/colors';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useWeeklySummaryStore, getWeekLabel, type WeeklySummaryData } from '../store/weeklySummaryStore';
 
-/**
- * Port of Flutter's weekly_summary_screen.dart (WeeklySummaryScreen).
- *
- * Notes on fidelity:
- * - Flutter read `elderlyId`/`elderlyName` off `familyDashboardProvider`.
- *   The RN equivalent is `useFamilyDashboardStore`'s `elderlyId()` /
- *   `elderlyName()` getters, matching the convention already used by
- *   HealthThresholdScreen.tsx / FamilyAlertsScreen.tsx.
- * - The Flutter FAB was a `FloatingActionButton.extended`; RN has no
- *   built-in FAB widget, so it is recreated with an absolutely-positioned
- *   pill-shaped TouchableOpacity, matching the style already used for the
- *   FAB in FamilyAppointmentsScreen.tsx.
- * - `ref.invalidate(weeklySummaryProvider(elderlyId))` (Flutter's Riverpod
- *   "retry" action, which re-runs the notifier's constructor -> `load()`)
- *   is ported as a direct call to `load(elderlyId)`.
- */
+
 
 export default function WeeklySummaryScreen() {
   const dashboardData = useFamilyDashboardStore((s) => s.data);
@@ -50,12 +35,10 @@ export default function WeeklySummaryScreen() {
     if (!dashboardData) {
       loadDashboard();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (elderlyId) load(elderlyId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const handleRefresh = async () => {
@@ -78,7 +61,6 @@ export default function WeeklySummaryScreen() {
     </View>
   );
 
-  // No elderly linked yet
   if (!elderlyId) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>

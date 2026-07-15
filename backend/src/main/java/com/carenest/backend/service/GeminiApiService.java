@@ -11,10 +11,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Low-level REST client for Google Gemini API.
- * Used by ChatService, AnomalyDetectionService, and WeeklySummaryService.
- */
+
 @Slf4j
 @Service
 public class GeminiApiService {
@@ -41,16 +38,12 @@ public class GeminiApiService {
         this.objectMapper = objectMapper;
     }
 
-    /**
-     * Generate a text response from Gemini with a system prompt and user message.
-     */
+    
     public String generateContent(String systemPrompt, String userMessage) {
         return generateContent(systemPrompt, userMessage, temperature, maxTokens);
     }
 
-    /**
-     * Generate a text response with custom temperature and max tokens.
-     */
+    
     public String generateContent(String systemPrompt, String userMessage, double overrideTemp, int overrideMaxTokens) {
         if (apiKey == null || apiKey.isBlank()) {
             log.warn("Gemini API key not configured — returning fallback response");
@@ -58,7 +51,6 @@ public class GeminiApiService {
         }
 
         try {
-            // Build the full prompt with system + user
             String fullPrompt = buildFullPrompt(systemPrompt, userMessage);
 
             Map<String, Object> requestBody = Map.of(
@@ -93,35 +85,22 @@ public class GeminiApiService {
         }
     }
 
-    /**
-     * Generate a health analysis with lower temperature for more factual output.
-     */
+    
     public String generateHealthAnalysis(String systemPrompt, String data) {
         return generateContent(systemPrompt, data, 0.3, 2048);
     }
 
-    /**
-     * Generate a friendly conversational response with higher temperature.
-     */
+    
     public String generateConversational(String systemPrompt, String userMessage) {
         return generateContent(systemPrompt, userMessage, 0.85, 1024);
     }
 
-    /**
-     * Check if Gemini API is available.
-     */
+    
     public boolean isAvailable() {
         return apiKey != null && !apiKey.isBlank();
     }
 
-    /**
-     * UC-17: Transcribe audio to text using Gemini's multimodal capabilities.
-     * Sends raw audio bytes as inlineData and returns the transcribed text.
-     *
-     * @param audioData raw audio bytes (MP3, WAV, WEBM, OGG)
-     * @param mimeType  MIME type of the audio (e.g., "audio/mp3", "audio/wav")
-     * @return transcribed text, or null if transcription failed
-     */
+    
     public String transcribeAudio(byte[] audioData, String mimeType) {
         if (apiKey == null || apiKey.isBlank()) {
             log.warn("Gemini API key not configured — cannot transcribe audio");
@@ -167,7 +146,6 @@ public class GeminiApiService {
         }
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────────
 
     private String buildFullPrompt(String systemPrompt, String userMessage) {
         if (systemPrompt == null || systemPrompt.isBlank()) {
@@ -187,7 +165,6 @@ public class GeminiApiService {
                     return text != null && !text.isBlank() ? text : "[Empty response from AI]";
                 }
             }
-            // Check for prompt feedback / safety blocks
             JsonNode promptFeedback = root.path("promptFeedback");
             if (promptFeedback.has("blockReason")) {
                 log.warn("Gemini response blocked: {}", promptFeedback.path("blockReason").asText());

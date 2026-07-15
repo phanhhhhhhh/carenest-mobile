@@ -159,7 +159,7 @@ public class DataSeeder implements CommandLineRunner {
             .name(name)
             .phone(phone)
             .email(email)
-            .emailVerified(true) // seed users are pre-verified
+            .emailVerified(true)
             .dob(dob)
             .role(role)
             .build();
@@ -417,7 +417,6 @@ public class DataSeeder implements CommandLineRunner {
         appointmentRepository.save(appointment);
     }
 
-    // ── New: Chat Messages Seed ──────────────────────────────────────────
 
     private void seedChatMessages() {
         log.info("Seeding chat messages...");
@@ -454,7 +453,6 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Chat messages seeded ({} pairs).", convos.length);
     }
 
-    // ── New: Subscription Seed ───────────────────────────────────────────
 
     private void seedSubscriptions() {
         log.info("Seeding subscriptions...");
@@ -473,7 +471,6 @@ public class DataSeeder implements CommandLineRunner {
         log.info("Subscription seeded (1 premium user).");
     }
 
-    // ── New: Camera Seed ─────────────────────────────────────────────────
 
     private void seedCameras() {
         log.info("Seeding camera devices...");

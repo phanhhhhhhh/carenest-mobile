@@ -4,16 +4,8 @@ import { getUserId } from '../../../core/storage/secureStorage';
 import { getStatus, getErrorMessage } from '../../../core/api/errors';
 import type { ElderlyProfile } from '../../../shared/types';
 
-/**
- * Port of Flutter's elderly_provider.dart (ElderlyProfileNotifier).
- *
- * Note: the Flutter notifier called `load()` automatically from its
- * constructor. Zustand stores are plain singletons created at module load
- * time (before login), so callers must invoke `load()` themselves (e.g. in
- * a screen's mount effect) instead of relying on store construction.
- */
 
-// ── Types ────────────────────────────────────────────────────────
+
 export interface EmergencyContact {
   id?: string;
   name: string;
@@ -41,7 +33,6 @@ interface ElderlyProfileState {
   }) => Promise<void>;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────
 function parseProfile(j: Record<string, unknown>): ElderlyProfile {
   return {
     id: String(j.id ?? ''),
@@ -57,7 +48,6 @@ function parseProfile(j: Record<string, unknown>): ElderlyProfile {
   };
 }
 
-// ── Store ────────────────────────────────────────────────────────
 export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => ({
   isLoading: false,
   isUpdating: false,

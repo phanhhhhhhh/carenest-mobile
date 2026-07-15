@@ -22,20 +22,7 @@ import { useMedicationStore } from '../store/medicationStore';
 import { snoozeOneOff, cancelSnooze } from '../../medication/services/medicationReminderService';
 import type { MedicationItem } from '../../../shared/types';
 
-/**
- * Port of Flutter's elderly_medication_screen.dart.
- *
- * Notes on deviations (no new npm deps allowed):
- *  - The "Today" progress banner used a diagonal LinearGradient
- *    (#2E7D9A -> #1A5570) in Flutter. There is no gradient library here, so
- *    it is rendered as a solid Colors.primaryDark background instead.
- *  - Native TimeOfDay picker (showTimePicker) is rebuilt as a small
- *    Modal-based hour/minute picker (two scrollable option lists).
- *  - Flutter's showModalBottomSheet is rebuilt with a bottom-anchored Modal.
- *  - SnackBar feedback for snooze and the AlertDialog for delete
- *    confirmation are both rebuilt with the native Alert API (already the
- *    established pattern in this codebase, e.g. ElderlyEditProfileScreen).
- */
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -61,10 +48,8 @@ export default function ElderlyMedicationScreen() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Add/Edit sheet state ─────────────────────────────────────────
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editing, setEditing] = useState<MedicationItem | null>(null);
   const [name, setName] = useState('');
@@ -73,7 +58,6 @@ export default function ElderlyMedicationScreen() {
   const [times, setTimes] = useState<string[]>([]);
   const [days, setDays] = useState<Set<number>>(new Set());
 
-  // ── Time picker modal state ──────────────────────────────────────
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [pickHour, setPickHour] = useState(8);
   const [pickMinute, setPickMinute] = useState(0);
@@ -251,7 +235,6 @@ export default function ElderlyMedicationScreen() {
             </View>
           )}
 
-          {/* Today progress card */}
           <View style={styles.progressCard}>
             <View style={styles.progressHeaderRow}>
               <Text style={styles.progressHeaderText}>Today</Text>
@@ -322,12 +305,10 @@ export default function ElderlyMedicationScreen() {
         </ScrollView>
       )}
 
-      {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={() => openAddSheet()}>
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
-      {/* Add/Edit bottom sheet */}
       <Modal
         visible={sheetVisible}
         transparent
@@ -458,7 +439,6 @@ export default function ElderlyMedicationScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Time picker modal */}
       <Modal
         visible={timePickerVisible}
         transparent

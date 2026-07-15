@@ -19,32 +19,7 @@ import * as storage from '../../../core/storage/secureStorage';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore, useFamilyLinkStore } from '../store/familyStore';
 
-/**
- * Port of Flutter's family_profile_screen.dart.
- *
- * Notes on fidelity:
- * - Flutter read `_name`/`_phone` directly from SecureStorage in
- *   `initState`/`_load` rather than from the auth provider; this port does
- *   the same via `secureStorage.getName()`/`getPhone()` instead of
- *   `useAuthStore`'s `user` object (which only carries id/name/role, no
- *   phone field).
- * - The "Add family member" AlertDialog (phone lookup + send request) is
- *   rebuilt as a `Modal`, matching the convention already used by
- *   ElderlyEmergencyContactsScreen.tsx for porting Flutter AlertDialogs.
- *   The Flutter dialog used `ScaffoldMessenger` snackbars for
- *   success/error feedback; this port uses `Alert.alert` instead (same
- *   substitution HealthThresholdScreen/ElderlyEmergencyContactsScreen use
- *   elsewhere in this codebase), since there's no SnackBar equivalent
- *   wired up yet.
- * - "Edit Profile" and "Help & Support" menu items are no-ops, matching the
- *   Flutter source (`() {}`) exactly — not stubbed out further.
- * - Notification Settings / Upgrade Premium navigate to 'NotificationSettings'
- *   / 'PremiumPlans' (Flutter: `context.go('/notification-settings')` /
- *   `context.go('/premium-plans')'). Those routes aren't registered in
- *   RootStackParamList yet (navigation files are off-limits for this port),
- *   so `useNavigation` is typed loosely with `NativeStackNavigationProp<any>`,
- *   matching the pattern used by HealthThresholdScreen.tsx.
- */
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -80,7 +55,6 @@ export default function FamilyProfileScreen() {
     if (!dashboardData) {
       loadDashboard();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openAddFamilyDialog = () => {

@@ -27,7 +27,6 @@ export default function PhoneScreen() {
   const [usePhone, setUsePhone] = useState(false);
   const [phone, setPhone] = useState('');
 
-  // Clear any stale store error on mount and when switching login method
   useEffect(() => {
     clearError();
   }, [clearError, usePhone]);
@@ -43,7 +42,6 @@ export default function PhoneScreen() {
     );
 
     if (result.type === 'needsVerification') {
-      // Email not verified yet — send user to the verify-email prompt (Flutter parity)
       navigation.navigate('VerifyEmailPrompt', { email: result.email });
       return;
     }
@@ -72,7 +70,6 @@ export default function PhoneScreen() {
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to continue</Text>
 
-          {/* Toggle Email / Phone */}
           <View style={styles.toggleRow}>
             <TouchableOpacity
               style={[styles.toggleBtn, !usePhone && styles.toggleActive]}

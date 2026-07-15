@@ -21,23 +21,7 @@ import { Colors } from '../../../core/theme/colors';
 import { useAppointmentStore } from '../store/appointmentStore';
 import type { AppointmentItem } from '../../../shared/types';
 
-/**
- * Port of Flutter's family_appointments_screen.dart.
- *
- * Flutter used a TabController + TabBar with two tabs (Upcoming / Past),
- * a showModalBottomSheet for add/edit, native showDatePicker/showTimePicker,
- * and an AlertDialog for delete confirmation.
- *
- * There is no top-tab-navigator, modal-bottom-sheet, or native date/time
- * picker dependency available here, so:
- *  - tabs are rebuilt with a manual TouchableOpacity toggle (same approach
- *    as ElderlyAppointmentsScreen.tsx),
- *  - the add/edit form is a Modal styled as a bottom sheet,
- *  - the date/time pickers are Modal-based column pickers (same approach
- *    mandated by ElderlyEditProfileScreen.tsx's blood-type picker),
- *  - the delete confirmation uses Alert.alert with the same title/message/
- *    button copy as the original AlertDialog.
- */
+
 
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Upcoming',
@@ -65,7 +49,7 @@ function statusLabel(status: string): string {
 }
 
 function formatDate(dt: Date): string {
-  const weekdayIdx = (dt.getDay() + 6) % 7; // JS: Sun=0..Sat=6 -> Mon=0..Sun=6
+  const weekdayIdx = (dt.getDay() + 6) % 7;
   return `${WEEK_DAYS[weekdayIdx]}, ${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
 }
 
@@ -98,7 +82,6 @@ export default function FamilyAppointmentsScreen() {
   const [tab, setTab] = useState<0 | 1>(0);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Add/edit sheet state
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editing, setEditing] = useState<AppointmentItem | null>(null);
   const [doctor, setDoctor] = useState('');
@@ -114,7 +97,6 @@ export default function FamilyAppointmentsScreen() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const upcomingList = upcoming();
@@ -287,12 +269,10 @@ export default function FamilyAppointmentsScreen() {
         renderList(tab === 0 ? upcomingList : pastList, tab === 0)
       )}
 
-      {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={openAddSheet} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
-      {/* Add/Edit bottom sheet */}
       <Modal
         visible={sheetVisible}
         transparent
@@ -320,7 +300,6 @@ export default function FamilyAppointmentsScreen() {
               <FormField icon="location" placeholder="Location (optional)" hint="e.g., City Hospital" value={location} onChangeText={setLocation} />
               <View style={{ height: 14 }} />
 
-              {/* Date picker */}
               <TouchableOpacity style={styles.pickerRow} onPress={() => setDatePickerVisible(true)}>
                 <Ionicons name="calendar" size={20} color={Colors.primary} />
                 <Text style={styles.pickerRowText}>{formatDate(selectedDate)}</Text>
@@ -329,7 +308,6 @@ export default function FamilyAppointmentsScreen() {
               </TouchableOpacity>
               <View style={{ height: 14 }} />
 
-              {/* Time picker */}
               <TouchableOpacity style={styles.pickerRow} onPress={() => setTimePickerVisible(true)}>
                 <Ionicons name="time" size={20} color={Colors.primary} />
                 <Text style={styles.pickerRowText}>
@@ -366,7 +344,6 @@ export default function FamilyAppointmentsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* Date picker modal */}
       <DatePickerModal
         visible={datePickerVisible}
         value={selectedDate}
@@ -377,7 +354,6 @@ export default function FamilyAppointmentsScreen() {
         }}
       />
 
-      {/* Time picker modal */}
       <TimePickerModal
         visible={timePickerVisible}
         hour={selectedHour}
@@ -393,7 +369,6 @@ export default function FamilyAppointmentsScreen() {
   );
 }
 
-// ── Form field ──────────────────────────────────────────────────────
 
 function FormField({
   icon,
@@ -429,7 +404,6 @@ function FormField({
   );
 }
 
-// ── Appointment card ────────────────────────────────────────────────
 
 function AppointmentCard({
   item,
@@ -538,7 +512,6 @@ function ActionChip({
   );
 }
 
-// ── Date picker modal (Modal-based, no native picker dependency) ────
 
 function DatePickerModal({
   visible,
@@ -562,7 +535,6 @@ function DatePickerModal({
       setMonth(value.getMonth());
       setDay(value.getDate());
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const years = Array.from({ length: 2 }, (_, i) => today.getFullYear() + i);
@@ -608,7 +580,6 @@ function DatePickerModal({
   );
 }
 
-// ── Time picker modal ─────────────────────────────────────────────
 
 function TimePickerModal({
   visible,
@@ -631,7 +602,6 @@ function TimePickerModal({
       setH(hour);
       setM(minute);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const hours = Array.from({ length: 24 }, (_, i) => i);

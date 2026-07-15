@@ -46,7 +46,6 @@ public class HealthReportService {
         List<HealthMetric> allMetrics = healthMetricRepository
             .findAllByElderlyIdAndDateRange(elderlyId, from, to);
 
-        // Group by type
         Map<HealthMetricType, List<HealthMetric>> grouped = allMetrics.stream()
             .filter(m -> resolvedTypes.contains(m.getType()))
             .collect(Collectors.groupingBy(m -> m.getType()));
@@ -56,7 +55,6 @@ public class HealthReportService {
             List<HealthMetric> typeMetrics = grouped.getOrDefault(type, List.of());
             if (typeMetrics.isEmpty()) continue;
 
-            // Sort by recordedAt ascending for time-series
             typeMetrics.sort(Comparator.comparing(m -> m.getRecordedAt()));
 
             List<MetricDataPoint> dataPoints = typeMetrics.stream()
@@ -97,12 +95,10 @@ public class HealthReportService {
                 .build();
         }
 
-        // Primary value stats
         BigDecimal sumValue = BigDecimal.ZERO;
         BigDecimal minValue = null;
         BigDecimal maxValue = null;
 
-        // Secondary value stats (for BP diastolic, etc.)
         BigDecimal sumSecondary = BigDecimal.ZERO;
         BigDecimal minSecondary = null;
         BigDecimal maxSecondary = null;
@@ -128,7 +124,6 @@ public class HealthReportService {
             ? sumSecondary.divide(BigDecimal.valueOf(secondaryCount), 2, RoundingMode.HALF_UP)
             : null;
 
-        // Trend: compare first-half average vs second-half average
         String trend = computeTrend(metrics);
 
         return MetricStats.builder()

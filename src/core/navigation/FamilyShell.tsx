@@ -4,12 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
 import FamilyDashboardScreen from '../../features/family/screens/FamilyDashboardScreen';
 import FamilyMedicationScreen from '../../features/family/screens/FamilyMedicationScreen';
-import FamilyHealthScreen from '../../features/family/screens/FamilyHealthScreen';
-import FamilyAlertsScreen from '../../features/family/screens/FamilyAlertsScreen';
+import CameraScreen from '../../features/family/screens/CameraScreen';
 import FamilyProfileScreen from '../../features/family/screens/FamilyProfileScreen';
 
-// Note: would add a typed param list here (e.g. `createBottomTabNavigator<FamilyTabParamList>()`)
-// but the nested tab params aren't modeled yet — see RootStackParamList.
 const Tab = createBottomTabNavigator();
 
 export default function FamilyShell() {
@@ -22,10 +19,9 @@ export default function FamilyShell() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarIcon: ({ color, focused }) => {
           const icons: Record<string, [string, string]> = {
-            FamilyDashboard: ['grid-outline', 'grid'],
+            FamilyDashboard: ['home-outline', 'home'],
             FamilyMeds: ['medkit-outline', 'medkit'],
-            FamilyHealth: ['fitness-outline', 'fitness'],
-            FamilyAlerts: ['notifications-outline', 'notifications'],
+            FamilyCamera: ['videocam-outline', 'videocam'],
             FamilyProfile: ['person-outline', 'person'],
           };
           const [outline, filled] = icons[route.name] || ['ellipse-outline', 'ellipse'];
@@ -39,10 +35,9 @@ export default function FamilyShell() {
         },
       })}
     >
-      <Tab.Screen name="FamilyDashboard" component={FamilyDashboardScreen} options={{ tabBarLabel: 'Overview' }} />
+      <Tab.Screen name="FamilyDashboard" component={FamilyDashboardScreen} options={{ tabBarLabel: 'Home' }} />
       <Tab.Screen name="FamilyMeds" component={FamilyMedicationScreen} options={{ tabBarLabel: 'Meds' }} />
-      <Tab.Screen name="FamilyHealth" component={FamilyHealthScreen} options={{ tabBarLabel: 'Health' }} />
-      <Tab.Screen name="FamilyAlerts" component={FamilyAlertsScreen} options={{ tabBarLabel: 'Alerts' }} />
+      <Tab.Screen name="FamilyCamera" component={CameraScreen} options={{ tabBarLabel: 'Camera' }} />
       <Tab.Screen name="FamilyProfile" component={FamilyProfileScreen} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );

@@ -2,15 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { MedicationItem } from '../../../shared/types';
 
-/**
- * Local medication reminders — port of Flutter's medication_reminder_service.dart.
- *
- * Schedules a repeating daily notification for every schedule time of every
- * medication, plus one-off snooze reminders. Expo identifies scheduled
- * notifications by string id, so we reuse the Flutter id scheme as strings:
- *   daily slot → "med-<medicationId>-<slot>"
- *   snooze     → "med-snooze-<medicationId>"
- */
+
 
 const CHANNEL_ID = 'carenest_medication';
 const SNOOZE_CHANNEL_ID = 'carenest_medication_snooze';
@@ -51,11 +43,10 @@ function snoozeId(med: MedicationItem): string {
   return `med-snooze-${med.id}`;
 }
 
-/** Re-schedule all daily reminders from the given medication list. */
+
 export async function scheduleFrom(medications: MedicationItem[]): Promise<void> {
   if (Platform.OS === 'web') return;
 
-  // Flutter version cancelled everything then re-scheduled — same here.
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   for (const med of medications) {
@@ -90,20 +81,18 @@ async function scheduleOne(med: MedicationItem, slot: number): Promise<void> {
       },
     });
   } catch {
-    // Invalid time or scheduling failure — skip this slot (parity: Flutter ignored errors)
   }
 }
 
-/** Cancel all daily reminders for one medication. */
+
 export async function cancelForMedication(medicationId: string): Promise<void> {
   if (Platform.OS === 'web') return;
-  // Flutter looped slots 0..19; do the same with string ids.
   for (let slot = 0; slot < 20; slot++) {
     await Notifications.cancelScheduledNotificationAsync(`med-${medicationId}-${slot}`);
   }
 }
 
-/** Schedule a one-off snooze reminder. Returns true on success. */
+
 export async function snoozeOneOff(med: MedicationItem, minutes = 10): Promise<boolean> {
   if (Platform.OS === 'web') return false;
   if (!initialized) await initializeMedicationReminders();
@@ -129,7 +118,7 @@ export async function snoozeOneOff(med: MedicationItem, minutes = 10): Promise<b
   }
 }
 
-/** Cancel a pending snooze reminder for one medication. */
+
 export async function cancelSnooze(med: MedicationItem): Promise<void> {
   if (Platform.OS === 'web') return;
   await Notifications.cancelScheduledNotificationAsync(snoozeId(med));

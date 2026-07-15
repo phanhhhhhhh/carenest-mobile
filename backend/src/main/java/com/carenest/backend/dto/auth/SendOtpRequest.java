@@ -12,5 +12,5 @@ public class SendOtpRequest {
     private String target;
 
     @NotBlank(message = "Method is required (EMAIL or SMS)")
-    private String method; // EMAIL or SMS
+    private String method;
 }

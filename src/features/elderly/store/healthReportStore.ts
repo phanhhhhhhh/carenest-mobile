@@ -3,15 +3,8 @@ import api from '../../../core/api/client';
 import { getUserId } from '../../../core/storage/secureStorage';
 import { getStatus, getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 
-/**
- * Port of Flutter's health_report_provider.dart (HealthReportNotifier).
- *
- * The Flutter provider was `StateNotifierProvider.autoDispose` (no family
- * key) — `load(elderlyId)` was called explicitly with the id at call time,
- * same as here.
- */
 
-// ── Types ────────────────────────────────────────────────────────
+
 export interface DataPoint {
   recordedAt: string;
   value?: number;
@@ -50,7 +43,6 @@ interface HealthReportState {
   load: (elderlyId: string) => Promise<void>;
 }
 
-// ── Display helpers (ports of MetricReportData getters) ───────────
 export function metricDisplayName(type: string): string {
   switch (type) {
     case 'BLOOD_PRESSURE':
@@ -115,7 +107,6 @@ function pad2(n: number): string {
   return n.toString().padStart(2, '0');
 }
 
-// ── Store ────────────────────────────────────────────────────────
 export const useHealthReportStore = create<HealthReportState>((set) => ({
   isLoading: false,
   error: null,
@@ -138,7 +129,6 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
       )}`;
       const toStr = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
 
-      // Fetch health report
       const reportResp = await api.get(`/elderly/${elderlyId}/health-report`, {
         params: { from: fromStr, to: toStr },
       });
@@ -149,7 +139,6 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
           )
         : [];
 
-      // Fetch medications for adherence
       const adherence: MedicationAdherenceData[] = [];
       try {
         const userId = await getUserId();
@@ -173,24 +162,19 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
               adherenceRate: total > 0 ? taken / total : 0,
             });
           } catch {
-            // skip this medication
           }
         }
       } catch {
-        // skip adherence
       }
 
-      // Count upcoming appointments
       let totalAppointments = 0;
       try {
         const userId = await getUserId();
         const apptResp = await api.get(`/users/${userId}/appointments`);
         totalAppointments = asListOfMaps(apptResp.data).length;
       } catch {
-        // skip
       }
 
-      // Try to get AI weekly summary
       let aiSummary: string | undefined;
       try {
         const summaryResp = await api.get(`/elderly/${elderlyId}/weekly-summary`);
@@ -200,7 +184,6 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
           aiSummary = (s.content as string) ?? (s.title as string) ?? undefined;
         }
       } catch {
-        // skip AI summary
       }
 
       set({

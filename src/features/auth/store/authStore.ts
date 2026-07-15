@@ -5,14 +5,12 @@ import { onSessionExpired } from '../../../core/auth/sessionEvents';
 import { getStatus, extractError, getResponseData, getErrorMessage } from '../../../core/api/errors';
 import type { AuthResponse, User } from '../../../shared/types';
 
-// ── Types ────────────────────────────────────────────────────────
 interface AuthState {
   isLoading: boolean;
   error: string | null;
   user: User | null;
   isAuthenticated: boolean;
 
-  // Actions
   login: (params: { email?: string; phone?: string; password: string }) => Promise<LoginResult>;
   loginDev: (phoneNumber: string) => Promise<LoginResult>;
   register: (params: RegisterParams) => Promise<RegisterResult>;
@@ -68,7 +66,6 @@ async function persistAuth(data: AuthResponse) {
   }
 }
 
-// ── Store ────────────────────────────────────────────────────────
 export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   error: null,
@@ -108,8 +105,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false, isAuthenticated: true, user: res.data.user });
       return { type: 'success' };
     } catch (e) {
-      // Parity with Flutter auth_repository: 404 → user not found;
-      // 401 with "verify" in message → unverified email.
       const status = getStatus(e);
       if (status === 404) {
         const msg = 'No account found. Please register first.';
@@ -133,7 +128,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // Dev mode: bypass real OTP auth (parity with Flutter loginDev)
   loginDev: async (phoneNumber) => {
     if (!__DEV__) {
       return { type: 'error' as const, message: 'Dev login unavailable in production' };
@@ -156,9 +150,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // Verify OTP — persists tokens like Flutter's verifyOtp, but defers the
-  // isAuthenticated flip so the WelcomeBack screen can still be shown
-  // (flipping immediately would unmount the entire auth stack).
   verifyOtp: async (target, code) => {
     set({ isLoading: true, error: null });
     try {
@@ -173,7 +164,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  // Flip to authenticated — AppNavigator then switches to the role shell.
   completeLogin: () => set({ isAuthenticated: true }),
 
   changePassword: async (params) => {
@@ -328,9 +318,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearError: () => set({ error: null }),
 }));
 
-// ── Session expiry (port of Flutter TokenNotifier) ───────────────
-// When the API client fails to refresh the token it clears storage and
-// emits this event; resetting the store makes AppNavigator show Welcome.
 onSessionExpired(() => {
   useAuthStore.setState({ isAuthenticated: false, user: null, error: null });
 });
