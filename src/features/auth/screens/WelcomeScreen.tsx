@@ -143,8 +143,11 @@ export default function WelcomeScreen() {
   );
 
   const handleSkip = useCallback(() => {
-    navigation.navigate('GetStarted');
-  }, [navigation]);
+    flatListRef.current?.scrollToIndex({
+      index: slides.length - 1,
+      animated: true,
+    });
+  }, []);
 
   const bounceInterpolate = mascotBounce.interpolate({
     inputRange: [0, 1],
