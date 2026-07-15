@@ -2,24 +2,8 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getStatus, getErrorMessage } from '../../../core/api/errors';
 
-/**
- * Port of Flutter's camera_provider.dart (CameraNotifier).
- *
- * The Flutter provider was a `StateNotifierProvider.family<..., String>`
- * keyed by elderlyId — one notifier instance per elderly profile. This
- * store follows the same convention used elsewhere in this port
- * (e.g. medicationStore.ts): a single shared store whose actions take
- * `elderlyId` as a parameter instead of one store instance per id.
- *
- * Note: the Flutter notifier called `load()` from its constructor. Callers
- * here should invoke `load(elderlyId)` from a screen's mount effect instead.
- *
- * This store only manages state + API calls for the camera feature. Actual
- * video/stream rendering (RTSP/HLS/WebRTC) is left to the screen — this
- * store just exposes `liveStreamUrl` in state for the screen to consume.
- */
 
-// ── Models ──────────────────────────────────────────────────────────
+
 
 export interface CameraDeviceData {
   id: number;
@@ -91,7 +75,6 @@ function parseCameraSnapshotData(j: Record<string, unknown>): CameraSnapshotData
   };
 }
 
-// ── State ─────────────────────────────────────────────────────────────
 
 interface CameraState {
   isLoading: boolean;

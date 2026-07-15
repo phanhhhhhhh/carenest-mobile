@@ -35,9 +35,7 @@ public class ChatService {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm 'on' EEEE, MMM d");
 
-    /**
-     * Send a message to the AI and get a response.
-     */
+    
     @Transactional
     public ChatResponse sendMessage(Long userId, ChatRequest request) {
         User user = userRepository.findById(userId)
@@ -47,7 +45,6 @@ public class ChatService {
             ? request.getSessionId()
             : "default-" + userId;
 
-        // 1. Save user message
         ChatMessage userMsg = ChatMessage.builder()
             .user(user)
             .role(ChatMessage.ChatRole.USER)
@@ -56,21 +53,16 @@ public class ChatService {
             .build();
         chatMessageRepository.save(userMsg);
 
-        // 2. Build system prompt with elderly health context
         String systemPrompt = buildSystemPrompt(user);
         String conversationHistory = buildConversationContext(userId);
 
-        // 3. Call Gemini API
         String fullPrompt = conversationHistory + "\nElderly: " + request.getMessage();
         String aiResponse = geminiApiService.generateConversational(systemPrompt, fullPrompt);
 
-        // 4. Classify intent
         String intent = classifyIntent(aiResponse);
 
-        // 5. Build context data for audit
         Map<String, Object> contextData = buildContextData(user);
 
-        // 6. Save AI response
         ChatMessage aiMsg = ChatMessage.builder()
             .user(user)
             .role(ChatMessage.ChatRole.AI)
@@ -81,7 +73,6 @@ public class ChatService {
             .build();
         chatMessageRepository.save(aiMsg);
 
-        // 7. Return response
         return ChatResponse.builder()
             .messageId(aiMsg.getId())
             .role("AI")
@@ -92,9 +83,7 @@ public class ChatService {
             .build();
     }
 
-    /**
-     * Get paginated chat history for a user.
-     */
+    
     @Transactional(readOnly = true)
     public ChatHistoryResponse getHistory(Long userId, String sessionId, int page, int size) {
         Page<ChatMessage> messages;
@@ -116,7 +105,6 @@ public class ChatService {
                 .createdAt(m.getCreatedAt())
                 .build())
             .collect(Collectors.toList());
-        // Reverse to show oldest first for chat UI
         Collections.reverse(responses);
 
         return ChatHistoryResponse.builder()
@@ -128,32 +116,26 @@ public class ChatService {
             .build();
     }
 
-    /**
-     * Clear chat history for a user.
-     */
+    
     @Transactional
     public void clearHistory(Long userId) {
         chatMessageRepository.deleteByUserId(userId);
         log.info("Chat history cleared for user {}", userId);
     }
 
-    // ── Private: Prompt Building ─────────────────────────────────────────────
 
     private String buildSystemPrompt(User user) {
         StringBuilder prompt = new StringBuilder();
 
-        // Personality and role
         prompt.append("You are a warm, caring AI companion for an elderly person named ");
         prompt.append(user.getName()).append(".\n\n");
 
-        // Time awareness
         ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         prompt.append("Current time: ").append(now.format(DateTimeFormatter.ofPattern("HH:mm 'on' EEEE, MMM d, yyyy"))).append(".\n");
 
         String timeOfDay = getTimeOfDayGreeting(now.getHour());
         prompt.append("It is ").append(timeOfDay).append(". Greet them appropriately.\n\n");
 
-        // Core rules
         prompt.append("=== YOUR PERSONALITY & RULES ===\n");
         prompt.append("1. Use simple, warm Vietnamese or English (match the elderly's language) with large-font friendly tone.\n");
         prompt.append("2. You are NOT a doctor. Never diagnose or prescribe. Always add: 'Please consult your doctor for medical advice.'\n");
@@ -163,7 +145,6 @@ public class ChatService {
         prompt.append("6. Keep responses concise (2-4 sentences) unless they ask for details.\n");
         prompt.append("7. Call them by their name to be personal.\n\n");
 
-        // Health context
         appendHealthContext(prompt, user);
         appendMedicationContext(prompt, user);
         appendAppointmentContext(prompt, user);
@@ -188,7 +169,6 @@ public class ChatService {
             prompt.append("Blood type: ").append(profile.getBloodType()).append("\n");
         }
 
-        // Latest health metrics
         List<HealthMetric> latestMetrics = healthMetricRepository.findByElderlyIdAndDeletedAtIsNullOrderByRecordedAtDesc(user.getId());
         if (!latestMetrics.isEmpty()) {
             prompt.append("Recent health metrics:\n");
@@ -259,7 +239,6 @@ public class ChatService {
         List<ChatMessage> recentMessages = chatMessageRepository.findTop20ByUserIdOrderByCreatedAtDesc(userId);
         if (recentMessages.isEmpty()) return "";
 
-        // Reverse to chronological order
         Collections.reverse(recentMessages);
 
         StringBuilder context = new StringBuilder();

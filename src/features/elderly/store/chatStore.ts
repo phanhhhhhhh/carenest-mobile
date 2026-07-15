@@ -3,20 +3,8 @@ import api from '../../../core/api/client';
 import { getStatus, getErrorMessage } from '../../../core/api/errors';
 import type { ChatMessage } from '../../../shared/types';
 
-/**
- * Port of Flutter's chat_provider.dart (ChatNotifier).
- *
- * The Flutter provider talks directly to the backend's /chat REST endpoints
- * (history, message, voice) — it does NOT use the on-device Gemini SDK, so
- * this port does the same (it does not use core/services/geminiService.ts,
- * which corresponds to a different Flutter service).
- *
- * Note: the Flutter notifier called `loadHistory()` automatically from its
- * constructor. Callers here should invoke `loadHistory()` from a screen's
- * mount effect instead.
- */
 
-// ── Types ────────────────────────────────────────────────────────
+
 interface ChatState {
   isLoading: boolean;
   isSending: boolean;
@@ -42,7 +30,6 @@ interface ChatState {
 const PAGE_SIZE = 50;
 let currentPage = 0;
 
-// ── Helpers ──────────────────────────────────────────────────────
 function parseMessage(j: Record<string, unknown>): ChatMessage {
   return {
     messageId: Number(j.messageId ?? 0),
@@ -54,7 +41,6 @@ function parseMessage(j: Record<string, unknown>): ChatMessage {
   };
 }
 
-// ── Store ────────────────────────────────────────────────────────
 export const useChatStore = create<ChatState>((set, get) => ({
   isLoading: false,
   isSending: false,
@@ -81,7 +67,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const rawMessages = Array.isArray(data.messages) ? (data.messages as unknown[]) : [];
       const messages = rawMessages.map((e) => parseMessage(e as Record<string, unknown>));
 
-      // Messages come newest-first from backend; reverse for display
       const reversed = [...messages].reverse();
       const displayMessages = refresh ? reversed : [...get().messages, ...reversed];
 
@@ -94,7 +79,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
     } catch (e) {
       if (getStatus(e) === 404) {
-        // Backend might not have ChatController yet — offline mode
         set({ isLoading: false, aiAvailable: false, messages: [] });
         return;
       }
@@ -103,7 +87,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   sendMessage: async (text, sessionId) => {
-    // Add user message optimistically
     const userMsg: ChatMessage = {
       messageId: Date.now(),
       role: 'USER',
@@ -129,7 +112,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
       return aiMsg.content;
     } catch (e) {
-      // Remove optimistic user message on failure
       const msgs = get().messages.slice(0, -1);
 
       let fallback: string;
@@ -145,7 +127,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
         fallback = 'Sorry, I cannot connect right now. Please try again later.';
       }
 
-      // Add error message as AI response
       const errorMsg: ChatMessage = {
         messageId: Date.now() + 1,
         role: 'AI',
@@ -170,8 +151,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     get().loadHistory({ refresh: true });
   },
 
-  // POST /api/chat/voice — send audio for server-side STT + AI chat.
-  // Returns the AI response content on success, null on failure.
   sendVoice: async ({ uri, mimeType, sessionId, language = 'vi' }) => {
     set({ isSending: true });
     try {
@@ -190,7 +169,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
       const data = (resp.data ?? {}) as Record<string, unknown>;
 
-      // Add transcription as user message
       const transcription = (data.transcription as string) ?? '';
       if (transcription.length > 0) {
         const userMsg: ChatMessage = {
@@ -202,7 +180,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set({ messages: [...get().messages, userMsg] });
       }
 
-      // Add AI response
       const aiMsg = parseMessage(data);
       set({ isSending: false, messages: [...get().messages, aiMsg] });
       return aiMsg.content;
@@ -212,7 +189,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  // GET /api/chat/voice/health — check STT availability.
   checkVoiceHealth: async () => {
     try {
       const resp = await api.get('/chat/voice/health');

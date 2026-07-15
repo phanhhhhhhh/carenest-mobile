@@ -11,10 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * UC-25: Subscription and tier enforcement service.
- * Handles feature gating based on subscription plan.
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -23,16 +20,9 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final FamilyLinkRepository familyLinkRepository;
 
-    /**
-     * UC-25: Check if a family member can add another elderly profile.
-     * Free tier: max 1 elderly. Premium: unlimited.
-     *
-     * @param familyId the family user ID
-     * @return true if the family can add another elderly, false if limit reached
-     */
+    
     @Transactional(readOnly = true)
     public boolean canAddElderly(Long familyId) {
-        // Check if user has an active premium subscription
         boolean isPremium = subscriptionRepository
             .findByUserIdAndStatusAndPlanTypeIn(
                 familyId,
@@ -43,10 +33,9 @@ public class SubscriptionService {
             .orElse(false);
 
         if (isPremium) {
-            return true; // Premium: unlimited elderly
+            return true;
         }
 
-        // Free tier: count currently linked ACTIVE elderly
         long activeElderlyCount = familyLinkRepository
             .findAllElderlyByFamilyIdAndStatus(familyId, FamilyLinkStatus.ACTIVE)
             .size();
@@ -59,12 +48,7 @@ public class SubscriptionService {
         return true;
     }
 
-    /**
-     * Get the maximum number of elderly profiles allowed for a family member.
-     *
-     * @param familyId the family user ID
-     * @return max profiles allowed (1 for free, Integer.MAX_VALUE for premium)
-     */
+    
     @Transactional(readOnly = true)
     public int getMaxElderlyProfiles(Long familyId) {
         boolean isPremium = subscriptionRepository
@@ -79,9 +63,7 @@ public class SubscriptionService {
         return isPremium ? Integer.MAX_VALUE : 1;
     }
 
-    /**
-     * Get the number of currently linked active elderly for a family member.
-     */
+    
     @Transactional(readOnly = true)
     public int getActiveElderlyCount(Long familyId) {
         return familyLinkRepository

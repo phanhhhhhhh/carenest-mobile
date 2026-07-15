@@ -21,15 +21,7 @@ import { getName } from '../../../core/storage/secureStorage';
 import ProactiveReminderCard from '../components/ProactiveReminderCard';
 import type { ChatMessage } from '../../../shared/types';
 
-/**
- * Port of Flutter's elderly_chat_screen.dart.
- *
- * Deviation: Flutter used package:speech_to_text for on-device voice input.
- * There is no speech-to-text dependency available here (no new npm deps
- * allowed), so the mic button is kept for visual/UX parity but always
- * behaves as "voice input is not available" — matching the Flutter
- * behavior when `_speechAvailable` is false.
- */
+
 
 const QUICK_REPLIES = ['Blood pressure today?', 'Medication schedule?', 'I have a headache'];
 
@@ -65,7 +57,6 @@ export default function ElderlyChatScreen() {
       const name = await getName();
       if (name) setUserName(name);
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const welcomeMessage =
@@ -112,7 +103,6 @@ export default function ElderlyChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* App bar */}
       <View style={styles.appBar}>
         <View style={styles.appBarLeft}>
           <View style={styles.avatarWrap}>
@@ -178,7 +168,6 @@ export default function ElderlyChatScreen() {
           />
         )}
 
-        {/* Quick replies */}
         <FlatList
           horizontal
           data={QUICK_REPLIES}
@@ -192,7 +181,6 @@ export default function ElderlyChatScreen() {
           )}
         />
 
-        {/* Input bar */}
         <View style={styles.inputBar}>
           <TouchableOpacity
             style={[styles.micBtn, isListening && styles.micBtnListening]}

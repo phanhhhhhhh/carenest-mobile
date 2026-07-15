@@ -21,11 +21,11 @@ public class OtpService {
     private static final int OTP_EXPIRY_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 5;
 
-    /** Generate a numeric OTP and persist it. */
+    
     public String generateAndPersist(String target) {
         String code = generateOtp();
         OtpVerification otp = OtpVerification.builder()
-            .phone(target) // stores email or phone
+            .phone(target)
             .otpCode(code)
             .expiresAt(OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES))
             .attempts((short) 0)
@@ -35,7 +35,7 @@ public class OtpService {
         return code;
     }
 
-    /** Send OTP to user's email. */
+    
     public void sendOtpViaEmail(String email, String userName) {
         String code = generateAndPersist(email);
         String subject = "Your CareNest verification code";
@@ -44,14 +44,13 @@ public class OtpService {
         log.info("OTP sent via email to {}", email);
     }
 
-    /** Send OTP via SMS (stub — would integrate Twilio/Vonage in production). */
+    
     public void sendOtpViaSms(String phone, String userName) {
         String code = generateAndPersist(phone);
-        // TODO: integrate SMS provider (Twilio, Vonage, etc.)
         log.info("OTP via SMS to {}: code={} (DEV MODE — log only)", phone, code);
     }
 
-    /** Verify the OTP code. Returns true if valid. */
+    
     public boolean verifyOtp(String target, String code) {
         OtpVerification otp = otpRepository
             .findTopByPhoneAndVerifiedAtIsNullOrderByCreatedAtDesc(target)

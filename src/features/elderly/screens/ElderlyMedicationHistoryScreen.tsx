@@ -28,7 +28,6 @@ function formatDateLabel(dt: Date): string {
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
-  // JS getDay(): 0=Sun..6=Sat. Flutter weekday: 1=Mon..7=Sun.
   const jsDay = dt.getDay();
   const weekdayIdx = jsDay === 0 ? 6 : jsDay - 1;
   return `${WEEK_DAYS[weekdayIdx]}, ${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
@@ -51,10 +50,8 @@ export default function ElderlyMedicationHistoryScreen() {
 
   useEffect(() => {
     fetchLogs(medicationId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [medicationId]);
 
-  // Group logs by date (yyyy-MM-dd)
   const grouped: Record<string, MedicationLogEntry[]> = {};
   for (const log of logs) {
     const d = new Date(log.takenAt);
@@ -112,7 +109,6 @@ export default function ElderlyMedicationHistoryScreen() {
             />
           }
         >
-          {/* Summary card */}
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Adherence Overview</Text>
             <Text style={styles.summaryValue}>{Math.round(adherence * 100)}%</Text>
@@ -135,7 +131,6 @@ export default function ElderlyMedicationHistoryScreen() {
             </View>
           </View>
 
-          {/* Log entries grouped by date */}
           {Object.entries(grouped).map(([dateKey, dayLogs]) => {
             const parsed = new Date(dateKey);
             const dayLabel = formatDateLabel(parsed);

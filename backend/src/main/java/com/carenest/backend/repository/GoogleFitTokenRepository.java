@@ -9,13 +9,9 @@ import java.util.Optional;
 @Repository
 public interface GoogleFitTokenRepository extends JpaRepository<GoogleFitToken, Long> {
 
-    /**
-     * Find the Google Fit token for a user.
-     */
+    
     Optional<GoogleFitToken> findByUserId(Long userId);
 
-    /**
-     * Delete the Google Fit token for a user (disconnect).
-     */
+    
     void deleteByUserId(Long userId);
 }

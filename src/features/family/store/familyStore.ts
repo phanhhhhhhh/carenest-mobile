@@ -4,22 +4,7 @@ import * as storage from '../../../core/storage/secureStorage';
 import { asListOfMaps, getErrorMessage, getStatus, getResponseData } from '../../../core/api/errors';
 import type { ElderlySummary } from '../../../shared/types';
 
-/**
- * Port of Flutter's family_provider.dart.
- *
- * Contains three independent stores, one per original StateNotifier:
- *  - useFamilyDashboardStore  (FamilyDashboardNotifier)
- *  - useFamilyLinkStore       (FamilyLinkNotifier, was .autoDispose)
- *  - useLinkedFamilyStore     (LinkedFamilyNotifier)
- *
- * Note: the Flutter FamilyDashboardNotifier called `load()` from its
- * constructor and auto-refreshed every 30s via Timer.periodic. Screens here
- * should call `load()` on mount and may set up their own
- * `setInterval(() => useFamilyDashboardStore.getState().refresh(), 30000)`
- * for the periodic refresh, clearing it on unmount. Likewise
- * FamilyLinkNotifier/LinkedFamilyNotifier's constructor-time `load()` should
- * be triggered from the screen's mount effect.
- */
+
 
 function parseElderlySummary(j: Record<string, unknown>): ElderlySummary {
   return {
@@ -31,7 +16,6 @@ function parseElderlySummary(j: Record<string, unknown>): ElderlySummary {
   };
 }
 
-// ── Family Dashboard ──────────────────────────────────────────────
 
 export interface FamilyDashboardData {
   linkedElderly: ElderlySummary[];
@@ -70,7 +54,6 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         return;
       }
 
-      // Fetch all linked elderly
       let elderlyList: ElderlySummary[] = [];
       try {
         const familyResp = await api.get(`/family/${userId}/elderly`);
@@ -83,13 +66,11 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         return;
       }
 
-      // Preserve previously selected index if still valid
       const prevIndex = get().data?.selectedIndex ?? 0;
       const selectedIndex = prevIndex < elderlyList.length ? prevIndex : 0;
       const selectedElderlyId =
         elderlyList.length > 0 ? elderlyList[selectedIndex].elderlyId : null;
 
-      // Count medications and taken status for selected elderly
       let totalMeds = 0;
       let takenMeds = 0;
       if (selectedElderlyId != null) {
@@ -98,7 +79,6 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
           const meds: unknown[] = Array.isArray(medResp.data) ? medResp.data : [];
           totalMeds = meds.length;
 
-          // Count taken medications via log query for today
           try {
             const today = new Date();
             const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -110,13 +90,11 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
               (l) => l && typeof l === 'object' && (l as Record<string, unknown>).status === 'TAKEN',
             ).length;
           } catch {
-            // If log endpoint unavailable, count from medication data
             takenMeds = meds.filter(
               (m) => m && typeof m === 'object' && (m as Record<string, unknown>).taken === true,
             ).length;
           }
         } catch {
-          // skip medication count
         }
       }
 
@@ -135,8 +113,6 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
     }
   },
 
-  // Switch to a different linked elderly profile.
-  // Reloads all data for the newly selected elderly.
   selectElderly: async (index) => {
     const data = get().data;
     if (!data || index >= data.linkedElderly.length) return;
@@ -145,13 +121,11 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
       data: {
         linkedElderly: data.linkedElderly,
         selectedIndex: index,
-        // Reset counters — load() will refill
         totalMedications: 0,
         takenMedications: 0,
       },
     });
 
-    // Reload to get medication counts for newly selected elderly
     await get().load();
   },
 
@@ -181,7 +155,6 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
   },
 }));
 
-// ── Family Link operations ────────────────────────────────────────
 
 interface FamilyLinkState {
   isLoading: boolean;
@@ -235,7 +208,6 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
   },
 }));
 
-// ── Elderly-side linked family list ────────────────────────────────
 
 export interface LinkedFamilyMember {
   id: string;

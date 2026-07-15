@@ -12,11 +12,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-/**
- * UC-18: AI Proactive Reminder via Chat.
- * Sends friendly, Gemini-generated reminders through the chat channel
- * 30 minutes before medication doses or appointments.
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,15 +25,11 @@ public class ChatReminderService {
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
     private static final ZoneId ICT = ZoneId.of("Asia/Ho_Chi_Minh");
 
-    /**
-     * Send a medication reminder via chat.
-     * Called by MedicationReminderScheduler when a medication is due.
-     */
+    
     @Transactional
     public void sendMedicationChatReminder(User elderly, Medication medication) {
         String reminderText = buildMedicationReminder(elderly, medication);
 
-        // Save as AI chat message so it appears in the chat history
         ChatMessage chatMsg = ChatMessage.builder()
             .user(elderly)
             .role(ChatMessage.ChatRole.AI)
@@ -53,7 +45,6 @@ public class ChatReminderService {
             .build();
         chatMessageRepository.save(chatMsg);
 
-        // Also push via FCM
         fcmService.sendToUser(elderly.getId(),
             "💊 Medication Reminder",
             medication.getName() + " - " + medication.getDosage(),
@@ -62,10 +53,7 @@ public class ChatReminderService {
         log.info("Chat medication reminder sent: elderlyId={} medication={}", elderly.getId(), medication.getName());
     }
 
-    /**
-     * Send an appointment reminder via chat.
-     * Called by ReminderScheduler when an appointment is upcoming.
-     */
+    
     @Transactional
     public void sendAppointmentChatReminder(User elderly, Appointment appointment) {
         String reminderText = buildAppointmentReminder(elderly, appointment);
@@ -92,7 +80,6 @@ public class ChatReminderService {
         log.info("Chat appointment reminder sent: elderlyId={} appointmentId={}", elderly.getId(), appointment.getId());
     }
 
-    // ── AI-Powered Reminder Text ──────────────────────────────────────────────
 
     private String buildMedicationReminder(User elderly, Medication medication) {
         if (geminiApiService.isAvailable()) {
@@ -116,7 +103,6 @@ public class ChatReminderService {
                 log.warn("Gemini chat reminder failed, using template: {}", e.getMessage());
             }
         }
-        // Fallback template
         String time = ZonedDateTime.now(ICT).format(TIME_FMT);
         return "🌿 " + elderly.getName() + " ơi, đã đến giờ uống thuốc rồi ạ!\n\n"
             + "💊 " + medication.getName() + " — " + medication.getDosage() + "\n"
@@ -149,7 +135,6 @@ public class ChatReminderService {
                 log.warn("Gemini appointment reminder failed, using template: {}", e.getMessage());
             }
         }
-        // Fallback template
         return "🏥 " + elderly.getName() + " ơi, hôm nay bà có lịch khám bệnh ạ!\n\n"
             + "👨‍⚕️ " + (appointment.getDoctor() != null ? "Bác sĩ " + appointment.getDoctor() : "Khám bệnh") + "\n"
             + "🏥 " + (appointment.getSpecialty() != null ? appointment.getSpecialty() : "") + "\n"

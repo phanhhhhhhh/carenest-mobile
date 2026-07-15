@@ -39,7 +39,6 @@ public class MedicationLogService {
 
         MedicationLog saved = medicationLogRepository.save(log);
 
-        // Update medication next dose time when taken
         if (medication.getSchedule() != null && medication.getSchedule().getTimes() != null) {
             medication.setNextDoseTime(calculateNextDoseTime(medication));
             medicationRepository.save(medication);

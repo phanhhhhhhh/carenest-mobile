@@ -2,19 +2,8 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getStatus, getErrorMessage } from '../../../core/api/errors';
 
-/**
- * Port of Flutter's health_threshold_provider.dart (ThresholdNotifier).
- *
- * The Flutter provider was a `StateNotifierProvider.family<..., String>`
- * keyed by elderlyId. Following the same convention used elsewhere in this
- * port (e.g. medicationStore.ts / cameraStore.ts), this is a single shared
- * store whose actions take `elderlyId` as a parameter.
- *
- * Note: the Flutter notifier called `load()` from its constructor. Callers
- * here should invoke `load(elderlyId)` from a screen's mount effect instead.
- */
 
-// ── Models ────────────────────────────────────────────────────────────
+
 
 export interface ThresholdItem {
   id: number;
@@ -100,7 +89,6 @@ function parseRecommendData(j: Record<string, unknown>): RecommendData {
   };
 }
 
-// ── State ──────────────────────────────────────────────────────────────
 
 interface ThresholdState {
   isLoading: boolean;

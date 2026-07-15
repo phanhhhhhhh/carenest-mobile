@@ -12,10 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * UC-25: Premium Plan payment endpoints.
- * VNPay and MoMo integration.
- */
+
 @RestController
 @RequestMapping("/api/payment")
 @RequiredArgsConstructor
@@ -23,9 +20,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    /**
-     * Initiate a VNPay payment for premium subscription.
-     */
+    
     @PostMapping("/vnpay/create")
     @PreAuthorize("hasRole('FAMILY') and #userId == authentication.principal")
     public ResponseEntity<Map<String, String>> createVnpay(
@@ -39,10 +34,7 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * VNPay return URL — called after user completes payment on VNPay page.
-     * This is a GET redirect from VNPay. No authentication required.
-     */
+    
     @GetMapping("/vnpay/return")
     public ResponseEntity<Map<String, String>> vnpayReturn(HttpServletRequest request) {
         Map<String, String> params = new HashMap<>();
@@ -51,18 +43,14 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * VNPay IPN (Instant Payment Notification) — server-to-server callback.
-     */
+    
     @PostMapping("/vnpay/ipn")
     public ResponseEntity<Map<String, String>> vnpayIpn(@RequestBody Map<String, String> params) {
         Map<String, String> result = paymentService.handleVnpayIpn(params);
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Initiate a MoMo payment.
-     */
+    
     @PostMapping("/momo/create")
     @PreAuthorize("hasRole('FAMILY') and #userId == authentication.principal")
     public ResponseEntity<Map<String, String>> createMomo(
@@ -74,28 +62,21 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * MoMo return/callback (IPN).
-     * MoMo sends a JSON body to this endpoint after payment processing.
-     */
+    
     @PostMapping("/momo/return")
     public ResponseEntity<Map<String, String>> momoReturn(@RequestBody Map<String, String> body) {
         Map<String, String> result = paymentService.handleMomoReturn(body);
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Get current subscription status for the authenticated user.
-     */
+    
     @GetMapping("/subscription")
     @PreAuthorize("#userId == authentication.principal")
     public ResponseEntity<Map<String, Object>> getStatus(@AuthenticationPrincipal Long userId) {
         return ResponseEntity.ok(paymentService.getSubscriptionStatus(userId));
     }
 
-    /**
-     * Cancel premium subscription.
-     */
+    
     @PostMapping("/cancel")
     @PreAuthorize("hasRole('FAMILY') and #userId == authentication.principal")
     public ResponseEntity<Map<String, String>> cancel(@AuthenticationPrincipal Long userId) {
@@ -103,9 +84,7 @@ public class PaymentController {
         return ResponseEntity.ok(Map.of("message", "Subscription cancelled"));
     }
 
-    /**
-     * Get premium plans with pricing.
-     */
+    
     @GetMapping("/plans")
     public ResponseEntity<Map<String, Object>> getPlans() {
         return ResponseEntity.ok(Map.of(

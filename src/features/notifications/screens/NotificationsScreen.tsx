@@ -18,7 +18,6 @@ import {
   type NotificationData,
 } from '../store/notificationStore';
 
-// ── Helpers (parity with _NotificationCard in notifications_screen.dart) ──
 function formatTime(createdAt: string): string {
   const dt = new Date(createdAt);
   const now = new Date();
@@ -26,8 +25,6 @@ function formatTime(createdAt: string): string {
   const diffMinutes = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
 
-  // Day difference counted in whole calendar days, matching Dart's Duration.inDays
-  // (floor of total elapsed days, not calendar-day boundary).
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMinutes < 1) return 'Just now';
@@ -122,7 +119,6 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const unreadCount = selectUnreadCount(items);

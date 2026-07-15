@@ -33,7 +33,6 @@ public class UserService {
             current = new NotificationPreferences();
         }
 
-        // Only update non-null fields (partial update using wrapper types from request)
         if (request.getMedicationReminder() != null) {
             current.setMedicationReminder(request.getMedicationReminder());
         }

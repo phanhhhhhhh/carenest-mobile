@@ -3,19 +3,8 @@ import api from '../../../core/api/client';
 import type { HealthMetric } from '../../../shared/types';
 import { getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 
-/**
- * Port of Flutter's health_metric_provider.dart (HealthMetricNotifier).
- *
- * The Flutter provider was a `StateNotifierProvider.family<..., String>`
- * keyed by elderlyId — one notifier instance per elderly user. Zustand has
- * no built-in "family" concept, so we memoize one store per elderlyId here.
- *
- * Note: the Flutter notifier called `load()` automatically from its
- * constructor. Callers here should invoke `load()` from a screen's mount
- * effect instead.
- */
 
-// ── Types ────────────────────────────────────────────────────────
+
 interface HealthMetricState {
   isLoading: boolean;
   error: string | null;
@@ -46,7 +35,6 @@ function toDateOnly(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
-// ── Store factory (family) ────────────────────────────────────────
 const stores = new Map<string, HealthMetricStoreHook>();
 
 function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
@@ -80,7 +68,6 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
       }
     },
 
-    // Reload with period filter: 'week' = last 7 days, 'month' = last 30 days.
     loadPeriod: async (period) => {
       const now = new Date();
       const from = new Date(now);
@@ -104,7 +91,7 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
   }));
 }
 
-/** Get (or lazily create) the health metric store for a given elderlyId. */
+
 export function useHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
   let hook = stores.get(elderlyId);
   if (!hook) {

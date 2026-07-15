@@ -17,7 +17,6 @@ import { useFamilyDashboardStore } from '../store/familyStore';
 import { useEmergencyEventStore } from '../store/emergencyEventStore';
 import type { EmergencyEvent } from '../../../shared/types';
 
-// Port of Flutter's family_alerts_screen.dart (FamilyAlertsScreen).
 
 function eventTitle(type: string): string {
   switch (type) {
@@ -121,12 +120,10 @@ export default function FamilyAlertsScreen() {
 
   useEffect(() => {
     loadDashboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (elderlyId) load(elderlyId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const activeCount = events.filter((e) => e.status === 'ACTIVE').length;
@@ -152,7 +149,6 @@ export default function FamilyAlertsScreen() {
     setRefreshing(false);
   };
 
-  // No elderly linked yet
   if (!elderlyId) {
     return (
       <SafeAreaView style={styles.container}>

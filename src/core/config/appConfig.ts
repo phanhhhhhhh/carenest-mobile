@@ -1,14 +1,8 @@
 import { Platform } from 'react-native';
 
-/**
- * App configuration — port of Flutter's app_config.dart + dio_client base URL logic.
- *
- * Env vars MUST be prefixed with EXPO_PUBLIC_ to be inlined by Expo at build time.
- * See .env.example.
- */
+
 
 function defaultBaseUrl(): string {
-  // Android emulator reaches host machine via 10.0.2.2; web/iOS simulator via localhost
   if (Platform.OS === 'android') return 'https://10.0.2.2:8443/api';
   return 'https://localhost:8443/api';
 }

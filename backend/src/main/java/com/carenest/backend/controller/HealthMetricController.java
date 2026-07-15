@@ -89,7 +89,6 @@ public class HealthMetricController {
         return ResponseEntity.noContent().build();
     }
 
-    // ── Health Report ───────────────────────────────────────────────────────
 
     @GetMapping("/elderly/{elderlyId}/health-report")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
@@ -102,7 +101,6 @@ public class HealthMetricController {
         return ResponseEntity.ok(healthReportService.generateReport(elderlyId, types, from, to));
     }
 
-    // ── Google Fit / Health Connect Sync ─────────────────────────────────────
 
     @PostMapping("/elderly/{elderlyId}/sync-health-data")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
@@ -113,7 +111,6 @@ public class HealthMetricController {
         return ResponseEntity.ok(healthSyncService.sync(elderlyId, request));
     }
 
-    // ── Weekly Summary ──────────────────────────────────────────────────────
 
     @GetMapping("/elderly/{elderlyId}/weekly-summary")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")

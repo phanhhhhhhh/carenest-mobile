@@ -4,12 +4,7 @@ import * as storage from '../../../core/storage/secureStorage';
 import { asListOfMaps, getErrorMessage } from '../../../core/api/errors';
 import type { AppointmentItem } from '../../../shared/types';
 
-/**
- * Port of Flutter's appointment_provider.dart (AppointmentNotifier).
- *
- * Note: the Flutter notifier called `load()` from its constructor. Callers
- * here should invoke `load()` from a screen's mount effect instead.
- */
+
 
 function isValidIsoDate(s: string): boolean {
   return s !== '' && !Number.isNaN(new Date(s).getTime());
@@ -37,7 +32,6 @@ function isPast(a: AppointmentItem): boolean {
   return a.status === 'COMPLETED' || a.status === 'CANCELLED';
 }
 
-// ── State ───────────────────────────────────────────────────────────
 
 interface AppointmentState {
   isLoading: boolean;

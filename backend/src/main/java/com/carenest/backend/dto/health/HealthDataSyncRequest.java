@@ -20,7 +20,7 @@ public class HealthDataSyncRequest {
     @NotEmpty(message = "dataPoints is required")
     private List<@Valid ExternalDataPoint> dataPoints;
 
-    /** Source of the synced data: GOOGLE_FIT, HEALTH_CONNECT, APPLE_HEALTH, MANUAL */
+    
     private String source;
 
     @Getter
