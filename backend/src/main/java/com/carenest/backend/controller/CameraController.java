@@ -162,8 +162,8 @@ public class CameraController {
         if (cameras.isEmpty()) {
             return ResponseEntity.ok(Map.of("hasCamera", false, "message", "No cameras linked"));
         }
-        boolean allOnline = cameras.stream().allMatch(CameraDevice::isOnline);
-        boolean anyPrivacy = cameras.stream().anyMatch(CameraDevice::isPrivacyMode);
+        boolean allOnline = cameras.stream().allMatch(c -> c.isOnline());
+        boolean anyPrivacy = cameras.stream().anyMatch(c -> c.isPrivacyMode());
         return ResponseEntity.ok(Map.of(
                 "hasCamera", true,
                 "cameraCount", cameras.size(),
