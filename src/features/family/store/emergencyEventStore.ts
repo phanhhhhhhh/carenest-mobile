@@ -4,17 +4,7 @@ import * as storage from '../../../core/storage/secureStorage';
 import { asListOfMaps, getErrorMessage } from '../../../core/api/errors';
 import type { EmergencyEvent } from '../../../shared/types';
 
-/**
- * Port of Flutter's emergency_event_provider.dart (EmergencyEventNotifier).
- *
- * The Flutter provider was a `StateNotifierProvider.family<..., String>`
- * keyed by elderlyId. Following the same convention used elsewhere in this
- * port (e.g. medicationStore.ts / cameraStore.ts), this is a single shared
- * store whose actions take `elderlyId` as a parameter.
- *
- * Note: the Flutter notifier called `load()` from its constructor. Callers
- * here should invoke `load(elderlyId)` from a screen's mount effect instead.
- */
+
 
 function parseEmergencyEvent(j: Record<string, unknown>): EmergencyEvent {
   return {
@@ -26,7 +16,6 @@ function parseEmergencyEvent(j: Record<string, unknown>): EmergencyEvent {
   };
 }
 
-// ── State ───────────────────────────────────────────────────────────
 
 interface EmergencyEventState {
   isLoading: boolean;
@@ -57,8 +46,6 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
     }
   },
 
-  // POST /api/elderly/{elderlyId}/emergency-events — create SOS event.
-  // Returns true on success (201/200), false otherwise.
   createSosEvent: async (elderlyId) => {
     try {
       const resp = await api.post(`/elderly/${elderlyId}/emergency-events`, {
@@ -71,7 +58,7 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
         notes: null,
       });
       if (resp.status === 201 || resp.status === 200) {
-        await get().load(elderlyId); // refresh list after creating
+        await get().load(elderlyId);
         return true;
       }
       return false;
@@ -81,7 +68,6 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
     }
   },
 
-  // PATCH /api/emergency-events/{id}/acknowledge — acknowledge an emergency.
   acknowledge: async (elderlyId, eventId) => {
     try {
       const userId = await storage.getUserId();
@@ -95,7 +81,6 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
     }
   },
 
-  // PATCH /api/users/{userId}/emergency-events/read-all — mark all alerts as read.
   markAllRead: async (elderlyId, userId) => {
     try {
       await api.patch(`/users/${userId}/emergency-events/read-all`);

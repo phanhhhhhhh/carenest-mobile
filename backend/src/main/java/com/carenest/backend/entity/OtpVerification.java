@@ -18,7 +18,7 @@ public class OtpVerification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String phone; // or email address
+    private String phone;
 
     private String otpCode;
 

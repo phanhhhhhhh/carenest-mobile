@@ -42,7 +42,6 @@ public class HealthMetricThresholdService {
         User elderly = userRepository.findById(elderlyId)
                 .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + elderlyId));
 
-        // Check if threshold already exists for this type
         thresholdRepository.findByElderlyIdAndMetricType(elderlyId, request.getMetricType())
                 .ifPresent(existing -> {
                     throw new IllegalArgumentException(
@@ -90,10 +89,7 @@ public class HealthMetricThresholdService {
         thresholdRepository.delete(threshold);
     }
 
-    /**
-     * Check a health metric against thresholds and create notification if breached.
-     * Called from HealthMetricService after creating a new metric.
-     */
+    
     public void checkAndAlert(HealthMetric metric) {
         thresholdRepository.findByElderlyIdAndMetricType(
                 metric.getElderly().getId(), metric.getType())
@@ -122,7 +118,6 @@ public class HealthMetricThresholdService {
                                 .build();
                         notificationRepository.save(notification);
 
-                        // Send push to the elderly user
                         fcmService.sendToUser(metric.getElderly().getId(),
                                 "Health Alert: " + metric.getType(),
                                 body,
@@ -131,7 +126,6 @@ public class HealthMetricThresholdService {
                                         "metricId", metric.getId().toString(),
                                         "elderlyId", metric.getElderly().getId().toString()));
 
-                        // Send push to linked family members if alertFamily is enabled
                         if (Boolean.TRUE.equals(threshold.getAlertFamily())) {
                             List<Long> familyUserIds = familyLinkRepository
                                     .findAllFamilyByElderlyIdAndStatus(
@@ -189,10 +183,7 @@ public class HealthMetricThresholdService {
         return sb.toString();
     }
 
-    /**
-     * UC-11: Use Gemini AI to recommend personalized thresholds based on
-     * the elderly's health profile (age, chronic conditions, etc.).
-     */
+    
     public Map<String, Object> recommendThresholds(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));

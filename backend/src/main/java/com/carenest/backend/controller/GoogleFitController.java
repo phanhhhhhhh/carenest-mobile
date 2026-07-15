@@ -12,10 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-/**
- * UC-10: Google Fit OAuth integration controller.
- * Handles OAuth authorization flow, connection status, and disconnect.
- */
+
 @Slf4j
 @RestController
 @RequestMapping("/api/google-fit")
@@ -25,10 +22,7 @@ public class GoogleFitController {
     private final GoogleFitService googleFitService;
     private final UserRepository userRepository;
 
-    /**
-     * UC-10: Get Google Fit OAuth authorization URL.
-     * The client should redirect the user to this URL for consent.
-     */
+    
     @GetMapping("/connect/{userId}")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<Map<String, Object>> authorize(@PathVariable Long userId) {
@@ -45,17 +39,12 @@ public class GoogleFitController {
         ));
     }
 
-    /**
-     * UC-10: Handle OAuth callback from Google.
-     * Google redirects here with a code and state parameter after user consent.
-     * No authentication required — this is a redirect from Google's OAuth page.
-     */
+    
     @GetMapping("/callback")
     public ResponseEntity<Map<String, String>> callback(
         @RequestParam("code") String code,
         @RequestParam("state") String state
     ) {
-        // Extract userId from state (format: "userId:uuid")
         Long userId;
         try {
             String userIdStr = state.split(":")[0];
@@ -84,9 +73,7 @@ public class GoogleFitController {
         }
     }
 
-    /**
-     * UC-10: Check Google Fit connection status for a user.
-     */
+    
     @GetMapping("/status/{userId}")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<Map<String, Object>> status(@PathVariable Long userId) {
@@ -99,10 +86,7 @@ public class GoogleFitController {
         ));
     }
 
-    /**
-     * UC-10: Disconnect Google Fit for a user.
-     * Revokes OAuth tokens and stops data syncing.
-     */
+    
     @PostMapping("/disconnect/{userId}")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<Map<String, String>> disconnect(@PathVariable Long userId) {
@@ -113,9 +97,7 @@ public class GoogleFitController {
         ));
     }
 
-    /**
-     * UC-10: Trigger a manual sync of Google Fit data for a user.
-     */
+    
     @PostMapping("/sync/{userId}")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<Map<String, Object>> syncNow(@PathVariable Long userId) {

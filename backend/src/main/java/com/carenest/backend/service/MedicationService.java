@@ -105,10 +105,7 @@ public class MedicationService {
             .build();
     }
 
-    /**
-     * Calculate the next dose time from the medication schedule.
-     * Finds the earliest upcoming time that matches the schedule's times and daysOfWeek.
-     */
+    
     private OffsetDateTime calculateNextDoseTime(MedicationSchedule schedule) {
         if (schedule == null || schedule.getTimes() == null || schedule.getTimes().isEmpty()) {
             return null;
@@ -119,12 +116,10 @@ public class MedicationService {
         List<String> times = schedule.getTimes();
         List<Integer> daysOfWeek = schedule.getDaysOfWeek();
 
-        // Check up to 7 days ahead
         for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
             ZonedDateTime candidateDay = now.plusDays(dayOffset);
-            int dayValue = candidateDay.getDayOfWeek().getValue(); // 1=Mon, 7=Sun
+            int dayValue = candidateDay.getDayOfWeek().getValue();
 
-            // If daysOfWeek specified, check if this day matches
             if (daysOfWeek != null && !daysOfWeek.isEmpty() && !daysOfWeek.contains(dayValue)) {
                 continue;
             }

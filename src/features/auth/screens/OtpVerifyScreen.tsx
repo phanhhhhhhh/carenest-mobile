@@ -32,7 +32,6 @@ export default function OtpVerifyScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const inputs = useRef<(TextInput | null)[]>([]);
 
-  // ── Verify OTP ─────────────────────────────────────────────────
   const verifyOtpAction = useAuthStore((s) => s.verifyOtp);
   const sendOtpAction = useAuthStore((s) => s.sendOtp);
   const completeLogin = useAuthStore((s) => s.completeLogin);
@@ -40,7 +39,6 @@ export default function OtpVerifyScreen() {
   const verifyOtp = useCallback(async (otpCode: string) => {
     if (otpCode.length !== OTP_LENGTH) return;
     setLoading(true);
-    // Store action persists tokens + user (Flutter persistAuth parity)
     const ok = await verifyOtpAction(target, otpCode);
     setLoading(false);
     if (ok) {
@@ -52,11 +50,9 @@ export default function OtpVerifyScreen() {
     }
   }, [target, userName, verifyOtpAction, completeLogin]);
 
-  // ── Handle text change (single digit or paste) ────────────────
   const handleChange = useCallback((text: string, index: number) => {
     const sanitized = text.replace(/[^0-9]/g, '');
 
-    // Paste — fill all fields from the pasted string
     if (sanitized.length > 1) {
       const digits = sanitized.slice(0, OTP_LENGTH).split('');
       const newCode = Array(OTP_LENGTH).fill('');
@@ -73,7 +69,6 @@ export default function OtpVerifyScreen() {
       return;
     }
 
-    // Single character
     const newCode = [...code];
     newCode[index] = sanitized.slice(0, 1);
     setCode(newCode);
@@ -82,17 +77,15 @@ export default function OtpVerifyScreen() {
       inputs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when last digit is entered
     if (index === OTP_LENGTH - 1 && sanitized) {
       Keyboard.dismiss();
       verifyOtp(newCode.join(''));
     }
   }, [code, verifyOtp]);
 
-  // ── Backspace — clear previous field when current is empty ────
   const handleKeyPress = useCallback((key: string, index: number) => {
     if (key !== 'Backspace') return;
-    if (code[index]) return; // Let onChangeText handle clearing
+    if (code[index]) return;
     if (index > 0) {
       const newCode = [...code];
       newCode[index - 1] = '';
@@ -101,7 +94,6 @@ export default function OtpVerifyScreen() {
     }
   }, [code]);
 
-  // ── Resend ────────────────────────────────────────────────────
   const handleResend = useCallback(async () => {
     const ok = await sendOtpAction(target, method);
     if (ok) {
@@ -111,19 +103,15 @@ export default function OtpVerifyScreen() {
     }
   }, [target, method, sendOtpAction]);
 
-  // ── Auto-navigate after success popup ──────────────────────────
-  // useEffect handles timer cleanup tự động khi component unmount,
-  // tránh memory leak / state-update-on-unmounted warning.
   useEffect(() => {
     if (!showSuccess) return;
     const timer = setTimeout(() => {
       setShowSuccess(false);
-      completeLogin(); // AppNavigator tự chuyển sang Elderly/FamilyShell
+      completeLogin();
     }, 1100);
     return () => clearTimeout(timer);
   }, [showSuccess, completeLogin]);
 
-  // ── Render ────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -167,7 +155,6 @@ export default function OtpVerifyScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Popup ngắn thay cho 1 màn hình riêng — tự đóng rồi vào thẳng app */}
       <Modal visible={showSuccess} transparent animationType="fade">
         <View style={styles.popupOverlay}>
           <View style={styles.popupCard}>
@@ -187,7 +174,6 @@ export default function OtpVerifyScreen() {
   );
 }
 
-// ── Styles ──────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -252,7 +238,6 @@ const styles = StyleSheet.create({
   resendTextDisabled: {
     opacity: 0.5,
   },
-  // ── Success popup ─────────────────────────────────────────────
   popupOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',

@@ -29,25 +29,7 @@ import {
   type RecommendData,
 } from '../store/healthThresholdStore';
 
-/**
- * Port of Flutter's health_threshold_screen.dart.
- *
- * Notes on fidelity:
- * - Flutter's screen reads `elderlyId`/`elderlyName` from
- *   `familyDashboardProvider` (a StateNotifierProvider watched via riverpod).
- *   The RN equivalent is `useFamilyDashboardStore` (see family_provider.dart
- *   port comment in familyStore.ts) — `elderlyId()`/`elderlyName()` mirror the
- *   Flutter getters of the same name.
- * - The Flutter "AI recommend" banner used a `LinearGradient`
- *   (0xFFE8F5E9 -> 0xFFF1F8E9). There is no gradient dependency available
- *   here (no new npm deps allowed), so it is approximated with a flat
- *   background color roughly halfway between the two stops. Noted as the one
- *   unfaithful visual spot.
- * - This screen has no navigation route registered yet in RootStackParamList
- *   (navigation files are off-limits for this port), so `useNavigation` is
- *   typed loosely, matching the pattern already used by
- *   ElderlyEditProfileScreen.tsx for the same situation.
- */
+
 
 const METRIC_TYPES = ['BLOOD_PRESSURE', 'BLOOD_GLUCOSE', 'HEART_RATE', 'WEIGHT'] as const;
 
@@ -118,14 +100,12 @@ export default function HealthThresholdScreen() {
     if (!dashboardData) {
       loadDashboard();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (elderlyId) {
       load(elderlyId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const openEditSheet = (metricType: string, existing: ThresholdItem | null) => {
@@ -238,7 +218,6 @@ export default function HealthThresholdScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
-          {/* AI recommend banner */}
           <View style={styles.recommendBanner}>
             <View style={styles.recommendIconWrap}>
               <Ionicons name="sparkles" size={20} color={Colors.success} />
@@ -282,7 +261,6 @@ export default function HealthThresholdScreen() {
         </ScrollView>
       )}
 
-      {/* Edit/create threshold bottom sheet */}
       <Modal
         visible={sheetVisible}
         transparent
@@ -378,7 +356,6 @@ export default function HealthThresholdScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* AI recommendations dialog */}
       <Modal
         visible={recommendDialogVisible}
         transparent

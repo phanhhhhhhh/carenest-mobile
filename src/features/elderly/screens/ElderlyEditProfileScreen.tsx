@@ -20,18 +20,7 @@ import { Colors } from '../../../core/theme/colors';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 import { getName, saveName } from '../../../core/storage/secureStorage';
 
-/**
- * Port of Flutter's elderly_edit_profile_screen.dart.
- *
- * Note: the Flutter screen's `_save()` never sent `name` in the PUT body to
- * `/elderly-profiles/{userId}` — it only persisted the name locally via
- * SecureStorage. This port mirrors that exactly: name is saved locally only,
- * everything else goes through `useElderlyProfileStore.updateProfile`.
- *
- * The blood type field used a native Flutter `DropdownButton`. There is no
- * dropdown/picker dependency available here, so it's rebuilt as a small
- * Modal-based option sheet (same approach mandated for date/time pickers).
- */
+
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -64,7 +53,6 @@ export default function ElderlyEditProfileScreen() {
     if (!profile) {
       load();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -153,7 +141,6 @@ export default function ElderlyEditProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Avatar */}
         <View style={styles.avatarWrap}>
           <View style={styles.avatarCircle}>
             <Ionicons name="person" size={64} color={Colors.primary} />
@@ -165,7 +152,6 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 28 }} />
 
-        {/* Personal info */}
         <Card title="Personal Information">
           <View style={styles.inputWrap}>
             <Ionicons name="person" size={18} color={Colors.primary} style={styles.inputIcon} />
@@ -191,7 +177,6 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        {/* Vitals */}
         <Card title="Body Measurements">
           <View style={styles.bloodTypeRow}>
             <Ionicons name="water" size={20} color={Colors.error} />
@@ -249,7 +234,6 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        {/* Conditions */}
         <Card title="Medical Conditions">
           <View style={styles.row}>
             <View style={[styles.inputWrap, { flex: 1 }]}>
@@ -292,7 +276,6 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        {/* Allergies */}
         <Card title="Drug Allergies">
           <View style={styles.row}>
             <View style={[styles.inputWrap, { flex: 1 }]}>
@@ -335,7 +318,6 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        {/* Notes */}
         <Card title="Medical Notes">
           <TextInput
             style={styles.notesInput}
@@ -352,7 +334,6 @@ export default function ElderlyEditProfileScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Blood type picker modal */}
       <Modal
         visible={bloodTypePickerVisible}
         transparent

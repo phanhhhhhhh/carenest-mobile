@@ -9,8 +9,6 @@ import ElderlyHealthScreen from '../../features/elderly/screens/ElderlyHealthScr
 import ElderlyChatScreen from '../../features/elderly/screens/ElderlyChatScreen';
 import ElderlyProfileScreen from '../../features/elderly/screens/ElderlyProfileScreen';
 
-// Note: would add a typed param list here (e.g. `createBottomTabNavigator<ElderlyTabParamList>()`)
-// but the nested tab params aren't modeled yet — see RootStackParamList.
 const Tab = createBottomTabNavigator();
 
 export default function ElderlyShell() {

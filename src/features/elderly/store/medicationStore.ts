@@ -5,15 +5,8 @@ import type { MedicationItem, MedicationLogEntry } from '../../../shared/types';
 import { getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 import { scheduleFrom } from '../../medication/services/medicationReminderService';
 
-/**
- * Port of Flutter's medication_provider.dart (MedicationListNotifier).
- *
- * Note: the Flutter notifier called `load()` automatically from its
- * constructor. Callers here should invoke `load()` from a screen's mount
- * effect instead.
- */
 
-// ── Types ────────────────────────────────────────────────────────
+
 interface MedicationListState {
   isLoading: boolean;
   error: string | null;
@@ -75,7 +68,6 @@ function parseLogEntry(j: Record<string, unknown>): MedicationLogEntry {
   };
 }
 
-// ── Store ────────────────────────────────────────────────────────
 export const useMedicationStore = create<MedicationListState>((set, get) => ({
   isLoading: false,
   error: null,
@@ -170,7 +162,6 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
     const previousTaken = items[idx].taken;
     const newTaken = !previousTaken;
 
-    // Optimistic update
     const updated = [...items];
     updated[idx] = { ...updated[idx], taken: newTaken };
     set({ items: updated });
@@ -183,7 +174,6 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       });
       return true;
     } catch (e) {
-      // Revert on failure
       const reverted = [...get().items];
       const revertIdx = reverted.findIndex((m) => m.id === medicationId);
       if (revertIdx >= 0) reverted[revertIdx] = { ...reverted[revertIdx], taken: previousTaken };

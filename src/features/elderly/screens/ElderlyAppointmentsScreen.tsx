@@ -15,13 +15,7 @@ import { Colors } from '../../../core/theme/colors';
 import { useAppointmentStore } from '../../family/store/appointmentStore';
 import type { AppointmentItem } from '../../../shared/types';
 
-/**
- * Port of Flutter's elderly_appointments_screen.dart.
- *
- * Flutter used a TabController + TabBar with two tabs (Upcoming / Past).
- * There is no top-tab-navigator dependency available here, so the tab bar
- * is rebuilt manually with TouchableOpacity + a simple index toggle.
- */
+
 
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Upcoming',
@@ -42,7 +36,7 @@ const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function formatDate(iso: string): string {
   const dt = new Date(iso);
-  const weekdayIdx = (dt.getDay() + 6) % 7; // JS: Sun=0..Sat=6 -> Mon=0..Sun=6
+  const weekdayIdx = (dt.getDay() + 6) % 7;
   return `${WEEK_DAYS[weekdayIdx]}, ${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
 }
 
@@ -124,7 +118,6 @@ export default function ElderlyAppointmentsScreen() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const upcomingList = upcoming();

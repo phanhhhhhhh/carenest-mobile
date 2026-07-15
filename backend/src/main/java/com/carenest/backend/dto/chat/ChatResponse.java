@@ -14,9 +14,9 @@ import java.time.Instant;
 public class ChatResponse {
 
     private Long messageId;
-    private String role;        // "USER" or "AI"
+    private String role;
     private String content;
-    private String intent;      // AI intent classification (null for user messages)
+    private String intent;
     private String sessionId;
     private Instant createdAt;
 }

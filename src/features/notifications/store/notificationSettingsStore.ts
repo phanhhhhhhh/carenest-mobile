@@ -3,7 +3,6 @@ import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { getStatus, extractError } from '../../../core/api/errors';
 
-// ── Types ────────────────────────────────────────────────────────
 export interface NotificationSettingsData {
   medicationReminder: boolean;
   reminderMinutesBefore: number;
@@ -56,7 +55,6 @@ interface NotificationSettingsState {
   isSaving: boolean;
   fcmTokenSaved: boolean;
 
-  // Derived getters (parity with Flutter state getters)
   medicationReminder: boolean;
   reminderMinutesBefore: number;
   healthAlert: boolean;
@@ -65,7 +63,6 @@ interface NotificationSettingsState {
   quietHoursStart: string;
   quietHoursEnd: string;
 
-  // Actions
   load: () => Promise<void>;
   setMedicationReminder: (v: boolean) => Promise<void>;
   setReminderMinutes: (v: number) => Promise<void>;
@@ -88,7 +85,6 @@ function deriveFrom(data: NotificationSettingsData) {
   };
 }
 
-// ── Store ────────────────────────────────────────────────────────
 export const useNotificationSettingsStore = create<NotificationSettingsState>((set, get) => ({
   isLoading: false,
   error: null,
@@ -135,7 +131,6 @@ export const useNotificationSettingsStore = create<NotificationSettingsState>((s
   },
 }));
 
-// Internal save helper (parity with Flutter notifier's private `_save`).
 async function save(
   set: (partial: Partial<NotificationSettingsState>) => void,
   get: () => NotificationSettingsState,

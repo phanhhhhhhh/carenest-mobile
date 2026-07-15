@@ -16,11 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
-/**
- * UC-17: Voice Input controller.
- * Accepts audio uploads, transcribes via Gemini STT,
- * then routes the transcribed text through the AI chat pipeline.
- */
+
 @Slf4j
 @RestController
 @RequestMapping("/api/chat")
@@ -30,13 +26,9 @@ public class VoiceController {
     private final SpeechToTextService speechToTextService;
     private final ChatService chatService;
 
-    private static final long MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10 MB
+    private static final long MAX_AUDIO_SIZE = 10 * 1024 * 1024;
 
-    /**
-     * UC-17: Upload audio for speech-to-text + AI chat.
-     * Accepts multipart/form-data with an audio file, optional sessionId and language hint.
-     * Transcribes the audio, then sends the text through the existing chat pipeline.
-     */
+    
     @PostMapping(value = "/voice", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ELDERLY') and #userId == authentication.principal")
     public ResponseEntity<?> transcribeAndChat(
@@ -45,7 +37,6 @@ public class VoiceController {
         @RequestParam(value = "sessionId", required = false) String sessionId,
         @RequestParam(value = "language", required = false, defaultValue = "vi") String language
     ) {
-        // Validate audio
         if (audio.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
                 "error", "Audio file is empty",
@@ -60,7 +51,6 @@ public class VoiceController {
             ));
         }
 
-        // Check STT availability
         if (!speechToTextService.isAvailable()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
                 "error", "Speech-to-text service is not available",
@@ -69,13 +59,11 @@ public class VoiceController {
         }
 
         try {
-            // Determine MIME type
             String mimeType = audio.getContentType();
             if (mimeType == null || mimeType.isBlank()) {
-                mimeType = "audio/webm"; // default for browser recordings
+                mimeType = "audio/webm";
             }
 
-            // Step 1: Transcribe audio to text
             log.info("Transcribing audio: userId={} size={}bytes mimeType={} language={}",
                 userId, audio.getSize(), mimeType, language);
             String transcribedText = speechToTextService.transcribe(audio.getBytes(), mimeType);
@@ -91,14 +79,12 @@ public class VoiceController {
                 userId, transcribedText.length(),
                 transcribedText.length() > 100 ? transcribedText.substring(0, 100) + "..." : transcribedText);
 
-            // Step 2: Route through chat pipeline
             ChatRequest chatRequest = new ChatRequest();
             chatRequest.setMessage(transcribedText);
             chatRequest.setSessionId(sessionId);
 
             ChatResponse chatResponse = chatService.sendMessage(userId, chatRequest);
 
-            // Add transcription to the response for client-side display
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "transcription", transcribedText,
                 "messageId", chatResponse.getMessageId(),
@@ -118,9 +104,7 @@ public class VoiceController {
         }
     }
 
-    /**
-     * Health check for voice/STT availability.
-     */
+    
     @GetMapping("/voice/health")
     @PreAuthorize("hasRole('ELDERLY')")
     public ResponseEntity<Map<String, Object>> health() {

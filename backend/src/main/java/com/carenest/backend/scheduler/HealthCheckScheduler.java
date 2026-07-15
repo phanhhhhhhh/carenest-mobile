@@ -12,10 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-/**
- * Periodic health check: scans recently recorded health metrics
- * and re-checks them against configured thresholds.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,7 +21,7 @@ public class HealthCheckScheduler {
     private final HealthMetricRepository healthMetricRepository;
     private final HealthMetricThresholdService thresholdService;
 
-    @Scheduled(fixedRate = 900000) // every 15 minutes
+    @Scheduled(fixedRate = 900000)
     @Transactional
     public void checkRecentMetrics() {
         OffsetDateTime since = OffsetDateTime.now().minusMinutes(20);
