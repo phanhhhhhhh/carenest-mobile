@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -66,7 +67,7 @@ public class HealthMetricThresholdController {
      */
     @GetMapping("/users/{userId}/health-thresholds/recommend")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
-    public ResponseEntity<java.util.Map<String, Object>> recommendThresholds(
+    public ResponseEntity<Map<String, Object>> recommendThresholds(
         @PathVariable Long userId
     ) {
         return ResponseEntity.ok(thresholdService.recommendThresholds(userId));

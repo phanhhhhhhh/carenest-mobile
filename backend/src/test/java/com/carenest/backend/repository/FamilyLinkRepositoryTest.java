@@ -10,6 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -73,7 +74,7 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
         User family = createFamilyUser("0904000006");
 
         FamilyLink link = createLink(elderly, family, FamilyLinkStatus.ACTIVE);
-        link.setDeletedAt(java.time.OffsetDateTime.now());
+        link.setDeletedAt(OffsetDateTime.now());
         familyLinkRepository.save(link);
         familyLinkRepository.flush();
 
@@ -154,7 +155,7 @@ class FamilyLinkRepositoryTest extends BaseRepositoryTest {
         familyLinkRepository.flush();
 
         // Soft-delete the elderly user (app uses soft deletes)
-        elderly.setDeletedAt(java.time.OffsetDateTime.now());
+        elderly.setDeletedAt(OffsetDateTime.now());
         userRepository.save(elderly);
         userRepository.flush();
 

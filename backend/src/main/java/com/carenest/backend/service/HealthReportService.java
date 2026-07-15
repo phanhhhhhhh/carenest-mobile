@@ -49,7 +49,7 @@ public class HealthReportService {
         // Group by type
         Map<HealthMetricType, List<HealthMetric>> grouped = allMetrics.stream()
             .filter(m -> resolvedTypes.contains(m.getType()))
-            .collect(Collectors.groupingBy(HealthMetric::getType));
+            .collect(Collectors.groupingBy(m -> m.getType()));
 
         List<MetricReport> reports = new ArrayList<>();
         for (HealthMetricType type : resolvedTypes) {
@@ -57,7 +57,7 @@ public class HealthReportService {
             if (typeMetrics.isEmpty()) continue;
 
             // Sort by recordedAt ascending for time-series
-            typeMetrics.sort(Comparator.comparing(HealthMetric::getRecordedAt));
+            typeMetrics.sort(Comparator.comparing(m -> m.getRecordedAt()));
 
             List<MetricDataPoint> dataPoints = typeMetrics.stream()
                 .map(m -> MetricDataPoint.builder()
@@ -151,13 +151,13 @@ public class HealthReportService {
         List<HealthMetric> secondHalf = metrics.subList(mid, metrics.size());
 
         BigDecimal firstAvg = firstHalf.stream()
-            .map(HealthMetric::getValue)
-            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .map(m -> m.getValue())
+            .reduce(BigDecimal.ZERO, (a, b) -> a.add(b))
             .divide(BigDecimal.valueOf(firstHalf.size()), 4, RoundingMode.HALF_UP);
 
         BigDecimal secondAvg = secondHalf.stream()
-            .map(HealthMetric::getValue)
-            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .map(m -> m.getValue())
+            .reduce(BigDecimal.ZERO, (a, b) -> a.add(b))
             .divide(BigDecimal.valueOf(secondHalf.size()), 4, RoundingMode.HALF_UP);
 
         if (firstAvg.compareTo(BigDecimal.ZERO) == 0) return "STABLE";

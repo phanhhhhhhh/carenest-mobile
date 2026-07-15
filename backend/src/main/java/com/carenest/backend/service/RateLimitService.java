@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -43,13 +42,14 @@ public class RateLimitService {
             long retryAfter = Math.max(resetSeconds, 1);
             log.warn("Rate limit exceeded for key={}, count={}", key, window.count());
             throw new RateLimitExceededException(
-                "Too many requests. Try again in " + retryAfter + " seconds.", retryAfter);
+                    "Too many requests. Try again in " + retryAfter + " seconds.", retryAfter);
         }
     }
 
     // ── Failed login tracking & lockout ────────────────────────────────────
 
-    private record LockoutState(int failedCount, Instant lockedUntil, Instant lastAttempt) {}
+    private record LockoutState(int failedCount, Instant lockedUntil, Instant lastAttempt) {
+    }
 
     private final ConcurrentHashMap<Long, LockoutState> failedLogins = new ConcurrentHashMap<>();
 
@@ -58,13 +58,15 @@ public class RateLimitService {
      */
     public void checkLockout(Long userId) {
         LockoutState state = failedLogins.get(userId);
-        if (state == null) return;
+        if (state == null)
+            return;
 
         if (state.lockedUntil() != null && state.lockedUntil().isAfter(Instant.now())) {
             long remainingSeconds = state.lockedUntil().getEpochSecond() - Instant.now().getEpochSecond();
             throw new RateLimitExceededException(
-                "Account temporarily locked due to too many failed attempts. Try again in "
-                    + remainingSeconds + " seconds.", remainingSeconds);
+                    "Account temporarily locked due to too many failed attempts. Try again in "
+                            + remainingSeconds + " seconds.",
+                    remainingSeconds);
         }
     }
 
@@ -78,7 +80,7 @@ public class RateLimitService {
             if (newCount >= MAX_FAILED_ATTEMPTS) {
                 lockedUntil = Instant.now().plusSeconds(LOCKOUT_DURATION_SECONDS);
                 log.warn("Account locked for userId={} after {} failed attempts until {}",
-                    userId, newCount, lockedUntil);
+                        userId, newCount, lockedUntil);
             }
             return new LockoutState(newCount, lockedUntil, Instant.now());
         });
@@ -99,10 +101,11 @@ public class RateLimitService {
         failedLogins.entrySet().removeIf(e -> {
             LockoutState s = e.getValue();
             return s.lockedUntil() == null
-                ? s.lastAttempt().isBefore(cutoff)
-                : s.lockedUntil().isBefore(cutoff);
+                    ? s.lastAttempt().isBefore(cutoff)
+                    : s.lockedUntil().isBefore(cutoff);
         });
     }
 
-    private record RateWindow(Instant windowStart, int count) {}
+    private record RateWindow(Instant windowStart, int count) {
+    }
 }
