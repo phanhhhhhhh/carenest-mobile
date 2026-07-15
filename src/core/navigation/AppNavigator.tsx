@@ -5,6 +5,8 @@ import { useAuthStore } from '../../features/auth/store/authStore';
 import { navigationRef } from './navigationRef';
 
 import WelcomeScreen from '../../features/auth/screens/WelcomeScreen';
+import GetStartedScreen from '../../features/auth/screens/GetStartedScreen';
+import RegisterSuccessScreen from '../../features/auth/screens/RegisterSuccessScreen';
 import PhoneScreen from '../../features/auth/screens/PhoneScreen';
 import RegisterScreen from '../../features/auth/screens/RegisterScreen';
 import ForgotPasswordScreen from '../../features/auth/screens/ForgotPasswordScreen';
@@ -35,6 +37,8 @@ import NotificationSettingsScreen from '../../features/notifications/screens/Not
 
 export type RootStackParamList = {
   Welcome: undefined;
+  GetStarted: undefined;
+  RegisterSuccess: { userName?: string } | undefined;
   Phone: undefined;
   Register: undefined;
   ForgotPassword: undefined;
@@ -78,6 +82,8 @@ export default function AppNavigator() {
         {!isAuthenticated ? (
           <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="GetStarted" component={GetStartedScreen} />
+            <Stack.Screen name="RegisterSuccess" component={RegisterSuccessScreen} />
             <Stack.Screen name="Phone" component={PhoneScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
