@@ -1,4 +1,4 @@
 export const AppStrings = {
   appName: 'CareNest',
-  tagline: 'Peace of mind when away from home',
+  tagline: 'Chăm sóc sức khỏe từ nơi xa',
 } as const;
