@@ -450,8 +450,12 @@ export default function CameraScreen() {
       return (
         <ScrollView contentContainerStyle={styles.listPad}>
           <View style={styles.emptyDevicesWrap}>
-            <Ionicons name="sad-outline" size={90} color={Colors.textHint} />
-            <View style={{ height: 8 }} />
+            <Image
+              source={require('../../../../assets/mascot/mascot_confused.jpg')}
+              style={{ width: 160, height: 160 }}
+              resizeMode="contain"
+            />
+            <View style={{ height: 4 }} />
             <Text style={styles.emptyDevicesTitle}>No cameras linked</Text>
             <View style={{ height: 6 }} />
             <Text style={styles.emptyDevicesSubtitle}>Link an Imou camera to start monitoring</Text>

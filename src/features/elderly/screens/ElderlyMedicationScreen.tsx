@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   FlatList,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -289,8 +290,12 @@ export default function ElderlyMedicationScreen() {
 
           {items.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Ionicons name="medkit-outline" size={48} color={Colors.textHint} />
-              <View style={{ height: 12 }} />
+              <Image
+                source={require('../../../../assets/mascot/mascot_confused.jpg')}
+                style={{ width: 120, height: 120 }}
+                resizeMode="contain"
+              />
+              <View style={{ height: 4 }} />
               <Text style={styles.emptyText}>No medications yet</Text>
               <View style={{ height: 4 }} />
               <Text style={styles.emptyHint}>Press + to add medication</Text>

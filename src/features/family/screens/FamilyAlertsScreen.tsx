@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -155,9 +156,13 @@ export default function FamilyAlertsScreen() {
   if (!elderlyId) {
     return (
       <SafeAreaView style={styles.container}>
-        {renderHeader(0, false, () => {})}
+        {renderHeader(0, false, () => { })}
         <View style={styles.center}>
-          <Ionicons name="people-outline" size={56} color={Colors.textHint} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
+            style={{ width: 140, height: 140 }}
+            resizeMode="contain"
+          />
           <Text style={styles.noElderlyText}>No elderly person linked yet</Text>
         </View>
       </SafeAreaView>
@@ -224,9 +229,11 @@ export default function FamilyAlertsScreen() {
     if (events.length === 0) {
       return (
         <View style={styles.center}>
-          <View style={styles.successCircle}>
-            <Ionicons name="checkmark-circle-outline" color={Colors.success} size={44} />
-          </View>
+          <Image
+            source={require('../../../../assets/mascot/mascot_thumbsup.jpg')}
+            style={{ width: 130, height: 130 }}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyTitle}>No alerts</Text>
           <Text style={styles.emptySubtitle}>Everything is fine!</Text>
         </View>
