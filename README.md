@@ -2,9 +2,9 @@
 
 > A mobile app for remote elderly health monitoring, helping families stay connected and track the well-being of their loved ones anytime, anywhere.
 
-**CareNest** is a learning project built with Flutter and Spring Boot for EXE101 @ FPT University.
+**CareNest** is a learning project built with React Native (Expo) and Spring Boot for EXE101 @ FPT University.
 
-**Status:** 31/33 UCs implemented — demo-ready with seed data.
+**Tech:** React Native (Expo SDK 57) · TypeScript · Zustand · Spring Boot 3.2 · Java 21 · PostgreSQL
 
 ---
 
@@ -43,7 +43,7 @@ CareNest is a mobile platform connecting elderly users with their families throu
 |---|---------|--------|
 | 1 | Register with email/phone + password | ✅ |
 | 2 | Login with phone+password or email+password | ✅ |
-| 3 | Email verification | ✅ |
+| 3 | Email verification + OTP verification | ✅ |
 | 4 | Forgot password (email reset link) | ✅ |
 | 5 | PIN setup & quick unlock | ✅ |
 | 6 | Profile view & edit (health conditions, blood type, weight, height, allergies) | ✅ |
@@ -55,22 +55,23 @@ CareNest is a mobile platform connecting elderly users with their families throu
 | 12 | **🤖 Chat AI** — Gemini-powered health chat, quick replies, voice input (STT) | ✅ |
 | 13 | **🔗 Google Fit** — OAuth connect, sync health data, disconnect | ✅ |
 | 14 | **👤 Profile** — Avatar, settings (PIN lock, notification prefs, premium, logout) | ✅ |
+| 15 | **📷 Camera** — View linked cameras, privacy toggle, check-in snapshots | ✅ |
 
 ### 👨‍👩‍👧 Family Side
 | # | Feature | Status |
 |---|---------|--------|
-| 15 | Multi-elderly dashboard with color-coded status | ✅ |
-| 16 | **💊 Medications** — View/manage elderly medications, toggle taken | ✅ |
-| 17 | **❤️ Health** — View elderly health metrics, set alert thresholds | ✅ |
-| 18 | **📅 Appointments** — Full CRUD for elderly appointments | ✅ |
-| 19 | **🚨 Alerts** — Active/resolved emergency events, acknowledge, mark all read | ✅ |
-| 20 | **📈 Weekly Summary** — AI-generated health report (Gemini, falls back to template) | ✅ |
-| 21 | **🎯 Health Thresholds** — Set per-metric min/max, AI recommend, family alert toggle | ✅ |
-| 22 | **🔗 Family Link** — Add elderly by phone number, manage connections | ✅ |
-| 23 | **📷 Camera** — Link Imou cameras, live view, snapshots, motion detection, privacy mode, timeline | ✅ |
-| 24 | **💳 Premium** — Plan cards, VNPay/MoMo payment (needs sandbox credentials) | ✅ |
-| 25 | **🔔 Notifications** — In-app list, unread badge, mark read, type filters | ✅ |
-| 26 | **⚙️ Notification Settings** — Per-category toggles, quiet hours, reminder minutes | ✅ |
+| 16 | Multi-elderly dashboard with color-coded status | ✅ |
+| 17 | **💊 Medications** — View/manage elderly medications, toggle taken | ✅ |
+| 18 | **❤️ Health** — View elderly health metrics, set alert thresholds | ✅ |
+| 19 | **📅 Appointments** — Full CRUD for elderly appointments | ✅ |
+| 20 | **🚨 Alerts** — Active/resolved emergency events, acknowledge, mark all read | ✅ |
+| 21 | **📈 Weekly Summary** — AI-generated health report (Gemini, falls back to template) | ✅ |
+| 22 | **🎯 Health Thresholds** — Set per-metric min/max, AI recommend, family alert toggle | ✅ |
+| 23 | **🔗 Family Link** — Add elderly by phone number, manage connections | ✅ |
+| 24 | **📷 Camera** — Link Imou cameras, live view, snapshots, motion detection, privacy mode, timeline | ✅ |
+| 25 | **💳 Premium** — Plan cards, VNPay/MoMo payment (needs sandbox credentials) | ✅ |
+| 26 | **🔔 Notifications** — In-app list, unread badge, mark read, type filters | ✅ |
+| 27 | **⚙️ Notification Settings** — Per-category toggles, quiet hours, reminder minutes | ✅ |
 
 ---
 
@@ -80,16 +81,15 @@ CareNest is a mobile platform connecting elderly users with their families throu
 
 | Technology | Purpose |
 |------------|---------|
-| **Flutter** (SDK ^3.12.0) | Cross-platform framework |
-| **Riverpod** ^2.6.1 | State management (StateNotifier + family providers) |
-| **GoRouter** ^15.1.2 | Declarative routing, auth guards, role-based redirect |
-| **Dio** ^5.8.0 | HTTP client + JWT interceptor + proactive token refresh |
-| **Flutter Secure Storage** ^9.2.4 | Secure JWT token storage |
-| **Google Generative AI** ^0.4.0 | Gemini AI for chat, health analysis, STT |
-| **Firebase** (core, auth, messaging) | Push notifications (FCM) |
-| **speech_to_text** ^7.0.0 | Voice input for AI chat |
-| **url_launcher** ^6.3.0 | External browser for OAuth, payment URLs |
-| **flutter_dotenv** ^5.1.0 | Environment variable loading |
+| **React Native** 0.86 + **Expo** SDK 57 | Cross-platform framework |
+| **TypeScript** 6.0 | Type-safe development |
+| **Zustand** 5.0 | Lightweight state management |
+| **React Navigation** 7 | Stack + bottom-tab routing, auth guards, role-based redirect |
+| **Axios** 1.7 | HTTP client + JWT interceptor + proactive token refresh |
+| **expo-secure-store** | Secure JWT token storage |
+| **expo-notifications** | Push notifications (FCM) |
+| **@expo/vector-icons** (Ionicons) | Icon system |
+| **Google Generative AI** | Gemini AI for chat, health analysis, STT |
 
 ### 🖥️ Backend
 
@@ -99,14 +99,14 @@ CareNest is a mobile platform connecting elderly users with their families throu
 | **Java** 21 (virtual threads enabled) | Programming language |
 | **Spring Data JPA** + Hibernate | ORM & data access |
 | **PostgreSQL** 16 (Docker) | Database |
-| **Flyway** | Database migrations (V1–V26) |
+| **Flyway** | Database migrations (V1–V27) |
 | **JJWT** 0.12.5 | JWT authentication (HMAC-SHA256) |
 | **Firebase Admin SDK** 9.2.0 | FCM push notifications |
 | **Spring Security** | Role-based access control |
 | **Spring Mail** | Email verification + password reset |
-| **Jackson** | JSON serialization (camelCase) |
+| **Jackson** | JSON serialization |
 | **Lombok** | Boilerplate reduction |
-| **SpringDoc OpenAPI** | Swagger UI at /swagger-ui.html |
+| **SpringDoc OpenAPI** | Swagger UI at `/swagger-ui.html` |
 
 ---
 
@@ -114,21 +114,21 @@ CareNest is a mobile platform connecting elderly users with their families throu
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                    Flutter Mobile App                 │
+│                React Native (Expo) App                │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────┐ │
 │  │  Elderly UI  │  │  Family UI   │  │  Auth Flow  │ │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘ │
 │         │                 │                  │        │
 │  ┌──────┴─────────────────┴──────────────────┴──────┐ │
-│  │          Riverpod StateNotifier Providers         │ │
-│  │   (15 providers: auth, elderly, health, meds,    │ │
-│  │    family, appointments, alerts, camera, etc.)    │ │
+│  │              Zustand Stores (18 stores)           │ │
+│  │   (auth, elderly, health, meds, family, alerts,   │ │
+│  │    appointments, camera, chat, payment, etc.)      │ │
 │  └──────────────────────┬───────────────────────────┘ │
 │                         │                              │
 │  ┌──────────────────────┴───────────────────────────┐ │
-│  │        Dio HTTP Client + JWT Interceptor          │ │
-│  │    (Bearer token attach + 60s proactive refresh   │ │
-│  │     + refresh mutex dedup + 401 auto-retry)       │ │
+│  │         Axios Client + JWT Interceptor            │ │
+│  │    (Bearer token attach + proactive refresh       │ │
+│  │     + 401 auto-retry + refresh mutex dedup)       │ │
 │  └──────────────────────┬───────────────────────────┘ │
 └─────────────────────────┼─────────────────────────────┘
                           │ HTTPS (REST JSON)
@@ -159,40 +159,44 @@ CareNest is a mobile platform connecting elderly users with their families throu
 
 ```
 carenest_mobile/
-├── lib/                                    # Flutter source (61 Dart files)
-│   ├── main.dart                           # Entry point: dotenv load, runApp
-│   ├── app.dart                            # MaterialApp.router + theme
-│   ├── core/                               # Shared infrastructure
-│   │   ├── auth/token_notifier.dart        # Session expiry → GoRouter redirect
-│   │   ├── config/app_config.dart          # Gemini API config
-│   │   ├── constants/                      # AppColors (28), AppStrings
-│   │   ├── navigation/                     # ElderlyShell, FamilyShell (bottom nav)
-│   │   ├── network/dio_client.dart         # Dio + JWT interceptor + refresh
-│   │   ├── router/app_router.dart          # GoRouter: 25 routes, auth guard
-│   │   ├── services/                       # GeminiService, FcmService
-│   │   ├── storage/secure_storage.dart     # FlutterSecureStorage wrapper
-│   │   ├── theme/app_theme.dart            # Material 3, Nunito font
-│   │   └── utils/dio_utils.dart            # Safe JSON parsing helpers
-│   └── features/                           # Feature modules
-│       ├── auth/                           # Login, register, forgot password, PIN, email verify
-│       ├── elderly/                        # Home, medications, health, chat, profile, health report
-│       ├── family/                         # Dashboard, medications, health, alerts, camera, appointments
-│       ├── home/                           # Legacy home (unused)
-│       ├── medication/                     # Local notification reminder service
-│       └── notifications/                  # Notification list, settings
-├── backend/                                # Spring Boot (160 Java files)
+├── App.tsx                                  # Entry point
+├── index.ts                                 # Expo registerRootComponent
+├── src/                                     # Application source
+│   ├── core/                                # Shared infrastructure
+│   │   ├── api/client.ts                   # Axios + JWT interceptor + refresh
+│   │   ├── api/errors.ts                   # API error types & helpers
+│   │   ├── auth/sessionEvents.ts           # Session expiry event emitter
+│   │   ├── config/appConfig.ts             # Gemini API config
+│   │   ├── constants/strings.ts            # App display strings
+│   │   ├── navigation/AppNavigator.tsx     # Stack navigator + auth guard
+│   │   ├── navigation/ElderlyShell.tsx     # Elderly bottom-tab shell
+│   │   ├── navigation/FamilyShell.tsx      # Family bottom-tab shell
+│   │   ├── navigation/navigationRef.ts     # Navigation ref for stores
+│   │   ├── services/geminiService.ts       # Gemini AI client
+│   │   ├── services/pushNotificationService.ts  # FCM push setup
+│   │   ├── storage/secureStorage.ts        # expo-secure-store wrapper
+│   │   └── theme/                          # Colors, spacing, typography
+│   ├── features/                           # Feature modules
+│   │   ├── auth/                           # 13 screens + authStore
+│   │   ├── elderly/                        # 11 screens + 6 stores + components
+│   │   ├── family/                         # 10 screens + 7 stores
+│   │   ├── medication/                     # Medication reminder service
+│   │   └── notifications/                  # 2 screens + 2 stores
+│   └── shared/types/index.ts              # Shared TypeScript types
+├── backend/                                # Spring Boot backend
 │   ├── pom.xml                             # Maven, Java 21, Spring Boot 3.2.5
 │   └── src/main/java/com/carenest/backend/
 │       ├── config/                         # SecurityConfig, FirebaseConfig
 │       ├── controller/                     # 11 REST controllers
 │       ├── dto/                            # 38 DTOs (request + response)
-│       ├── entity/                         # 14 JPA entities + 3 embedded POJOs
+│       ├── entity/                         # 14 JPA entities
 │       ├── exception/                      # GlobalExceptionHandler + custom exceptions
 │       ├── repository/                     # 16 JPA repositories
-│       ├── scheduler/                      # 4 scheduled tasks (health check, reminders, weekly summary)
-│       ├── seeder/                         # DataSeeder (5 elderly + 10 family + demo data)
-│       ├── security/                       # JwtAuthenticationFilter, AuthorizationService
+│       ├── scheduler/                      # 4 scheduled tasks
+│       ├── seeder/                         # DataSeeder (demo data)
+│       ├── security/                       # JwtAuthFilter, AuthzService, RateLimitFilter
 │       └── service/                        # 25 business logic services
+├── assets/                                 # Mascot images, brand logo, app icons
 ├── .env.example                            # Environment variables template
 └── README.md
 ```
@@ -203,10 +207,10 @@ carenest_mobile/
 
 ### Prerequisites
 
-- **Flutter SDK** >= 3.12.0 (Dart >= 3.12.0)
+- **Node.js** >= 20
 - **JDK** 21 (Eclipse Temurin recommended)
 - **Docker Desktop** (for PostgreSQL)
-- **Android Studio** or **VS Code** + Flutter extension
+- **VS Code** or **Android Studio**
 
 ### ⚡ Quick Start
 
@@ -217,22 +221,24 @@ cd carenest_mobile
 
 # 2. Environment
 cp .env.example .env
-# → Set API_BASE_URL (see below), GEMINI_API_KEY (optional for AI features)
+# → Set API_BASE_URL (Android: http://10.0.2.2:8080/api, iOS/physical: http://<ip>:8080/api)
+# → Set GEMINI_API_KEY (optional, for AI features)
 
-# 3. Start PostgreSQL
+# 3. Install dependencies
+npm install
+
+# 4. Start PostgreSQL
 docker-compose up -d
-
-# 4. Install dependencies
-flutter pub get
 
 # 5. Run backend (separate terminal)
 cd backend
 cp src/main/resources/application-local.example.properties src/main/resources/application-local.properties
+# Edit application-local.properties with your DB credentials
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
-# Dev profile enables: seed data, SQL logging, debug logging
 
-# 6. Run Flutter
-flutter run
+# 6. Run React Native
+npx expo start
+# Press 'a' for Android, 'i' for iOS, 'w' for web
 ```
 
 ### API_BASE_URL Values by Platform
@@ -241,47 +247,41 @@ flutter run
 |----------|-------------|
 | Android Emulator | `http://10.0.2.2:8080/api` |
 | iOS Simulator | `http://localhost:8080/api` |
-| Web (Chrome) | `http://localhost:8080/api` |
+| Web | `http://localhost:8080/api` |
 | Physical Device | `http://<your-lan-ip>:8080/api` |
-
-If `API_BASE_URL` is not set in `.env`, the app falls back to `10.0.2.2:8080/api` (Android emulator).
 
 ---
 
 ## Authentication Flow
 
 ```
-User                   Flutter App                Backend
+User                   React Native App          Backend
   │                         │                        │
   │  1. Register           │                        │
   │  (email+name+password  │  POST /api/auth/register
   │   + role ELDERLY/FAMILY)│───────────────────────>│
-  │                         │  {message: "check email"}
+  │                         │  {userId, requiresVerification}
   │                         │<───────────────────────│
-  │  2. Verify email       │                        │
-  │  (click link in inbox) │  POST /api/auth/verify-email
+  │  2. Verify (OTP popup) │                        │
+  │  (enter 6-digit code)  │  POST /api/auth/verify-otp
   │                         │───────────────────────>│
-  │                         │                        │
-  │  3. Login              │                        │
-  │  (phone+password or    │  POST /api/auth/login   │
-  │   email+password)      │───────────────────────>│
   │                         │  {accessToken, refreshToken, user}
   │                         │<───────────────────────│
-  │  4. Auto-navigate to   │                        │
+  │  3. Auto-navigate to   │                        │
   │     role-based shell   │                        │
   │<────────────────────────│                        │
   │                         │                        │
   │  ... Token refresh     │  POST /api/auth/refresh │
-  │     (automatic, 60s    │  (Dio interceptor,      │
-  │      before expiry)    │   mutex-deduplicated)   │
+  │     (automatic, prior  │  (Axios interceptor,    │
+  │      to expiry)        │   mutex-deduplicated)   │
 ```
 
 **Auth methods:**
-- **Phone + password**: Primary method (no email required)
-- **Email + password**: Alternative
+- **Phone + password**: Primary method (auto-verified, no email needed)
+- **Email + password**: Requires verification before login
 - **DEV_PHONE:{number}**: Dev bypass (local/dev profiles only)
 
-Tokens stored in **Flutter Secure Storage**. The Dio interceptor proactively refreshes 60 seconds before expiry and deduplicates concurrent refresh calls via a mutex.
+Tokens stored in **expo-secure-store**. The Axios interceptor proactively refreshes before expiry and deduplicates concurrent refresh calls via a mutex.
 
 ---
 
@@ -295,6 +295,8 @@ Tokens stored in **Flutter Secure Storage**. The Dio interceptor proactively ref
 | POST | `/auth/refresh` | Refresh Token |
 | POST | `/auth/logout` | ✅ |
 | POST | `/auth/verify-email` | — |
+| POST | `/auth/send-otp` | — |
+| POST | `/auth/verify-otp` | — |
 | POST | `/auth/resend-verification` | — |
 | POST | `/auth/forgot-password` | — |
 | POST | `/auth/reset-password` | — |
@@ -305,50 +307,15 @@ Tokens stored in **Flutter Secure Storage**. The Dio interceptor proactively ref
 ### Elderly (`/api`)
 | Method | Endpoint | Auth |
 |--------|----------|------|
-| GET | `/elderly-profiles/{id}` | ✅ |
-| PUT | `/elderly-profiles/{id}` | ✅ |
-| POST | `/elderly/{id}/health-metrics` | ✅ |
-| GET | `/elderly/{id}/health-metrics` | ✅ |
+| GET/PUT | `/elderly-profiles/{id}` | ✅ |
+| POST/GET | `/elderly/{id}/health-metrics` | ✅ |
 | GET | `/elderly/{id}/health-report` | ✅ |
 | POST | `/elderly/{id}/sync-health-data` | ✅ |
-| GET | `/elderly/{id}/weekly-summary` | ✅ |
-| POST | `/elderly/{id}/weekly-summary/generate` | ✅ |
-| POST | `/elderly/{id}/emergency-events` | ✅ |
-| GET | `/elderly/{id}/emergency-events` | ✅ |
+| GET/POST | `/elderly/{id}/weekly-summary` | ✅ |
+| POST/GET | `/elderly/{id}/emergency-events` | ✅ |
+| PATCH | `/emergency-events/{id}/acknowledge` | ✅ |
 
-### Family (`/api`)
-| Method | Endpoint | Auth |
-|--------|----------|------|
-| GET | `/family/{familyId}/elderly` | ✅ |
-| GET | `/elderly/{elderlyId}/family` | ✅ |
-| POST | `/family-links` | ✅ |
-| PATCH | `/family-links/{id}/status` | ✅ |
-
-### Medications (`/api`)
-| Method | Endpoint | Auth |
-|--------|----------|------|
-| GET | `/users/{userId}/medications` | ✅ |
-| POST | `/medications` | ✅ |
-| PATCH | `/medications/{id}` | ✅ |
-| DELETE | `/medications/{id}` | ✅ |
-| GET | `/medications/{id}/logs` | ✅ |
-| POST | `/medications/{id}/logs` | ✅ |
-
-### Appointments, Notifications, Reminders, Camera, etc.
-| Method | Endpoint | Auth |
-|--------|----------|------|
-| GET/POST/PATCH/DELETE | `/appointments` | ✅ |
-| GET/PATCH | `/users/{userId}/notifications` | ✅ |
-| GET/PUT | `/users/{userId}/notification-preferences` | ✅ |
-| GET/POST/PATCH/DELETE | `/reminders` | ✅ |
-| GET/POST/DELETE | `/elderly/{id}/cameras` | ✅ |
-| GET | `/cameras/{id}/live` | ✅ |
-| POST | `/cameras/{id}/voice/start` | ✅ |
-| POST | `/cameras/{id}/privacy` | ✅ |
-| PUT | `/cameras/{id}/motion-detection` | ✅ |
-| GET/POST | `/payment/plans`, `/payment/subscription` | ✅ |
-| GET/POST | `/google-fit/status`, `/google-fit/connect`, etc. | ✅ |
-
+### Family, Medications, Appointments, Camera, etc.
 Full API docs: `http://localhost:8080/swagger-ui.html` (when backend is running)
 
 ---
@@ -359,7 +326,7 @@ Full API docs: `http://localhost:8080/swagger-ui.html` (when backend is running)
 | Variable | Default | Required |
 |----------|---------|----------|
 | `DATABASE_URL` | `jdbc:postgresql://localhost:5433/carenest` | For custom DB |
-| `JWT_SECRET` | (dev default, 32 chars) | **Yes for production** |
+| `JWT_SECRET` | (dev default) | **Yes for production** |
 | `GEMINI_API_KEY` | (empty) | For AI features |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | (empty) | For email verification |
 | `FIREBASE_CREDENTIALS_PATH` | (empty) | For FCM push |
@@ -368,7 +335,7 @@ Full API docs: `http://localhost:8080/swagger-ui.html` (when backend is running)
 | `MOMO_PARTNER_CODE` / `MOMO_ACCESS_KEY` / `MOMO_SECRET_KEY` | (empty) | For MoMo payment |
 | `IMOU_APP_ID` / `IMOU_APP_SECRET` | (empty) | For camera features |
 
-### Flutter (`.env`)
+### React Native (`.env`)
 | Variable | Default | Required |
 |----------|---------|----------|
 | `API_BASE_URL` | `http://10.0.2.2:8080/api` | For non-emulator devices |
@@ -378,7 +345,7 @@ Full API docs: `http://localhost:8080/swagger-ui.html` (when backend is running)
 
 ## Demo Data
 
-The `dev` Spring profile (`application-dev.properties`) enables the `DataSeeder` which creates:
+The `dev` Spring profile enables the `DataSeeder` which creates:
 
 | Entity | Count | Details |
 |--------|-------|---------|
@@ -389,10 +356,10 @@ The `dev` Spring profile (`application-dev.properties`) enables the `DataSeeder`
 | Health metrics | ~240 | 30 days, twice daily (BP, HR, glucose) |
 | Appointments | 15 | 3 per elderly (upcoming) |
 | Chat messages | 8 | 4 user-AI conversation pairs |
-| Subscriptions | 1 | Premium monthly (family user #1) |
-| Camera devices | 1 | Demo Imou device (IMOU-DEMO-001) |
+| Subscriptions | 1 | Premium monthly |
+| Camera devices | 1 | Demo Imou device |
 
-**Demo login credentials** (all pre-verified, no email verification needed):
+**Demo login credentials:**
 
 | Role | Phone | Name |
 |------|-------|------|
@@ -407,14 +374,14 @@ The `dev` Spring profile (`application-dev.properties`) enables the `DataSeeder`
 
 | # | Limitation | Fix |
 |---|-----------|-----|
-| 1 | **FCM push notifications** — backend is ready but Flutter needs `google-services.json` from a Firebase project | Add Firebase project config |
-| 2 | **Payment** — VNPay/MoMo payment flow works but needs sandbox credentials in env vars | Set `VNPAY_*` / `MOMO_*` env vars |
+| 1 | **FCM push notifications** — Backend is ready but needs `google-services.json` from a Firebase project | Add Firebase project config |
+| 2 | **Payment** — VNPay/MoMo flow works but needs sandbox credentials | Set `VNPAY_*` / `MOMO_*` env vars |
 | 3 | **Google Fit** — OAuth flow works but needs Google Cloud project credentials | Set `GOOGLE_FIT_*` env vars |
 | 4 | **Camera live view** — Imou integration requires real device SNs and API credentials | Set `IMOU_*` env vars |
 | 5 | **Email sending** — SMTP credentials needed for verification + password reset emails | Set `MAIL_*` env vars |
 | 6 | **Gemini AI** — Chat, health analysis, STT, weekly summaries need API key | Set `GEMINI_API_KEY` |
-| 7 | **iOS simulator** — Default base URL is `10.0.2.2` (Android-only); set `API_BASE_URL` for iOS | Set `API_BASE_URL` in `.env` |
-| 8 | **Camera snapshot cleanup** — Scheduled daily but only logs, doesn't actually delete old snapshots | Implement deletion in `CameraService.cleanupOldSnapshots()` |
+| 7 | **iOS simulator** — Default base URL is `10.0.2.2` (Android-only) | Set `API_BASE_URL` in `.env` |
+| 8 | **Camera snapshot cleanup** — Scheduled daily but doesn't actually delete old snapshots | Implement in `CameraService.cleanupOldSnapshots()` |
 
 ---
 
@@ -428,7 +395,7 @@ The `dev` Spring profile (`application-dev.properties`) enables the `DataSeeder`
 
 - `feat:` — New feature
 - `fix:` — Bug fix
-- `chore:` — Maintenance (config, cleanup, demo prep)
+- `chore:` — Maintenance (config, cleanup)
 - `docs:` — Documentation
 - `refactor:` — Code refactoring
 

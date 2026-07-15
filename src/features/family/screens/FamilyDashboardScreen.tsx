@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -162,66 +163,79 @@ export default function FamilyDashboardScreen() {
 
   const takenMeds = medItems.filter((m) => m.taken).length;
 
+  // "Cập nhật X trước" trên card elderly — lấy recordedAt mới nhất trong
+  // số các chỉ số sức khỏe đã có (dữ liệu thật, không giả lập).
+  const allMetricTimestamps = Object.values(latestByType).map((m) => new Date(m.recordedAt).getTime());
+  const lastMetricTime = allMetricTimestamps.length > 0 ? Math.max(...allMetricTimestamps) : null;
+  const lastUpdatedLabel = lastMetricTime ? formatRelative(new Date(lastMetricTime).toISOString()) : null;
+  // "Online" ở đây là suy ra từ độ mới của dữ liệu sức khỏe (có cập nhật
+  // trong 30 phút gần nhất) — app hiện CHƯA có hệ thống presence/realtime
+  // thật, đây là proxy hợp lý nhất từ dữ liệu đang có.
+  const isRecentlyActive = lastMetricTime ? Date.now() - lastMetricTime < 30 * 60 * 1000 : false;
+
   const hasCamera = cameras.length > 0;
   const cam = hasCamera ? cameras[0] : null;
   const camOnline = cam?.status === 'ONLINE';
 
-  // Build combined "recent activity" list (mirrors Dart's _buildRecentActivity)
+  // Build combined "Cảnh báo gần đây" list — ưu tiên cảnh báo khẩn cấp thật
+  // (SOS/emergency) trước, sau đó tới các lần uống thuốc gần nhất (khớp ví
+  // dụ "Bố đã uống thuốc sáng" trong wireframe), cuối cùng mới tới chỉ số
+  // sức khỏe nếu còn chỗ. Toàn bộ đều là dữ liệu thật từ store, không giả lập.
   type ActivityItem = { icon: keyof typeof Ionicons.glyphMap; color: string; title: string; subtitle: string; time: string };
   const activityItems: ActivityItem[] = [];
   if (elderlyId) {
-    if (!medLoading && medItems.length > 0) {
-      for (const med of medItems.slice(0, 3)) {
-        const timeLabel = formatDoseTime(med);
+    if (!alertLoading && alertEvents.length > 0) {
+      const active = alertEvents.filter((e) => e.status === 'ACTIVE').slice(0, 2);
+      for (const event of active) {
         activityItems.push({
-          icon: 'medical-outline',
-          color: Colors.primary,
-          title: med.name,
-          subtitle: `${med.dosage}${timeLabel ? ` at ${timeLabel}` : ''}`,
-          time: med.taken ? 'Taken' : 'Upcoming',
+          icon: 'warning',
+          color: Colors.error,
+          title: event.type === 'SOS' ? 'Cảnh báo khẩn cấp (SOS)' : 'Cảnh báo',
+          subtitle: event.description,
+          time: formatRelative(event.createdAt),
         });
       }
     }
-    if (!healthIsLoading && Object.keys(latestByType).length > 0) {
-      const entries = Object.entries(latestByType).slice(0, 2);
+    if (!medLoading && medItems.length > 0 && activityItems.length < 3) {
+      const takenRecently = medItems.filter((m) => m.taken).slice(0, 3 - activityItems.length);
+      for (const med of takenRecently) {
+        activityItems.push({
+          icon: 'medical',
+          color: Colors.success,
+          title: `Đã uống ${med.name}`,
+          subtitle: med.dosage,
+          time: formatDoseTime(med) ? `Lúc ${formatDoseTime(med)}` : '',
+        });
+      }
+    }
+    if (!healthIsLoading && Object.keys(latestByType).length > 0 && activityItems.length < 3) {
+      const entries = Object.entries(latestByType).slice(0, 3 - activityItems.length);
       for (const [type, data] of entries) {
         const typeLabel =
           type === 'BLOOD_PRESSURE'
-            ? 'Blood Pressure'
+            ? 'Huyết áp'
             : type === 'BLOOD_GLUCOSE'
-              ? 'Blood Sugar'
+              ? 'Đường huyết'
               : type === 'HEART_RATE'
-                ? 'Heart Rate'
+                ? 'Nhịp tim'
                 : type;
         const valueStr = data.valueSecondary ? `${data.value}/${data.valueSecondary}` : data.value;
         activityItems.push({
-          icon: 'pulse-outline',
-          color: Colors.success,
-          title: `${typeLabel} reading`,
+          icon: 'pulse',
+          color: Colors.primary,
+          title: `Đo ${typeLabel}`,
           subtitle: `${valueStr} ${data.unit ?? ''}`.trim(),
           time: formatRelative(data.recordedAt),
-        });
-      }
-    }
-    if (!alertLoading && alertEvents.length > 0) {
-      const active = alertEvents.filter((e) => e.status === 'ACTIVE').slice(0, 1);
-      for (const event of active) {
-        activityItems.push({
-          icon: 'warning-outline',
-          color: Colors.warning,
-          title: event.type === 'SOS' ? 'SOS Emergency' : 'Alert',
-          subtitle: event.description,
-          time: formatRelative(event.createdAt),
         });
       }
     }
   }
   if (activityItems.length === 0) {
     activityItems.push({
-      icon: 'information-circle-outline',
+      icon: 'checkmark-circle-outline',
       color: Colors.textHint,
-      title: 'No activity yet',
-      subtitle: 'Data appears when new activity occurs',
+      title: 'Chưa có cảnh báo nào',
+      subtitle: 'Mọi thứ đang ổn',
       time: '',
     });
   }
@@ -236,7 +250,10 @@ export default function FamilyDashboardScreen() {
       >
         {/* Header */}
         <View style={styles.headerRow}>
-          <Text style={styles.greeting}>{getGreeting()}, {user?.name || 'you'}!</Text>
+          <View>
+            <Text style={styles.greetingSmall}>Xin chào,</Text>
+            <Text style={styles.greeting}>{user?.name || 'bạn'}</Text>
+          </View>
           <TouchableOpacity
             style={styles.bellButton}
             onPress={() => {
@@ -244,11 +261,7 @@ export default function FamilyDashboardScreen() {
             }}
           >
             <Ionicons name="notifications-outline" size={26} color={Colors.textPrimary} />
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
+            {unreadCount > 0 && <View style={styles.dotBadge} />}
           </TouchableOpacity>
         </View>
 
@@ -280,10 +293,22 @@ export default function FamilyDashboardScreen() {
               <Ionicons name="body" color="white" size={28} />
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={styles.elderlyCardLabel}>Your loved one</Text>
-              <Text style={styles.elderlyCardName}>{hasElderly ? elderlyName : 'Not linked'}</Text>
+              <Text style={styles.elderlyCardName}>
+                <Text style={styles.elderlyCardLabelInline}>Người thân: </Text>
+                {hasElderly ? elderlyName : 'Chưa liên kết'}
+              </Text>
+              {hasElderly && (
+                <Text style={styles.elderlyCardUpdated}>
+                  {lastUpdatedLabel ? `Cập nhật: ${lastUpdatedLabel}` : 'Chưa có dữ liệu mới'}
+                </Text>
+              )}
             </View>
-            <View style={[styles.statusDot, { backgroundColor: hasElderly ? Colors.success : Colors.textHint }]} />
+            {hasElderly && (
+              <View style={[styles.onlinePill, { backgroundColor: isRecentlyActive ? 'rgba(76,217,100,0.25)' : 'rgba(255,255,255,0.15)' }]}>
+                <View style={[styles.onlineDot, { backgroundColor: isRecentlyActive ? Colors.success : 'rgba(255,255,255,0.6)' }]} />
+                <Text style={styles.onlinePillText}>{isRecentlyActive ? 'Online' : 'Offline'}</Text>
+              </View>
+            )}
           </View>
           {hasElderly && healthConditions.length > 0 && (
             <View style={styles.conditionsWrap}>
@@ -329,14 +354,9 @@ export default function FamilyDashboardScreen() {
         {/* Medication today */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
-          <View style={styles.sectionHeaderRight}>
-            {medItems.length > 0 && (
-              <Text style={styles.medFraction}>{takenMeds}/{medItems.length}</Text>
-            )}
-            <TouchableOpacity onPress={() => navigation.navigate('FamilyMeds')}>
-              <Text style={styles.viewAllText}>Xem tất cả →</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('FamilyMeds')}>
+            <Text style={styles.viewAllText}>Xem tất cả →</Text>
+          </TouchableOpacity>
         </View>
         <View style={{ height: 10 }} />
         {medLoading && medItems.length === 0 ? (
@@ -348,23 +368,24 @@ export default function FamilyDashboardScreen() {
             <Text style={styles.emptyBoxText}>Chưa có thuốc nào</Text>
           </View>
         ) : (
-          <View style={styles.medCard}>
-            {medItems.slice(0, 4).map((med, idx) => (
-              <View key={med.id} style={[styles.medRow, idx > 0 && styles.medRowDivider]}>
-                <Ionicons
-                  name={med.taken ? 'checkmark-circle' : 'time'}
-                  size={22}
-                  color={med.taken ? Colors.success : Colors.warning}
-                />
-                <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={styles.medName}>{med.name} {med.dosage}</Text>
-                  <Text style={styles.medTime}>{formatDoseTime(med)}</Text>
+          <View style={styles.medCardRow}>
+            <MedProgressRing taken={takenMeds} total={medItems.length} />
+            <View style={{ width: 14 }} />
+            <View style={{ flex: 1 }}>
+              {medItems.slice(0, 4).map((med) => (
+                <View key={med.id} style={styles.medListRow}>
+                  <Text style={[styles.medCheckMark, { color: med.taken ? Colors.success : Colors.error }]}>
+                    {med.taken ? '✓' : '✗'}
+                  </Text>
+                  <Text style={styles.medListName} numberOfLines={1}>
+                    {med.name} {med.dosage}
+                  </Text>
+                  <Text style={[styles.medListTime, !med.taken && { color: Colors.warning }]}>
+                    {formatDoseTime(med)}{!med.taken ? ' (sắp tới)' : ''}
+                  </Text>
                 </View>
-                <Text style={[styles.medStatus, { color: med.taken ? Colors.success : Colors.warning }]}>
-                  {med.taken ? 'Đã uống' : 'Sắp tới'}
-                </Text>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         )}
 
@@ -461,6 +482,48 @@ export default function FamilyDashboardScreen() {
   );
 }
 
+/** Vòng tròn tiến độ thuốc hôm nay (vd "3/4") — dùng react-native-svg để vẽ
+ * arc thật (strokeDasharray), khớp đúng chi tiết thiết kế trong wireframe. */
+function MedProgressRing({ taken, total }: { taken: number; total: number }) {
+  const size = 60;
+  const strokeWidth = 6;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = total > 0 ? taken / total : 0;
+  const dashOffset = circumference * (1 - progress);
+  const ringColor = progress >= 1 ? Colors.success : Colors.primary;
+
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={hexToRgba(Colors.textHint, 0.2)}
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={ringColor}
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+          fill="none"
+          // Bắt đầu vẽ từ đỉnh 12h thay vì 3h (mặc định SVG)
+          rotation={-90}
+          origin={`${size / 2}, ${size / 2}`}
+        />
+      </Svg>
+      <Text style={styles.ringText}>{taken}/{total}</Text>
+    </View>
+  );
+}
+
 function VitalMiniCard({
   label,
   value,
@@ -480,7 +543,7 @@ function VitalMiniCard({
       <Text style={styles.vitalValue}>{value}</Text>
       <View style={{ height: 4 }} />
       <View style={styles.vitalStatusRow}>
-        <View style={[styles.vitalDot, { backgroundColor: statusColor }]} />
+        <View style={[styles.vitalDot, { borderColor: statusColor }]} />
         <Text style={[styles.vitalStatusText, { color: statusColor }]}>{isWarning ? 'Cảnh báo' : 'OK'}</Text>
       </View>
     </TouchableOpacity>
@@ -528,9 +591,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: Spacing.xl },
 
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  greeting: { fontSize: 24, fontWeight: '700', color: Colors.textPrimary, flexShrink: 1 }, // 24 is intentionally larger than h2 (22) for dashboard
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  greetingSmall: { fontSize: 14, color: Colors.textSecondary, marginBottom: 2 },
+  greeting: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, flexShrink: 1 },
   bellButton: { padding: 4 },
+  dotBadge: {
+    position: 'absolute',
+    right: 4,
+    top: 4,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: Colors.warning,
+    borderWidth: 1.5,
+    borderColor: Colors.background,
+  },
   badge: {
     position: 'absolute',
     right: 2,
@@ -581,7 +656,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   elderlyCardLabel: { color: 'rgba(255,255,255,0.7)', fontSize: Typography.bodySmall.fontSize },
-  elderlyCardName: { color: 'white', fontSize: 20, fontWeight: '700', marginTop: 2 }, // 20 is intentionally larger for the name
+  elderlyCardLabelInline: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '500' },
+  elderlyCardName: { color: 'white', fontSize: 18, fontWeight: '700', marginTop: 2 },
+  elderlyCardUpdated: { color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 3 },
+  onlinePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  onlineDot: { width: 7, height: 7, borderRadius: 3.5 },
+  onlinePillText: { color: 'white', fontSize: 11, fontWeight: '600' },
   statusDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
   conditionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
   conditionChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)' },
@@ -600,8 +687,26 @@ const styles = StyleSheet.create({
   vitalLabel: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.4 }, // 9 is deliberately smaller than caption
   vitalValue: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
   vitalStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  vitalDot: { width: 7, height: 7, borderRadius: 3.5 },
+  vitalDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, backgroundColor: 'transparent' },
   vitalStatusText: { fontSize: 9 }, // 9 is deliberately smaller than caption (11)
+
+  medCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surface,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  ringText: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
+  medListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
+  medCheckMark: { fontSize: 15, fontWeight: '700', width: 18 },
+  medListName: { flex: 1, fontSize: Typography.buttonSmall.fontSize, fontWeight: '600', color: Colors.textPrimary },
+  medListTime: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
 
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
