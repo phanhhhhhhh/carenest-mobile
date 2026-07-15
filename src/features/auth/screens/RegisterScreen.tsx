@@ -48,13 +48,13 @@ function validateName(v: string): string | undefined {
 
 /**
  * Phone is entered as local digits, displayed next to a fixed +84 prefix.
- * Accepts "0768554948" or "768554948" -> normalized to +84768554948.
+ * Accepts "0987654321" or "987654321" -> normalized to +84987654321.
  */
 function validatePhone(v: string): string | undefined {
   if (!v.trim()) return 'Vui lòng nhập số điện thoại';
   const digits = v.replace(/\D/g, '').replace(/^0+/, '');
   if (digits.length !== 9 || !/^[35789]/.test(digits)) {
-    return 'Số điện thoại không đúng định dạng (VD: 0768554948)';
+    return 'Số điện thoại không đúng định dạng (VD: 0987654321)';
   }
   return undefined;
 }
