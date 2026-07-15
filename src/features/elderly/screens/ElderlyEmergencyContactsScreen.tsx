@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -283,10 +284,12 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <View style={styles.centerFill}>
       <View style={styles.emptyWrap}>
-        <View style={styles.emptyIconCircle}>
-          <Ionicons name="alert-circle-outline" color={Colors.primary} size={40} />
-        </View>
-        <View style={{ height: 20 }} />
+        <Image
+          source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
+          style={{ width: 140, height: 140 }}
+          resizeMode="contain"
+        />
+        <View style={{ height: 8 }} />
         <Text style={styles.emptyTitle}>No Emergency Contacts</Text>
         <View style={{ height: 8 }} />
         <Text style={styles.emptySubtitle}>

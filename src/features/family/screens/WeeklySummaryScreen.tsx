@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -83,8 +84,11 @@ export default function WeeklySummaryScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         {renderAppBar()}
         <View style={styles.center}>
-          <Ionicons name="people-outline" size={56} color={Colors.textHint} />
-          <View style={{ height: 16 }} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
+            style={{ width: 140, height: 140 }}
+            resizeMode="contain"
+          />
           <Text style={styles.noElderlyText}>No elderly person linked yet</Text>
         </View>
       </SafeAreaView>
@@ -144,10 +148,12 @@ function renderError(error: string, onRetry: () => void) {
 function renderEmpty(onGenerate: () => void) {
   return (
     <View style={styles.center}>
-      <View style={styles.emptyIconCircle}>
-        <Ionicons name="sparkles" color={Colors.primary} size={40} />
-      </View>
-      <View style={{ height: 16 }} />
+      <Image
+        source={require('../../../../assets/mascot/mascot_dashboard.jpg')}
+        style={{ width: 150, height: 150 }}
+        resizeMode="contain"
+      />
+      <View style={{ height: 4 }} />
       <Text style={styles.emptyTitle}>No weekly reports yet</Text>
       <View style={{ height: 6 }} />
       <Text style={styles.emptySubtitle}>

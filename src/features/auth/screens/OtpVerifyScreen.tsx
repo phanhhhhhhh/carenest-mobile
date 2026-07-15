@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   Keyboard,
+  Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -27,11 +29,13 @@ export default function OtpVerifyScreen() {
   const { target, method, userName } = route.params;
   const [code, setCode] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const inputs = useRef<(TextInput | null)[]>([]);
 
   // ── Verify OTP ─────────────────────────────────────────────────
   const verifyOtpAction = useAuthStore((s) => s.verifyOtp);
   const sendOtpAction = useAuthStore((s) => s.sendOtp);
+  const completeLogin = useAuthStore((s) => s.completeLogin);
 
   const verifyOtp = useCallback(async (otpCode: string) => {
     if (otpCode.length !== OTP_LENGTH) return;
@@ -40,13 +44,13 @@ export default function OtpVerifyScreen() {
     const ok = await verifyOtpAction(target, otpCode);
     setLoading(false);
     if (ok) {
-      navigation.replace('WelcomeBack', { userName });
+      setShowSuccess(true);
     } else {
       Alert.alert('Error', 'Invalid or expired verification code');
       setCode(Array(OTP_LENGTH).fill(''));
       inputs.current[0]?.focus();
     }
-  }, [target, userName, navigation, verifyOtpAction]);
+  }, [target, userName, verifyOtpAction, completeLogin]);
 
   // ── Handle text change (single digit or paste) ────────────────
   const handleChange = useCallback((text: string, index: number) => {
@@ -107,6 +111,18 @@ export default function OtpVerifyScreen() {
     }
   }, [target, method, sendOtpAction]);
 
+  // ── Auto-navigate after success popup ──────────────────────────
+  // useEffect handles timer cleanup tự động khi component unmount,
+  // tránh memory leak / state-update-on-unmounted warning.
+  useEffect(() => {
+    if (!showSuccess) return;
+    const timer = setTimeout(() => {
+      setShowSuccess(false);
+      completeLogin(); // AppNavigator tự chuyển sang Elderly/FamilyShell
+    }, 1100);
+    return () => clearTimeout(timer);
+  }, [showSuccess, completeLogin]);
+
   // ── Render ────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
@@ -150,6 +166,23 @@ export default function OtpVerifyScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Popup ngắn thay cho 1 màn hình riêng — tự đóng rồi vào thẳng app */}
+      <Modal visible={showSuccess} transparent animationType="fade">
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupCard}>
+            <Image
+              source={require('../../../../assets/mascot/mascot_thumbsup_stethoscope.jpg')}
+              style={styles.popupMascot}
+              resizeMode="contain"
+            />
+            <Text style={styles.popupTitle}>Xác thực thành công!</Text>
+            <Text style={styles.popupSubtitle}>
+              Chào mừng bạn đến với CareNest{userName ? `, ${userName}` : ''}!
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -218,5 +251,37 @@ const styles = StyleSheet.create({
   },
   resendTextDisabled: {
     opacity: 0.5,
+  },
+  // ── Success popup ─────────────────────────────────────────────
+  popupOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  popupCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    width: '100%',
+  },
+  popupMascot: {
+    width: 130,
+    height: 130,
+    marginBottom: 8,
+  },
+  popupTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 6,
+  },
+  popupSubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
 });

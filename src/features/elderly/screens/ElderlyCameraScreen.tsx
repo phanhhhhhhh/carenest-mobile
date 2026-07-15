@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Switch,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -87,8 +88,12 @@ export default function ElderlyCameraScreen() {
         </View>
       ) : cameras.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="videocam-outline" size={60} color={Colors.textHint} />
-          <View style={{ height: 8 }} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_confused.jpg')}
+            style={{ width: 150, height: 150 }}
+            resizeMode="contain"
+          />
+          <View style={{ height: 4 }} />
           <Text style={styles.emptyTitle}>Chưa có camera nào được liên kết</Text>
           <View style={{ height: 6 }} />
           <Text style={styles.emptySubtitle}>

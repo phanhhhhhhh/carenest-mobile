@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -149,9 +150,11 @@ export default function NotificationsScreen() {
   } else if (items.length === 0) {
     body = (
       <View style={styles.center}>
-        <View style={styles.emptyIconWrap}>
-          <Ionicons name="notifications-outline" color={Colors.primary} size={40} />
-        </View>
+        <Image
+          source={require('../../../../assets/mascot/mascot_notifications.jpg')}
+          style={{ width: 140, height: 140 }}
+          resizeMode="contain"
+        />
         <Text style={styles.emptyTitle}>No notifications yet</Text>
         <Text style={styles.emptySubtitle}>System notifications will appear here</Text>
       </View>
