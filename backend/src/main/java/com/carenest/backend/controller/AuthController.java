@@ -180,7 +180,7 @@ public class AuthController {
         response.put("refreshToken", UUID.randomUUID().toString());
         response.put("tokenType", "Bearer");
         response.put("expiresIn", jwtService.getAccessTokenExpirationSeconds());
-        Map<String, Object> userMap = new java.util.HashMap<>();
+        Map<String, Object> userMap = new HashMap<>();
         userMap.put("id", user.getId());
         userMap.put("name", user.getName());
         userMap.put("email", user.getEmail());

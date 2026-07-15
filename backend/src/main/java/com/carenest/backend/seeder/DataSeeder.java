@@ -35,10 +35,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -465,8 +466,8 @@ public class DataSeeder implements CommandLineRunner {
             .status(Subscription.SubscriptionStatus.ACTIVE)
             .paymentProvider("MANUAL")
             .amount(new BigDecimal("49000"))
-            .startDate(java.time.Instant.now().minus(5, java.time.temporal.ChronoUnit.DAYS))
-            .endDate(java.time.Instant.now().plus(25, java.time.temporal.ChronoUnit.DAYS))
+            .startDate(Instant.now().minus(5, ChronoUnit.DAYS))
+            .endDate(Instant.now().plus(25, ChronoUnit.DAYS))
             .build();
         subscriptionRepository.save(sub);
         log.info("Subscription seeded (1 premium user).");
@@ -484,7 +485,7 @@ public class DataSeeder implements CommandLineRunner {
             .deviceSn("IMOU-DEMO-001")
             .deviceId("demo-device-001")
             .status(CameraDevice.CameraStatus.ONLINE)
-            .lastSeenAt(java.time.Instant.now())
+            .lastSeenAt(Instant.now())
             .motionDetectionEnabled(true)
             .monitoringWindowStart("07:00")
             .monitoringWindowEnd("09:00")

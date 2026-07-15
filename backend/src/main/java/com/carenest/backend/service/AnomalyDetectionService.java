@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -157,7 +156,7 @@ public class AnomalyDetectionService {
     }
 
     private boolean checkZScore(HealthMetric metric, List<HealthMetric> history) {
-        List<BigDecimal> values = history.stream().map(HealthMetric::getValue).collect(Collectors.toList());
+        List<BigDecimal> values = history.stream().map(m -> m.getValue()).collect(Collectors.toList());
         BigDecimal mean = mean(values);
         BigDecimal stdDev = stdDev(values, mean);
         if (stdDev.compareTo(BigDecimal.ZERO) == 0) return false;
@@ -167,7 +166,7 @@ public class AnomalyDetectionService {
     }
 
     private boolean checkIQR(HealthMetric metric, List<HealthMetric> history) {
-        List<BigDecimal> sorted = history.stream().map(HealthMetric::getValue).sorted().collect(Collectors.toList());
+        List<BigDecimal> sorted = history.stream().map(m -> m.getValue()).sorted().collect(Collectors.toList());
         int n = sorted.size();
         BigDecimal q1 = sorted.get((int) (n * 0.25));
         BigDecimal q3 = sorted.get((int) (n * 0.75));
@@ -179,10 +178,10 @@ public class AnomalyDetectionService {
 
     private boolean checkMovingAverage(HealthMetric metric, List<HealthMetric> history) {
         List<HealthMetric> sorted = history.stream()
-            .sorted(Comparator.comparing(HealthMetric::getRecordedAt).reversed())
+            .sorted(Comparator.comparing((HealthMetric m) -> m.getRecordedAt()).reversed())
             .limit(MA_WINDOW).collect(Collectors.toList());
         if (sorted.size() < MA_WINDOW) return false;
-        BigDecimal ma = mean(sorted.stream().map(HealthMetric::getValue).collect(Collectors.toList()));
+        BigDecimal ma = mean(sorted.stream().map(m -> m.getValue()).collect(Collectors.toList()));
         if (ma.compareTo(BigDecimal.ZERO) == 0) return false;
         BigDecimal deviation = metric.getValue().subtract(ma).abs()
             .divide(ma, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
@@ -336,7 +335,7 @@ public class AnomalyDetectionService {
 
         data.append("\n=== 7-DAY TREND ===\n");
         List<HealthMetric> sorted = recentMetrics.stream()
-            .sorted(Comparator.comparing(HealthMetric::getRecordedAt))
+            .sorted(Comparator.comparing(m -> m.getRecordedAt()))
             .limit(MA_WINDOW * 3) // up to 21 readings for context
             .collect(Collectors.toList());
         if (sorted.isEmpty()) {
@@ -372,14 +371,14 @@ public class AnomalyDetectionService {
 
     private BigDecimal mean(List<BigDecimal> values) {
         if (values.isEmpty()) return BigDecimal.ZERO;
-        return values.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+        return values.stream().reduce(BigDecimal.ZERO, (a, b) -> a.add(b))
             .divide(BigDecimal.valueOf(values.size()), 4, RoundingMode.HALF_UP);
     }
 
     private BigDecimal stdDev(List<BigDecimal> values, BigDecimal mean) {
         if (values.size() < 2) return BigDecimal.ZERO;
         BigDecimal sumSq = values.stream().map(v -> v.subtract(mean).pow(2))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+            .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
         return BigDecimal.valueOf(Math.sqrt(
             sumSq.divide(BigDecimal.valueOf(values.size() - 1), 4, RoundingMode.HALF_UP).doubleValue()));
     }

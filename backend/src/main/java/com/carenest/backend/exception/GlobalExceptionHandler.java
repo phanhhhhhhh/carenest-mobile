@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -43,7 +44,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<Map<String, Object>> handleRateLimit(RateLimitExceededException ex) {
-        Map<String, Object> body = new java.util.HashMap<>(Map.of(
+        Map<String, Object> body = new HashMap<>(Map.of(
             "status", 429,
             "error", ex.getMessage(),
             "timestamp", OffsetDateTime.now().toString()

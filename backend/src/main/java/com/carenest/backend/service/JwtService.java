@@ -6,7 +6,6 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,21 +38,21 @@ public class JwtService {
             boolean isSafeProfile = environment.matchesProfiles("local") || environment.matchesProfiles("dev");
             if (!isSafeProfile) {
                 throw new IllegalStateException(
-                    "JWT secret is too weak or using default — set JWT_SECRET env var before deploy"
-                );
+                        "JWT secret is too weak or using default — set JWT_SECRET env var before deploy");
             }
-            log.warn("JWT secret is weak or default — acceptable only in local/dev profile. Set JWT_SECRET before deploying.");
+            log.warn(
+                    "JWT secret is weak or default — acceptable only in local/dev profile. Set JWT_SECRET before deploying.");
         }
     }
 
     public String generateAccessToken(Long userId, UserRole role) {
         return Jwts.builder()
-            .subject(userId.toString())
-            .claim("role", role.name())
-            .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + accessTokenExpirationMs))
-            .signWith(signingKey())
-            .compact();
+                .subject(userId.toString())
+                .claim("role", role.name())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + accessTokenExpirationMs))
+                .signWith(signingKey())
+                .compact();
     }
 
     /**
@@ -62,13 +61,13 @@ public class JwtService {
     public String generatePasswordResetToken(Long userId, String email) {
         long resetExpirationMs = 15 * 60 * 1000; // 15 minutes
         return Jwts.builder()
-            .subject(userId.toString())
-            .claim("email", email)
-            .claim("purpose", "password_reset")
-            .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + resetExpirationMs))
-            .signWith(signingKey())
-            .compact();
+                .subject(userId.toString())
+                .claim("email", email)
+                .claim("purpose", "password_reset")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + resetExpirationMs))
+                .signWith(signingKey())
+                .compact();
     }
 
     public boolean validateToken(String token) {
@@ -95,7 +94,7 @@ public class JwtService {
 
     private Claims parseClaims(String token) {
         return Jwts.parser().verifyWith(signingKey()).build()
-            .parseSignedClaims(token).getPayload();
+                .parseSignedClaims(token).getPayload();
     }
 
     private SecretKey signingKey() {

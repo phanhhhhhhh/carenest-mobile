@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 
 /**
  * Applies rate limiting to auth endpoints: login, forgot-password.
@@ -40,7 +41,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 response.setContentType("application/json");
                 response.getWriter().write(
                     "{\"status\":429,\"error\":\"" + e.getMessage() + "\",\"timestamp\":\""
-                        + java.time.OffsetDateTime.now() + "\"}");
+                        + OffsetDateTime.now() + "\"}");
                 return;
             }
         }
