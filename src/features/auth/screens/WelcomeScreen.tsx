@@ -303,6 +303,26 @@ export default function WelcomeScreen() {
 
       <View style={styles.footer}>
         {renderDots()}
+
+        {currentIndex === slides.length - 1 && (
+          <View style={styles.buttonSlot}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => navigation.navigate('Register')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.primaryButtonLabel}>Bắt đầu ngay</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => navigation.navigate('Phone')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.secondaryButtonLabel}>Đăng nhập</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -408,16 +428,15 @@ const styles = StyleSheet.create({
     backgroundColor: DotInactive,
   },
   buttonSlot: {
-    height: 52,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 32,
+    marginTop: 4,
   },
   primaryButton: {
-    minWidth: width * 0.55,
+    width: '100%',
     backgroundColor: Teal,
-    paddingVertical: 14,
-    paddingHorizontal: 36,
+    paddingVertical: 15,
     borderRadius: 9999,
     alignItems: 'center',
     shadowColor: TealDark,
@@ -430,5 +449,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: White,
+  },
+  secondaryButton: {
+    width: '100%',
+    backgroundColor: White,
+    paddingVertical: 15,
+    borderRadius: 9999,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Teal,
+    marginTop: 14,
+  },
+  secondaryButtonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Teal,
   },
 });
