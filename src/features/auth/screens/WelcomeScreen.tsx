@@ -318,7 +318,6 @@ export default function WelcomeScreen() {
               }),
             },
           ]}
-          pointerEvents={currentIndex === slides.length - 1 ? 'auto' : 'none'}
         >
           <TouchableOpacity
             style={styles.primaryButton}
