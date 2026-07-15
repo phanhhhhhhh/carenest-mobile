@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   Switch,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -214,8 +215,11 @@ export default function HealthThresholdScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         {renderAppBar()}
         <View style={styles.center}>
-          <Ionicons name="people-outline" size={56} color={Colors.textHint} />
-          <View style={{ height: 16 }} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
+            style={{ width: 140, height: 140 }}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>No elderly person linked yet</Text>
         </View>
       </SafeAreaView>
