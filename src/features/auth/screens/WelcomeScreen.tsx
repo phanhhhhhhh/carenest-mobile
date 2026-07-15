@@ -142,17 +142,6 @@ export default function WelcomeScreen() {
     []
   );
 
-  const goNext = useCallback(() => {
-    if (currentIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({
-        index: currentIndex + 1,
-        animated: true,
-      });
-    } else {
-      navigation.navigate('GetStarted');
-    }
-  }, [currentIndex, navigation]);
-
   const handleSkip = useCallback(() => {
     navigation.navigate('GetStarted');
   }, [navigation]);
@@ -275,20 +264,6 @@ export default function WelcomeScreen() {
     );
   }
 
-  // Button fades/slides in as soon as you start swiping toward slide 2,
-  // stays visible on slide 3. Touches are blocked while it's hidden.
-  const buttonOpacity = scrollX.interpolate({
-    inputRange: [0, width * 0.6, width],
-    outputRange: [0, 0, 1],
-    extrapolate: 'clamp',
-  });
-  const buttonTranslateY = scrollX.interpolate({
-    inputRange: [0, width],
-    outputRange: [16, 0],
-    extrapolate: 'clamp',
-  });
-  const buttonEnabled = slides[currentIndex]?.showButton;
-
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity
@@ -328,24 +303,6 @@ export default function WelcomeScreen() {
 
       <View style={styles.footer}>
         {renderDots()}
-
-        <View style={styles.buttonSlot} pointerEvents={buttonEnabled ? 'auto' : 'none'}>
-          <Animated.View
-            style={{
-              opacity: buttonOpacity,
-              transform: [{ translateY: buttonTranslateY }],
-            }}
-          >
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={goNext}
-              activeOpacity={0.85}
-              disabled={!buttonEnabled}
-            >
-              <Text style={styles.primaryButtonLabel}>Khám phá ngay  →</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
       </View>
     </SafeAreaView>
   );
