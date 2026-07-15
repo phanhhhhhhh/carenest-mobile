@@ -20,13 +20,7 @@ import {
   type MedicationAdherenceData,
 } from '../store/healthReportStore';
 
-/**
- * UC-11: 30-day health report with metrics, mini bar charts, medication
- * adherence, appointment count, and AI weekly summary.
- *
- * Port of health_report_screen.dart. No charting library is used — the
- * per-metric mini bar chart is rebuilt with plain flex-height Views.
- */
+
 export default function HealthReportScreen() {
   const [elderlyId, setElderlyId] = useState('');
 
@@ -91,7 +85,6 @@ export default function HealthReportScreen() {
             />
           }
         >
-          {/* Header with date range */}
           {elderlyName != null && (
             <SectionCard
               title={`Report for ${elderlyName}`}
@@ -102,7 +95,6 @@ export default function HealthReportScreen() {
           )}
 
           <View style={{ height: 12 }} />
-          {/* Summary cards row */}
           <View style={styles.statsRow}>
             <StatCard
               value={`${metricReports.length}`}
@@ -124,7 +116,6 @@ export default function HealthReportScreen() {
             />
           </View>
 
-          {/* Medication Adherence */}
           {adherenceData.length > 0 && (
             <>
               <Text style={styles.sectionTitle}>Medication Adherence</Text>
@@ -134,7 +125,6 @@ export default function HealthReportScreen() {
             </>
           )}
 
-          {/* Per-metric reports */}
           {metricReports.length > 0 && (
             <>
               <Text style={styles.sectionTitle}>Health Metrics</Text>
@@ -144,7 +134,6 @@ export default function HealthReportScreen() {
             </>
           )}
 
-          {/* AI Summary */}
           {!!aiSummary && (
             <>
               <Text style={styles.sectionTitle}>AI Weekly Summary</Text>
@@ -252,7 +241,6 @@ function MetricCard({ report }: { report: MetricReportData }) {
         </View>
       </View>
 
-      {/* Mini bar chart of data points */}
       {report.dataPoints.length > 0 && (
         <View style={styles.barChart}>
           {report.dataPoints.map((dp, i) => {

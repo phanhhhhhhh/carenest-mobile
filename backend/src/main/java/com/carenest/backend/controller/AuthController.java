@@ -30,9 +30,6 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtService jwtService;
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Register & Login
-    // ═══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(
@@ -51,9 +48,6 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Email Verification
-    // ═══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/verify-email")
     public ResponseEntity<Map<String, String>> verifyEmail(
@@ -73,9 +67,6 @@ public class AuthController {
         ));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Token Management
-    // ═══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
@@ -88,9 +79,6 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Password Management
-    // ═══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/change-password")
     public ResponseEntity<Map<String, String>> changePassword(
@@ -127,9 +115,6 @@ public class AuthController {
         ));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // OTP Verification (Email or SMS)
-    // ═══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/send-otp")
     public ResponseEntity<Map<String, String>> sendOtp(
@@ -137,7 +122,6 @@ public class AuthController {
     ) {
         String target = request.getTarget().trim();
 
-        // Check user exists
         User user = findUserByTarget(target);
         if (user.isEmailVerified()) {
             throw new ConflictException("Account is already verified. Please log in.");
@@ -166,14 +150,12 @@ public class AuthController {
                 .body(Map.of("error", "Invalid or expired verification code"));
         }
 
-        // Mark user as verified
         User user = findUserByTarget(target);
         user.setEmailVerified(true);
         user.setEmailVerificationToken(null);
         user.setEmailVerificationExpiry(null);
         userRepository.save(user);
 
-        // Auto-login: return tokens
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Verification successful! Welcome to CareNest, " + user.getName() + "!");
         response.put("accessToken", jwtService.generateAccessToken(user.getId(), user.getRole()));
@@ -192,7 +174,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    /** Find user by email or phone. */
+    
     private User findUserByTarget(String target) {
         if (target.contains("@")) {
             return userRepository.findByEmailAndDeletedAtIsNull(target.toLowerCase())
@@ -202,9 +184,6 @@ public class AuthController {
             .orElseThrow(() -> new NotFoundException("No account found with phone: " + target));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // PIN Management
-    // ═══════════════════════════════════════════════════════════════════════
 
     @PostMapping("/setup-pin")
     public ResponseEntity<Map<String, String>> setupPin(

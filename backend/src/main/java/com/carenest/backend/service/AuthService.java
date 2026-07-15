@@ -44,42 +44,35 @@ public class AuthService {
     @Value("${jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpirationMs;
 
-    // ── Register ──────────────────────────────────────────────────────────
 
     @Transactional
     public Map<String, Object> register(RegisterRequest request) {
-        // Validate password match
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("Password and confirm password do not match");
         }
 
-        // Validate role
         if (request.getRole() == com.carenest.backend.entity.UserRole.ADMIN) {
             throw new UnauthorizedException("Cannot self-register ADMIN role");
         }
 
-        // Require at least email or phone
         boolean hasEmail = request.getEmail() != null && !request.getEmail().isBlank();
         boolean hasPhone = request.getPhone() != null && !request.getPhone().isBlank();
         if (!hasEmail && !hasPhone) {
             throw new IllegalArgumentException("Either email or phone number is required");
         }
 
-        // Check email uniqueness
         if (hasEmail) {
             if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())) {
                 throw new ConflictException("Email already registered: " + request.getEmail());
             }
         }
 
-        // Check phone uniqueness
         if (hasPhone) {
             if (userRepository.existsByPhoneAndDeletedAtIsNull(request.getPhone().trim())) {
                 throw new ConflictException("Phone number already registered: " + request.getPhone());
             }
         }
 
-        // Generate verification token if email is provided
         String verificationToken = null;
         boolean needsVerification = hasEmail;
         if (needsVerification) {
@@ -93,13 +86,12 @@ public class AuthService {
             .role(request.getRole())
             .phone(hasPhone ? request.getPhone().trim() : null)
             .dob(request.getDob())
-            .emailVerified(!needsVerification) // auto-verify if no email
+            .emailVerified(!needsVerification)
             .emailVerificationToken(verificationToken)
             .emailVerificationExpiry(needsVerification ? OffsetDateTime.now().plusHours(24) : null)
             .build();
         userRepository.save(user);
 
-        // Send verification email if email provided
         if (needsVerification) {
             emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
         }
@@ -107,32 +99,26 @@ public class AuthService {
         Map<String, Object> response = new HashMap<>();
         response.put("userId", user.getId());
         if (needsVerification) {
-            // Email provided: must verify via email or SMS before login
             response.put("message", "Registration successful. Verify your account via email or SMS to continue.");
             response.put("requiresVerification", true);
         } else {
-            // Phone-only (no email): auto-verified
             response.put("message", "Registration successful. You can now log in with your phone and password.");
             response.put("requiresVerification", false);
         }
         return response;
     }
 
-    // ── Login (Phone + Password / Email + Password / Firebase Token) ──────
 
     @Transactional
     public AuthResponse login(LoginRequest request, String deviceInfo) {
-        // Method 1: Phone + Password
         if (request.getPhone() != null && !request.getPhone().isBlank()) {
             return loginWithPhone(request, deviceInfo);
         }
 
-        // Method 2: Email + Password
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
             return loginWithEmail(request, deviceInfo);
         }
 
-        // Method 3: Firebase phone token (legacy)
         if (request.getFirebaseToken() != null && !request.getFirebaseToken().isBlank()) {
             return loginWithFirebase(request.getFirebaseToken(), deviceInfo);
         }
@@ -148,7 +134,6 @@ public class AuthService {
         User user = userRepository.findByPhoneAndDeletedAtIsNull(request.getPhone().trim())
             .orElseThrow(() -> new UnauthorizedException("Invalid phone or password"));
 
-        // Check lockout before processing
         rateLimitService.checkLockout(user.getId());
 
         if (user.getPasswordHash() == null) {
@@ -157,7 +142,6 @@ public class AuthService {
                 "No password set for this account. Use forgot-password to set a password, or login with Firebase OTP.");
         }
 
-        // If user has email set but not verified, block login (check before password)
         if (user.getEmail() != null && !user.getEmail().isBlank() && !user.isEmailVerified()) {
             throw new UnauthorizedException(
                 "Email not verified. Please check your inbox or request a new verification email.");
@@ -180,10 +164,8 @@ public class AuthService {
         User user = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail().toLowerCase().trim())
             .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
-        // Check lockout before processing
         rateLimitService.checkLockout(user.getId());
 
-        // Check email verification FIRST before password — prevents info leak
         if (!user.isEmailVerified()) {
             throw new UnauthorizedException(
                 "Email not verified. Please check your inbox or request a new verification email.");
@@ -205,7 +187,6 @@ public class AuthService {
         return buildAuthResponse(user, deviceInfo);
     }
 
-    // ── Email Verification ──────────────────────────────────────────────────
 
     @Transactional
     public void verifyEmail(String token) {
@@ -213,7 +194,7 @@ public class AuthService {
             .orElseThrow(() -> new UnauthorizedException("Invalid or expired verification token"));
 
         if (user.isEmailVerified()) {
-            return; // Already verified — idempotent
+            return;
         }
 
         if (user.getEmailVerificationExpiry() != null
@@ -239,7 +220,6 @@ public class AuthService {
             throw new ConflictException("Email is already verified. Please log in.");
         }
 
-        // Generate new token
         String newToken = generateSecureToken();
         user.setEmailVerificationToken(newToken);
         user.setEmailVerificationExpiry(OffsetDateTime.now().plusHours(24));
@@ -248,7 +228,6 @@ public class AuthService {
         emailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
     }
 
-    // ── Token Refresh ───────────────────────────────────────────────────────
 
     @Transactional
     public AuthResponse refresh(RefreshRequest request) {
@@ -271,7 +250,6 @@ public class AuthService {
         return buildAuthResponse(user, stored.getDeviceInfo());
     }
 
-    // ── Logout ──────────────────────────────────────────────────────────────
 
     @Transactional
     public void logout(Long userId) {
@@ -279,7 +257,6 @@ public class AuthService {
             .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
     }
 
-    // ── Change Password ─────────────────────────────────────────────────────
 
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
@@ -302,20 +279,15 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        // Revoke all other sessions
         refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(userId)
             .forEach(token -> token.setRevokedAt(OffsetDateTime.now()));
     }
 
-    // ── Forgot Password Flow ────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public void forgotPassword(String email) {
-        // Security: always return "success" even if email not found
-        // to prevent email enumeration attacks.
         userRepository.findByEmailAndDeletedAtIsNull(email.toLowerCase().trim())
             .ifPresent(user -> {
-                // Generate password reset token (JWT, 15 min expiry)
                 String resetToken = jwtService.generatePasswordResetToken(user.getId(), user.getEmail());
                 emailService.sendPasswordResetEmail(user.getEmail(), user.getName(), resetToken);
             });
@@ -327,7 +299,6 @@ public class AuthService {
             throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
-        // Validate reset token
         if (!jwtService.validateToken(token)) {
             throw new UnauthorizedException("Invalid or expired reset token");
         }
@@ -339,12 +310,10 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Revoke all sessions
         refreshTokenRepository.findAllByUserIdAndRevokedAtIsNull(userId)
             .forEach(t -> t.setRevokedAt(OffsetDateTime.now()));
     }
 
-    // ── PIN Setup ───────────────────────────────────────────────────────────
 
     @Transactional
     public void setupPin(Long userId, String pin, String confirmPin) {
@@ -375,7 +344,6 @@ public class AuthService {
         return passwordEncoder.matches(pin, user.getPin());
     }
 
-    // ── Internal ────────────────────────────────────────────────────────────
 
     private AuthResponse buildAuthResponse(User user, String deviceInfo) {
         String rawRefreshToken = UUID.randomUUID().toString();

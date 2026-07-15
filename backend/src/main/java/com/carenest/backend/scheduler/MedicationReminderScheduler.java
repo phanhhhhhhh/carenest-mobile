@@ -16,10 +16,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Checks for medications that are due (nextDoseTime within the past hour)
- * but not yet logged, and sends reminder notifications.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -30,7 +27,7 @@ public class MedicationReminderScheduler {
     private final FcmService fcmService;
     private final com.carenest.backend.service.ChatReminderService chatReminderService;
 
-    @Scheduled(fixedRate = 3600000) // every hour
+    @Scheduled(fixedRate = 3600000)
     @Transactional
     public void checkDueMedications() {
         OffsetDateTime now = OffsetDateTime.now();
@@ -40,10 +37,8 @@ public class MedicationReminderScheduler {
             .findByNextDoseTimeBetweenAndDeletedAtIsNull(oneHourAgo, now);
 
         for (Medication med : dueMedications) {
-            // Honour quiet hours — defer until quiet period ends
             if (med.getElderly().getNotificationPreferences() != null
                 && med.getElderly().getNotificationPreferences().isInQuietHours()) {
-                // Bump nextDoseTime by 30 min so it stays in upcoming check windows
                 med.setNextDoseTime(now.plusMinutes(30));
                 medicationRepository.save(med);
                 log.debug("Deferred medication reminder {} — within quiet hours for userId={}",
@@ -51,7 +46,6 @@ public class MedicationReminderScheduler {
                 continue;
             }
 
-            // Check if a log already exists for this medication in the same window
             boolean alreadyLogged = medicationRepository
                 .existsLogForMedicationInWindow(med.getId(), oneHourAgo, now);
 
@@ -70,7 +64,6 @@ public class MedicationReminderScheduler {
                     .build();
                 notificationRepository.save(notification);
 
-                // Send push notification
                 fcmService.sendToUser(med.getElderly().getId(),
                     "Medication Reminder: " + med.getName(),
                     med.getName() + " - " + med.getDosage(),
@@ -79,7 +72,6 @@ public class MedicationReminderScheduler {
                         "medicationId", med.getId().toString()
                     ));
 
-                // UC-18: Also send AI-powered chat reminder
                 try {
                     chatReminderService.sendMedicationChatReminder(med.getElderly(), med);
                 } catch (Exception e) {

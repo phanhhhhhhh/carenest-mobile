@@ -17,19 +17,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Hybrid anomaly detection: statistical triage + Gemini AI deep analysis.
- * <p>
- * UC-11: AI Anomaly Detection — automatically detect and alert when health
- * metrics exceed personalized thresholds. Uses the elderly's health profile
- * (UC-23) for context-aware analysis.
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AnomalyDetectionService {
 
-    // Statistical thresholds (fast triage)
     private static final double ZSCORE_THRESHOLD = 2.5;
     private static final double IQR_MULTIPLIER = 1.5;
     private static final double MOVING_AVG_DEVIATION_PCT = 20.0;
@@ -44,15 +37,10 @@ public class AnomalyDetectionService {
     private final FcmService fcmService;
     private final GeminiApiService geminiApiService;
 
-    /**
-     * Analyze a newly recorded metric for anomalies.
-     * Phase 1: Statistical triage (fast, always runs)
-     * Phase 2: Gemini AI deep analysis (async, when statistical anomaly detected or always on)
-     */
+    
     public AnomalyResult analyze(HealthMetric metric) {
         List<HealthMetric> recentMetrics = fetchRecentMetrics(metric);
 
-        // Exclude the current metric from historical analysis
         recentMetrics = recentMetrics.stream()
             .filter(m -> !m.getId().equals(metric.getId()))
             .collect(Collectors.toList());
@@ -66,7 +54,6 @@ public class AnomalyDetectionService {
                 .build();
         }
 
-        // Phase 1: Statistical triage
         List<String> reasons = new ArrayList<>();
         int anomalyCount = 0;
 
@@ -89,9 +76,7 @@ public class AnomalyDetectionService {
         if (isAnomaly) {
             log.warn("Statistical anomaly: elderlyId={} type={} value={} reasons={}",
                 metric.getElderly().getId(), metric.getType(), metric.getValue(), reasons);
-            // Create basic alert immediately (fast path)
             createAnomalyAlert(metric, reasons, null);
-            // Trigger AI deep analysis asynchronously
             runAiDeepAnalysis(metric, recentMetrics, reasons);
         }
 
@@ -102,10 +87,7 @@ public class AnomalyDetectionService {
             .build();
     }
 
-    /**
-     * Run Gemini AI deep analysis for a metric.
-     * Called by HealthCheckScheduler for periodic batch analysis.
-     */
+    
     @Async
     public void runAiDeepAnalysis(HealthMetric metric, List<HealthMetric> recentMetrics, List<String> statisticalReasons) {
         if (!geminiApiService.isAvailable()) {
@@ -118,7 +100,6 @@ public class AnomalyDetectionService {
             String dataContext = buildAiDataContext(metric, recentMetrics, statisticalReasons);
             String aiAnalysis = geminiApiService.generateHealthAnalysis(systemPrompt, dataContext);
 
-            // Update the alert notification with AI insight
             appendAiInsight(metric, aiAnalysis);
 
             log.info("Gemini AI analysis complete for elderlyId={} type={}: {} chars",
@@ -130,21 +111,16 @@ public class AnomalyDetectionService {
         }
     }
 
-    /**
-     * Batch AI analysis for all elderly (called by HealthCheckScheduler).
-     */
+    
     public void runBatchAiAnalysis() {
         if (!geminiApiService.isAvailable()) {
             log.debug("Gemini API not available — skipping batch AI analysis");
             return;
         }
         log.info("Starting batch AI health analysis...");
-        // This is called from scheduler — individual metric analysis is
-        // triggered when each metric is created via HealthMetricService
         log.info("AI analysis is event-driven on metric creation");
     }
 
-    // ── Statistical Checks (kept for fast triage) ─────────────────────────────
 
     private List<HealthMetric> fetchRecentMetrics(HealthMetric metric) {
         return healthMetricRepository
@@ -188,7 +164,6 @@ public class AnomalyDetectionService {
         return deviation.compareTo(BigDecimal.valueOf(MOVING_AVG_DEVIATION_PCT)) > 0;
     }
 
-    // ── Alert Creation ──────────────────────────────────────────────────────
 
     private void createAnomalyAlert(HealthMetric metric, List<String> reasons, String aiInsight) {
         User elderly = metric.getElderly();
@@ -219,7 +194,6 @@ public class AnomalyDetectionService {
             .build();
         notificationRepository.save(notification);
 
-        // Push to elderly + linked family
         Map<String, String> pushData = Map.of(
             "type", "HEALTH_ALERT",
             "metricId", metric.getId().toString(),
@@ -235,12 +209,8 @@ public class AnomalyDetectionService {
         }
     }
 
-    /**
-     * Append AI insight to the most recent alert for this metric.
-     */
+    
     private void appendAiInsight(HealthMetric metric, String aiInsight) {
-        // Find the most recent HEALTH_ALERT for this elderly and update its body
-        // Simplified: create a follow-up notification with the AI insight
         User elderly = metric.getElderly();
         String title = "🤖 AI Insight: " + formatType(metric.getType());
         Notification insightNote = Notification.builder()
@@ -256,7 +226,6 @@ public class AnomalyDetectionService {
             .build();
         notificationRepository.save(insightNote);
 
-        // Push AI insight to family
         List<Long> familyIds = familyLinkRepository
             .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
             .stream().map(fl -> fl.getFamily().getId()).collect(Collectors.toList());
@@ -266,7 +235,6 @@ public class AnomalyDetectionService {
         }
     }
 
-    // ── AI Prompt Building ──────────────────────────────────────────────────
 
     private String buildAiSystemPrompt(HealthMetric metric) {
         User elderly = metric.getElderly();
@@ -278,7 +246,6 @@ public class AnomalyDetectionService {
         prompt.append("=== PATIENT CONTEXT ===\n");
         prompt.append("Name: ").append(elderly.getName()).append("\n");
 
-        // Add health profile context
         var profileOpt = elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(elderly.getId());
         if (profileOpt.isPresent()) {
             var profile = profileOpt.get();
@@ -336,7 +303,7 @@ public class AnomalyDetectionService {
         data.append("\n=== 7-DAY TREND ===\n");
         List<HealthMetric> sorted = recentMetrics.stream()
             .sorted(Comparator.comparing(m -> m.getRecordedAt()))
-            .limit(MA_WINDOW * 3) // up to 21 readings for context
+            .limit(MA_WINDOW * 3)
             .collect(Collectors.toList());
         if (sorted.isEmpty()) {
             data.append("No recent data available.\n");
@@ -367,7 +334,6 @@ public class AnomalyDetectionService {
         };
     }
 
-    // ── Statistics Helpers ──────────────────────────────────────────────────
 
     private BigDecimal mean(List<BigDecimal> values) {
         if (values.isEmpty()) return BigDecimal.ZERO;
@@ -394,7 +360,6 @@ public class AnomalyDetectionService {
         };
     }
 
-    // ── Result DTO ──────────────────────────────────────────────────────────
 
     @Getter
     @Builder

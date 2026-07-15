@@ -19,7 +19,6 @@ import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-// ── Validation helpers ────────────────────────────────────────────────
 
 interface FieldErrors {
   name?: string;
@@ -38,13 +37,13 @@ function validateName(v: string): string | undefined {
 }
 
 function validateEmail(v: string): string | undefined {
-  if (!v.trim()) return undefined; // email is optional
+  if (!v.trim()) return undefined;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) return 'Enter a valid email address';
   return undefined;
 }
 
 function validatePhone(v: string): string | undefined {
-  if (!v.trim()) return undefined; // phone is optional
+  if (!v.trim()) return undefined;
   const digits = v.replace(/\D/g, '');
   if (digits.length < 7 || digits.length > 11) return 'Enter a valid phone number';
   return undefined;
@@ -62,13 +61,11 @@ function validateConfirmPassword(pw: string, confirm: string): string | undefine
   return undefined;
 }
 
-// ── Component ─────────────────────────────────────────────────────────
 
 export default function RegisterScreen() {
   const navigation = useNavigation<Nav>();
   const { register, isLoading } = useAuthStore();
 
-  // ── Form state ────────────────────────────────────────────────────
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -79,13 +76,11 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  // ── Refs for field focusing ───────────────────────────────────────
   const emailRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
-  // ── Validation runner ─────────────────────────────────────────────
   const runValidation = (fields?: Record<string, string>): FieldErrors => {
     const e: FieldErrors = {};
     const n = fields?.name ?? name;
@@ -102,14 +97,12 @@ export default function RegisterScreen() {
 
     if (!agreedToTerms) e.terms = 'You must agree to the Terms of Service';
 
-    // Remove undefined so spreading is clean
     Object.keys(e).forEach((k) => {
       if (e[k as keyof FieldErrors] === undefined) delete e[k as keyof FieldErrors];
     });
     return e;
   };
 
-  // ── Field blur handler (single-field validation) ──────────────────
   const handleBlur = (field: keyof FieldErrors) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     setErrors((prev) => {
@@ -118,11 +111,9 @@ export default function RegisterScreen() {
     });
   };
 
-  // ── Submit ────────────────────────────────────────────────────────
   const handleRegister = async () => {
     const allErrors = runValidation();
     setErrors(allErrors);
-    // Mark every field as touched
     setTouched({
       name: true,
       email: true,
@@ -134,7 +125,6 @@ export default function RegisterScreen() {
 
     if (Object.keys(allErrors).length > 0) {
       const firstKey = Object.keys(allErrors)[0];
-      // Also show a top-level alert for the first error
       Alert.alert('Validation Error', allErrors[firstKey as keyof FieldErrors]);
       return;
     }
@@ -153,7 +143,6 @@ export default function RegisterScreen() {
     });
 
     if (result.type === 'success') {
-      // Navigation is handled by AppNavigator reacting to isAuthenticated change
     } else if (result.type === 'needsVerification') {
       navigation.navigate('VerificationChoice', {
         email: email.trim() || '',
@@ -165,7 +154,6 @@ export default function RegisterScreen() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -177,7 +165,6 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Back button */}
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backBtn}
@@ -186,13 +173,11 @@ export default function RegisterScreen() {
             <Text style={styles.backText}>{'← Back'}</Text>
           </TouchableOpacity>
 
-          {/* Header */}
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>
             Fill in your details to complete registration
           </Text>
 
-          {/* ── Full Name ─────────────────────────────────────────── */}
           <Text style={styles.label}>Full Name *</Text>
           <TextInput
             style={[styles.input, touched.name && errors.name && styles.inputError]}
@@ -214,7 +199,6 @@ export default function RegisterScreen() {
             <Text style={styles.fieldError}>{errors.name}</Text>
           )}
 
-          {/* ── Email ─────────────────────────────────────────────── */}
           <Text style={styles.label}>Email</Text>
           <TextInput
             ref={emailRef}
@@ -239,7 +223,6 @@ export default function RegisterScreen() {
             <Text style={styles.fieldError}>{errors.email}</Text>
           )}
 
-          {/* ── Phone with +84 prefix ─────────────────────────────── */}
           <Text style={styles.label}>Phone</Text>
           <View style={styles.phoneWrap}>
             <View style={styles.prefixBadge}>
@@ -253,7 +236,6 @@ export default function RegisterScreen() {
               ]}
               value={phone}
               onChangeText={(v) => {
-                // Only allow digits
                 const cleaned = v.replace(/\D/g, '');
                 setPhone(cleaned);
                 if (touched.phone) setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
@@ -272,7 +254,6 @@ export default function RegisterScreen() {
             <Text style={styles.fieldError}>{errors.phone}</Text>
           )}
 
-          {/* ── Role picker ───────────────────────────────────────── */}
           <Text style={styles.label}>I am a *</Text>
           <View style={styles.roleRow}>
             {(['ELDERLY', 'FAMILY'] as const).map((r) => (
@@ -290,7 +271,6 @@ export default function RegisterScreen() {
             ))}
           </View>
 
-          {/* ── Password ──────────────────────────────────────────── */}
           <Text style={styles.label}>Password *</Text>
           <TextInput
             ref={passwordRef}
@@ -319,7 +299,6 @@ export default function RegisterScreen() {
             <Text style={styles.fieldError}>{errors.password}</Text>
           )}
 
-          {/* ── Confirm Password ──────────────────────────────────── */}
           <Text style={styles.label}>Confirm Password *</Text>
           <TextInput
             ref={confirmRef}
@@ -348,7 +327,6 @@ export default function RegisterScreen() {
             <Text style={styles.fieldError}>{errors.confirmPassword}</Text>
           )}
 
-          {/* ── Terms checkbox ────────────────────────────────────── */}
           <TouchableOpacity
             style={styles.termsRow}
             onPress={() => {
@@ -380,7 +358,6 @@ export default function RegisterScreen() {
             </Text>
           )}
 
-          {/* ── Submit button ─────────────────────────────────────── */}
           <TouchableOpacity
             style={[styles.registerBtn, isLoading && styles.registerBtnDisabled]}
             onPress={handleRegister}
@@ -397,7 +374,6 @@ export default function RegisterScreen() {
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   flex: {
@@ -412,7 +388,6 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
 
-  // ── Back button ──────────────────────────────────────────────────
   backBtn: {
     marginBottom: 20,
     alignSelf: 'flex-start',
@@ -422,7 +397,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 
-  // ── Header ───────────────────────────────────────────────────────
   title: {
     fontSize: 26,
     fontWeight: '800',
@@ -435,7 +409,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xxl,
   },
 
-  // ── Field label ──────────────────────────────────────────────────
   label: {
     fontSize: Typography.bodySmall.fontSize,
     fontWeight: '600',
@@ -444,7 +417,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
-  // ── Text input ───────────────────────────────────────────────────
   input: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,
@@ -458,13 +430,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.error,
   },
   fieldError: {
-    fontSize: 12, // deliberately smaller than bodySmall for error messages
+    fontSize: 12,
     color: Colors.error,
     marginTop: 4,
     marginLeft: 2,
   },
 
-  // ── Phone input with prefix ──────────────────────────────────────
   phoneWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -494,7 +465,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
 
-  // ── Role picker ──────────────────────────────────────────────────
   roleRow: {
     flexDirection: 'row',
     gap: 10,
@@ -523,7 +493,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ── Terms checkbox ───────────────────────────────────────────────
   termsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -560,7 +529,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  // ── Submit button ────────────────────────────────────────────────
   registerBtn: {
     backgroundColor: Colors.primary,
     borderRadius: BorderRadius.md,

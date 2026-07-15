@@ -61,10 +61,7 @@ public class HealthMetricThresholdController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * UC-11: Get Gemini AI-powered personalized threshold recommendations
-     * based on the elderly's health profile.
-     */
+    
     @GetMapping("/users/{userId}/health-thresholds/recommend")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<Map<String, Object>> recommendThresholds(

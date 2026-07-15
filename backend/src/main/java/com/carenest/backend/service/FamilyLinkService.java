@@ -38,7 +38,6 @@ public class FamilyLinkService {
     private final SubscriptionService subscriptionService;
 
     public FamilyLinkResponse create(FamilyLinkRequest request) {
-        // UC-25: Free tier enforcement — check if family can add more elderly
         if (!subscriptionService.canAddElderly(request.getFamilyId())) {
             int current = subscriptionService.getActiveElderlyCount(request.getFamilyId());
             int max = subscriptionService.getMaxElderlyProfiles(request.getFamilyId());
@@ -74,7 +73,6 @@ public class FamilyLinkService {
 
         FamilyLink saved = familyLinkRepository.save(link);
 
-        // UC-04: System sends a link request notification to Elderly
         Notification notification = Notification.builder()
             .user(elderly)
             .type(NotificationType.FAMILY_LINK_REQUEST)

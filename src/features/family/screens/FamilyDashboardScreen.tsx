@@ -25,17 +25,7 @@ import { useHealthMetricStore } from '../../elderly/store/healthMetricStore';
 import { useNotificationStore, selectUnreadCount } from '../../notifications/store/notificationStore';
 import type { AppointmentItem, MedicationItem } from '../../../shared/types';
 
-/**
- * Port of Flutter's family_dashboard_screen.dart (FamilyDashboardScreen).
- *
- * Notes on deviations:
- * - The Flutter elderly card used a `LinearGradient` (AppColors.primary ->
- *   #1A5570). No gradient dependency is installed in this project (see the
- *   same note in FamilyMedicationScreen.tsx), so it falls back to a solid
- *   `Colors.primaryDark` background — the only visual deviation.
- * - `Icons.elderly` has no exact Ionicons equivalent; `body-outline` /
- *   `body` is used as the closest stand-in.
- */
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -127,7 +117,6 @@ export default function FamilyDashboardScreen() {
     loadDashboard();
     loadAppointments();
     loadNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -136,7 +125,6 @@ export default function FamilyDashboardScreen() {
     loadCameras(elderlyId);
     loadAlerts(elderlyId);
     healthStore.getState().load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const handleRefresh = async () => {
@@ -163,24 +151,15 @@ export default function FamilyDashboardScreen() {
 
   const takenMeds = medItems.filter((m) => m.taken).length;
 
-  // "Cập nhật X trước" trên card elderly — lấy recordedAt mới nhất trong
-  // số các chỉ số sức khỏe đã có (dữ liệu thật, không giả lập).
   const allMetricTimestamps = Object.values(latestByType).map((m) => new Date(m.recordedAt).getTime());
   const lastMetricTime = allMetricTimestamps.length > 0 ? Math.max(...allMetricTimestamps) : null;
   const lastUpdatedLabel = lastMetricTime ? formatRelative(new Date(lastMetricTime).toISOString()) : null;
-  // "Online" ở đây là suy ra từ độ mới của dữ liệu sức khỏe (có cập nhật
-  // trong 30 phút gần nhất) — app hiện CHƯA có hệ thống presence/realtime
-  // thật, đây là proxy hợp lý nhất từ dữ liệu đang có.
   const isRecentlyActive = lastMetricTime ? Date.now() - lastMetricTime < 30 * 60 * 1000 : false;
 
   const hasCamera = cameras.length > 0;
   const cam = hasCamera ? cameras[0] : null;
   const camOnline = cam?.status === 'ONLINE';
 
-  // Build combined "Cảnh báo gần đây" list — ưu tiên cảnh báo khẩn cấp thật
-  // (SOS/emergency) trước, sau đó tới các lần uống thuốc gần nhất (khớp ví
-  // dụ "Bố đã uống thuốc sáng" trong wireframe), cuối cùng mới tới chỉ số
-  // sức khỏe nếu còn chỗ. Toàn bộ đều là dữ liệu thật từ store, không giả lập.
   type ActivityItem = { icon: keyof typeof Ionicons.glyphMap; color: string; title: string; subtitle: string; time: string };
   const activityItems: ActivityItem[] = [];
   if (elderlyId) {
@@ -248,7 +227,6 @@ export default function FamilyDashboardScreen() {
           <RefreshControl refreshing={refreshing || dashLoading} onRefresh={handleRefresh} colors={[Colors.primary]} tintColor={Colors.primary} />
         }
       >
-        {/* Header */}
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.greetingSmall}>Xin chào,</Text>
@@ -257,7 +235,6 @@ export default function FamilyDashboardScreen() {
           <TouchableOpacity
             style={styles.bellButton}
             onPress={() => {
-              // Notifications route
             }}
           >
             <Ionicons name="notifications-outline" size={26} color={Colors.textPrimary} />
@@ -267,7 +244,6 @@ export default function FamilyDashboardScreen() {
 
         <View style={{ height: 24 }} />
 
-        {/* Elderly selector */}
         {dashData && dashData.linkedElderly.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selector}>
             {dashData.linkedElderly.map((e, i) => {
@@ -286,7 +262,6 @@ export default function FamilyDashboardScreen() {
           </ScrollView>
         )}
 
-        {/* Elderly card */}
         <View style={styles.elderlyCard}>
           <View style={styles.elderlyCardTopRow}>
             <View style={styles.elderlyAvatar}>
@@ -323,7 +298,6 @@ export default function FamilyDashboardScreen() {
 
         <View style={{ height: 20 }} />
 
-        {/* Vitals row */}
         {elderlyId && (
           <View style={styles.vitalsRow}>
             <VitalMiniCard
@@ -351,7 +325,6 @@ export default function FamilyDashboardScreen() {
 
         <View style={{ height: 24 }} />
 
-        {/* Medication today */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
           <TouchableOpacity onPress={() => navigation.navigate('FamilyMeds')}>
@@ -391,7 +364,6 @@ export default function FamilyDashboardScreen() {
 
         <View style={{ height: 24 }} />
 
-        {/* Camera preview */}
         {elderlyId && (
           <>
             <View style={styles.sectionHeaderRow}>
@@ -432,7 +404,6 @@ export default function FamilyDashboardScreen() {
           </>
         )}
 
-        {/* Recent activity / alerts */}
         <Text style={styles.sectionTitle}>Cảnh báo gần đây</Text>
         <View style={{ height: 14 }} />
         <View style={styles.activityCard}>
@@ -455,7 +426,6 @@ export default function FamilyDashboardScreen() {
 
         <View style={{ height: 24 }} />
 
-        {/* Upcoming appointments */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
           <TouchableOpacity onPress={() => navigation.navigate('FamilyAppointments')}>
@@ -482,8 +452,7 @@ export default function FamilyDashboardScreen() {
   );
 }
 
-/** Vòng tròn tiến độ thuốc hôm nay (vd "3/4") — dùng react-native-svg để vẽ
- * arc thật (strokeDasharray), khớp đúng chi tiết thiết kế trong wireframe. */
+
 function MedProgressRing({ taken, total }: { taken: number; total: number }) {
   const size = 60;
   const strokeWidth = 6;
@@ -514,7 +483,6 @@ function MedProgressRing({ taken, total }: { taken: number; total: number }) {
           strokeDashoffset={dashOffset}
           strokeLinecap="round"
           fill="none"
-          // Bắt đầu vẽ từ đỉnh 12h thay vì 3h (mặc định SVG)
           rotation={-90}
           origin={`${size / 2}, ${size / 2}`}
         />
@@ -672,7 +640,7 @@ const styles = StyleSheet.create({
   statusDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
   conditionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
   conditionChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)' },
-  conditionChipText: { color: 'white', fontSize: 12 }, // 12 deliberately smaller than bodySmall
+  conditionChipText: { color: 'white', fontSize: 12 },
 
   vitalsRow: { flexDirection: 'row' },
   vitalCard: {
@@ -684,11 +652,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: hexToRgba(Colors.textHint, 0.25),
   },
-  vitalLabel: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.4 }, // 9 is deliberately smaller than caption
+  vitalLabel: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.4 },
   vitalValue: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
   vitalStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   vitalDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, backgroundColor: 'transparent' },
-  vitalStatusText: { fontSize: 9 }, // 9 is deliberately smaller than caption (11)
+  vitalStatusText: { fontSize: 9 },
 
   medCardRow: {
     flexDirection: 'row',
@@ -737,7 +705,7 @@ const styles = StyleSheet.create({
   medRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 },
   medRowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: hexToRgba(Colors.textHint, 0.2) },
   medName: { fontSize: Typography.buttonSmall.fontSize, fontWeight: '600', color: Colors.textPrimary },
-  medTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 }, // 12 is deliberately smaller than bodySmall
+  medTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   medStatus: { fontSize: Typography.caption.fontSize, fontWeight: '600' },
 
   liveBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: hexToRgba(Colors.error, 0.1) },
@@ -771,7 +739,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: hexToRgba(Colors.primary, 0.4),
   },
-  cameraActionLabel: { fontSize: 12, color: Colors.primary }, // 12 deliberately smaller than bodySmall
+  cameraActionLabel: { fontSize: 12, color: Colors.primary },
 
   activityCard: {
     width: '100%',
@@ -787,8 +755,8 @@ const styles = StyleSheet.create({
   activityRow: { flexDirection: 'row', alignItems: 'center' },
   activityIconBox: { width: 40, height: 40, borderRadius: BorderRadius.md, justifyContent: 'center', alignItems: 'center' },
   activityTitle: { fontWeight: '600', color: Colors.textPrimary, fontSize: Typography.buttonSmall.fontSize },
-  activitySubtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 }, // 12 deliberately smaller
-  activityTime: { color: Colors.textHint, fontSize: 12 }, // 12 deliberately smaller
+  activitySubtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
+  activityTime: { color: Colors.textHint, fontSize: 12 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: hexToRgba(Colors.textHint, 0.25), marginVertical: 10 },
 
   aptCard: {
@@ -813,7 +781,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   aptDay: { fontWeight: '700', fontSize: Typography.cardTitle.fontSize, color: Colors.primary },
-  aptMonth: { fontSize: 10, color: Colors.primary }, // 10 deliberately smaller for month label
+  aptMonth: { fontSize: 10, color: Colors.primary },
   aptDoctor: { fontWeight: '600', fontSize: Typography.buttonSmall.fontSize, color: Colors.textPrimary },
-  aptDetail: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 }, // 12 deliberately smaller than bodySmall
+  aptDetail: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 });

@@ -1,4 +1,3 @@
-// ── Auth ─────────────────────────────────────────────────────────
 export type UserRole = 'ELDERLY' | 'FAMILY';
 
 export interface User {
@@ -15,7 +14,6 @@ export interface AuthResponse {
   user: User;
 }
 
-// ── Elderly ──────────────────────────────────────────────────────
 export interface ElderlyProfile {
   id: string;
   name: string;
@@ -54,7 +52,6 @@ export interface HealthMetric {
   recordedAt: string;
 }
 
-// ── Family ───────────────────────────────────────────────────────
 export interface ElderlySummary {
   elderlyId: string;
   elderlyName: string;
@@ -80,7 +77,6 @@ export interface EmergencyEvent {
   createdAt: string;
 }
 
-// ── Notifications ────────────────────────────────────────────────
 export interface NotificationItem {
   id: string;
   title: string;
@@ -90,7 +86,6 @@ export interface NotificationItem {
   createdAt: string;
 }
 
-// ── Chat ─────────────────────────────────────────────────────────
 export interface ChatMessage {
   messageId: number;
   role: 'USER' | 'AI';

@@ -20,19 +20,7 @@ import { useMedicationStore } from '../../elderly/store/medicationStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import type { MedicationItem } from '../../../shared/types';
 
-/**
- * Port of Flutter's family_medication_screen.dart.
- *
- * The Flutter screen used `showModalBottomSheet` for the add/edit form and
- * native `showTimePicker`. Neither is available without adding a dependency
- * here, so both are rebuilt as `Modal`-based sheets/pickers (same approach
- * used by ElderlyEditProfileScreen for its blood-type dropdown).
- *
- * The Flutter compliance card used a `LinearGradient` background
- * (AppColors.primary -> #1A5570). There is no gradient dependency installed
- * in this project, so the card falls back to a solid `Colors.primaryDark`
- * background — the only visual deviation from the source.
- */
+
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HISTORY_DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
@@ -63,7 +51,6 @@ function formatLogDate(iso: string): string {
 }
 
 export default function FamilyMedicationScreen() {
-  // Medication store (elderly-side store, driven remotely by family here)
   const items = useMedicationStore((s) => s.items);
   const isLoading = useMedicationStore((s) => s.isLoading);
   const logs = useMedicationStore((s) => s.logs);
@@ -75,7 +62,6 @@ export default function FamilyMedicationScreen() {
   const fetchLogs = useMedicationStore((s) => s.fetchLogs);
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
 
-  // Family dashboard store — provides the currently-selected linked elderly
   const dashData = useFamilyDashboardStore((s) => s.data);
   const dashLoad = useFamilyDashboardStore((s) => s.load);
 
@@ -91,7 +77,6 @@ export default function FamilyMedicationScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedHistoryMedId, setSelectedHistoryMedId] = useState<string | null>(null);
 
-  // Add/edit sheet state
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editing, setEditing] = useState<MedicationItem | null>(null);
   const [name, setName] = useState('');
@@ -100,7 +85,6 @@ export default function FamilyMedicationScreen() {
   const [times, setTimes] = useState<TimeValue[]>([]);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
-  // Time picker modal state
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [pickerHour, setPickerHour] = useState(8);
   const [pickerMinute, setPickerMinute] = useState(0);
@@ -239,7 +223,7 @@ export default function FamilyMedicationScreen() {
   };
 
   const renderComplianceCard = () => {
-    const todayIndex = (new Date().getDay() + 6) % 7; // Mon=0 ... Sun=6
+    const todayIndex = (new Date().getDay() + 6) % 7;
     return (
       <View style={styles.complianceCard}>
         <View style={styles.complianceHeaderRow}>
@@ -403,7 +387,6 @@ export default function FamilyMedicationScreen() {
         </>
       )}
 
-      {/* Add / edit sheet */}
       <Modal
         visible={sheetVisible}
         transparent
@@ -512,7 +495,6 @@ export default function FamilyMedicationScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Time picker modal */}
       <Modal
         visible={timePickerVisible}
         transparent
@@ -772,7 +754,6 @@ const styles = StyleSheet.create({
   logDate: { fontSize: 13, color: Colors.textPrimary, marginLeft: 10 },
   logStatus: { fontSize: 12, fontWeight: '600' },
 
-  // Add/edit sheet
   sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheetContainer: {
     backgroundColor: Colors.surface,
@@ -836,7 +817,6 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { opacity: 0.5 },
   submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 
-  // Blood-type-style modal picker (shared visual language)
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12, textAlign: 'center' },
 

@@ -6,14 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * Supports three login methods:
- * 1. Email + password (standard)
- * 2. Phone + password (no email required)
- * 3. Firebase phone OTP token (legacy)
- *
- * Priority: phone > email > firebaseToken
- */
+
 @Getter
 @Setter
 public class LoginRequest {
@@ -27,14 +20,10 @@ public class LoginRequest {
     @Size(min = 8, max = 100, message = "Password must be 8-100 characters")
     private String password;
 
-    /**
-     * Legacy: Firebase ID token from phone OTP login.
-     */
+    
     private String firebaseToken;
 
-    /**
-     * At least one credential must be provided.
-     */
+    
     public boolean hasCredentials() {
         return (email != null && !email.isBlank() && password != null && !password.isBlank())
             || (phone != null && !phone.isBlank() && password != null && !password.isBlank())

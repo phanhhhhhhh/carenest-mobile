@@ -16,21 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 
-/**
- * Port of Flutter's elderly_emergency_contacts_screen.dart.
- *
- * The Flutter screen talked to `/elderly-profiles/{userId}` directly via
- * `dioProvider` rather than through the elderly profile Riverpod notifier
- * (which doesn't know about `emergencyContacts` at all). This port mirrors
- * that: it calls `api` directly instead of routing through
- * `useElderlyProfileStore`, since that store's `ElderlyProfile` type has no
- * `emergencyContacts` field and editing shared/types is off-limits.
- *
- * The Flutter `AlertDialog`s (add contact form, delete confirmation) are
- * rebuilt as custom `Modal` sheets rather than the native `Alert.alert`, so
- * the exact layout/colors/icons of the original dialogs are preserved
- * (native alerts can't host styled TextFields or fully custom text colors).
- */
+
 
 interface Contact {
   id?: string;
@@ -172,7 +158,6 @@ export default function ElderlyEmergencyContactsScreen() {
         <Text style={styles.fabText}>Add Contact</Text>
       </TouchableOpacity>
 
-      {/* Add contact dialog */}
       <Modal
         visible={addModalVisible}
         transparent
@@ -240,7 +225,6 @@ export default function ElderlyEmergencyContactsScreen() {
         </View>
       </Modal>
 
-      {/* Delete confirmation dialog */}
       <Modal
         visible={deleteTargetIndex != null}
         transparent

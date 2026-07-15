@@ -20,24 +20,7 @@ import { useHealthThresholdStore } from '../store/healthThresholdStore';
 import { useHealthMetricStore } from '../../elderly/store/healthMetricStore';
 import type { HealthMetric } from '../../../shared/types';
 
-/**
- * Port of Flutter's family_health_screen.dart.
- *
- * Notes on fidelity:
- * - The Flutter screen drew its mini per-metric chart with a `CustomPainter`
- *   (gradient-filled line chart). No chart libs are allowed here, so it is
- *   rebuilt as a plain flex-height bar chart (same technique already used by
- *   HealthReportScreen.tsx in this codebase) — visually a bar chart instead
- *   of a line chart, but conveys the same up/down trend information from the
- *   same data points.
- * - This screen has no navigation route registered yet in
- *   RootStackParamList (navigation files are off-limits for this port), so
- *   `useNavigation` is typed loosely with `NativeStackNavigationProp<any>`,
- *   matching the pattern already used by HealthThresholdScreen.tsx /
- *   ElderlyEditProfileScreen.tsx for the same situation. The tune/threshold
- *   button navigates to 'HealthThreshold' (context.push('/health-thresholds')
- *   in Flutter).
- */
+
 
 const METRIC_ORDER = ['BLOOD_PRESSURE', 'BLOOD_GLUCOSE', 'HEART_RATE', 'WEIGHT'] as const;
 
@@ -94,7 +77,6 @@ export default function FamilyHealthScreen() {
     if (!dashboardData) {
       loadDashboard();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -145,7 +127,6 @@ function HealthBody({
   useEffect(() => {
     healthStore.getState().load();
     loadThresholds(elderlyId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const deriveStatus = (type: string, metric: HealthMetric): Status => {

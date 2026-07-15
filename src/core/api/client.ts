@@ -13,7 +13,6 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// ── Proactive refresh helpers ────────────────────────────────────
 const PROACTIVE_REFRESH_WINDOW_SEC = 60;
 let pendingRefresh: Promise<string | null> | null = null;
 
@@ -41,7 +40,6 @@ async function doRefresh(): Promise<string | null> {
     await saveToken(newAccess);
     await saveRefreshToken(newRefresh);
 
-    // Also refresh persisted user data on token refresh (parity with dio_client)
     const user = res.data.user;
     if (user) {
       if (user.role) await saveRole(user.role);
@@ -57,14 +55,12 @@ async function doRefresh(): Promise<string | null> {
   }
 }
 
-// ── Request interceptor ──────────────────────────────────────────
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   const isRefreshPath = config.url?.includes('/auth/refresh');
 
   if (!isRefreshPath) {
     const token = await getToken();
     if (token) {
-      // Proactive refresh if token expires soon
       if (jwtExpiresSoon(token)) {
         pendingRefresh ??= doRefresh();
         const newToken = await pendingRefresh;
@@ -80,7 +76,6 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-// ── Response interceptor — 401 retry with refresh ────────────────
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {

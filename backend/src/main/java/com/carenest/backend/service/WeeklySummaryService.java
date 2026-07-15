@@ -45,9 +45,7 @@ public class WeeklySummaryService {
     private final FcmService fcmService;
     private final GeminiApiService geminiApiService;
 
-    /**
-     * Generate weekly health summary for one elderly user.
-     */
+    
     public String generateWeeklySummary(Long elderlyId) {
         User elderly = userRepository.findById(elderlyId).orElse(null);
         if (elderly == null)
@@ -62,12 +60,10 @@ public class WeeklySummaryService {
         List<MedicationLog> logs = medicationLogRepository
                 .findAllByElderlyIdAndDateRange(elderlyId, weekStart, now);
 
-        // Try AI-generated summary first, fall back to template
         String aiSummary = buildAiSummary(elderly, metrics, logs, weekStart, now);
         String summary = (aiSummary != null) ? aiSummary
                 : buildSummaryText(elderly.getName(), metrics, logs, weekStart, now);
 
-        // Save as notification for the elderly
         Notification notif = Notification.builder()
                 .user(elderly)
                 .type(NotificationType.FAMILY_UPDATE)
@@ -81,13 +77,11 @@ public class WeeklySummaryService {
                 .build();
         notificationRepository.save(notif);
 
-        // Push to elderly
         fcmService.sendToUser(elderlyId,
                 "📊 Your Weekly Health Summary",
                 buildShortSummary(metrics, logs),
                 Map.of("type", "WEEKLY_SUMMARY"));
 
-        // Push to all linked family members
         List<FamilyLink> familyLinks = familyLinkRepository
                 .findAllFamilyByElderlyIdAndStatus(elderlyId, FamilyLinkStatus.ACTIVE);
 
@@ -116,10 +110,7 @@ public class WeeklySummaryService {
         return summary;
     }
 
-    /**
-     * Generate weekly summaries for ALL elderly users.
-     * Called by the scheduler.
-     */
+    
     public int generateAllSummaries() {
         List<User> elderlyUsers = userRepository.findAll()
                 .stream()
@@ -141,9 +132,7 @@ public class WeeklySummaryService {
         return count;
     }
 
-    /**
-     * Get the latest weekly summary notification for an elderly user.
-     */
+    
     @Transactional(readOnly = true)
     public Notification getLatestSummary(Long elderlyId) {
         return notificationRepository
@@ -155,13 +144,8 @@ public class WeeklySummaryService {
                 .orElse(null);
     }
 
-    // ── AI-Generated Summary (UC-13: Gemini API) ─────────────────────────────
 
-    /**
-     * Generate a natural-language weekly health summary using Gemini AI.
-     * Falls back to null if Gemini is unavailable, so the template path can take
-     * over.
-     */
+    
     private String buildAiSummary(User elderly, List<HealthMetric> metrics,
             List<MedicationLog> logs,
             OffsetDateTime from, OffsetDateTime to) {
@@ -218,7 +202,6 @@ public class WeeklySummaryService {
         ctx.append("Name: ").append(elderly.getName()).append("\n");
         ctx.append("Week: ").append(weekLabel).append("\n\n");
 
-        // Health metrics grouped by type
         Map<HealthMetricType, List<HealthMetric>> byType = metrics.stream()
                 .collect(Collectors.groupingBy(m -> m.getType(), LinkedHashMap::new, Collectors.toList()));
 
@@ -242,7 +225,6 @@ public class WeeklySummaryService {
             }
         }
 
-        // Medication adherence
         long taken = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
         long missed = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.MISSED).count();
         long skipped = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.SKIPPED).count();
@@ -259,7 +241,6 @@ public class WeeklySummaryService {
             ctx.append("No medication data this week.\n");
         }
 
-        // Week-over-week comparison
         OffsetDateTime twoWeeksAgo = from.minusDays(7);
         Map<HealthMetricType, BigDecimal> thisWeekAvgs = byType.entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey(),
@@ -296,7 +277,6 @@ public class WeeklySummaryService {
         }
 
         ctx.append("\n=== FLAGGED METRICS ===\n");
-        // Identify any metric outside normal ranges
         boolean hasFlags = false;
         for (var entry : byType.entrySet()) {
             List<BigDecimal> values = entry.getValue().stream()
@@ -334,13 +314,7 @@ public class WeeklySummaryService {
         };
     }
 
-    /**
-     * Generate a detailed English summary.
-     *
-     * This method is designed to be replaced with an AI/LLM call
-     * (e.g., OpenAI, Claude) without changing the rest of the system.
-     * The AI prompt would receive the same data map and return generated text.
-     */
+    
     private String buildSummaryText(String name, List<HealthMetric> metrics,
             List<MedicationLog> logs,
             OffsetDateTime from, OffsetDateTime to) {
@@ -350,7 +324,6 @@ public class WeeklySummaryService {
         sb.append("📅 Week: ").append(weekLabel).append("\n");
         sb.append("👤 ").append(name).append("\n\n");
 
-        // ── Health Metrics Summary ──────────────────────────────────────
         Map<HealthMetricType, List<HealthMetric>> byType = metrics.stream()
                 .collect(Collectors.groupingBy(m -> m.getType(), LinkedHashMap::new, Collectors.toList()));
 
@@ -382,7 +355,6 @@ public class WeeklySummaryService {
             sb.append("⚠️ No health data recorded this week.\n\n");
         }
 
-        // ── Medication Adherence ────────────────────────────────────────
         long taken = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
         long missed = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.MISSED).count();
         long total = taken + missed;
@@ -406,8 +378,6 @@ public class WeeklySummaryService {
             sb.append("\n\n");
         }
 
-        // ── Trend Comparison ────────────────────────────────────────────
-        // Compare this week's averages to last week's
         OffsetDateTime twoWeeksAgo = from.minusDays(7);
         List<HealthMetric> prevMetrics = healthMetricRepository
                 .findAllByElderlyIdAndDateRange(

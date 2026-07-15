@@ -29,7 +29,6 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
 
-    // ── Phone Lookup (for family link) ──────────────────────────────────────
 
     @GetMapping("/users/by-phone/{phone}")
     @PreAuthorize("isAuthenticated()")
@@ -43,7 +42,6 @@ public class UserController {
         ));
     }
 
-    // ── Notification Preferences ──────────────────────────────────────────
 
     @GetMapping("/users/{userId}/notification-preferences")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
@@ -65,7 +63,6 @@ public class UserController {
         return ResponseEntity.ok(NotificationPreferencesResponse.from(updated));
     }
 
-    // ── FCM Token ─────────────────────────────────────────────────────────
 
     @PutMapping("/users/{userId}/fcm-token")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")

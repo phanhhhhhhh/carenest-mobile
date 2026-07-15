@@ -85,7 +85,6 @@ public class DashboardService {
         MedicationAdherenceSummary adherence = getMedicationAdherence(elderlyId);
         ActiveAlertSummary alerts = getActiveAlerts(elderlyId);
 
-        // UC-22: Compute color-coded status for multi-elderly dashboard
         String statusColor;
         String statusMessage;
         if (alerts.getCount() > 0 && hasEmergencyAlert(elderlyId)) {
@@ -115,9 +114,7 @@ public class DashboardService {
                 .build();
     }
 
-    /**
-     * Check if this elderly has any active (unresolved) emergency events.
-     */
+    
     private boolean hasEmergencyAlert(Long elderlyId) {
         return !emergencyEventRepository
                 .findByElderlyIdAndStatusOrderByTriggeredAtDesc(elderlyId,
@@ -131,7 +128,6 @@ public class DashboardService {
                 .orElse(Collections.emptyList());
     }
 
-    // ── Latest Metrics ──────────────────────────────────────────────────────
 
     private Map<String, LatestMetricItem> getLatestMetrics(Long elderlyId) {
         Map<String, LatestMetricItem> metrics = new LinkedHashMap<>();
@@ -147,17 +143,14 @@ public class DashboardService {
         return metrics;
     }
 
-    // ── Medication Adherence (today) ────────────────────────────────────────
 
     private MedicationAdherenceSummary getMedicationAdherence(Long elderlyId) {
         OffsetDateTime startOfDay = OffsetDateTime.now()
                 .withHour(0).withMinute(0).withSecond(0).withNano(0);
         OffsetDateTime endOfDay = startOfDay.plusDays(1);
 
-        // Count scheduled medications for today
         List<com.carenest.backend.entity.Medication> todayMeds = medicationRepository
                 .findUpcomingByElderlyId(elderlyId, startOfDay, endOfDay);
-        // Also count overdue
         List<com.carenest.backend.entity.Medication> overdue = medicationRepository
                 .findAllOverdueMedications(OffsetDateTime.now())
                 .stream()
@@ -166,7 +159,6 @@ public class DashboardService {
 
         long totalDue = todayMeds.size() + overdue.size();
 
-        // Get all logs for today
         List<MedicationLog> logs = medicationLogRepository
                 .findAllByElderlyIdAndDateRange(elderlyId, startOfDay, endOfDay);
 
@@ -188,7 +180,6 @@ public class DashboardService {
                 .build();
     }
 
-    // ── Upcoming Appointments ───────────────────────────────────────────────
 
     private List<AppointmentResponse> getUpcomingAppointments(Long elderlyId) {
         OffsetDateTime now = OffsetDateTime.now();
@@ -202,7 +193,6 @@ public class DashboardService {
                 .collect(Collectors.toList());
     }
 
-    // ── Active Alerts ───────────────────────────────────────────────────────
 
     private ActiveAlertSummary getActiveAlerts(Long elderlyId) {
         long unreadCount = notificationRepository.countByUserIdAndReadAtIsNull(elderlyId);
@@ -224,7 +214,6 @@ public class DashboardService {
                 .build();
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
 
     private AppointmentResponse toAppointmentResponse(Appointment a) {
         return AppointmentResponse.builder()

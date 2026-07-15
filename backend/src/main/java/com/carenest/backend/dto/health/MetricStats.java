@@ -15,5 +15,5 @@ public class MetricStats {
     private BigDecimal minSecondary;
     private BigDecimal maxSecondary;
     private int count;
-    private String trend; // STABLE, INCREASING, DECREASING, INSUFFICIENT_DATA
+    private String trend;
 }

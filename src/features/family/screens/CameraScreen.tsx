@@ -28,41 +28,7 @@ import {
   type CameraSnapshotData,
 } from '../store/cameraStore';
 
-/**
- * Port of Flutter's camera_screen.dart (family-side camera monitoring —
- * Wireframe A3).
- *
- * Notes on fidelity:
- * - Flutter reads `elderlyId`/`elderlyName` from `familyDashboardProvider`.
- *   The RN equivalent is `useFamilyDashboardStore` (same pattern used by
- *   HealthThresholdScreen.tsx / FamilyMedicationScreen.tsx).
- * - `TabController`/`TabBar`/`TabBarView` (Check-in / Thiết bị) has no
- *   built-in RN equivalent without adding a dependency, so it's implemented
- *   as a small local two-button tab bar with a manual indicator underline —
- *   visually equivalent, same labels/counts.
- * - `PopupMenuButton` (per-camera "⋮" menu with Toggle Privacy / Remove
- *   Camera) has no RN primitive; it's implemented as a small dropdown
- *   card Modal anchored below the trigger button instead of a native
- *   OS-positioned popup menu. Same two actions, same labels/colors/icons.
- * - Flutter's colored `SnackBar` (success/warning/error backgrounds) has no
- *   direct RN equivalent without a toast dependency; messages are shown via
- *   `Alert.alert('', message)`, matching the convention already used in
- *   HealthThresholdScreen.tsx. The background color semantics are lost —
- *   this is the accepted unfaithful spot for all toast-like confirmations
- *   (snapshot, voice call, privacy, motion, live view, PTZ).
- * - The empty-state mascot image (`assets/images/mascot/mascot_confused.jpg`)
- *   is not available as a ported asset (no new deps / asset work in scope
- *   for this file), so it is replaced with an Ionicons icon — same pattern
- *   as WelcomeScreen.tsx using emoji/icon substitutes instead of the
- *   original mascot art.
- * - Live video is NOT rendered (no native video/RTSP/HLS dependency
- *   available). The hero preview area matches Flutter exactly: a static
- *   placeholder (dark box + play/eye-off/videocam-off icon + "LIVE · HD"
- *   badge) — Flutter itself never rendered a real video stream there
- *   either. The actual stream URL (fetched on-demand via "Live View") is
- *   surfaced via `liveStreamUrl` state; see the `// TODO: video rendering`
- *   comment below.
- */
+
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -94,39 +60,31 @@ export default function CameraScreen() {
   const controlPtz = useCameraStore((s) => s.controlPtz);
   const clearLiveStream = useCameraStore((s) => s.clearLiveStream);
 
-  // Tab (0 = Check-in / timeline, 1 = Thiết bị / devices) — port of TabController(length: 2)
   const [tab, setTab] = useState<0 | 1>(0);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Link Camera dialog state
   const [bindVisible, setBindVisible] = useState(false);
   const [snValue, setSnValue] = useState('');
   const [labelValue, setLabelValue] = useState('');
 
-  // Remove Camera confirm dialog state
   const [unbindTarget, setUnbindTarget] = useState<number | null>(null);
 
-  // Per-camera "⋮" popup menu state
   const [menuDeviceId, setMenuDeviceId] = useState<number | null>(null);
 
-  // PTZ (rotate) bottom sheet state
   const [ptzDeviceId, setPtzDeviceId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!dashboardData) {
       loadDashboard();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (elderlyId) {
       load(elderlyId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
-  // ── Dialog openers ──────────────────────────────────────────────
 
   const showBindDialog = () => {
     if (!elderlyId) return;
@@ -152,7 +110,6 @@ export default function CameraScreen() {
     await unbindCamera(elderlyId, id);
   };
 
-  // ── Action handlers ─────────────────────────────────────────────
 
   const handleLiveView = async (deviceId: number) => {
     if (!elderlyId) return;
@@ -228,7 +185,6 @@ export default function CameraScreen() {
     setRefreshing(false);
   };
 
-  // ── Trigger label/icon/color helpers (port of _triggerLabel/_triggerIcon/_triggerColor) ──
 
   const triggerLabel = (trigger: string): string => {
     switch (trigger) {
@@ -287,7 +243,6 @@ export default function CameraScreen() {
     return `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
   };
 
-  // ── Render pieces ───────────────────────────────────────────────
 
   const renderAppBar = () => (
     <View style={styles.appBar}>
@@ -335,10 +290,7 @@ export default function CameraScreen() {
     return (
       <View style={styles.heroCard}>
         <View style={styles.heroVideoWrap}>
-          {/* TODO: video rendering — render the real stream here (RTSP/HLS/WebRTC).
-              Flutter never rendered actual video in this hero block either — it
-              was always this same static placeholder. Current stream status:
-              liveStreamUrl=${liveStreamUrl ?? 'null'} */}
+          {}
           <View style={styles.heroVideoPlaceholder}>
             <Ionicons name={heroIcon} size={44} color="rgba(255,255,255,0.54)" />
           </View>
@@ -497,7 +449,6 @@ export default function CameraScreen() {
     );
   };
 
-  // ── No elderly linked ───────────────────────────────────────────
 
   if (!elderlyId) {
     return (
@@ -533,7 +484,6 @@ export default function CameraScreen() {
         </>
       )}
 
-      {/* Link Camera dialog */}
       <Modal visible={bindVisible} transparent animationType="fade" onRequestClose={() => setBindVisible(false)}>
         <View style={styles.dialogOverlay}>
           <View style={styles.dialog}>
@@ -576,7 +526,6 @@ export default function CameraScreen() {
         </View>
       </Modal>
 
-      {/* Remove Camera confirm dialog */}
       <Modal
         visible={unbindTarget != null}
         transparent
@@ -602,7 +551,6 @@ export default function CameraScreen() {
         </View>
       </Modal>
 
-      {/* Per-camera "⋮" popup menu (port of PopupMenuButton) */}
       <Modal
         visible={menuCam != null}
         transparent
@@ -637,7 +585,6 @@ export default function CameraScreen() {
         </TouchableOpacity>
       </Modal>
 
-      {/* PTZ (rotate) bottom sheet */}
       <Modal visible={ptzDeviceId != null} transparent animationType="slide" onRequestClose={closePtz}>
         <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={closePtz}>
           <TouchableOpacity activeOpacity={1} style={styles.ptzSheet}>
@@ -669,7 +616,6 @@ export default function CameraScreen() {
   );
 }
 
-// ── Small presentational pieces ─────────────────────────────────────
 
 function ActionBtn({
   icon,
@@ -788,7 +734,6 @@ function CameraCard({
   );
 }
 
-// ── Styles ───────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
