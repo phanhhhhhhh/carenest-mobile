@@ -102,7 +102,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const res = await api.post('/auth/login', body);
       await persistAuth(res.data);
-      set({ isLoading: false, isAuthenticated: true, user: res.data.user });
+      set({ isLoading: false, user: res.data.user });
       return { type: 'success' };
     } catch (e) {
       const status = getStatus(e);
