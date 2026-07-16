@@ -66,14 +66,55 @@ function normalizePhone(v: string): string {
   return '+84' + v.replace(/\D/g, '').replace(/^0+/, '');
 }
 
-/** Backend: >= 8 chars, at least 1 uppercase, 1 lowercase, 1 digit */
+// Password rules (mirror backend regex) - drives both the live
+// checklist and validation, so UI and API can never disagree.
+const PASSWORD_RULES = [
+  { key: 'length', label: 'Ít nhất 8 ký tự', test: (v: string) => v.length >= 8 },
+  { key: 'upper', label: 'Ít nhất 1 chữ hoa', test: (v: string) => /[A-Z]/.test(v) },
+  { key: 'lower', label: 'Ít nhất 1 chữ thường', test: (v: string) => /[a-z]/.test(v) },
+  { key: 'digit', label: 'Ít nhất 1 chữ số', test: (v: string) => /\d/.test(v) },
+  {
+    key: 'special',
+    label: 'Ít nhất 1 ký tự đặc biệt (VD: ! @ # ?)',
+    test: (v: string) => /[^A-Za-z0-9]/.test(v),
+  },
+] as const;
+
+function isPasswordValid(v: string): boolean {
+  return PASSWORD_RULES.every((r) => r.test(v));
+}
+
 function validatePassword(v: string): string | undefined {
   if (!v) return 'Vui lòng nhập mật khẩu';
-  if (v.length < 8) return 'Mật khẩu phải có ít nhất 8 ký tự';
-  if (!/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/.test(v)) {
-    return 'Mật khẩu cần ít nhất 1 chữ hoa, 1 chữ thường và 1 chữ số';
+  if (!isPasswordValid(v)) {
+    return 'Mật khẩu chưa đáp ứng đủ các điều kiện bên dưới';
   }
   return undefined;
+}
+
+/** Live checklist shown under the password field - elderly-friendly:
+ *  always visible while typing, no tooltips, each rule ticks green. */
+function PasswordChecklist({ value }: { value: string }) {
+  return (
+    <View style={styles.checklist}>
+      <Text style={styles.checklistTitle}>Mật khẩu cần có:</Text>
+      {PASSWORD_RULES.map((rule) => {
+        const ok = rule.test(value);
+        return (
+          <View key={rule.key} style={styles.checklistRow}>
+            <Ionicons
+              name={ok ? 'checkmark-circle' : 'ellipse-outline'}
+              size={18}
+              color={ok ? Teal : HintGray}
+            />
+            <Text style={[styles.checklistLabel, ok && styles.checklistLabelOk]}>
+              {rule.label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 function validateConfirmPassword(pw: string, confirm: string): string | undefined {
@@ -118,6 +159,7 @@ export default function RegisterScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [role, setRole] = useState<'ELDERLY' | 'FAMILY'>('ELDERLY');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showPwRules, setShowPwRules] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -292,6 +334,7 @@ export default function RegisterScreen() {
                   }));
                 }
               }}
+              onFocus={() => setShowPwRules(true)}
               onBlur={() => handleBlur('password')}
               placeholder="Nhập mật khẩu"
               placeholderTextColor={HintGray}
@@ -312,6 +355,8 @@ export default function RegisterScreen() {
               />
             </TouchableOpacity>
           </PillField>
+
+          {showPwRules && <PasswordChecklist value={password} />}
 
           <PillField
             label="Nhập lại mật khẩu"
@@ -566,6 +611,35 @@ const styles = StyleSheet.create({
   termsError: {
     marginLeft: 28,
     marginBottom: 4,
+  },
+
+  checklist: {
+    backgroundColor: '#F2FAF9',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: -4,
+    marginBottom: 16,
+  },
+  checklistTitle: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: LabelGray,
+    marginBottom: 8,
+  },
+  checklistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  checklistLabel: {
+    fontSize: 13.5,
+    color: LabelGray,
+    marginLeft: 8,
+  },
+  checklistLabelOk: {
+    color: Teal,
+    fontWeight: '600',
   },
 
   registerBtn: {

@@ -18,8 +18,8 @@ public class RegisterRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be 8-100 characters")
     @Pattern(
-        regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).{8,}$",
-        message = "Password must contain at least one uppercase letter, one lowercase letter, and one digit"
+        regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}$",
+        message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
     )
     private String password;
 
