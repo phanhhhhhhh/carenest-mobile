@@ -31,7 +31,7 @@ const BorderGray = '#C9CED4';
 const TextDark = '#37404A';
 const White = '#FFFFFF';
 
-/** +84987654321 -> 0987654321 for display */
+/** +84768554948 -> 0768554948 for display */
 function displayPhone(target: string): string {
   if (target.startsWith('+84')) return '0' + target.slice(3);
   return target;
@@ -85,7 +85,7 @@ export default function OtpVerifyScreen() {
     if (!showSuccess) return;
     const timer = setTimeout(() => {
       setShowSuccess(false);
-      navigation.replace('WelcomeBack', { userName });
+      navigation.replace('RegisterSuccess', { userName });
     }, 1400);
     return () => clearTimeout(timer);
   }, [showSuccess, navigation, userName]);
@@ -212,7 +212,7 @@ export default function OtpVerifyScreen() {
         <View style={styles.popupOverlay}>
           <View style={styles.popupCard}>
             <View style={styles.checkCircle}>
-              <Ionicons name="checkmark" size={34} color={White} />
+              <Ionicons name="checkmark" size={38} color={White} />
             </View>
             <Text style={styles.popupTitle}>Xác thực thành công!</Text>
             <Text style={styles.popupSubtitle}>
@@ -248,22 +248,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 72,
+    paddingTop: 90,
     alignItems: 'center',
   },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '700',
     color: Teal,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 15,
     color: SubtitleGray,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   phone: {
-    fontSize: 14,
+    fontSize: 16.5,
     fontWeight: '600',
     color: TextDark,
     marginBottom: 32,
@@ -275,13 +275,13 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   otpBox: {
-    width: 44,
-    height: 58,
-    borderRadius: 10,
+    width: 52,
+    height: 66,
+    borderRadius: 12,
     borderWidth: 1.2,
     borderColor: BorderGray,
     textAlign: 'center',
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '700',
     color: TextDark,
     backgroundColor: White,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   },
   loading: {
     color: Teal,
-    fontSize: 13,
+    fontSize: 14.5,
     marginBottom: 12,
   },
   resendBtn: {
@@ -299,11 +299,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   resendCountdown: {
-    fontSize: 13,
+    fontSize: 14.5,
     color: SubtitleGray,
   },
   resendActive: {
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: '700',
     color: Teal,
   },
@@ -323,29 +323,29 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   checkCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: SuccessGreen,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
   },
   popupTitle: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '700',
     color: Teal,
     marginBottom: 8,
   },
   popupSubtitle: {
-    fontSize: 13,
+    fontSize: 14.5,
     color: SubtitleGray,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 14,
   },
   popupLogo: {
-    width: 130,
-    height: 38,
+    width: 150,
+    height: 44,
   },
 });

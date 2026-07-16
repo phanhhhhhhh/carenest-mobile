@@ -32,7 +32,7 @@ export default function RegisterSuccessScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.checkCircle}>
-          <Ionicons name="checkmark" size={34} color={White} />
+          <Ionicons name="checkmark" size={40} color={White} />
         </View>
         <Text style={styles.title}>Đăng ký thành công!</Text>
         <Text style={styles.subtitle}>Chào mừng bạn đến với</Text>
@@ -63,34 +63,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   checkCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     backgroundColor: SuccessGreen,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
   },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '700',
     color: Teal,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 15,
     color: SubtitleGray,
     marginBottom: 12,
   },
   logo: {
-    width: 150,
-    height: 42,
+    width: 185,
+    height: 52,
   },
   mascot: {
     position: 'absolute',
     bottom: 0,
     alignSelf: 'center',
-    width: width * 0.95,
-    height: width * 0.95,
+    width: width * 1.05,
+    height: width * 1.05,
   },
 });
