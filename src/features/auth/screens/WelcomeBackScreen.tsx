@@ -1,54 +1,45 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
-import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
-type Route = RouteProp<RootStackParamList, 'WelcomeBack'>;
+const { width } = Dimensions.get('window');
 
 const Teal = '#12A79C';
-const TealDark = '#0E8A81';
+const SuccessGreen = '#22C55E';
 const SubtitleGray = '#8E8E8E';
 const White = '#FFFFFF';
 
 export default function WelcomeBackScreen() {
-  const route = useRoute<Route>();
-  const authStoreUser = useAuthStore((s) => s.user);
   const completeLogin = useAuthStore((s) => s.completeLogin);
-
-  const userName = route.params?.userName || authStoreUser?.name || 'bạn';
-
-  const handleContinue = () => {
-    completeLogin();
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      completeLogin();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [completeLogin]);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        <View style={styles.checkCircle}>
+          <Ionicons name="checkmark" size={34} color={White} />
+        </View>
+        <Text style={styles.title}>Đăng nhập thành công!</Text>
+        <Text style={styles.subtitle}>Chào mừng bạn trở lại</Text>
         <Image
-          source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
-          style={styles.mascot}
+          source={require('../../../../assets/brand/logo_wordmark.jpg')}
+          style={styles.logo}
           resizeMode="contain"
         />
-
-        <Text style={styles.title}>
-          Chào mừng trở lại,{'\n'}
-          {userName}!
-        </Text>
-        <Text style={styles.subtitle}>
-          Tài khoản của bạn đã được xác thực thành công
-        </Text>
-
-        <TouchableOpacity
-          style={styles.btn}
-          onPress={handleContinue}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.btnText}>Tiếp tục</Text>
-        </TouchableOpacity>
       </View>
+
+      <Image
+        source={require('../../../../assets/mascot/mascot_thumbsup_stethoscope.jpg')}
+        style={styles.mascot}
+        resizeMode="contain"
+      />
     </SafeAreaView>
   );
 }
@@ -59,47 +50,39 @@ const styles = StyleSheet.create({
     backgroundColor: White,
   },
   content: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 90,
     paddingHorizontal: 32,
   },
-  mascot: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
+  checkCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: SuccessGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
   title: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     color: Teal,
-    textAlign: 'center',
-    lineHeight: 32,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: SubtitleGray,
-    textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: 40,
-    paddingHorizontal: 16,
+    marginBottom: 12,
   },
-  btn: {
-    backgroundColor: Teal,
-    borderRadius: 9999,
-    paddingVertical: 14,
-    paddingHorizontal: 48,
-    alignItems: 'center',
-    shadowColor: TealDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
+  logo: {
+    width: 150,
+    height: 42,
   },
-  btnText: {
-    color: White,
-    fontSize: 16,
-    fontWeight: '700',
+  mascot: {
+    position: 'absolute',
+    bottom: 0,
+    alignSelf: 'center',
+    width: width * 0.95,
+    height: width * 0.95,
   },
 });
