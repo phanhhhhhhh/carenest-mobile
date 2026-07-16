@@ -52,12 +52,13 @@ function normalizePhone(v: string): string {
 
 function validateLoginPassword(v: string): string | undefined {
   if (!v) return 'Vui lòng nhập mật khẩu';
+  if (v.length < 8) return 'Mật khẩu phải có ít nhất 8 ký tự';
   return undefined;
 }
 
 export default function PhoneScreen() {
   const navigation = useNavigation<Nav>();
-  const { login, isLoading, clearError } = useAuthStore();
+  const { login, sendOtp, isLoading, clearError } = useAuthStore();
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -97,12 +98,23 @@ export default function PhoneScreen() {
     if (result.type === 'success') {
       navigation.navigate('WelcomeBack', {});
     } else if (result.type === 'needsVerification') {
-      navigation.navigate('VerifyEmailPrompt', { email: result.email });
+      if (result.method === 'SMS') {
+        // Tài khoản SĐT chưa xác thực -> gửi OTP rồi đưa sang màn xác thực
+        await sendOtp(result.target, 'SMS');
+        navigation.navigate('OtpVerify', {
+          target: result.target,
+          method: 'SMS',
+          userName: '',
+        });
+      } else {
+        navigation.navigate('VerifyEmailPrompt', { email: result.target });
+      }
     } else {
-      Alert.alert(
-        'Đăng nhập thất bại',
-        result.message || 'Thông tin đăng nhập không đúng. Vui lòng thử lại.'
-      );
+      const raw = result.message || '';
+      const friendly = /invalid (phone|email) or password/i.test(raw)
+        ? 'Số điện thoại hoặc mật khẩu không đúng.'
+        : raw || 'Thông tin đăng nhập không đúng. Vui lòng thử lại.';
+      Alert.alert('Đăng nhập thất bại', friendly);
     }
   };
 

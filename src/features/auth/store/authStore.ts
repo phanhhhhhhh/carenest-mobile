@@ -35,7 +35,7 @@ interface AuthState {
 
 type LoginResult =
   | { type: 'success' }
-  | { type: 'needsVerification'; email: string }
+  | { type: 'needsVerification'; target: string; method: 'EMAIL' | 'SMS' }
   | { type: 'error'; message: string };
 
 interface RegisterParams {
@@ -102,6 +102,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const res = await api.post('/auth/login', body);
       await persistAuth(res.data);
+      // Defer isAuthenticated so the success screen can show first;
+      // the screen calls completeLogin() to enter the app.
       set({ isLoading: false, user: res.data.user });
       return { type: 'success' };
     } catch (e) {
@@ -113,13 +115,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       if (status === 401) {
         const data = getResponseData(e) as Record<string, unknown> | undefined;
-        const rawMsg = String(data?.error ?? data?.message ?? '');
-        if (rawMsg.includes('verify')) {
+        const rawMsg = String(data?.error ?? data?.message ?? '').toLowerCase();
+        if (rawMsg.includes('verif')) {
           set({ isLoading: false });
-          return {
-            type: 'needsVerification',
-            email: String(data?.email ?? params.email ?? ''),
-          };
+          return params.phone
+            ? { type: 'needsVerification', target: params.phone, method: 'SMS' }
+            : {
+                type: 'needsVerification',
+                target: String(data?.email ?? params.email ?? ''),
+                method: 'EMAIL',
+              };
         }
       }
       const msg = extractError(e, 'Invalid credentials');
@@ -293,11 +298,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       set({ isLoading: false });
-      return {
-        type: 'needsVerification',
-        contact: params.email || params.phone || '',
-        message: data.message,
-      };
+      if (data.requiresVerification) {
+        return {
+          type: 'needsVerification',
+          contact: params.email || params.phone || '',
+          message: data.message,
+        };
+      }
+      // Registered but no token and no verification needed -> go log in
+      return { type: 'success' };
     } catch (e) {
       const msg = extractError(e, 'Registration failed');
       set({ isLoading: false, error: msg });

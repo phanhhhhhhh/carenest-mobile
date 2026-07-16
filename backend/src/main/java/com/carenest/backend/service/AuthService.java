@@ -73,9 +73,11 @@ public class AuthService {
             }
         }
 
+        // Every self-registered account must be verified before first login:
+        // email accounts via email link, phone-only accounts via SMS OTP.
         String verificationToken = null;
-        boolean needsVerification = hasEmail;
-        if (needsVerification) {
+        boolean needsVerification = true;
+        if (hasEmail) {
             verificationToken = generateSecureToken();
         }
 
@@ -88,23 +90,18 @@ public class AuthService {
             .dob(request.getDob())
             .emailVerified(!needsVerification)
             .emailVerificationToken(verificationToken)
-            .emailVerificationExpiry(needsVerification ? OffsetDateTime.now().plusHours(24) : null)
+            .emailVerificationExpiry(hasEmail ? OffsetDateTime.now().plusHours(24) : null)
             .build();
         userRepository.save(user);
 
-        if (needsVerification) {
+        if (hasEmail) {
             emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
         }
 
         Map<String, Object> response = new HashMap<>();
         response.put("userId", user.getId());
-        if (needsVerification) {
-            response.put("message", "Registration successful. Verify your account via email or SMS to continue.");
-            response.put("requiresVerification", true);
-        } else {
-            response.put("message", "Registration successful. You can now log in with your phone and password.");
-            response.put("requiresVerification", false);
-        }
+        response.put("message", "Registration successful. Verify your account via email or SMS to continue.");
+        response.put("requiresVerification", true);
         return response;
     }
 
@@ -142,9 +139,9 @@ public class AuthService {
                 "No password set for this account. Use forgot-password to set a password, or login with Firebase OTP.");
         }
 
-        if (user.getEmail() != null && !user.getEmail().isBlank() && !user.isEmailVerified()) {
+        if (!user.isEmailVerified()) {
             throw new UnauthorizedException(
-                "Email not verified. Please check your inbox or request a new verification email.");
+                "Account not verified. Please verify your account via OTP before logging in.");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
@@ -344,6 +341,15 @@ public class AuthService {
         return passwordEncoder.matches(pin, user.getPin());
     }
 
+
+    /**
+     * Issue an access + persisted refresh token for a user that has just been
+     * verified out-of-band (e.g. via SMS OTP). Same path as a normal login.
+     */
+    @Transactional
+    public AuthResponse issueTokensForVerifiedUser(User user, String deviceInfo) {
+        return buildAuthResponse(user, deviceInfo);
+    }
 
     private AuthResponse buildAuthResponse(User user, String deviceInfo) {
         String rawRefreshToken = UUID.randomUUID().toString();

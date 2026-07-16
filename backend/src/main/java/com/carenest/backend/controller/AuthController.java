@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -140,7 +139,8 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<Map<String, Object>> verifyOtp(
-        @Valid @RequestBody VerifyOtpRequest request
+        @Valid @RequestBody VerifyOtpRequest request,
+        HttpServletRequest httpRequest
     ) {
         String target = request.getTarget().trim();
         boolean valid = otpService.verifyOtp(target, request.getCode());
@@ -156,21 +156,19 @@ public class AuthController {
         user.setEmailVerificationExpiry(null);
         userRepository.save(user);
 
+        // Issue tokens through AuthService so the refresh token hash is
+        // persisted -- the previous ad-hoc UUID was never stored and broke
+        // the /auth/refresh flow for OTP-registered users.
+        AuthResponse auth = authService.issueTokensForVerifiedUser(
+            user, httpRequest.getHeader("User-Agent"));
+
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Verification successful! Welcome to CareNest, " + user.getName() + "!");
-        response.put("accessToken", jwtService.generateAccessToken(user.getId(), user.getRole()));
-        response.put("refreshToken", UUID.randomUUID().toString());
-        response.put("tokenType", "Bearer");
-        response.put("expiresIn", jwtService.getAccessTokenExpirationSeconds());
-        Map<String, Object> userMap = new HashMap<>();
-        userMap.put("id", user.getId());
-        userMap.put("name", user.getName());
-        userMap.put("email", user.getEmail());
-        userMap.put("phone", user.getPhone());
-        userMap.put("role", user.getRole().name());
-        userMap.put("dob", user.getDob() != null ? user.getDob().toString() : null);
-        userMap.put("emailVerified", true);
-        response.put("user", userMap);
+        response.put("accessToken", auth.getAccessToken());
+        response.put("refreshToken", auth.getRefreshToken());
+        response.put("tokenType", auth.getTokenType());
+        response.put("expiresIn", auth.getExpiresIn());
+        response.put("user", auth.getUser());
         return ResponseEntity.ok(response);
     }
 
