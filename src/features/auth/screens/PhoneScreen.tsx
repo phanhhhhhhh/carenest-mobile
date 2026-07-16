@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +18,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+
+const { width } = Dimensions.get('window');
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -137,7 +140,7 @@ export default function PhoneScreen() {
             />
           </View>
 
-          { }
+          {/* Số điện thoại */}
           <View style={styles.fieldBlock}>
             <Text style={[styles.label, phoneError && styles.labelError]}>
               Số điện thoại
@@ -145,7 +148,7 @@ export default function PhoneScreen() {
             <View style={[styles.inputPill, phoneError && styles.inputPillError]}>
               <Ionicons
                 name="phone-portrait-outline"
-                size={16}
+                size={18}
                 color={HintGray}
                 style={styles.leftIcon}
               />
@@ -175,7 +178,7 @@ export default function PhoneScreen() {
             {phoneError && <Text style={styles.fieldError}>{errors.phone}</Text>}
           </View>
 
-          { }
+          {/* Mật khẩu */}
           <View style={styles.fieldBlock}>
             <Text style={[styles.label, passwordError && styles.labelError]}>
               Mật khẩu
@@ -183,7 +186,7 @@ export default function PhoneScreen() {
             <View style={[styles.inputPill, passwordError && styles.inputPillError]}>
               <Ionicons
                 name="lock-closed-outline"
-                size={16}
+                size={18}
                 color={HintGray}
                 style={styles.leftIcon}
               />
@@ -214,7 +217,7 @@ export default function PhoneScreen() {
               >
                 <Ionicons
                   name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                  size={18}
+                  size={20}
                   color={HintGray}
                 />
               </TouchableOpacity>
@@ -253,21 +256,21 @@ export default function PhoneScreen() {
               onPress={() => handleSocial('Apple')}
               activeOpacity={0.8}
             >
-              <Ionicons name="logo-apple" size={24} color="#000000" />
+              <Ionicons name="logo-apple" size={28} color="#000000" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.socialBtn}
               onPress={() => handleSocial('Google')}
               activeOpacity={0.8}
             >
-              <FontAwesome name="google" size={22} color="#DB4437" />
+              <FontAwesome name="google" size={25} color="#DB4437" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.socialBtn}
               onPress={() => handleSocial('Facebook')}
               activeOpacity={0.8}
             >
-              <Ionicons name="logo-facebook" size={24} color="#1877F2" />
+              <Ionicons name="logo-facebook" size={28} color="#1877F2" />
             </TouchableOpacity>
           </View>
 
@@ -308,21 +311,21 @@ const styles = StyleSheet.create({
   },
   mascotWrapper: {
     alignItems: 'center',
-    marginBottom: 18,
+    marginBottom: 22,
   },
   mascot: {
-    width: 190,
-    height: 190,
+    width: width * 0.55,
+    height: width * 0.55,
   },
 
   fieldBlock: {
-    marginBottom: 14,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: '600',
     color: LabelGray,
-    marginBottom: 6,
+    marginBottom: 7,
   },
   labelError: {
     color: ErrorRed,
@@ -333,8 +336,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: BorderGray,
     borderRadius: 9999,
-    paddingHorizontal: 16,
-    height: 46,
+    paddingHorizontal: 18,
+    height: 54,
     backgroundColor: White,
   },
   inputPillError: {
@@ -344,24 +347,24 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   phonePrefix: {
-    fontSize: 14,
+    fontSize: 15.5,
     fontWeight: '600',
     color: TextDark,
   },
   prefixDivider: {
     width: 1,
-    height: 18,
+    height: 20,
     backgroundColor: BorderGray,
     marginHorizontal: 8,
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15.5,
     color: TextDark,
     paddingVertical: 0,
   },
   fieldError: {
-    fontSize: 12,
+    fontSize: 13,
     color: ErrorRed,
     marginTop: 5,
     marginLeft: 16,
@@ -372,14 +375,14 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   forgotText: {
-    fontSize: 12.5,
+    fontSize: 14,
     color: TextDark,
   },
 
   loginBtn: {
     backgroundColor: Teal,
     borderRadius: 9999,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
     shadowColor: TealDark,
     shadowOffset: { width: 0, height: 4 },
@@ -391,7 +394,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   loginBtnText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: White,
   },
@@ -408,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E3E6E9',
   },
   dividerText: {
-    fontSize: 12,
+    fontSize: 13.5,
     color: LabelGray,
     marginHorizontal: 10,
   },
@@ -416,13 +419,13 @@ const styles = StyleSheet.create({
   socialRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 24,
-    marginBottom: 18,
+    gap: 28,
+    marginBottom: 22,
   },
   socialBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: '#E3E6E9',
     alignItems: 'center',
@@ -435,11 +438,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   registerHint: {
-    fontSize: 12.5,
+    fontSize: 14,
     color: TextDark,
   },
   registerLink: {
-    fontSize: 12.5,
+    fontSize: 14,
     fontWeight: '700',
     color: TextDark,
   },
