@@ -17,10 +17,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../core/navigation/AppNavigator';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { AppStrings } from '../../../core/constants/strings';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+
+// Teal palette matching the Welcome Flow mockup
+const Teal = '#12A79C';
+const TealDark = '#0E8A81';
+const SubtitleGray = '#8E8E8E';
+const SkipGray = '#5C5C5C';
+const DotInactive = '#D7DBDE';
+const White = '#FFFFFF';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,48 +35,43 @@ interface SlideData {
   id: string;
   title: string;
   subtitle: string;
-  mascotImage: ImageSourcePropType;
-  isFinal: boolean;
+  image: ImageSourcePropType;
+  imageSize: number;
+  showButton: boolean;
 }
 
 const slides: SlideData[] = [
   {
     id: '1',
-    title: `Chăm sóc sức khỏe từ xa
-mọi lúc, mọi nơi`,
-    subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe
-và cập nhật tình trạng nhanh chóng`,
-    mascotImage: require('../../../../assets/mascot/mascot_dashboard.jpg'),
-    isFinal: false,
+    title: `Chăm sóc sức khỏe từ xa\nmọi lúc, mọi nơi`,
+    subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhật tình trạng nhanh chóng`,
+    image: require('../../../../assets/mascot/mascot_dashboard.jpg'),
+    imageSize: 280,
+    showButton: false,
   },
   {
     id: '2',
-    title: `Đa tiện ích
-chăm sóc sức khỏe`,
-    subtitle: `Theo dõi, quản lý và cải thiện
-sức khỏe mỗi ngày`,
-    mascotImage: require('../../../../assets/icons/health_icon_grid.jpg'),
-    isFinal: false,
+    title: `Đa tiện ích\nchăm sóc sức khỏe`,
+    subtitle: `Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày`,
+    image: require('../../../../assets/icons/health_icon_grid.jpg'),
+    imageSize: 280,
+    showButton: true,
   },
   {
     id: '3',
-    title: `Luôn kết nối
-trong tầm tay`,
-    subtitle: `Xem chỉ số sức khỏe và nhắn tin
-với bác sĩ ngay trên điện thoại`,
-    mascotImage: require('../../../../assets/mascot/mascot_bigphone.jpg'),
-    isFinal: false,
-  },
-  {
-    id: '4',
-    title: `Chủ động theo dõi
-sức khỏe mỗi ngày`,
-    subtitle: `Nhắc nhở thông minh, kết nối bác sĩ
-và người thân luôn bên cạnh`,
-    mascotImage: require('../../../../assets/mascot/mascot_notifications.jpg'),
-    isFinal: true,
+    title: `Chủ động theo dõi\nsức khỏe mỗi ngày`,
+    subtitle: `Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh`,
+    image: require('../../../../assets/mascot/mascot_bigphone.jpg'),
+    imageSize: 300,
+    showButton: true,
   },
 ];
+
+// The mockup shows 5 dots while there are 3 slides:
+// active positions are the 1st, 3rd and 5th dot.
+const TOTAL_DOTS = 5;
+const DOT_SIZE = 8;
+const DOT_ACTIVE_WIDTH = 22;
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -81,6 +83,9 @@ export default function WelcomeScreen() {
   const splashScale = useRef(new Animated.Value(1)).current;
   const mascotBounce = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
+
+  // Tracks horizontal scroll offset so dots & button animate while dragging
+  const scrollX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
@@ -119,10 +124,15 @@ export default function WelcomeScreen() {
           useNativeDriver: true,
         }).start();
       });
-    }, 2000);
+    }, 2200);
 
     return () => clearTimeout(timer);
   }, [splashOpacity, splashScale, mascotBounce, contentOpacity]);
+
+  const onScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
+  );
 
   const onMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -131,15 +141,6 @@ export default function WelcomeScreen() {
     },
     []
   );
-
-  const handleNext = useCallback(() => {
-    if (currentIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({
-        index: currentIndex + 1,
-        animated: true,
-      });
-    }
-  }, [currentIndex]);
 
   const handleSkip = useCallback(() => {
     flatListRef.current?.scrollToIndex({
@@ -155,91 +156,82 @@ export default function WelcomeScreen() {
 
   const renderSlide = useCallback(
     ({ item, index }: ListRenderItemInfo<SlideData>) => {
+      // Subtle parallax: content drifts & fades slightly while swiping
+      const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+      const slideOpacity = scrollX.interpolate({
+        inputRange,
+        outputRange: [0.35, 1, 0.35],
+        extrapolate: 'clamp',
+      });
+      const translateX = scrollX.interpolate({
+        inputRange,
+        outputRange: [width * 0.08, 0, -width * 0.08],
+        extrapolate: 'clamp',
+      });
+
       return (
         <View style={styles.slide}>
-          <View style={styles.mascotWrapper}>
-            <Image
-              source={item.mascotImage}
-              style={styles.mascotImage}
-              resizeMode="contain"
-            />
-          </View>
+          <Animated.View
+            style={[
+              styles.slideInner,
+              { opacity: slideOpacity, transform: [{ translateX }] },
+            ]}
+          >
+            <Text style={styles.slideTitle}>{item.title}</Text>
+            <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
 
-          <Text style={styles.slideTitle}>{item.title}</Text>
-
-          <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
-
-          <View style={styles.buttonContainer}>
-            {index === 0 && (
-              <TouchableOpacity
-                style={styles.textButton}
-                onPress={handleNext}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.textButtonLabel}>
-                  Tiếp tục →
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {(index === 1 || index === 2) && (
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={handleNext}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.primaryButtonLabel}>Khám phá ngay</Text>
-              </TouchableOpacity>
-            )}
-
-            {item.isFinal && (
-              <View style={styles.finalButtonGroup}>
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={() => navigation.navigate('Register')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.primaryButtonLabel}>
-                    Bắt đầu ngay
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.secondaryButton}
-                  onPress={() => navigation.navigate('Phone')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.secondaryButtonLabel}>
-                    Đăng nhập
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+            <View style={styles.imageWrapper}>
+              <Image
+                source={item.image}
+                style={{ width: item.imageSize, height: item.imageSize }}
+                resizeMode="contain"
+              />
+            </View>
+          </Animated.View>
         </View>
       );
     },
-    [handleNext, navigation]
+    [scrollX]
   );
 
-  const renderDots = useCallback(() => {
+  // Dots: the active "pill" glides between positions 1 -> 3 -> 5 as you swipe
+  const renderDots = () => {
     return (
       <View style={styles.dotContainer}>
-        {slides.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              {
-                backgroundColor:
-                  index === currentIndex ? Colors.primary : Colors.textHint,
-                width: index === currentIndex ? 24 : 8,
-              },
-            ]}
-          />
-        ))}
+        {Array.from({ length: TOTAL_DOTS }).map((_, dotIndex) => {
+          // Which slide (if any) activates this dot: dot 0 -> slide 0, dot 2 -> slide 1, dot 4 -> slide 2
+          const owningSlide = dotIndex % 2 === 0 ? dotIndex / 2 : -1;
+
+          if (owningSlide === -1) {
+            return <View key={dotIndex} style={[styles.dot, styles.dotInactive]} />;
+          }
+
+          const inputRange = [
+            (owningSlide - 1) * width,
+            owningSlide * width,
+            (owningSlide + 1) * width,
+          ];
+          const dotWidth = scrollX.interpolate({
+            inputRange,
+            outputRange: [DOT_SIZE, DOT_ACTIVE_WIDTH, DOT_SIZE],
+            extrapolate: 'clamp',
+          });
+          const dotColor = scrollX.interpolate({
+            inputRange,
+            outputRange: [DotInactive, Teal, DotInactive],
+            extrapolate: 'clamp',
+          });
+
+          return (
+            <Animated.View
+              key={dotIndex}
+              style={[styles.dot, { width: dotWidth, backgroundColor: dotColor }]}
+            />
+          );
+        })}
       </View>
     );
-  }, [currentIndex]);
+  };
 
   if (showSplash) {
     return (
@@ -257,7 +249,7 @@ export default function WelcomeScreen() {
             ]}
           >
             <Image
-              source={require('../../../../assets/mascot/mascot_thumbsup.jpg')}
+              source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
               style={styles.splashMascotImage}
               resizeMode="contain"
             />
@@ -269,9 +261,7 @@ export default function WelcomeScreen() {
             resizeMode="contain"
           />
 
-          <Text style={styles.splashTagline}>
-            {AppStrings.tagline}
-          </Text>
+          <Text style={styles.splashTagline}>{AppStrings.tagline}</Text>
         </SafeAreaView>
       </Animated.View>
     );
@@ -279,17 +269,18 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {currentIndex < slides.length - 1 && (
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={handleSkip}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.skipButtonText}>Bỏ qua</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={handleSkip}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={styles.skipButtonText}>Bỏ qua</Text>
+      </TouchableOpacity>
 
-      <Animated.View style={[styles.flatListWrapper, { opacity: contentOpacity }]}>
+      <Animated.View
+        style={[styles.flatListWrapper, { opacity: contentOpacity }]}
+      >
         <FlatList
           ref={flatListRef}
           data={slides}
@@ -301,6 +292,8 @@ export default function WelcomeScreen() {
           snapToInterval={width}
           decelerationRate="fast"
           bounces={false}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           onMomentumScrollEnd={onMomentumScrollEnd}
           initialScrollIndex={0}
           getItemLayout={(_, index) => ({
@@ -311,7 +304,38 @@ export default function WelcomeScreen() {
         />
       </Animated.View>
 
-      {renderDots()}
+      <View style={styles.footer}>
+        {renderDots()}
+
+        <Animated.View
+          style={[
+            styles.buttonSlot,
+            {
+              opacity: scrollX.interpolate({
+                inputRange: [(slides.length - 2) * width, (slides.length - 1) * width],
+                outputRange: [0, 1],
+                extrapolate: 'clamp',
+              }),
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('Register')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryButtonLabel}>Bắt đầu ngay</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Phone')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.secondaryButtonLabel}>Đăng nhập</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
@@ -319,142 +343,138 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   splashContainer: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: White,
   },
   splashSafeArea: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.xxxl,
+    paddingHorizontal: 32,
   },
   splashMascotWrapper: {
-    marginBottom: 8,
-  },
-  splashMascotImage: {
-    width: 200,
-    height: 200,
-  },
-  splashLogo: {
-    width: 200,
-    height: 60,
     marginBottom: 4,
   },
+  splashMascotImage: {
+    width: 230,
+    height: 230,
+  },
+  splashLogo: {
+    width: 210,
+    height: 62,
+    marginBottom: 2,
+  },
   splashTagline: {
-    fontSize: Typography.button.fontSize,
-    color: Colors.textSecondary,
+    fontSize: 15,
+    color: Teal,
+    fontWeight: '500',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 22,
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: White,
   },
   flatListWrapper: {
     flex: 1,
   },
   skipButton: {
     position: 'absolute',
-    top: 12,
+    top: 14,
     right: 20,
     zIndex: 10,
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
   skipButtonText: {
-    fontSize: Typography.body.fontSize,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+    fontSize: 15,
+    color: SkipGray,
+    fontStyle: 'italic',
+    fontWeight: '400',
   },
   slide: {
     width,
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.xxxl,
-    paddingBottom: 80,
   },
-  mascotWrapper: {
-    marginBottom: 32,
+  slideInner: {
+    flex: 1,
     alignItems: 'center',
-  },
-  mascotImage: {
-    width: 240,
-    height: 240,
+    paddingHorizontal: 32,
+    paddingTop: 72,
   },
   slideTitle: {
-    fontSize: 24,
+    fontSize: 21,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: Teal,
     textAlign: 'center',
-    lineHeight: 34,
-    marginBottom: Spacing.md,
+    lineHeight: 30,
+    marginBottom: 10,
   },
   slideSubtitle: {
-    fontSize: Typography.body.fontSize,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    color: SubtitleGray,
     textAlign: 'center',
-    lineHeight: Typography.body.lineHeight,
-    marginBottom: 40,
+    lineHeight: 21,
+  },
+  imageWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footer: {
+    alignItems: 'center',
+    paddingBottom: 28,
   },
   dotContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 48,
-    gap: 6,
+    gap: 8,
+    marginBottom: 20,
   },
   dot: {
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 0,
+    height: DOT_SIZE,
+    width: DOT_SIZE,
+    borderRadius: DOT_SIZE / 2,
   },
-  buttonContainer: {
+  dotInactive: {
+    backgroundColor: DotInactive,
+  },
+  buttonSlot: {
     width: '100%',
     alignItems: 'center',
-  },
-  textButton: {
-    paddingVertical: 14,
     paddingHorizontal: 32,
-  },
-  textButtonLabel: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Colors.primary,
+    marginTop: 4,
   },
   primaryButton: {
     width: '100%',
-    backgroundColor: Colors.primary,
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Teal,
+    paddingVertical: 15,
+    borderRadius: 9999,
     alignItems: 'center',
-    shadowColor: Colors.primaryDark,
+    shadowColor: TealDark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 5,
   },
   primaryButtonLabel: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
-    color: Colors.surface,
+    color: White,
   },
   secondaryButton: {
     width: '100%',
-    backgroundColor: Colors.surface,
-    paddingVertical: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    backgroundColor: White,
+    paddingVertical: 15,
+    borderRadius: 9999,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Teal,
     marginTop: 14,
   },
   secondaryButtonLabel: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    color: Colors.primary,
-  },
-  finalButtonGroup: {
-    width: '100%',
-    alignItems: 'center',
+    color: Teal,
   },
 });
