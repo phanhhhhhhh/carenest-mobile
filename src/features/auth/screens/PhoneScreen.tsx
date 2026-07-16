@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,157 +9,277 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
+const Teal = '#12A79C';
+const TealDark = '#0E8A81';
+const LabelGray = '#6B7280';
+const HintGray = '#B4BAC0';
+const BorderGray = '#C9CED4';
+const ErrorRed = '#E53935';
+const White = '#FFFFFF';
+const TextDark = '#37404A';
+
+interface FieldErrors {
+  phone?: string;
+  password?: string;
+}
+
+function validatePhone(v: string): string | undefined {
+  if (!v.trim()) return 'Vui lòng nhập số điện thoại';
+  const digits = v.replace(/\D/g, '').replace(/^0+/, '');
+  if (digits.length !== 9 || !/^[35789]/.test(digits)) {
+    return 'Số điện thoại không đúng định dạng (VD: 0768554948)';
+  }
+  return undefined;
+}
+
+function normalizePhone(v: string): string {
+  return '+84' + v.replace(/\D/g, '').replace(/^0+/, '');
+}
+
+function validateLoginPassword(v: string): string | undefined {
+  if (!v) return 'Vui lòng nhập mật khẩu';
+  return undefined;
+}
+
 export default function PhoneScreen() {
   const navigation = useNavigation<Nav>();
   const { login, isLoading, clearError } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [usePhone, setUsePhone] = useState(false);
+
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const passwordRef = useRef<TextInput>(null);
 
   useEffect(() => {
     clearError();
-  }, [clearError, usePhone]);
+  }, [clearError]);
+
+  const handleBlur = (field: keyof FieldErrors) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setErrors((prev) => ({
+      ...prev,
+      [field]:
+        field === 'phone' ? validatePhone(phone) : validateLoginPassword(password),
+    }));
+  };
 
   const handleLogin = async () => {
-    if (!password || (!usePhone && !email) || (usePhone && !phone)) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
+    const allErrors: FieldErrors = {
+      phone: validatePhone(phone),
+      password: validateLoginPassword(password),
+    };
+    (Object.keys(allErrors) as (keyof FieldErrors)[]).forEach((k) => {
+      if (allErrors[k] === undefined) delete allErrors[k];
+    });
+    setErrors(allErrors);
+    setTouched({ phone: true, password: true });
+    if (Object.keys(allErrors).length > 0) return;
 
-    const result = await login(
-      usePhone ? { phone, password } : { email, password },
-    );
+    const result = await login({ phone: normalizePhone(phone), password });
 
-    if (result.type === 'needsVerification') {
+    if (result.type === 'success') {
+      navigation.navigate('WelcomeBack', {});
+    } else if (result.type === 'needsVerification') {
       navigation.navigate('VerifyEmailPrompt', { email: result.email });
-      return;
-    }
-    if (result.type === 'error') {
-      Alert.alert('Login Failed', result.message || 'Invalid credentials. Please try again.');
+    } else {
+      Alert.alert(
+        'Đăng nhập thất bại',
+        result.message || 'Thông tin đăng nhập không đúng. Vui lòng thử lại.'
+      );
     }
   };
+
+  const handleSocial = (provider: string) => {
+    Alert.alert('Thông báo', `Đăng nhập bằng ${provider} đang được phát triển.`);
+  };
+
+  const phoneError = !!(touched.phone && errors.phone);
+  const passwordError = !!(touched.password && errors.password);
 
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
+        style={styles.flex}
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backBtn}
+            activeOpacity={0.8}
           >
-            <Text style={styles.backText}>← Back</Text>
+            <Ionicons name="arrow-back" size={20} color={White} />
           </TouchableOpacity>
 
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
-
-          <View style={styles.toggleRow}>
-            <TouchableOpacity
-              style={[styles.toggleBtn, !usePhone && styles.toggleActive]}
-              onPress={() => setUsePhone(false)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.toggleText, !usePhone && styles.toggleTextActive]}>
-                Email
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.toggleBtn, usePhone && styles.toggleActive]}
-              onPress={() => setUsePhone(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.toggleText, usePhone && styles.toggleTextActive]}>
-                Phone
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {usePhone ? (
-            <View style={styles.inputWrap}>
-              <Text style={styles.label}>Phone Number</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="+84..."
-                keyboardType="phone-pad"
-                placeholderTextColor={Colors.textHint}
-              />
-            </View>
-          ) : (
-            <View style={styles.inputWrap}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="example@email.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholderTextColor={Colors.textHint}
-              />
-            </View>
-          )}
-
-          <View style={styles.inputWrap}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              secureTextEntry
-              placeholderTextColor={Colors.textHint}
+          <View style={styles.mascotWrapper}>
+            <Image
+              source={require('../../../../assets/mascot/mascot_phone.jpg')}
+              style={styles.mascot}
+              resizeMode="contain"
             />
           </View>
 
+          { }
+          <View style={styles.fieldBlock}>
+            <Text style={[styles.label, phoneError && styles.labelError]}>
+              Số điện thoại
+            </Text>
+            <View style={[styles.inputPill, phoneError && styles.inputPillError]}>
+              <Ionicons
+                name="phone-portrait-outline"
+                size={16}
+                color={HintGray}
+                style={styles.leftIcon}
+              />
+              <Text style={styles.phonePrefix}>+84</Text>
+              <View style={styles.prefixDivider} />
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={(v) => {
+                  const cleaned = v.replace(/\D/g, '');
+                  setPhone(cleaned);
+                  if (touched.phone) {
+                    setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
+                  }
+                }}
+                onBlur={() => handleBlur('phone')}
+                placeholder="Nhập số điện thoại"
+                placeholderTextColor={HintGray}
+                keyboardType="phone-pad"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
+                editable={!isLoading}
+                maxLength={10}
+              />
+            </View>
+            {phoneError && <Text style={styles.fieldError}>{errors.phone}</Text>}
+          </View>
+
+          { }
+          <View style={styles.fieldBlock}>
+            <Text style={[styles.label, passwordError && styles.labelError]}>
+              Mật khẩu
+            </Text>
+            <View style={[styles.inputPill, passwordError && styles.inputPillError]}>
+              <Ionicons
+                name="lock-closed-outline"
+                size={16}
+                color={HintGray}
+                style={styles.leftIcon}
+              />
+              <TextInput
+                ref={passwordRef}
+                style={styles.input}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  if (touched.password) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      password: validateLoginPassword(v),
+                    }));
+                  }
+                }}
+                onBlur={() => handleBlur('password')}
+                placeholder="Nhập mật khẩu"
+                placeholderTextColor={HintGray}
+                secureTextEntry={!showPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword((s) => !s)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                  size={18}
+                  color={HintGray}
+                />
+              </TouchableOpacity>
+            </View>
+            {passwordError && <Text style={styles.fieldError}>{errors.password}</Text>}
+          </View>
+
           <TouchableOpacity
+            style={styles.forgotBtn}
             onPress={() => navigation.navigate('ForgotPassword')}
-            activeOpacity={0.7}
+            disabled={isLoading}
           >
-            <Text style={styles.forgotText}>Forgot Password?</Text>
+            <Text style={styles.forgotText}>Quên mật khẩu?</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.loginBtn, isLoading && styles.loginBtnDisabled]}
             onPress={handleLogin}
             disabled={isLoading}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
             <Text style={styles.loginBtnText}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.registerLink}
-            onPress={() => navigation.navigate('Register')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.registerText}>
-              Don't have an account?{' '}
-              <Text style={{ fontWeight: '700', color: Colors.primary }}>
-                Create Account
-              </Text>
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>Hoặc đăng nhập với</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.socialRow}>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={() => handleSocial('Apple')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-apple" size={24} color="#000000" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={() => handleSocial('Google')}
+              activeOpacity={0.8}
+            >
+              <FontAwesome name="google" size={22} color="#DB4437" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={() => handleSocial('Facebook')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="logo-facebook" size={24} color="#1877F2" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.registerRow}>
+            <Text style={styles.registerHint}>Chưa có tài khoản? </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Register')}
+              disabled={isLoading}
+            >
+              <Text style={styles.registerLink}>Đăng ký tài khoản ngay</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -167,38 +287,160 @@ export default function PhoneScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: Spacing.xxl, flexGrow: 1, justifyContent: 'center' },
-  backBtn: { marginBottom: Spacing.xxl },
-  backText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
-  title: { fontSize: Typography.h1.fontSize, fontWeight: '800', color: Colors.textPrimary },
-  subtitle: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, marginTop: 6, marginBottom: 28 },
-  toggleRow: {
+  flex: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: White,
+  },
+  scroll: {
+    paddingHorizontal: 28,
+    paddingTop: 8,
+    paddingBottom: 40,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Teal,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  mascotWrapper: {
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  mascot: {
+    width: 190,
+    height: 190,
+  },
+
+  fieldBlock: {
+    marginBottom: 14,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: LabelGray,
+    marginBottom: 6,
+  },
+  labelError: {
+    color: ErrorRed,
+  },
+  inputPill: {
     flexDirection: 'row',
-    backgroundColor: Colors.border,
-    borderRadius: BorderRadius.md,
-    padding: 4,
-    marginBottom: Spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: BorderGray,
+    borderRadius: 9999,
+    paddingHorizontal: 16,
+    height: 46,
+    backgroundColor: White,
   },
-  toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  toggleActive: { backgroundColor: Colors.surface },
-  toggleText: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, fontWeight: '500' },
-  toggleTextActive: { color: Colors.primary, fontWeight: '700' },
-  inputWrap: { marginBottom: Spacing.lg },
-  label: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
+  inputPillError: {
+    borderColor: ErrorRed,
+  },
+  leftIcon: {
+    marginRight: 8,
+  },
+  phonePrefix: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: TextDark,
+  },
+  prefixDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: BorderGray,
+    marginHorizontal: 8,
+  },
   input: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.md,
-    padding: 14,
-    fontSize: Typography.body.fontSize,
-    color: Colors.textPrimary,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flex: 1,
+    fontSize: 14,
+    color: TextDark,
+    paddingVertical: 0,
   },
-  forgotText: { textAlign: 'right', color: Colors.primary, fontSize: Typography.bodySmall.fontSize, marginBottom: Spacing.xxl },
-  loginBtn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, padding: Spacing.lg, alignItems: 'center' },
-  loginBtnDisabled: { opacity: 0.6 },
-  loginBtnText: { color: 'white', fontSize: Typography.button.fontSize, fontWeight: '700' },
-  registerLink: { marginTop: 20, alignItems: 'center' },
-  registerText: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary },
+  fieldError: {
+    fontSize: 12,
+    color: ErrorRed,
+    marginTop: 5,
+    marginLeft: 16,
+  },
+
+  forgotBtn: {
+    alignSelf: 'flex-end',
+    marginBottom: 18,
+  },
+  forgotText: {
+    fontSize: 12.5,
+    color: TextDark,
+  },
+
+  loginBtn: {
+    backgroundColor: Teal,
+    borderRadius: 9999,
+    paddingVertical: 14,
+    alignItems: 'center',
+    shadowColor: TealDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  loginBtnDisabled: {
+    opacity: 0.6,
+  },
+  loginBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: White,
+  },
+
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 22,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E3E6E9',
+  },
+  dividerText: {
+    fontSize: 12,
+    color: LabelGray,
+    marginHorizontal: 10,
+  },
+
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
+    marginBottom: 18,
+  },
+  socialBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E3E6E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: White,
+  },
+
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  registerHint: {
+    fontSize: 12.5,
+    color: TextDark,
+  },
+  registerLink: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: TextDark,
+  },
 });
