@@ -44,9 +44,9 @@ const slides: SlideData[] = [
   {
     id: '1',
     title: `Chăm sóc sức khỏe từ xa\nmọi lúc, mọi nơi`,
-    subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhật tình trạng nhanh chóng`,
+    subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhập tình trạng nhanh chóng`,
     image: require('../../../../assets/mascot/mascot_dashboard.jpg'),
-    imageSize: 280,
+    imageSize: Math.round(width * 0.82),
     showButton: false,
   },
   {
@@ -54,7 +54,7 @@ const slides: SlideData[] = [
     title: `Đa tiện ích\nchăm sóc sức khỏe`,
     subtitle: `Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày`,
     image: require('../../../../assets/icons/health_icon_grid.jpg'),
-    imageSize: 280,
+    imageSize: Math.round(width * 0.74),
     showButton: true,
   },
   {
@@ -62,7 +62,7 @@ const slides: SlideData[] = [
     title: `Chủ động theo dõi\nsức khỏe mỗi ngày`,
     subtitle: `Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh`,
     image: require('../../../../assets/mascot/mascot_bigphone.jpg'),
-    imageSize: 300,
+    imageSize: Math.round(width * 0.88),
     showButton: true,
   },
 ];
@@ -70,8 +70,8 @@ const slides: SlideData[] = [
 // The mockup shows 5 dots while there are 3 slides:
 // active positions are the 1st, 3rd and 5th dot.
 const TOTAL_DOTS = 5;
-const DOT_SIZE = 8;
-const DOT_ACTIVE_WIDTH = 22;
+const DOT_SIZE = 9;
+const DOT_ACTIVE_WIDTH = 26;
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -142,12 +142,20 @@ export default function WelcomeScreen() {
     []
   );
 
+  const goNext = useCallback(() => {
+    if (currentIndex < slides.length - 1) {
+      flatListRef.current?.scrollToIndex({
+        index: currentIndex + 1,
+        animated: true,
+      });
+    } else {
+      navigation.navigate('GetStarted');
+    }
+  }, [currentIndex, navigation]);
+
   const handleSkip = useCallback(() => {
-    flatListRef.current?.scrollToIndex({
-      index: slides.length - 1,
-      animated: true,
-    });
-  }, []);
+    navigation.navigate('GetStarted');
+  }, [navigation]);
 
   const bounceInterpolate = mascotBounce.interpolate({
     inputRange: [0, 1],
@@ -267,6 +275,20 @@ export default function WelcomeScreen() {
     );
   }
 
+  // Button fades/slides in as soon as you start swiping toward slide 2,
+  // stays visible on slide 3. Touches are blocked while it's hidden.
+  const buttonOpacity = scrollX.interpolate({
+    inputRange: [0, width * 0.6, width],
+    outputRange: [0, 0, 1],
+    extrapolate: 'clamp',
+  });
+  const buttonTranslateY = scrollX.interpolate({
+    inputRange: [0, width],
+    outputRange: [16, 0],
+    extrapolate: 'clamp',
+  });
+  const buttonEnabled = slides[currentIndex]?.showButton;
+
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity
@@ -307,34 +329,23 @@ export default function WelcomeScreen() {
       <View style={styles.footer}>
         {renderDots()}
 
-        <Animated.View
-          style={[
-            styles.buttonSlot,
-            {
-              opacity: scrollX.interpolate({
-                inputRange: [(slides.length - 2) * width, (slides.length - 1) * width],
-                outputRange: [0, 1],
-                extrapolate: 'clamp',
-              }),
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => navigation.navigate('Register')}
-            activeOpacity={0.85}
+        <View style={styles.buttonSlot} pointerEvents={buttonEnabled ? 'auto' : 'none'}>
+          <Animated.View
+            style={{
+              opacity: buttonOpacity,
+              transform: [{ translateY: buttonTranslateY }],
+            }}
           >
-            <Text style={styles.primaryButtonLabel}>Bắt đầu ngay</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.navigate('Phone')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.secondaryButtonLabel}>Đăng nhập</Text>
-          </TouchableOpacity>
-        </Animated.View>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={goNext}
+              activeOpacity={0.85}
+              disabled={!buttonEnabled}
+            >
+              <Text style={styles.primaryButtonLabel}>Khám phá ngay  →</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -355,16 +366,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   splashMascotImage: {
-    width: 230,
-    height: 230,
+    width: width * 0.62,
+    height: width * 0.62,
   },
   splashLogo: {
-    width: 210,
-    height: 62,
-    marginBottom: 2,
+    width: width * 0.55,
+    height: width * 0.16,
+    marginBottom: 4,
   },
   splashTagline: {
-    fontSize: 15,
+    fontSize: 17,
     color: Teal,
     fontWeight: '500',
     textAlign: 'center',
@@ -399,21 +410,21 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: 32,
-    paddingTop: 72,
+    paddingTop: 64,
   },
   slideTitle: {
-    fontSize: 21,
+    fontSize: 24,
     fontWeight: '700',
     color: Teal,
     textAlign: 'center',
-    lineHeight: 30,
-    marginBottom: 10,
+    lineHeight: 33,
+    marginBottom: 12,
   },
   slideSubtitle: {
-    fontSize: 14,
+    fontSize: 15.5,
     color: SubtitleGray,
     textAlign: 'center',
-    lineHeight: 21,
+    lineHeight: 23,
   },
   imageWrapper: {
     flex: 1,
@@ -440,15 +451,16 @@ const styles = StyleSheet.create({
     backgroundColor: DotInactive,
   },
   buttonSlot: {
+    height: 52,
     width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    marginTop: 4,
+    justifyContent: 'center',
   },
   primaryButton: {
-    width: '100%',
+    minWidth: width * 0.6,
     backgroundColor: Teal,
-    paddingVertical: 15,
+    paddingVertical: 16,
+    paddingHorizontal: 36,
     borderRadius: 9999,
     alignItems: 'center',
     shadowColor: TealDark,
@@ -458,23 +470,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   primaryButtonLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: White,
-  },
-  secondaryButton: {
-    width: '100%',
-    backgroundColor: White,
-    paddingVertical: 15,
-    borderRadius: 9999,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Teal,
-    marginTop: 14,
-  },
-  secondaryButtonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Teal,
   },
 });
