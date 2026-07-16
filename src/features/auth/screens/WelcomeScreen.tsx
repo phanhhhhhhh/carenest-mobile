@@ -37,7 +37,6 @@ interface SlideData {
   subtitle: string;
   image: ImageSourcePropType;
   imageSize: number;
-  showButton: boolean;
 }
 
 const slides: SlideData[] = [
@@ -47,7 +46,6 @@ const slides: SlideData[] = [
     subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhập tình trạng nhanh chóng`,
     image: require('../../../../assets/mascot/mascot_dashboard.jpg'),
     imageSize: Math.round(width * 0.82),
-    showButton: false,
   },
   {
     id: '2',
@@ -55,7 +53,6 @@ const slides: SlideData[] = [
     subtitle: `Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày`,
     image: require('../../../../assets/icons/health_icon_grid.jpg'),
     imageSize: Math.round(width * 0.74),
-    showButton: true,
   },
   {
     id: '3',
@@ -63,7 +60,6 @@ const slides: SlideData[] = [
     subtitle: `Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh`,
     image: require('../../../../assets/mascot/mascot_bigphone.jpg'),
     imageSize: Math.round(width * 0.88),
-    showButton: true,
   },
 ];
 
@@ -77,14 +73,26 @@ export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [showSplash, setShowSplash] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(0);
   const flatListRef = useRef<FlatList<SlideData>>(null);
+
+  const updateIndex = useCallback((offsetX: number) => {
+    const idx = Math.max(
+      0,
+      Math.min(slides.length - 1, Math.round(offsetX / width))
+    );
+    if (idx !== currentIndexRef.current) {
+      currentIndexRef.current = idx;
+      setCurrentIndex(idx);
+    }
+  }, []);
 
   const splashOpacity = useRef(new Animated.Value(1)).current;
   const splashScale = useRef(new Animated.Value(1)).current;
   const mascotBounce = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
 
-  // Tracks horizontal scroll offset so dots & button animate while dragging
+  // Tracks horizontal scroll offset so dots & buttons animate while dragging
   const scrollX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -131,31 +139,34 @@ export default function WelcomeScreen() {
 
   const onScroll = Animated.event(
     [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-    { useNativeDriver: false }
+    {
+      useNativeDriver: false,
+      // onMomentumScrollEnd never fires on react-native-web, so the
+      // current index is derived here -- onScroll works everywhere.
+      listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        updateIndex(e.nativeEvent.contentOffset.x);
+      },
+    }
   );
 
+  // Kept as a native fallback; harmless duplicate of the onScroll listener.
   const onMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const index = Math.round(e.nativeEvent.contentOffset.x / width);
-      setCurrentIndex(index);
+      updateIndex(e.nativeEvent.contentOffset.x);
     },
-    []
+    [updateIndex]
   );
 
-  const goNext = useCallback(() => {
-    if (currentIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({
-        index: currentIndex + 1,
-        animated: true,
-      });
-    } else {
-      navigation.navigate('GetStarted');
-    }
-  }, [currentIndex, navigation]);
-
   const handleSkip = useCallback(() => {
-    navigation.navigate('GetStarted');
-  }, [navigation]);
+    // Update state immediately: programmatic scrolls don't reliably fire
+    // scroll events on every platform before the animation settles.
+    currentIndexRef.current = slides.length - 1;
+    setCurrentIndex(slides.length - 1);
+    flatListRef.current?.scrollToIndex({
+      index: slides.length - 1,
+      animated: true,
+    });
+  }, []);
 
   const bounceInterpolate = mascotBounce.interpolate({
     inputRange: [0, 1],
@@ -275,30 +286,32 @@ export default function WelcomeScreen() {
     );
   }
 
-  // Button fades/slides in as soon as you start swiping toward slide 2,
-  // stays visible on slide 3. Touches are blocked while it's hidden.
-  const buttonOpacity = scrollX.interpolate({
-    inputRange: [0, width * 0.6, width],
-    outputRange: [0, 0, 1],
+  // Two buttons fade in on the last slide
+  const lastSlideButtonsOpacity = scrollX.interpolate({
+    inputRange: [(slides.length - 2) * width, (slides.length - 1) * width],
+    outputRange: [0, 1],
     extrapolate: 'clamp',
   });
-  const buttonTranslateY = scrollX.interpolate({
-    inputRange: [0, width],
+  const lastSlideButtonsTranslateY = scrollX.interpolate({
+    inputRange: [(slides.length - 2) * width, (slides.length - 1) * width],
     outputRange: [16, 0],
     extrapolate: 'clamp',
   });
-  const buttonEnabled = slides[currentIndex]?.showButton;
+  const isLastSlide = currentIndex === slides.length - 1;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.skipButton}
-        onPress={handleSkip}
-        activeOpacity={0.7}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text style={styles.skipButtonText}>Bỏ qua</Text>
-      </TouchableOpacity>
+      {/* "Bỏ qua" chỉ hiện khi chưa ở trang cuối */}
+      {!isLastSlide && (
+        <TouchableOpacity
+          style={styles.skipButton}
+          onPress={handleSkip}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.skipButtonText}>Bỏ qua</Text>
+        </TouchableOpacity>
+      )}
 
       <Animated.View
         style={[styles.flatListWrapper, { opacity: contentOpacity }]}
@@ -329,20 +342,33 @@ export default function WelcomeScreen() {
       <View style={styles.footer}>
         {renderDots()}
 
-        <View style={styles.buttonSlot} pointerEvents={buttonEnabled ? 'auto' : 'none'}>
+        <View
+          style={styles.buttonSlot}
+          pointerEvents={isLastSlide ? 'auto' : 'none'}
+        >
           <Animated.View
-            style={{
-              opacity: buttonOpacity,
-              transform: [{ translateY: buttonTranslateY }],
-            }}
+            style={[
+              styles.buttonGroup,
+              {
+                opacity: lastSlideButtonsOpacity,
+                transform: [{ translateY: lastSlideButtonsTranslateY }],
+              },
+            ]}
           >
             <TouchableOpacity
               style={styles.primaryButton}
-              onPress={goNext}
+              onPress={() => navigation.navigate('Register')}
               activeOpacity={0.85}
-              disabled={!buttonEnabled}
             >
-              <Text style={styles.primaryButtonLabel}>Khám phá ngay  →</Text>
+              <Text style={styles.primaryButtonLabel}>Bắt đầu ngay  →</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={() => navigation.navigate('Phone')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.secondaryButtonLabel}>Đăng nhập</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -450,17 +476,22 @@ const styles = StyleSheet.create({
   dotInactive: {
     backgroundColor: DotInactive,
   },
+  // Fixed height keeps the dots from jumping between slides;
+  // width 100% so the buttons can stretch edge-to-edge.
   buttonSlot: {
-    height: 52,
     width: '100%',
+    height: 128,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 24,
+  },
+  buttonGroup: {
+    width: '100%',
   },
   primaryButton: {
-    minWidth: width * 0.6,
+    width: '100%',
     backgroundColor: Teal,
     paddingVertical: 16,
-    paddingHorizontal: 36,
     borderRadius: 9999,
     alignItems: 'center',
     shadowColor: TealDark,
@@ -473,5 +504,20 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: White,
+  },
+  secondaryButton: {
+    width: '100%',
+    backgroundColor: White,
+    paddingVertical: 16,
+    borderRadius: 9999,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Teal,
+    marginTop: 14,
+  },
+  secondaryButtonLabel: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Teal,
   },
 });

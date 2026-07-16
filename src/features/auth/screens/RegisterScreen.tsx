@@ -180,10 +180,18 @@ export default function RegisterScreen() {
         userName: name.trim(),
       });
     } else if (result.type === 'success') {
+      // Đăng ký xong không cần xác thực (trường hợp backend cũ) -> đi đăng nhập
       setSubmitting(false);
+      Alert.alert('Đăng ký thành công', 'Vui lòng đăng nhập để tiếp tục.', [
+        { text: 'Đăng nhập', onPress: () => navigation.navigate('Phone') },
+      ]);
     } else {
       setSubmitting(false);
-      Alert.alert('Đăng ký thất bại', result.message);
+      const raw = result.message || '';
+      const friendly = /already registered/i.test(raw)
+        ? 'Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.'
+        : raw || 'Đăng ký thất bại. Vui lòng thử lại.';
+      Alert.alert('Đăng ký thất bại', friendly);
     }
   };
 
