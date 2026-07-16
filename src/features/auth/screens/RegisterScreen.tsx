@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +18,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+
+const { width } = Dimensions.get('window');
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -48,13 +51,13 @@ function validateName(v: string): string | undefined {
 
 /**
  * Phone is entered as local digits, displayed next to a fixed +84 prefix.
- * Accepts "0987654321" or "987654321" -> normalized to +84987654321.
+ * Accepts "0768554948" or "768554948" -> normalized to +84768554948.
  */
 function validatePhone(v: string): string | undefined {
   if (!v.trim()) return 'Vui lòng nhập số điện thoại';
   const digits = v.replace(/\D/g, '').replace(/^0+/, '');
   if (digits.length !== 9 || !/^[35789]/.test(digits)) {
-    return 'Số điện thoại không đúng định dạng (VD: 0987654321)';
+    return 'Số điện thoại không đúng định dạng (VD: 0768554948)';
   }
   return undefined;
 }
@@ -169,12 +172,8 @@ export default function RegisterScreen() {
     });
 
     if (result.type === 'needsVerification') {
-      const sent = await sendOtp(normalizedPhone, 'SMS');
+      await sendOtp(normalizedPhone, 'SMS');
       setSubmitting(false);
-      if (!sent) {
-        Alert.alert('Lỗi', 'Không thể gửi mã xác thực. Vui lòng thử lại.');
-        return;
-      }
       navigation.navigate('OtpVerify', {
         target: normalizedPhone,
         method: 'SMS',
@@ -219,7 +218,7 @@ export default function RegisterScreen() {
 
           {/* Họ và tên — backend yêu cầu, style đồng bộ mockup */}
           <PillField label="Họ và tên" error={errors.name} touched={touched.name}>
-            <Ionicons name="person-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <Ionicons name="person-outline" size={18} color={HintGray} style={styles.leftIcon} />
             <TextInput
               style={styles.input}
               value={name}
@@ -241,7 +240,7 @@ export default function RegisterScreen() {
           </PillField>
 
           <PillField label="Số điện thoại" error={errors.phone} touched={touched.phone}>
-            <Ionicons name="phone-portrait-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <Ionicons name="phone-portrait-outline" size={18} color={HintGray} style={styles.leftIcon} />
             <Text style={styles.phonePrefix}>+84</Text>
             <View style={styles.prefixDivider} />
             <TextInput
@@ -268,7 +267,7 @@ export default function RegisterScreen() {
           </PillField>
 
           <PillField label="Mật khẩu" error={errors.password} touched={touched.password}>
-            <Ionicons name="lock-closed-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <Ionicons name="lock-closed-outline" size={18} color={HintGray} style={styles.leftIcon} />
             <TextInput
               ref={passwordRef}
               style={styles.input}
@@ -300,7 +299,7 @@ export default function RegisterScreen() {
             >
               <Ionicons
                 name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                size={18}
+                size={20}
                 color={HintGray}
               />
             </TouchableOpacity>
@@ -311,7 +310,7 @@ export default function RegisterScreen() {
             error={errors.confirmPassword}
             touched={touched.confirmPassword}
           >
-            <Ionicons name="lock-closed-outline" size={16} color={HintGray} style={styles.leftIcon} />
+            <Ionicons name="lock-closed-outline" size={18} color={HintGray} style={styles.leftIcon} />
             <TextInput
               ref={confirmRef}
               style={styles.input}
@@ -338,7 +337,7 @@ export default function RegisterScreen() {
             >
               <Ionicons
                 name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
-                size={18}
+                size={20}
                 color={HintGray}
               />
             </TouchableOpacity>
@@ -384,7 +383,7 @@ export default function RegisterScreen() {
             disabled={busy}
           >
             <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
-              {agreedToTerms && <Ionicons name="checkmark" size={13} color={White} />}
+              {agreedToTerms && <Ionicons name="checkmark" size={14} color={White} />}
             </View>
             <Text style={styles.termsText}>
               Tôi đồng ý với <Text style={styles.termsLink}>Điều khoản sử dụng</Text> và{'\n'}
@@ -443,18 +442,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mascot: {
-    width: 170,
-    height: 170,
+    width: width * 0.48,
+    height: width * 0.48,
   },
 
   fieldBlock: {
-    marginBottom: 14,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: '600',
     color: LabelGray,
-    marginBottom: 6,
+    marginBottom: 7,
   },
   labelError: {
     color: ErrorRed,
@@ -465,8 +464,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: BorderGray,
     borderRadius: 9999,
-    paddingHorizontal: 16,
-    height: 46,
+    paddingHorizontal: 18,
+    height: 54,
     backgroundColor: White,
   },
   inputPillError: {
@@ -476,24 +475,24 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   phonePrefix: {
-    fontSize: 14,
+    fontSize: 15.5,
     fontWeight: '600',
     color: TextDark,
   },
   prefixDivider: {
     width: 1,
-    height: 18,
+    height: 20,
     backgroundColor: BorderGray,
     marginHorizontal: 8,
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15.5,
     color: TextDark,
     paddingVertical: 0,
   },
   fieldError: {
-    fontSize: 12,
+    fontSize: 13,
     color: ErrorRed,
     marginTop: 5,
     marginLeft: 16,
@@ -509,7 +508,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: BorderGray,
     borderRadius: 9999,
-    paddingVertical: 10,
+    paddingVertical: 13,
     alignItems: 'center',
     backgroundColor: White,
   },
@@ -518,7 +517,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F7F5',
   },
   roleText: {
-    fontSize: 13,
+    fontSize: 14.5,
     fontWeight: '600',
     color: LabelGray,
   },
@@ -532,8 +531,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   checkbox: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
     borderRadius: 4,
     borderWidth: 1.5,
     borderColor: BorderGray,
@@ -548,9 +547,9 @@ const styles = StyleSheet.create({
   },
   termsText: {
     flex: 1,
-    fontSize: 12.5,
+    fontSize: 14,
     color: TextDark,
-    lineHeight: 19,
+    lineHeight: 21,
   },
   termsLink: {
     textDecorationLine: 'underline',
@@ -564,7 +563,7 @@ const styles = StyleSheet.create({
   registerBtn: {
     backgroundColor: Teal,
     borderRadius: 9999,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
     marginTop: 14,
     shadowColor: TealDark,
@@ -577,7 +576,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   registerBtnText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     color: White,
   },
@@ -588,11 +587,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   loginHint: {
-    fontSize: 12.5,
+    fontSize: 14,
     color: TextDark,
   },
   loginLink: {
-    fontSize: 12.5,
+    fontSize: 14,
     fontWeight: '700',
     color: TextDark,
   },
