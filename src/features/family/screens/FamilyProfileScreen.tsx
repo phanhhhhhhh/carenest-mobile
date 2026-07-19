@@ -32,8 +32,14 @@ export default function FamilyProfileScreen() {
 
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
-  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName());
-  const healthConditions = useFamilyDashboardStore((s) => s.healthConditions());
+  const elderlyName =
+    dashboardData && dashboardData.linkedElderly.length > 0 && dashboardData.selectedIndex < dashboardData.linkedElderly.length
+      ? dashboardData.linkedElderly[dashboardData.selectedIndex].elderlyName
+      : null;
+  const healthConditions =
+    dashboardData && dashboardData.linkedElderly.length > 0 && dashboardData.selectedIndex < dashboardData.linkedElderly.length
+      ? dashboardData.linkedElderly[dashboardData.selectedIndex].healthConditions
+      : [];
   const totalMeds = dashboardData?.totalMedications ?? 0;
 
   const [addDialogVisible, setAddDialogVisible] = useState(false);

@@ -91,8 +91,12 @@ export default function PhoneScreen() {
     });
     setErrors(allErrors);
     setTouched({ phone: true, password: true });
-    if (Object.keys(allErrors).length > 0) return;
+    if (Object.keys(allErrors).length > 0) {
+      Alert.alert('Validation', 'Lỗi: ' + JSON.stringify(allErrors));
+      return;
+    }
 
+    try {
     const result = await login({ phone: normalizePhone(phone), password });
 
     if (result.type === 'success') {
@@ -115,6 +119,9 @@ export default function PhoneScreen() {
         ? 'Số điện thoại hoặc mật khẩu không đúng.'
         : raw || 'Thông tin đăng nhập không đúng. Vui lòng thử lại.';
       Alert.alert('Đăng nhập thất bại', friendly);
+    }
+    } catch (err: any) {
+      Alert.alert('DEBUG LỖI', String(err?.message ?? err));
     }
   };
 

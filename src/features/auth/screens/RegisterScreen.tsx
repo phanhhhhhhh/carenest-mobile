@@ -200,12 +200,16 @@ export default function RegisterScreen() {
       confirmPassword: true,
       terms: true,
     });
-    if (Object.keys(allErrors).length > 0) return;
+    if (Object.keys(allErrors).length > 0) {
+      Alert.alert('Validation', 'Lỗi: ' + JSON.stringify(allErrors));
+      return;
+    }
 
     const normalizedPhone = normalizePhone(phone);
     setSubmitting(true);
 
-    const result = await register({
+    try {
+      const result = await register({
       name: name.trim(),
       phone: normalizedPhone,
       password,
@@ -234,6 +238,10 @@ export default function RegisterScreen() {
         ? 'Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.'
         : raw || 'Đăng ký thất bại. Vui lòng thử lại.';
       Alert.alert('Đăng ký thất bại', friendly);
+    }
+    } catch (err: any) {
+      setSubmitting(false);
+      Alert.alert('DEBUG LỖI', String(err?.message ?? err));
     }
   };
 

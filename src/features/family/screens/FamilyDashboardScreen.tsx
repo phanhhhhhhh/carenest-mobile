@@ -147,7 +147,13 @@ export default function FamilyDashboardScreen() {
   const hr = latestByType['HEART_RATE'];
   const bp = latestByType['BLOOD_PRESSURE'];
   const glucose = latestByType['BLOOD_GLUCOSE'];
+  // Quick-glance thresholds (systolic >=135, resting HR ngoài 50-110,
+  // đường huyết mmol/L ngoài 3.9-7.8). Chi tiết hơn xem FamilyHealth.
   const isBpWarning = bp ? (Number.parseFloat(bp.value) || 0) >= 135 : false;
+  const hrValue = hr ? Number.parseFloat(hr.value) || 0 : 0;
+  const isHrWarning = hr ? hrValue < 50 || hrValue > 110 : false;
+  const glucoseValue = glucose ? Number.parseFloat(glucose.value) || 0 : 0;
+  const isGlucoseWarning = glucose ? glucoseValue < 3.9 || glucoseValue > 7.8 : false;
 
   const takenMeds = medItems.filter((m) => m.taken).length;
 
@@ -234,8 +240,7 @@ export default function FamilyDashboardScreen() {
           </View>
           <TouchableOpacity
             style={styles.bellButton}
-            onPress={() => {
-            }}
+            onPress={() => navigation.navigate('Notifications')}
           >
             <Ionicons name="notifications-outline" size={26} color={Colors.textPrimary} />
             {unreadCount > 0 && <View style={styles.dotBadge} />}
@@ -265,7 +270,7 @@ export default function FamilyDashboardScreen() {
         <View style={styles.elderlyCard}>
           <View style={styles.elderlyCardTopRow}>
             <View style={styles.elderlyAvatar}>
-              <Ionicons name="body" color="white" size={28} />
+              <Ionicons name="body" color={Colors.primary} size={26} />
             </View>
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={styles.elderlyCardName}>
@@ -279,8 +284,8 @@ export default function FamilyDashboardScreen() {
               )}
             </View>
             {hasElderly && (
-              <View style={[styles.onlinePill, { backgroundColor: isRecentlyActive ? 'rgba(76,217,100,0.25)' : 'rgba(255,255,255,0.15)' }]}>
-                <View style={[styles.onlineDot, { backgroundColor: isRecentlyActive ? Colors.success : 'rgba(255,255,255,0.6)' }]} />
+              <View style={styles.onlinePill}>
+                <View style={[styles.onlineDot, { backgroundColor: isRecentlyActive ? Colors.success : Colors.textHint }]} />
                 <Text style={styles.onlinePillText}>{isRecentlyActive ? 'Online' : 'Offline'}</Text>
               </View>
             )}
@@ -294,112 +299,114 @@ export default function FamilyDashboardScreen() {
               ))}
             </View>
           )}
+          {elderlyId && (
+            <View style={styles.vitalsRow}>
+              <VitalMiniCard
+                label="Nhịp tim"
+                value={hr ? hr.value : '--'}
+                isWarning={isHrWarning}
+                onPress={() => navigation.navigate('FamilyHealth')}
+              />
+              <View style={{ width: 10 }} />
+              <VitalMiniCard
+                label="Huyết áp"
+                value={bp ? (bp.valueSecondary ? `${bp.value}/${bp.valueSecondary}` : bp.value) : '--'}
+                isWarning={isBpWarning}
+                onPress={() => navigation.navigate('FamilyHealth')}
+              />
+              <View style={{ width: 10 }} />
+              <VitalMiniCard
+                label="Đường"
+                value={glucose ? glucose.value : '--'}
+                isWarning={isGlucoseWarning}
+                onPress={() => navigation.navigate('FamilyHealth')}
+              />
+            </View>
+          )}
         </View>
-
-        <View style={{ height: 20 }} />
-
-        {elderlyId && (
-          <View style={styles.vitalsRow}>
-            <VitalMiniCard
-              label="Nhịp tim"
-              value={hr ? hr.value : '--'}
-              isWarning={false}
-              onPress={() => navigation.navigate('FamilyHealth')}
-            />
-            <View style={{ width: 10 }} />
-            <VitalMiniCard
-              label="Huyết áp"
-              value={bp ? (bp.valueSecondary ? `${bp.value}/${bp.valueSecondary}` : bp.value) : '--'}
-              isWarning={isBpWarning}
-              onPress={() => navigation.navigate('FamilyHealth')}
-            />
-            <View style={{ width: 10 }} />
-            <VitalMiniCard
-              label="Đường"
-              value={glucose ? glucose.value : '--'}
-              isWarning={false}
-              onPress={() => navigation.navigate('FamilyHealth')}
-            />
-          </View>
-        )}
 
         <View style={{ height: 24 }} />
 
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('FamilyMeds')}>
-            <Text style={styles.viewAllText}>Xem tất cả →</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={{ height: 10 }} />
-        {medLoading && medItems.length === 0 ? (
-          <View style={styles.loadingBox}>
-            <ActivityIndicator size="small" color={Colors.primary} />
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('FamilyMeds')}>
+              <Text style={styles.viewAllText}>Xem tất cả →</Text>
+            </TouchableOpacity>
           </View>
-        ) : medItems.length === 0 ? (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyBoxText}>Chưa có thuốc nào</Text>
-          </View>
-        ) : (
-          <View style={styles.medCardRow}>
-            <MedProgressRing taken={takenMeds} total={medItems.length} />
-            <View style={{ width: 14 }} />
-            <View style={{ flex: 1 }}>
-              {medItems.slice(0, 4).map((med) => (
-                <View key={med.id} style={styles.medListRow}>
-                  <Text style={[styles.medCheckMark, { color: med.taken ? Colors.success : Colors.error }]}>
-                    {med.taken ? '✓' : '✗'}
-                  </Text>
-                  <Text style={styles.medListName} numberOfLines={1}>
-                    {med.name} {med.dosage}
-                  </Text>
-                  <Text style={[styles.medListTime, !med.taken && { color: Colors.warning }]}>
-                    {formatDoseTime(med)}{!med.taken ? ' (sắp tới)' : ''}
-                  </Text>
-                </View>
-              ))}
+          <View style={{ height: 10 }} />
+          {medLoading && medItems.length === 0 ? (
+            <View style={styles.loadingBox}>
+              <ActivityIndicator size="small" color={Colors.primary} />
             </View>
-          </View>
-        )}
+          ) : medItems.length === 0 ? (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyBoxText}>Chưa có thuốc nào</Text>
+            </View>
+          ) : (
+            <View style={styles.medCardRow}>
+              <MedProgressRing taken={takenMeds} total={medItems.length} />
+              <View style={{ width: 14 }} />
+              <View style={{ flex: 1 }}>
+                {medItems.slice(0, 4).map((med) => (
+                  <View key={med.id} style={styles.medListRow}>
+                    <Text style={[styles.medCheckMark, { color: med.taken ? Colors.success : Colors.error }]}>
+                      {med.taken ? '✓' : '✗'}
+                    </Text>
+                    <Text style={styles.medListName} numberOfLines={1}>
+                      {med.name} {med.dosage}
+                    </Text>
+                    <Text style={[styles.medListTime, !med.taken && { color: Colors.warning }]}>
+                      {formatDoseTime(med)}{!med.taken ? ' (sắp tới)' : ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
 
         <View style={{ height: 24 }} />
 
         {elderlyId && (
           <>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>{cam ? `Camera — ${cam.label}` : 'Camera'}</Text>
-              {hasCamera && camOnline && (
-                <View style={styles.liveBadge}>
-                  <Text style={styles.liveBadgeText}>LIVE</Text>
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>{cam ? `Camera — ${cam.label}` : 'Camera'}</Text>
+                {hasCamera && camOnline && (
+                  <View style={styles.liveRow}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveBadgeText}>Live</Text>
+                  </View>
+                )}
+              </View>
+              <View style={{ height: 10 }} />
+              {!hasCamera ? (
+                <View style={styles.emptyBox}>
+                  <Ionicons name="videocam-off" color={Colors.textHint} size={32} />
+                  <Text style={[styles.emptyBoxText, { marginTop: 8 }]}>Chưa liên kết camera nào</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('CameraScreen', { elderlyId })}
+                  >
+                    <Text style={[styles.viewAllText, { marginTop: 8 }]}>+ Thêm camera</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.cameraCard}>
+                  <View style={styles.cameraPreviewBox}>
+                    <Ionicons name={camOnline ? 'play-circle' : 'videocam-off'} color="rgba(255,255,255,0.54)" size={40} />
+                  </View>
+                  <View style={{ height: 12 }} />
+                  <View style={styles.cameraActionsRow}>
+                    <CameraActionButton icon="play" label="Xem" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
+                    <View style={{ width: 8 }} />
+                    <CameraActionButton icon="mic" label="Gọi" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
+                    <View style={{ width: 8 }} />
+                    <CameraActionButton icon="calendar" label="Check-in" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
+                  </View>
                 </View>
               )}
             </View>
-            <View style={{ height: 10 }} />
-            {!hasCamera ? (
-              <View style={styles.emptyBox}>
-                <Ionicons name="videocam-off" color={Colors.textHint} size={32} />
-                <Text style={[styles.emptyBoxText, { marginTop: 8 }]}>Chưa liên kết camera nào</Text>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('CameraScreen', { elderlyId })}
-                >
-                  <Text style={[styles.viewAllText, { marginTop: 8 }]}>+ Thêm camera</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.cameraCard}>
-                <View style={styles.cameraPreviewBox}>
-                  <Ionicons name={camOnline ? 'play-circle' : 'videocam-off'} color="rgba(255,255,255,0.54)" size={40} />
-                </View>
-                <View style={{ height: 12 }} />
-                <View style={styles.cameraActionsRow}>
-                  <CameraActionButton icon="play" label="Xem" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
-                  <View style={{ width: 8 }} />
-                  <CameraActionButton icon="mic" label="Gọi" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
-                  <View style={{ width: 8 }} />
-                  <CameraActionButton icon="calendar" label="Check-in" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
-                </View>
-              </View>
-            )}
             <View style={{ height: 24 }} />
           </>
         )}
@@ -427,9 +434,9 @@ export default function FamilyDashboardScreen() {
         <View style={{ height: 24 }} />
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+          <Text style={styles.sectionTitle}>Lịch hẹn sắp tới</Text>
           <TouchableOpacity onPress={() => navigation.navigate('FamilyAppointments')}>
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={styles.viewAllText}>Xem tất cả →</Text>
           </TouchableOpacity>
         </View>
         <View style={{ height: 12 }} />
@@ -607,26 +614,28 @@ const styles = StyleSheet.create({
   elderlyCard: {
     padding: Spacing.xl,
     borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.primaryDark,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: hexToRgba(Colors.textHint, 0.25),
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   elderlyCardTopRow: { flexDirection: 'row', alignItems: 'center' },
   elderlyAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: hexToRgba(Colors.primary, 0.12),
     justifyContent: 'center',
     alignItems: 'center',
   },
   elderlyCardLabel: { color: 'rgba(255,255,255,0.7)', fontSize: Typography.bodySmall.fontSize },
-  elderlyCardLabelInline: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '500' },
-  elderlyCardName: { color: 'white', fontSize: 18, fontWeight: '700', marginTop: 2 },
-  elderlyCardUpdated: { color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 3 },
+  elderlyCardLabelInline: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  elderlyCardName: { color: Colors.textPrimary, fontSize: 18, fontWeight: '700', marginTop: 2 },
+  elderlyCardUpdated: { color: Colors.textSecondary, fontSize: 12, marginTop: 3 },
   onlinePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -634,15 +643,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: hexToRgba(Colors.textHint, 0.35),
+    backgroundColor: Colors.surface,
   },
   onlineDot: { width: 7, height: 7, borderRadius: 3.5 },
-  onlinePillText: { color: 'white', fontSize: 11, fontWeight: '600' },
+  onlinePillText: { color: Colors.textPrimary, fontSize: 11, fontWeight: '600' },
   statusDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
   conditionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  conditionChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)' },
-  conditionChipText: { color: 'white', fontSize: 12 },
+  conditionChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: hexToRgba(Colors.primary, 0.1) },
+  conditionChipText: { color: Colors.primary, fontSize: 12, fontWeight: '600' },
 
-  vitalsRow: { flexDirection: 'row' },
+  vitalsRow: { flexDirection: 'row', marginTop: 16 },
   vitalCard: {
     flex: 1,
     paddingHorizontal: 8,
@@ -658,17 +670,22 @@ const styles = StyleSheet.create({
   vitalDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, backgroundColor: 'transparent' },
   vitalStatusText: { fontSize: 9 },
 
-  medCardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
+  sectionCard: {
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: hexToRgba(Colors.textHint, 0.25),
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
+  },
+  medCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: Spacing.md,
   },
   ringText: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
   medListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
@@ -708,17 +725,11 @@ const styles = StyleSheet.create({
   medTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   medStatus: { fontSize: Typography.caption.fontSize, fontWeight: '600' },
 
-  liveBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, backgroundColor: hexToRgba(Colors.error, 0.1) },
+  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.error },
   liveBadgeText: { fontSize: Typography.caption.fontSize, fontWeight: '700', color: Colors.error },
   cameraCard: {
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    paddingTop: Spacing.md,
   },
   cameraPreviewBox: {
     aspectRatio: 16 / 9,
