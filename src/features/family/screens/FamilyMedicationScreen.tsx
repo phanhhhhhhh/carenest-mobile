@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
-import { useMedicationStore } from '../../elderly/store/medicationStore';
+import { useMedicationStore } from '../store/medicationStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import type { MedicationItem } from '../../../shared/types';
 
@@ -73,6 +73,8 @@ export default function FamilyMedicationScreen() {
   const updateMedication = useMedicationStore((s) => s.updateMedication);
   const deleteMedication = useMedicationStore((s) => s.deleteMedication);
   const fetchLogs = useMedicationStore((s) => s.fetchLogs);
+  const allLogs = useMedicationStore((s) => s.allLogs);
+  const fetchAllLogs = useMedicationStore((s) => s.fetchAllLogs);
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
 
   // Family dashboard store — provides the currently-selected linked elderly
@@ -102,6 +104,8 @@ export default function FamilyMedicationScreen() {
   const [times, setTimes] = useState<TimeValue[]>([]);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
+  const [rangeDays, setRangeDays] = useState<7 | 30>(7);
+
   // Time picker modal state
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [pickerHour, setPickerHour] = useState(8);
@@ -123,9 +127,72 @@ export default function FamilyMedicationScreen() {
     setRefreshing(false);
   }, [dashLoad, loadMedications, currentElderlyId]);
 
+  // Logs của mọi thuốc — nạp lại mỗi khi danh sách/trạng thái uống đổi
+  // (toggleTaken thay items -> effect chạy -> cột hôm nay cập nhật ngay)
+  useEffect(() => {
+    fetchAllLogs();
+  }, [items, fetchAllLogs]);
+
   const taken = items.filter((m) => m.taken).length;
   const total = items.length;
-  const progress = total === 0 ? 0 : taken / total;
+
+  /**
+   * Tỉ lệ tuân thủ theo ngày, tính từ logs thật:
+   *   scheduled(ngày) = tổng số cữ của các thuốc active vào thứ đó
+   *   taken(ngày)     = số log TAKEN trong ngày đó
+   * 7d  -> tuần hiện tại (T2..CN); ngày tương lai = null (không vẽ cột)
+   * 30d -> trung bình theo thứ trong 30 ngày gần nhất
+   */
+  const weeklyAdherence = useMemo<(number | null)[]>(() => {
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const today = startOfDay(new Date());
+    const mondayOffset = (today.getDay() + 6) % 7; // Mon=0..Sun=6
+
+    const scheduledOnWeekday = (weekday: number): number =>
+      items.reduce((sum, m) => {
+        const active = m.daysOfWeek.length === 0 || m.daysOfWeek.includes(weekday);
+        if (!active) return sum;
+        return sum + Math.max(1, m.scheduleTimes.length);
+      }, 0);
+
+    const takenCountByDate = new Map<string, number>();
+    for (const log of allLogs) {
+      if (log.status !== 'TAKEN') continue;
+      const d = new Date(log.takenAt);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = startOfDay(d).toISOString();
+      takenCountByDate.set(key, (takenCountByDate.get(key) ?? 0) + 1);
+    }
+
+    if (rangeDays === 7) {
+      return Array.from({ length: 7 }, (_, weekday) => {
+        const date = new Date(today);
+        date.setDate(today.getDate() - mondayOffset + weekday);
+        if (date.getTime() > today.getTime()) return null; // ngày tương lai
+        const scheduled = scheduledOnWeekday(weekday);
+        if (scheduled === 0) return null;
+        const takenCount = takenCountByDate.get(date.toISOString()) ?? 0;
+        return Math.min(1, takenCount / scheduled);
+      });
+    }
+
+    // 30d: gom theo thứ
+    const takenByWeekday = Array(7).fill(0);
+    const daysByWeekday = Array(7).fill(0);
+    for (let i = 0; i < 30; i += 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const weekday = (date.getDay() + 6) % 7;
+      daysByWeekday[weekday] += 1;
+      takenByWeekday[weekday] += takenCountByDate.get(date.toISOString()) ?? 0;
+    }
+    return Array.from({ length: 7 }, (_, weekday) => {
+      const scheduledPerDay = scheduledOnWeekday(weekday);
+      const totalScheduled = scheduledPerDay * daysByWeekday[weekday];
+      if (totalScheduled === 0) return null;
+      return Math.min(1, takenByWeekday[weekday] / totalScheduled);
+    });
+  }, [items, allLogs, rangeDays]);
 
   const openAddForm = (existing?: MedicationItem) => {
     if (!currentElderlyId) {
@@ -240,8 +307,6 @@ export default function FamilyMedicationScreen() {
     );
   };
 
-  const [rangeDays, setRangeDays] = useState<7 | 30>(7);
-
   const renderComplianceCard = () => {
     const todayIndex = (new Date().getDay() + 6) % 7; // Mon=0 ... Sun=6
     return (
@@ -260,19 +325,23 @@ export default function FamilyMedicationScreen() {
         <View style={styles.weekBarRow}>
           {HISTORY_DAY_LABELS.map((label, i) => {
             const isToday = i === todayIndex;
-            // Ghi chú: backend hiện chưa trả breakdown tuân thủ theo từng
-            // ngày — chỉ ngày hôm nay dùng tỉ lệ thật (progress), các ngày
-            // khác minh họa bằng chiều cao cố định cho tới khi có API.
-            const barHeight = isToday ? 24 + progress * 60 : 55;
+            const ratio = weeklyAdherence[i];
+            // Cột tính từ logs thật; null = ngày tương lai hoặc không có
+            // cữ thuốc nào -> chỉ vẽ track rỗng.
+            const barHeight = ratio === null ? 0 : 8 + ratio * 76;
+            const fillColor = isToday
+              ? Colors.primary
+              : ratio !== null && ratio < 0.5
+                ? Colors.warning
+                : '#9CC9C4';
             return (
               <View key={label} style={styles.weekBarCol}>
                 <View style={styles.weekBarTrack}>
-                  <View
-                    style={[
-                      styles.weekBarFill,
-                      { height: barHeight, backgroundColor: isToday ? Colors.primary : '#D9DEE3' },
-                    ]}
-                  />
+                  {ratio !== null && (
+                    <View
+                      style={[styles.weekBarFill, { height: barHeight, backgroundColor: fillColor }]}
+                    />
+                  )}
                 </View>
                 <Text style={[styles.weekBarLabel, isToday && styles.weekBarLabelActive]}>{label}</Text>
               </View>
