@@ -12,7 +12,6 @@ interface AuthState {
   isAuthenticated: boolean;
 
   login: (params: { email?: string; phone?: string; password: string }) => Promise<LoginResult>;
-  loginDev: (phoneNumber: string) => Promise<LoginResult>;
   register: (params: RegisterParams) => Promise<RegisterResult>;
   verifyOtp: (target: string, code: string) => Promise<boolean>;
   completeLogin: () => void;
@@ -53,6 +52,18 @@ type RegisterResult =
   | { type: 'needsVerification'; contact: string; message?: string }
   | { type: 'error'; message: string };
 
+function isJwtExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return true;
+    return payload.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+}
+
 async function persistAuth(data: AuthResponse) {
   await storage.saveToken(data.accessToken);
   if (data.refreshToken) await storage.saveRefreshToken(data.refreshToken);
@@ -75,6 +86,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   loadSession: async () => {
     const token = await storage.getToken();
     if (!token) return;
+
+    if (isJwtExpired(token)) {
+      console.log('[authStore.loadSession] Token expired, clearing session');
+      await storage.clearAll();
+      return;
+    }
+
     try {
       const role = await storage.getRole();
       const name = await storage.getName();
@@ -128,28 +146,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
       }
       const msg = extractError(e, 'Invalid credentials');
-      set({ isLoading: false, error: msg });
-      return { type: 'error', message: msg };
-    }
-  },
-
-  loginDev: async (phoneNumber) => {
-    if (!__DEV__) {
-      return { type: 'error' as const, message: 'Dev login unavailable in production' };
-    }
-    set({ isLoading: true, error: null });
-    try {
-      const res = await api.post('/auth/login', {
-        firebaseToken: `DEV_PHONE:${phoneNumber}`,
-      });
-      await persistAuth(res.data);
-      set({ isLoading: false, isAuthenticated: true, user: res.data.user });
-      return { type: 'success' };
-    } catch (e) {
-      const status = getStatus(e);
-      const msg = status === 404
-        ? `DEV_NEEDS_REGISTER:${phoneNumber}`
-        : 'Cannot connect to backend';
       set({ isLoading: false, error: msg });
       return { type: 'error', message: msg };
     }
