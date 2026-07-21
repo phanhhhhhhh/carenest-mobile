@@ -1,5 +1,6 @@
 package com.carenest.backend.controller;
 
+import com.carenest.backend.dto.payment.PaymentInitResponse;
 import com.carenest.backend.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -23,14 +24,14 @@ public class PaymentController {
     
     @PostMapping("/vnpay/create")
     @PreAuthorize("hasRole('FAMILY') and #userId == authentication.principal")
-    public ResponseEntity<Map<String, String>> createVnpay(
+    public ResponseEntity<PaymentInitResponse> createVnpay(
         @AuthenticationPrincipal Long userId,
         @RequestBody Map<String, String> body,
         HttpServletRequest request
     ) {
         String planType = body.getOrDefault("planType", "PREMIUM_MONTHLY");
         String clientIp = request.getRemoteAddr();
-        Map<String, String> result = paymentService.createVnpayPayment(userId, planType, clientIp);
+        PaymentInitResponse result = paymentService.createVnpayPayment(userId, planType, clientIp);
         return ResponseEntity.ok(result);
     }
 
@@ -53,12 +54,12 @@ public class PaymentController {
     
     @PostMapping("/momo/create")
     @PreAuthorize("hasRole('FAMILY') and #userId == authentication.principal")
-    public ResponseEntity<Map<String, String>> createMomo(
+    public ResponseEntity<PaymentInitResponse> createMomo(
         @AuthenticationPrincipal Long userId,
         @RequestBody Map<String, String> body
     ) {
         String planType = body.getOrDefault("planType", "PREMIUM_MONTHLY");
-        Map<String, String> result = paymentService.createMomoPayment(userId, planType);
+        PaymentInitResponse result = paymentService.createMomoPayment(userId, planType);
         return ResponseEntity.ok(result);
     }
 

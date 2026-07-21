@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getUserId } from '../../../core/storage/secureStorage';
 import type { MedicationItem, MedicationLogEntry } from '../../../shared/types';
-import { getErrorMessage, asListOfMaps } from '../../../core/api/errors';
+import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import { scheduleFrom } from '../../medication/services/medicationReminderService';
+import { MedicationSchema, MedicationLogSchema, safeParseList } from '../../../shared/schemas';
 
 
 
@@ -13,8 +14,10 @@ interface MedicationListState {
   items: MedicationItem[];
   logs: MedicationLogEntry[];
   logsError: string | null;
+  /** Logs of ALL medications — used for the compliance chart by day. */
+  allLogs: MedicationLogEntry[];
 
-  load: (elderlyId?: string) => Promise<void>;
+  load: (elderlyId?: string, signal?: AbortSignal) => Promise<void>;
   addMedication: (params: {
     name: string;
     dosage: string;
@@ -33,38 +36,41 @@ interface MedicationListState {
   }) => Promise<void>;
   deleteMedication: (medicationId: string) => Promise<boolean>;
   fetchLogs: (medicationId: string) => Promise<void>;
+  fetchAllLogs: () => Promise<void>;
   toggleTaken: (
     medicationId: string,
     onError?: (error: string) => void,
   ) => Promise<boolean>;
 }
 
-function parseMedicationItem(j: Record<string, unknown>): MedicationItem {
-  const schedule = (j.schedule && typeof j.schedule === 'object'
-    ? (j.schedule as Record<string, unknown>)
-    : {}) as Record<string, unknown>;
+function toMedicationItem(m: ReturnType<typeof MedicationSchema.parse>): MedicationItem {
   return {
-    id: String(j.id ?? ''),
-    name: (j.name as string) ?? '',
-    dosage: (j.dosage as string) ?? '',
-    instructions: (j.instructions as string) ?? undefined,
-    nextDoseTime: (j.nextDoseTime as string) ?? undefined,
-    scheduleTimes: Array.isArray(schedule.times)
-      ? (schedule.times as unknown[]).map((e) => String(e))
-      : [],
-    daysOfWeek: Array.isArray(schedule.daysOfWeek)
-      ? (schedule.daysOfWeek as unknown[]).map((e) => Number(e))
-      : [],
+    id: m.id,
+    name: m.name,
+    dosage: m.dosage,
+    instructions: m.instructions ?? undefined,
+    nextDoseTime: m.nextDoseTime ?? undefined,
+    scheduleTimes: m.schedule?.times ?? [],
+    daysOfWeek: m.schedule?.daysOfWeek ?? [],
+    // Real taken-today status is filled in by `load()` from today's medication
+    // logs — the medication list endpoint itself has no `taken` field.
     taken: false,
   };
 }
 
-function parseLogEntry(j: Record<string, unknown>): MedicationLogEntry {
+function startAndEndOfToday(): { from: string; to: string } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
+function toLogEntry(l: ReturnType<typeof MedicationLogSchema.parse>): MedicationLogEntry {
   return {
-    id: String(j.id ?? ''),
-    medicationId: j.medicationId != null ? String(j.medicationId) : '',
-    status: ((j.status as string) ?? 'TAKEN') as MedicationLogEntry['status'],
-    takenAt: (j.takenAt as string) ?? new Date().toISOString(),
+    id: l.id,
+    medicationId: l.medicationId ?? '',
+    status: l.status as MedicationLogEntry['status'],
+    takenAt: l.takenAt,
   };
 }
 
@@ -72,10 +78,11 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
   isLoading: false,
   error: null,
   items: [],
+  allLogs: [],
   logs: [],
   logsError: null,
 
-  load: async (elderlyId) => {
+  load: async (elderlyId, signal) => {
     set({ isLoading: true, error: null });
     try {
       const userId = elderlyId ?? (await getUserId());
@@ -83,11 +90,31 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
         set({ isLoading: false });
         return;
       }
-      const resp = await api.get(`/users/${userId}/medications`);
-      const items = asListOfMaps(resp.data).map(parseMedicationItem);
+      const resp = await api.get(`/users/${userId}/medications`, { signal });
+      if (!Array.isArray(resp.data)) {
+        console.warn('[schema] MedicationList: expected an array — keeping previous state');
+        set({ isLoading: false, error: 'Unexpected response from server' });
+        return;
+      }
+      let items = safeParseList(MedicationSchema, resp.data, 'MedicationList').map(toMedicationItem);
+
+      try {
+        const { from, to } = startAndEndOfToday();
+        const logResp = await api.get(`/elderly/${userId}/medication-logs`, { params: { from, to }, signal });
+        const takenIds = new Set(
+          safeParseList(MedicationLogSchema, logResp.data, 'MedicationLog')
+            .filter((l) => l.status === 'TAKEN')
+            .map((l) => l.medicationId ?? ''),
+        );
+        items = items.map((item) => ({ ...item, taken: takenIds.has(item.id) }));
+      } catch {
+        // today's logs unavailable — leave `taken` as false rather than guessing
+      }
+
       set({ isLoading: false, items });
       scheduleFrom(items);
     } catch (e) {
+      if (isCancelled(e)) return;
       set({ isLoading: false, error: `Error loading medication: ${getErrorMessage(e)}` });
     }
   },
@@ -148,10 +175,37 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
     set({ logsError: null });
     try {
       const resp = await api.get(`/medications/${medicationId}/logs`);
-      const logs = asListOfMaps(resp.data).map(parseLogEntry);
+      const logs = safeParseList(MedicationLogSchema, resp.data, 'MedicationLog').map(toLogEntry);
       set({ logs });
     } catch (e) {
       set({ logsError: `Error loading history: ${getErrorMessage(e)}` });
+    }
+  },
+
+  fetchAllLogs: async () => {
+    const { items, allLogs: previousAllLogs } = get();
+    if (items.length === 0) {
+      set({ allLogs: [] });
+      return;
+    }
+    try {
+      const results = await Promise.allSettled(
+        items.map(async (m) => {
+          const resp = await api.get(`/medications/${m.id}/logs`);
+          return safeParseList(MedicationLogSchema, resp.data, 'MedicationLog').map((l) => ({
+            ...toLogEntry(l),
+            medicationId: l.medicationId ?? m.id,
+          }));
+        }),
+      );
+      const merged: MedicationLogEntry[] = [];
+      for (const r of results) {
+        if (r.status === 'fulfilled') merged.push(...r.value);
+      }
+      set({ allLogs: merged });
+    } catch (e) {
+      console.warn('[medicationStore.fetchAllLogs]', e);
+      set({ allLogs: previousAllLogs });
     }
   },
 

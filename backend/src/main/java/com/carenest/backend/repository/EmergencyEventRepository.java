@@ -18,5 +18,7 @@ public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, 
 
     List<EmergencyEvent> findByElderlyIdAndStatusOrderByTriggeredAtDesc(Long elderlyId, EmergencyStatus status);
 
+    List<EmergencyEvent> findByElderlyIdInAndStatus(List<Long> elderlyIds, EmergencyStatus status);
+
     Optional<EmergencyEvent> findById(Long id);
 }

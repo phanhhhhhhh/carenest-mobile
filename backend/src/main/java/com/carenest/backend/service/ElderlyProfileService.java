@@ -53,12 +53,12 @@ public class ElderlyProfileService {
     }
 
     @Transactional(readOnly = true)
-    public ElderlyProfileResponse getById(Long id) {
-        return toResponse(findOrThrow(id));
+    public ElderlyProfileResponse getByUserId(Long userId) {
+        return toResponse(findOrThrow(userId));
     }
 
-    public ElderlyProfileResponse update(Long id, ElderlyProfileRequest request) {
-        ElderlyProfile profile = findOrThrow(id);
+    public ElderlyProfileResponse update(Long userId, ElderlyProfileRequest request) {
+        ElderlyProfile profile = findOrThrow(userId);
 
         if (request.getHealthConditions() != null) {
             profile.setHealthConditions(request.getHealthConditions());
@@ -85,9 +85,9 @@ public class ElderlyProfileService {
         return toResponse(elderlyProfileRepository.save(profile));
     }
 
-    private ElderlyProfile findOrThrow(Long id) {
-        return elderlyProfileRepository.findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new NotFoundException("ElderlyProfile not found: " + id));
+    private ElderlyProfile findOrThrow(Long userId) {
+        return elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(userId)
+            .orElseThrow(() -> new NotFoundException("ElderlyProfile not found for userId: " + userId));
     }
 
     private List<EmergencyContact> mapContactsFromDto(List<EmergencyContactDto> dtos) {

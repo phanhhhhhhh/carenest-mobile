@@ -91,6 +91,10 @@ public class EmergencyEventService {
         EmergencyEvent event = emergencyEventRepository.findById(eventId)
             .orElseThrow(() -> new NotFoundException("EmergencyEvent not found: " + eventId));
 
+        if (event.getStatus() == EmergencyStatus.RESOLVED) {
+            return toResponse(event);
+        }
+
         userRepository.findById(familyUserId)
             .orElseThrow(() -> new NotFoundException("User (family) not found: " + familyUserId));
 
@@ -140,6 +144,9 @@ public class EmergencyEventService {
         OffsetDateTime now = OffsetDateTime.now();
         int count = 0;
         for (EmergencyEvent event : activeEvents) {
+            if (event.getStatus() == EmergencyStatus.RESOLVED) {
+                continue;
+            }
             event.setAcknowledgedAt(now);
             event.setAcknowledgedBy(acknowledgedBy);
             event.setStatus(EmergencyStatus.RESOLVED);

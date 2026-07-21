@@ -16,11 +16,46 @@ const api = axios.create({
 const PROACTIVE_REFRESH_WINDOW_SEC = 60;
 let pendingRefresh: Promise<string | null> | null = null;
 
+const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+// Hermes doesn't reliably provide a global `atob`/`Buffer`, so decode base64url
+// manually with plain string/array operations only.
+function decodeBase64Url(input: string): string | null {
+  try {
+    const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
+
+    let bytes = '';
+    let buffer = 0;
+    let bitsCollected = 0;
+    for (const char of normalized) {
+      const value = BASE64_CHARS.indexOf(char);
+      if (value === -1) continue;
+      buffer = (buffer << 6) | value;
+      bitsCollected += 6;
+      if (bitsCollected >= 8) {
+        bitsCollected -= 8;
+        bytes += String.fromCharCode((buffer >> bitsCollected) & 0xff);
+      }
+    }
+
+    return decodeURIComponent(
+      bytes
+        .split('')
+        .map((c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+        .join(''),
+    );
+  } catch {
+    return null;
+  }
+}
+
 function jwtExpiresSoon(token: string): boolean {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return false;
-    const payload = JSON.parse(atob(parts[1]));
+    const decoded = decodeBase64Url(parts[1]);
+    if (decoded == null) return false;
+    const payload = JSON.parse(decoded);
     if (!payload.exp) return false;
     const remaining = payload.exp * 1000 - Date.now();
     return remaining / 1000 < PROACTIVE_REFRESH_WINDOW_SEC;

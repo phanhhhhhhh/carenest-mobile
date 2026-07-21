@@ -21,5 +21,8 @@ public interface MedicationLogRepository extends JpaRepository<MedicationLog, Lo
     @Query("SELECT ml FROM MedicationLog ml JOIN ml.medication m WHERE m.elderly.id = :elderlyId AND ml.takenAt BETWEEN :from AND :to ORDER BY ml.takenAt DESC")
     List<MedicationLog> findAllByElderlyIdAndDateRange(@Param("elderlyId") Long elderlyId, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 
+    @Query("SELECT ml FROM MedicationLog ml JOIN FETCH ml.medication m JOIN FETCH m.elderly WHERE m.elderly.id IN :elderlyIds AND ml.takenAt BETWEEN :from AND :to ORDER BY ml.takenAt DESC")
+    List<MedicationLog> findAllByElderlyIdsAndDateRange(@Param("elderlyIds") List<Long> elderlyIds, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
     List<MedicationLog> findByMedicationIdAndStatusOrderByTakenAtDesc(Long medicationId, MedicationLogStatus status);
 }

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
-import { getStatus, getErrorMessage } from '../../../core/api/errors';
+import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
 import type { ChatMessage } from '../../../shared/types';
+import { ChatMessageSchema, safeParseOne, safeParseList } from '../../../shared/schemas';
 
 
 
@@ -14,7 +15,7 @@ interface ChatState {
   totalMessages: number;
   aiAvailable: boolean;
 
-  loadHistory: (params?: { refresh?: boolean }) => Promise<void>;
+  loadHistory: (params?: { refresh?: boolean }, signal?: AbortSignal) => Promise<void>;
   sendMessage: (text: string, sessionId?: string) => Promise<string>;
   clearHistory: () => Promise<void>;
   refresh: () => void;
@@ -30,14 +31,14 @@ interface ChatState {
 const PAGE_SIZE = 50;
 let currentPage = 0;
 
-function parseMessage(j: Record<string, unknown>): ChatMessage {
+function toChatMessage(m: ReturnType<typeof ChatMessageSchema.parse>): ChatMessage {
   return {
-    messageId: Number(j.messageId ?? 0),
-    role: ((j.role as string) ?? 'AI') as ChatMessage['role'],
-    content: (j.content as string) ?? '',
-    intent: (j.intent as string) ?? undefined,
-    sessionId: (j.sessionId as string) ?? undefined,
-    createdAt: (j.createdAt as string) ?? new Date().toISOString(),
+    messageId: m.messageId ?? 0,
+    role: m.role ?? 'AI',
+    content: m.content ?? '',
+    intent: m.intent ?? undefined,
+    sessionId: m.sessionId ?? undefined,
+    createdAt: m.createdAt ?? new Date().toISOString(),
   };
 }
 
@@ -50,7 +51,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   totalMessages: 0,
   aiAvailable: true,
 
-  loadHistory: async ({ refresh = false } = {}) => {
+  loadHistory: async ({ refresh = false } = {}, signal) => {
     if (refresh) {
       currentPage = 0;
       set({ isLoading: true, error: null, messages: [] });
@@ -61,11 +62,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const resp = await api.get('/chat/history', {
         params: { page: currentPage, size: PAGE_SIZE },
+        signal,
       });
 
       const data = (resp.data ?? {}) as Record<string, unknown>;
-      const rawMessages = Array.isArray(data.messages) ? (data.messages as unknown[]) : [];
-      const messages = rawMessages.map((e) => parseMessage(e as Record<string, unknown>));
+      const messages = safeParseList(ChatMessageSchema, data.messages, 'ChatHistory').map(toChatMessage);
 
       const reversed = [...messages].reverse();
       const displayMessages = refresh ? reversed : [...get().messages, ...reversed];
@@ -78,6 +79,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         aiAvailable: true,
       });
     } catch (e) {
+      if (isCancelled(e)) return;
       if (getStatus(e) === 404) {
         set({ isLoading: false, aiAvailable: false, messages: [] });
         return;
@@ -102,8 +104,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ...(sessionId ? { sessionId } : {}),
       });
 
-      const aiData = (resp.data ?? {}) as Record<string, unknown>;
-      const aiMsg = parseMessage(aiData);
+      const parsed = safeParseOne(ChatMessageSchema, resp.data, 'ChatMessage');
+      const aiMsg = toChatMessage(parsed ?? {});
 
       set({
         isSending: false,
@@ -180,7 +182,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set({ messages: [...get().messages, userMsg] });
       }
 
-      const aiMsg = parseMessage(data);
+      const parsed = safeParseOne(ChatMessageSchema, data, 'ChatVoiceMessage');
+      const aiMsg = toChatMessage(parsed ?? {});
       set({ isSending: false, messages: [...get().messages, aiMsg] });
       return aiMsg.content;
     } catch (e) {

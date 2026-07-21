@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getUserId } from '../../../core/storage/secureStorage';
-import { getStatus, getErrorMessage } from '../../../core/api/errors';
+import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
 import type { ElderlyProfile } from '../../../shared/types';
+import { ElderlyProfileSchema, safeParseOne } from '../../../shared/schemas';
 
 
 
@@ -19,7 +20,7 @@ interface ElderlyProfileState {
   error: string | null;
   profile: ElderlyProfile | null;
 
-  load: () => Promise<void>;
+  load: (signal?: AbortSignal) => Promise<void>;
   loadEmergencyContacts: () => Promise<EmergencyContact[]>;
   updateEmergencyContacts: (contacts: EmergencyContact[]) => Promise<boolean>;
   updateProfile: (params: {
@@ -33,18 +34,16 @@ interface ElderlyProfileState {
   }) => Promise<void>;
 }
 
-function parseProfile(j: Record<string, unknown>): ElderlyProfile {
+function toProfile(p: ReturnType<typeof ElderlyProfileSchema.parse>): ElderlyProfile {
   return {
-    id: String(j.id ?? ''),
-    name: (j.userName as string) ?? '',
-    healthConditions: Array.isArray(j.healthConditions)
-      ? (j.healthConditions as string[])
-      : [],
-    bloodType: (j.bloodType as string) ?? undefined,
-    weight: typeof j.weightKg === 'number' ? j.weightKg : undefined,
-    height: typeof j.heightCm === 'number' ? j.heightCm : undefined,
-    allergies: Array.isArray(j.allergies) ? (j.allergies as string[]) : [],
-    notes: (j.notes as string) ?? undefined,
+    id: p.id ?? '',
+    name: p.userName ?? '',
+    healthConditions: p.healthConditions ?? [],
+    bloodType: p.bloodType ?? undefined,
+    weight: p.weightKg ?? undefined,
+    height: p.heightCm ?? undefined,
+    allergies: Array.isArray(p.allergies) ? p.allergies : [],
+    notes: p.notes ?? undefined,
   };
 }
 
@@ -54,7 +53,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
   error: null,
   profile: null,
 
-  load: async () => {
+  load: async (signal) => {
     set({ isLoading: true, error: null });
     try {
       const userId = await getUserId();
@@ -62,13 +61,11 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
         set({ isLoading: false, error: 'Not logged in' });
         return;
       }
-      const resp = await api.get(`/elderly-profiles/${userId}`);
-      const data = (resp.data && typeof resp.data === 'object' ? resp.data : {}) as Record<
-        string,
-        unknown
-      >;
-      set({ isLoading: false, profile: parseProfile(data) });
+      const resp = await api.get(`/elderly-profiles/${userId}`, { signal });
+      const parsed = safeParseOne(ElderlyProfileSchema, resp.data ?? {}, 'ElderlyProfile');
+      set({ isLoading: false, profile: toProfile(parsed ?? {}) });
     } catch (e) {
+      if (isCancelled(e)) return;
       const status = getStatus(e);
       set({
         isLoading: false,
@@ -86,22 +83,13 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
         return [];
       }
       const resp = await api.get(`/elderly-profiles/${userId}`);
-      const data = (resp.data && typeof resp.data === 'object' ? resp.data : {}) as Record<
-        string,
-        unknown
-      >;
-      const emergencyContacts = Array.isArray(data.emergencyContacts)
-        ? (data.emergencyContacts as unknown[])
-        : [];
-      const contacts: EmergencyContact[] = emergencyContacts.map((c) => {
-        const contact = (c && typeof c === 'object' ? c : {}) as Record<string, unknown>;
-        return {
-          id: contact.id != null ? String(contact.id) : undefined,
-          name: (contact.name as string) ?? '',
-          phone: (contact.phone as string) ?? '',
-          relationship: (contact.relationship as string) ?? '',
-        };
-      });
+      const parsed = safeParseOne(ElderlyProfileSchema, resp.data ?? {}, 'ElderlyProfile');
+      const contacts: EmergencyContact[] = (parsed?.emergencyContacts ?? []).map((c) => ({
+        id: c.id,
+        name: c.name ?? '',
+        phone: c.phone ?? '',
+        relationship: c.relationship ?? '',
+      }));
       set({ isLoading: false });
       return contacts;
     } catch (e) {

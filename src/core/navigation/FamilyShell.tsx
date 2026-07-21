@@ -7,7 +7,14 @@ import FamilyMedicationScreen from '../../features/family/screens/FamilyMedicati
 import CameraScreen from '../../features/family/screens/CameraScreen';
 import FamilyProfileScreen from '../../features/family/screens/FamilyProfileScreen';
 
-const Tab = createBottomTabNavigator();
+export type FamilyTabParamList = {
+  FamilyDashboard: undefined;
+  FamilyMeds: undefined;
+  FamilyCamera: undefined;
+  FamilyProfile: undefined;
+};
+
+const Tab = createBottomTabNavigator<FamilyTabParamList>();
 
 export default function FamilyShell() {
   return (

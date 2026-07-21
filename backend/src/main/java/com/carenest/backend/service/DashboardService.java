@@ -8,31 +8,38 @@ import com.carenest.backend.dto.dashboard.LatestMetricItem;
 import com.carenest.backend.dto.dashboard.MedicationAdherenceSummary;
 import com.carenest.backend.entity.Appointment;
 import com.carenest.backend.entity.AppointmentStatus;
+import com.carenest.backend.entity.ElderlyProfile;
+import com.carenest.backend.entity.EmergencyEvent;
+import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.FamilyLink;
 import com.carenest.backend.entity.FamilyLinkStatus;
-import com.carenest.backend.entity.HealthMetricType;
+import com.carenest.backend.entity.HealthMetric;
+import com.carenest.backend.entity.Medication;
 import com.carenest.backend.entity.MedicationLog;
 import com.carenest.backend.entity.MedicationLogStatus;
 import com.carenest.backend.entity.Notification;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.repository.AppointmentRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
+import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
 import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.MedicationRepository;
 import com.carenest.backend.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,11 +54,94 @@ public class DashboardService {
     private final MedicationLogRepository medicationLogRepository;
     private final AppointmentRepository appointmentRepository;
     private final NotificationRepository notificationRepository;
-    private final com.carenest.backend.repository.EmergencyEventRepository emergencyEventRepository;
+    private final EmergencyEventRepository emergencyEventRepository;
 
     public FamilyDashboardResponse getFamilyDashboard(Long familyId) {
         List<FamilyLink> links = familyLinkRepository
                 .findAllElderlyByFamilyIdAndStatus(familyId, FamilyLinkStatus.ACTIVE);
+
+        if (links.isEmpty()) {
+            return FamilyDashboardResponse.builder()
+                    .familyId(familyId)
+                    .elderly(Collections.emptyList())
+                    .summary(FamilyDashboardResponse.DashboardSummary.builder()
+                            .totalElderly(0)
+                            .totalActiveAlerts(0)
+                            .totalUpcomingAppointments(0)
+                            .totalMedicationsDue(0)
+                            .build())
+                    .build();
+        }
+
+        List<Long> elderlyIds = links.stream()
+                .map(link -> link.getElderly().getId())
+                .collect(Collectors.toList());
+
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime startOfDay = now.withHour(0).withMinute(0).withSecond(0).withNano(0);
+        OffsetDateTime endOfDay = startOfDay.plusDays(1);
+
+        Map<Long, List<String>> healthConditionsByElderly = elderlyProfileRepository
+                .findByUserIdInAndDeletedAtIsNull(elderlyIds)
+                .stream()
+                .collect(Collectors.toMap(p -> p.getUser().getId(), ElderlyProfile::getHealthConditions));
+
+        Map<Long, Map<String, LatestMetricItem>> latestMetricsByElderly = healthMetricRepository
+                .findLatestPerElderlyAndType(elderlyIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        hm -> hm.getElderly().getId(),
+                        Collectors.toMap(
+                                hm -> hm.getType().name(),
+                                this::toLatestMetricItem,
+                                (a, b) -> a,
+                                LinkedHashMap::new)));
+
+        Map<Long, List<Medication>> upcomingMedsByElderly = medicationRepository
+                .findUpcomingByElderlyIds(elderlyIds, startOfDay, endOfDay)
+                .stream()
+                .collect(Collectors.groupingBy(m -> m.getElderly().getId()));
+
+        Map<Long, List<Medication>> overdueMedsByElderly = medicationRepository
+                .findOverdueByElderlyIds(elderlyIds, now)
+                .stream()
+                .collect(Collectors.groupingBy(m -> m.getElderly().getId()));
+
+        Map<Long, List<MedicationLog>> logsByElderly = medicationLogRepository
+                .findAllByElderlyIdsAndDateRange(elderlyIds, startOfDay, endOfDay)
+                .stream()
+                .collect(Collectors.groupingBy(l -> l.getMedication().getElderly().getId()));
+
+        Map<Long, List<AppointmentResponse>> appointmentsByElderly = appointmentRepository
+                .findByElderlyIdInAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
+                        elderlyIds, now, now.plusMonths(3))
+                .stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .collect(Collectors.groupingBy(a -> a.getElderly().getId()))
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream()
+                                .map(this::toAppointmentResponse)
+                                .limit(5)
+                                .collect(Collectors.toList())));
+
+        Map<Long, Long> unreadCountByElderly = new HashMap<>();
+        for (Object[] row : notificationRepository.countUnreadByUserIds(elderlyIds)) {
+            unreadCountByElderly.put((Long) row[0], (Long) row[1]);
+        }
+
+        Map<Long, Notification> latestNotificationByElderly = notificationRepository
+                .findLatestPerUser(elderlyIds)
+                .stream()
+                .collect(Collectors.toMap(n -> n.getUser().getId(), n -> n));
+
+        Set<Long> elderlyWithActiveEmergency = emergencyEventRepository
+                .findByElderlyIdInAndStatus(elderlyIds, EmergencyStatus.ACTIVE)
+                .stream()
+                .map(e -> e.getElderly().getId())
+                .collect(Collectors.toCollection(HashSet::new));
 
         List<ElderlyDashboardItem> items = new ArrayList<>();
         int totalAlerts = 0;
@@ -60,12 +150,54 @@ public class DashboardService {
 
         for (FamilyLink link : links) {
             User elderly = link.getElderly();
-            ElderlyDashboardItem item = buildElderlyItem(elderly);
+            Long elderlyId = elderly.getId();
+
+            MedicationAdherenceSummary adherence = buildMedicationAdherence(
+                    upcomingMedsByElderly.getOrDefault(elderlyId, Collections.emptyList()),
+                    overdueMedsByElderly.getOrDefault(elderlyId, Collections.emptyList()),
+                    logsByElderly.getOrDefault(elderlyId, Collections.emptyList()));
+
+            ActiveAlertSummary alerts = buildActiveAlerts(
+                    unreadCountByElderly.getOrDefault(elderlyId, 0L),
+                    latestNotificationByElderly.get(elderlyId));
+
+            List<AppointmentResponse> upcomingAppointments =
+                    appointmentsByElderly.getOrDefault(elderlyId, Collections.emptyList());
+
+            boolean hasEmergency = elderlyWithActiveEmergency.contains(elderlyId);
+
+            String statusColor;
+            String statusMessage;
+            if (alerts.getCount() > 0 && hasEmergency) {
+                statusColor = "RED";
+                statusMessage = "Emergency alert active";
+            } else if (alerts.getCount() > 3 || adherence.getAdherenceRate() < 0.7) {
+                statusColor = "RED";
+                statusMessage = "Needs immediate attention";
+            } else if (alerts.getCount() > 0 || adherence.getAdherenceRate() < 0.9) {
+                statusColor = "YELLOW";
+                statusMessage = "Some items need attention";
+            } else {
+                statusColor = "GREEN";
+                statusMessage = "All good";
+            }
+
+            ElderlyDashboardItem item = ElderlyDashboardItem.builder()
+                    .elderlyId(elderlyId)
+                    .elderlyName(elderly.getName())
+                    .healthConditions(healthConditionsByElderly.getOrDefault(elderlyId, Collections.emptyList()))
+                    .latestMetrics(latestMetricsByElderly.getOrDefault(elderlyId, Collections.emptyMap()))
+                    .medicationAdherence(adherence)
+                    .upcomingAppointments(upcomingAppointments)
+                    .activeAlerts(alerts)
+                    .statusColor(statusColor)
+                    .statusMessage(statusMessage)
+                    .build();
             items.add(item);
 
-            totalAlerts += item.getActiveAlerts().getCount();
-            totalAppointments += item.getUpcomingAppointments().size();
-            totalMedsDue += (int) item.getMedicationAdherence().getTotalDue();
+            totalAlerts += alerts.getCount();
+            totalAppointments += upcomingAppointments.size();
+            totalMedsDue += (int) adherence.getTotalDue();
         }
 
         return FamilyDashboardResponse.builder()
@@ -80,87 +212,18 @@ public class DashboardService {
                 .build();
     }
 
-    private ElderlyDashboardItem buildElderlyItem(User elderly) {
-        Long elderlyId = elderly.getId();
-        MedicationAdherenceSummary adherence = getMedicationAdherence(elderlyId);
-        ActiveAlertSummary alerts = getActiveAlerts(elderlyId);
-
-        String statusColor;
-        String statusMessage;
-        if (alerts.getCount() > 0 && hasEmergencyAlert(elderlyId)) {
-            statusColor = "RED";
-            statusMessage = "Emergency alert active";
-        } else if (alerts.getCount() > 3 || adherence.getAdherenceRate() < 0.7) {
-            statusColor = "RED";
-            statusMessage = "Needs immediate attention";
-        } else if (alerts.getCount() > 0 || adherence.getAdherenceRate() < 0.9) {
-            statusColor = "YELLOW";
-            statusMessage = "Some items need attention";
-        } else {
-            statusColor = "GREEN";
-            statusMessage = "All good";
-        }
-
-        return ElderlyDashboardItem.builder()
-                .elderlyId(elderlyId)
-                .elderlyName(elderly.getName())
-                .healthConditions(getHealthConditions(elderlyId))
-                .latestMetrics(getLatestMetrics(elderlyId))
-                .medicationAdherence(adherence)
-                .upcomingAppointments(getUpcomingAppointments(elderlyId))
-                .activeAlerts(alerts)
-                .statusColor(statusColor)
-                .statusMessage(statusMessage)
+    private LatestMetricItem toLatestMetricItem(HealthMetric m) {
+        return LatestMetricItem.builder()
+                .value(m.getValue())
+                .valueSecondary(m.getValueSecondary())
+                .unit(m.getUnit())
+                .recordedAt(m.getRecordedAt())
                 .build();
     }
 
-    
-    private boolean hasEmergencyAlert(Long elderlyId) {
-        return !emergencyEventRepository
-                .findByElderlyIdAndStatusOrderByTriggeredAtDesc(elderlyId,
-                        com.carenest.backend.entity.EmergencyStatus.ACTIVE)
-                .isEmpty();
-    }
-
-    private List<String> getHealthConditions(Long elderlyId) {
-        return elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(elderlyId)
-                .map(profile -> profile.getHealthConditions())
-                .orElse(Collections.emptyList());
-    }
-
-
-    private Map<String, LatestMetricItem> getLatestMetrics(Long elderlyId) {
-        Map<String, LatestMetricItem> metrics = new LinkedHashMap<>();
-        for (HealthMetricType type : HealthMetricType.values()) {
-            healthMetricRepository.findLatestByElderlyIdAndType(elderlyId, type)
-                    .ifPresent(m -> metrics.put(type.name(), LatestMetricItem.builder()
-                            .value(m.getValue())
-                            .valueSecondary(m.getValueSecondary())
-                            .unit(m.getUnit())
-                            .recordedAt(m.getRecordedAt())
-                            .build()));
-        }
-        return metrics;
-    }
-
-
-    private MedicationAdherenceSummary getMedicationAdherence(Long elderlyId) {
-        OffsetDateTime startOfDay = OffsetDateTime.now()
-                .withHour(0).withMinute(0).withSecond(0).withNano(0);
-        OffsetDateTime endOfDay = startOfDay.plusDays(1);
-
-        List<com.carenest.backend.entity.Medication> todayMeds = medicationRepository
-                .findUpcomingByElderlyId(elderlyId, startOfDay, endOfDay);
-        List<com.carenest.backend.entity.Medication> overdue = medicationRepository
-                .findAllOverdueMedications(OffsetDateTime.now())
-                .stream()
-                .filter(m -> m.getElderly().getId().equals(elderlyId))
-                .collect(Collectors.toList());
-
+    private MedicationAdherenceSummary buildMedicationAdherence(
+            List<Medication> todayMeds, List<Medication> overdue, List<MedicationLog> logs) {
         long totalDue = todayMeds.size() + overdue.size();
-
-        List<MedicationLog> logs = medicationLogRepository
-                .findAllByElderlyIdAndDateRange(elderlyId, startOfDay, endOfDay);
 
         long taken = logs.stream()
                 .filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
@@ -180,32 +243,9 @@ public class DashboardService {
                 .build();
     }
 
-
-    private List<AppointmentResponse> getUpcomingAppointments(Long elderlyId) {
-        OffsetDateTime now = OffsetDateTime.now();
-        return appointmentRepository
-                .findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
-                        elderlyId, now, now.plusMonths(3))
-                .stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
-                .map(this::toAppointmentResponse)
-                .limit(5)
-                .collect(Collectors.toList());
-    }
-
-
-    private ActiveAlertSummary getActiveAlerts(Long elderlyId) {
-        long unreadCount = notificationRepository.countByUserIdAndReadAtIsNull(elderlyId);
-
-        String latestTitle = null;
-        String latestType = null;
-        var page = notificationRepository
-                .findByUserIdOrderByCreatedAtDesc(elderlyId, PageRequest.of(0, 1));
-        if (!page.isEmpty()) {
-            Notification latest = page.getContent().get(0);
-            latestTitle = latest.getTitle();
-            latestType = latest.getType().name();
-        }
+    private ActiveAlertSummary buildActiveAlerts(long unreadCount, Notification latest) {
+        String latestTitle = latest != null ? latest.getTitle() : null;
+        String latestType = latest != null ? latest.getType().name() : null;
 
         return ActiveAlertSummary.builder()
                 .count((int) unreadCount)
@@ -213,7 +253,6 @@ public class DashboardService {
                 .latestType(latestType)
                 .build();
     }
-
 
     private AppointmentResponse toAppointmentResponse(Appointment a) {
         return AppointmentResponse.builder()

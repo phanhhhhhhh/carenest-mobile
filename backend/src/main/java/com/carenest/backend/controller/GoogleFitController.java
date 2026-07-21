@@ -1,5 +1,6 @@
 package com.carenest.backend.controller;
 
+import com.carenest.backend.dto.googlefit.GoogleFitStatusResponse;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.UserRepository;
@@ -76,14 +77,14 @@ public class GoogleFitController {
     
     @GetMapping("/status/{userId}")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
-    public ResponseEntity<Map<String, Object>> status(@PathVariable Long userId) {
+    public ResponseEntity<GoogleFitStatusResponse> status(@PathVariable Long userId) {
         boolean connected = googleFitService.isConnected(userId);
         boolean configured = googleFitService.isConfigured();
 
-        return ResponseEntity.ok(Map.of(
-            "connected", connected,
-            "configured", configured
-        ));
+        return ResponseEntity.ok(GoogleFitStatusResponse.builder()
+                .connected(connected)
+                .configured(configured)
+                .build());
     }
 
     

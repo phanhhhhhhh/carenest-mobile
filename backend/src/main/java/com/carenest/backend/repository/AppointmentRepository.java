@@ -16,6 +16,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
         Long elderlyId, OffsetDateTime from, OffsetDateTime to);
 
+    List<Appointment> findByElderlyIdInAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
+        List<Long> elderlyIds, OffsetDateTime from, OffsetDateTime to);
+
     List<Appointment> findByElderlyIdAndStatusAndDeletedAtIsNullOrderByDatetimeAsc(
         Long elderlyId, AppointmentStatus status);
 

@@ -20,7 +20,6 @@ import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { getUserId } from '../../../core/storage/secureStorage';
-import { AppConfig } from '../../../core/config/appConfig';
 import { GeminiService } from '../../../core/services/geminiService';
 import { useHealthMetricStore } from '../store/healthMetricStore';
 import { useGoogleFitStore } from '../store/googleFitStore';
@@ -136,11 +135,12 @@ export default function ElderlyHealthScreen() {
   }, []);
 
   useEffect(() => {
-    if (elderlyId) {
-      healthStore.getState().load();
-      loadThresholds(elderlyId);
-      fitStore.getState().loadStatus();
-    }
+    if (!elderlyId) return;
+    const controller = new AbortController();
+    healthStore.getState().load(undefined, controller.signal);
+    loadThresholds(elderlyId, controller.signal);
+    fitStore.getState().loadStatus(controller.signal);
+    return () => controller.abort();
   }, [elderlyId]);
 
   const getStatus = (data: HealthMetric): Status => {
@@ -199,14 +199,6 @@ export default function ElderlyHealthScreen() {
         'Start tracking your health by adding your first reading. ' +
         'I will help you analyze trends and provide personalized advice!',
       );
-      setAiLoading(false);
-      setAiError(null);
-      return;
-    }
-
-    const hasGemini = AppConfig.geminiApiKey.length > 0;
-    if (!hasGemini) {
-      setAiInsight(ruleBasedInsight());
       setAiLoading(false);
       setAiError(null);
       return;

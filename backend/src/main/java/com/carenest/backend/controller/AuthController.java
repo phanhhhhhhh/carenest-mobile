@@ -120,10 +120,11 @@ public class AuthController {
         @Valid @RequestBody SendOtpRequest request
     ) {
         String target = request.getTarget().trim();
+        String genericMessage = "If this account exists, an OTP has been sent";
 
-        User user = findUserByTarget(target);
-        if (user.isEmailVerified()) {
-            throw new ConflictException("Account is already verified. Please log in.");
+        User user = findUserByTargetOrNull(target);
+        if (user == null || user.isEmailVerified()) {
+            return ResponseEntity.ok(Map.of("message", genericMessage));
         }
 
         if ("SMS".equalsIgnoreCase(request.getMethod())) {
@@ -132,9 +133,7 @@ public class AuthController {
             otpService.sendOtpViaEmail(target, user.getName());
         }
 
-        return ResponseEntity.ok(Map.of(
-            "message", "Verification code sent to " + target
-        ));
+        return ResponseEntity.ok(Map.of("message", genericMessage));
     }
 
     @PostMapping("/verify-otp")
@@ -172,7 +171,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    
+
     private User findUserByTarget(String target) {
         if (target.contains("@")) {
             return userRepository.findByEmailAndDeletedAtIsNull(target.toLowerCase())
@@ -180,6 +179,13 @@ public class AuthController {
         }
         return userRepository.findByPhoneAndDeletedAtIsNull(target)
             .orElseThrow(() -> new NotFoundException("No account found with phone: " + target));
+    }
+
+    private User findUserByTargetOrNull(String target) {
+        if (target.contains("@")) {
+            return userRepository.findByEmailAndDeletedAtIsNull(target.toLowerCase()).orElse(null);
+        }
+        return userRepository.findByPhoneAndDeletedAtIsNull(target).orElse(null);
     }
 
 

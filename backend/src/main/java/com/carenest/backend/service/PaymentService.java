@@ -60,7 +60,7 @@ public class PaymentService {
 
     
     @Transactional
-    public Map<String, String> createVnpayPayment(Long userId, String planType, String clientIp) {
+    public com.carenest.backend.dto.payment.PaymentInitResponse createVnpayPayment(Long userId, String planType, String clientIp) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -84,11 +84,13 @@ public class PaymentService {
         String paymentUrl = buildVnpayUrl(txnRef, amount, clientIp);
         log.info("VNPay payment URL created: userId={} txnRef={}", userId, txnRef);
 
-        return Map.of(
-                "paymentUrl", paymentUrl,
-                "transactionId", txnRef,
-                "amount", amount.toString(),
-                "planType", planType);
+        return com.carenest.backend.dto.payment.PaymentInitResponse.builder()
+                .paymentUrl(paymentUrl)
+                .transactionId(txnRef)
+                .amount(amount)
+                .planType(planType)
+                .provider("VNPAY")
+                .build();
     }
 
     
@@ -133,7 +135,7 @@ public class PaymentService {
 
     
     @Transactional
-    public Map<String, String> createMomoPayment(Long userId, String planType) {
+    public com.carenest.backend.dto.payment.PaymentInitResponse createMomoPayment(Long userId, String planType) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -157,28 +159,14 @@ public class PaymentService {
         subscriptionRepository.save(sub);
 
         try {
-            String rawSignature = "accessKey=" + momoAccessKey
-                    + "&amount=" + amount
-                    + "&extraData="
-                    + "&ipnUrl=" + URLEncoder.encode(vnpayReturnUrl.replace("vnpay", "momo"), StandardCharsets.UTF_8)
-                    + "&orderId=" + orderId
-                    + "&orderInfo=" + URLEncoder.encode("CareNest Premium Subscription", StandardCharsets.UTF_8)
-                    + "&partnerCode=" + momoPartnerCode
-                    + "&redirectUrl="
-                    + URLEncoder.encode(vnpayReturnUrl.replace("vnpay", "momo"), StandardCharsets.UTF_8)
-                    + "&requestId=" + requestId
-                    + "&requestType=captureWallet";
-
-            String signature = hmacSHA256(momoSecretKey, rawSignature);
-
-            log.info("MoMo payment created: userId={} orderId={}", userId, orderId);
-            return Map.of(
-                    "payUrl", momoPayUrl,
-                    "orderId", orderId,
-                    "requestId", requestId,
-                    "amount", amount.toString(),
-                    "planType", planType,
-                    "signature", signature);
+            log.info("MoMo payment created: userId={} orderId={} requestId={}", userId, orderId, requestId);
+            return com.carenest.backend.dto.payment.PaymentInitResponse.builder()
+                    .paymentUrl(momoPayUrl)
+                    .transactionId(orderId)
+                    .amount(amount)
+                    .planType(planType)
+                    .provider("MOMO")
+                    .build();
         } catch (Exception e) {
             log.error("Failed to create MoMo payment: {}", e.getMessage());
             throw new RuntimeException("Failed to create MoMo payment", e);

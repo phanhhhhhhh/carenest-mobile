@@ -1,26 +1,22 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
-import { asListOfMaps, getErrorMessage } from '../../../core/api/errors';
+import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import type { AppointmentItem } from '../../../shared/types';
+import { AppointmentSchema, safeParseList } from '../../../shared/schemas';
 
 
 
-function isValidIsoDate(s: string): boolean {
-  return s !== '' && !Number.isNaN(new Date(s).getTime());
-}
-
-function parseAppointmentItem(j: Record<string, unknown>): AppointmentItem {
-  const rawDate = (j.appointmentDate as string) ?? '';
+function toAppointmentItem(a: ReturnType<typeof AppointmentSchema.parse>): AppointmentItem {
   return {
-    id: j.id != null ? String(j.id) : '',
-    doctor: (j.doctor as string) ?? '',
-    specialty: (j.specialty as string) ?? '',
-    location: (j.location as string | null) ?? undefined,
-    appointmentDate: isValidIsoDate(rawDate) ? rawDate : new Date().toISOString(),
-    status: ((j.status as string) ?? 'SCHEDULED') as AppointmentItem['status'],
-    notes: (j.notes as string | null) ?? undefined,
-    createdAt: j.createdAt != null ? String(j.createdAt) : undefined,
+    id: a.id,
+    doctor: a.doctor,
+    specialty: a.specialty ?? '',
+    location: a.location ?? undefined,
+    appointmentDate: a.datetime,
+    status: a.status,
+    notes: a.notes ?? undefined,
+    createdAt: a.createdAt ?? undefined,
   };
 }
 
@@ -39,7 +35,7 @@ interface AppointmentState {
   appointments: AppointmentItem[];
   isSaving: boolean;
 
-  load: () => Promise<void>;
+  load: (signal?: AbortSignal) => Promise<void>;
   create: (params: {
     doctor: string;
     specialty: string;
@@ -69,7 +65,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
   appointments: [],
   isSaving: false,
 
-  load: async () => {
+  load: async (signal) => {
     set({ isLoading: true, error: null });
     try {
       const userId = await storage.getUserId();
@@ -77,10 +73,16 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
         set({ isLoading: false });
         return;
       }
-      const resp = await api.get(`/users/${userId}/appointments`);
-      const items = asListOfMaps(resp.data).map(parseAppointmentItem);
+      const resp = await api.get(`/users/${userId}/appointments`, { signal });
+      if (!Array.isArray(resp.data)) {
+        console.warn('[schema] AppointmentList: expected an array — keeping previous state');
+        set({ isLoading: false, error: 'Unexpected response from server' });
+        return;
+      }
+      const items = safeParseList(AppointmentSchema, resp.data, 'AppointmentList').map(toAppointmentItem);
       set({ isLoading: false, appointments: items });
     } catch (e) {
+      if (isCancelled(e)) return;
       set({ isLoading: false, error: `Error loading appointments: ${getErrorMessage(e)}` });
     }
   },
@@ -94,7 +96,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       data.doctor = doctor;
       data.specialty = specialty;
       if (location && location.length > 0) data.location = location;
-      data.appointmentDate = appointmentDate.toISOString();
+      data.datetime = appointmentDate.toISOString();
       if (notes && notes.length > 0) data.notes = notes;
 
       await api.post('/appointments', data);
@@ -114,7 +116,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       if (doctor !== undefined) data.doctor = doctor;
       if (specialty !== undefined) data.specialty = specialty;
       if (location !== undefined) data.location = location;
-      if (appointmentDate !== undefined) data.appointmentDate = appointmentDate.toISOString();
+      if (appointmentDate !== undefined) data.datetime = appointmentDate.toISOString();
       if (notes !== undefined) data.notes = notes;
       await api.patch(`/appointments/${appointmentId}`, data);
       await get().load();

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
-import { getStatus, getErrorMessage } from '../../../core/api/errors';
+import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
+import { WeeklySummarySchema, safeParseOne } from '../../../shared/schemas';
 
 
 
@@ -17,17 +18,20 @@ export interface WeeklySummaryData {
   createdAt: string;
 }
 
-function parseWeeklySummaryData(j: Record<string, unknown>): WeeklySummaryData {
-  const weekStart = j.weekStart != null ? String(j.weekStart) : '';
-  const weekEnd = j.weekEnd != null ? String(j.weekEnd) : '';
-  const createdAt = j.createdAt != null ? String(j.createdAt) : '';
+function parseWeeklySummaryData(j: Record<string, unknown>): WeeklySummaryData | null {
+  const validated = safeParseOne(WeeklySummarySchema, j, 'WeeklySummary');
+  if (!validated) return null;
+
+  const weekStart = validated.weekStart ?? '';
+  const weekEnd = validated.weekEnd ?? '';
+  const createdAt = validated.createdAt ?? '';
   return {
-    id: j.id != null ? String(j.id) : '',
-    title: (j.title as string) ?? 'Weekly Health Summary',
-    content: (j.content as string) ?? '',
-    medicationAdherence: j.medicationAdherence != null ? Number(j.medicationAdherence) : 0,
-    totalMetrics: j.totalMetrics != null ? Number(j.totalMetrics) : 0,
-    abnormalMetrics: j.abnormalMetrics != null ? Number(j.abnormalMetrics) : 0,
+    id: j.id != null ? String(j.id) : String(Date.now()),
+    title: validated.title ?? 'Weekly Health Summary',
+    content: validated.content ?? validated.summary ?? validated.body ?? '',
+    medicationAdherence: validated.medicationAdherence ?? 0,
+    totalMetrics: validated.totalMetrics ?? 0,
+    abnormalMetrics: validated.abnormalMetrics ?? 0,
     weekStart: isValidIsoDate(weekStart)
       ? weekStart
       : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -53,7 +57,7 @@ interface WeeklySummaryState {
   summaries: WeeklySummaryData[];
   latest: WeeklySummaryData | null;
 
-  load: (elderlyId: string) => Promise<void>;
+  load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
   generateNow: (elderlyId: string) => Promise<WeeklySummaryData | null>;
 }
 
@@ -63,18 +67,23 @@ export const useWeeklySummaryStore = create<WeeklySummaryState>((set) => ({
   summaries: [],
   latest: null,
 
-  load: async (elderlyId) => {
+  load: async (elderlyId, signal) => {
     set({ isLoading: true, error: null });
     try {
-      const resp = await api.get(`/elderly/${elderlyId}/weekly-summary`);
+      const resp = await api.get(`/elderly/${elderlyId}/weekly-summary`, { signal });
       const data = resp.data as Record<string, unknown> | null;
       if (!data || Object.keys(data).length === 0) {
         set({ isLoading: false, summaries: [] });
         return;
       }
       const summary = parseWeeklySummaryData(data);
+      if (!summary) {
+        set({ isLoading: false, error: 'Unexpected response from server' });
+        return;
+      }
       set({ isLoading: false, summaries: [summary], latest: summary });
     } catch (e) {
+      if (isCancelled(e)) return;
       const status = getStatus(e);
       if (status === 404 || status === 204) {
         set({ isLoading: false, summaries: [] });
@@ -89,17 +98,11 @@ export const useWeeklySummaryStore = create<WeeklySummaryState>((set) => ({
     try {
       const resp = await api.post(`/elderly/${elderlyId}/weekly-summary/generate`);
       const raw = resp.data as Record<string, unknown>;
-      const data: WeeklySummaryData = {
-        id: String(Date.now()),
-        title: 'Weekly Health Summary',
-        content: (raw.summary as string) ?? (raw.message as string) ?? '',
-        medicationAdherence: 0,
-        totalMetrics: 0,
-        abnormalMetrics: 0,
-        weekStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        weekEnd: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      };
+      const data = parseWeeklySummaryData(raw);
+      if (!data) {
+        set({ isLoading: false, error: 'Unexpected response from server' });
+        return null;
+      }
       set((state) => ({
         isLoading: false,
         latest: data,

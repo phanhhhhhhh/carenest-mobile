@@ -33,18 +33,18 @@ public class ElderlyProfileController {
         return ResponseEntity.status(HttpStatus.CREATED).body(elderlyProfileService.create(userId, request));
     }
 
-    @GetMapping("/{id}")
-    @PreAuthorize("@authz.canAccessElderlyProfile(authentication.principal, #id)")
-    public ResponseEntity<ElderlyProfileResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(elderlyProfileService.getById(id));
+    @GetMapping("/{userId}")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
+    public ResponseEntity<ElderlyProfileResponse> getByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(elderlyProfileService.getByUserId(userId));
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("@authz.canAccessElderlyProfile(authentication.principal, #id)")
+    @PutMapping("/{userId}")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
     public ResponseEntity<ElderlyProfileResponse> update(
-        @PathVariable Long id,
+        @PathVariable Long userId,
         @Valid @RequestBody ElderlyProfileRequest request
     ) {
-        return ResponseEntity.ok(elderlyProfileService.update(id, request));
+        return ResponseEntity.ok(elderlyProfileService.update(userId, request));
     }
 }

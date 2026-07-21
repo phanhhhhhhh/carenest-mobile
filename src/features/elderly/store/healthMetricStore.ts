@@ -1,7 +1,8 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import api from '../../../core/api/client';
 import type { HealthMetric } from '../../../shared/types';
-import { getErrorMessage, asListOfMaps } from '../../../core/api/errors';
+import { getErrorMessage, isCancelled } from '../../../core/api/errors';
+import { HealthMetricSchema, safeParseList } from '../../../shared/schemas';
 
 
 
@@ -11,23 +12,21 @@ interface HealthMetricState {
   metrics: HealthMetric[];
   latestByType: Record<string, HealthMetric>;
 
-  load: (params?: { fromDate?: Date; toDate?: Date }) => Promise<void>;
+  load: (params?: { fromDate?: Date; toDate?: Date }, signal?: AbortSignal) => Promise<void>;
   loadPeriod: (period: 'week' | 'month') => Promise<void>;
   addMetric: (params: { type: string; value: string; unit?: string }) => Promise<void>;
 }
 
 type HealthMetricStoreHook = UseBoundStore<StoreApi<HealthMetricState>>;
 
-function parseMetric(j: Record<string, unknown>): HealthMetric {
-  const rawValue = j.value;
-  const rawSecondary = j.valueSecondary;
+function toHealthMetric(m: ReturnType<typeof HealthMetricSchema.parse>): HealthMetric {
   return {
-    id: String(j.id ?? ''),
-    type: (j.type as string) ?? '',
-    value: rawValue != null ? String(rawValue) : '',
-    valueSecondary: rawSecondary != null ? String(rawSecondary) : undefined,
-    unit: (j.unit as string) ?? undefined,
-    recordedAt: (j.recordedAt as string) ?? new Date().toISOString(),
+    id: m.id,
+    type: m.type,
+    value: String(m.value),
+    valueSecondary: m.valueSecondary != null ? String(m.valueSecondary) : undefined,
+    unit: m.unit ?? undefined,
+    recordedAt: m.recordedAt,
   };
 }
 
@@ -44,7 +43,7 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
     metrics: [],
     latestByType: {},
 
-    load: async ({ fromDate, toDate } = {}) => {
+    load: async ({ fromDate, toDate } = {}, signal) => {
       set({ isLoading: true, error: null });
       try {
         const params: Record<string, string> = {};
@@ -53,8 +52,14 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
 
         const resp = await api.get(`/elderly/${elderlyId}/health-metrics`, {
           params: Object.keys(params).length > 0 ? params : undefined,
+          signal,
         });
-        const list = asListOfMaps(resp.data).map(parseMetric);
+        if (!Array.isArray(resp.data)) {
+          console.warn('[schema] HealthMetricList: expected an array — keeping previous state');
+          set({ isLoading: false, error: 'Unexpected response from server' });
+          return;
+        }
+        const list = safeParseList(HealthMetricSchema, resp.data, 'HealthMetricList').map(toHealthMetric);
         const latest: Record<string, HealthMetric> = {};
         for (const m of list) {
           const existing = latest[m.type];
@@ -64,6 +69,7 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
         }
         set({ isLoading: false, metrics: list, latestByType: latest });
       } catch (e) {
+        if (isCancelled(e)) return;
         set({ isLoading: false, error: `Error: ${getErrorMessage(e)}` });
       }
     },
@@ -81,6 +87,7 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
           elderlyId: Number.parseInt(elderlyId, 10) || undefined,
           type,
           value,
+          recordedAt: new Date().toISOString(),
           ...(unit !== undefined ? { unit } : {}),
         });
         await get().load();

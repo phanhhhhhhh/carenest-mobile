@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
-import { getStatus, getErrorMessage } from '../../../core/api/errors';
+import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
+import {
+  CameraDeviceSchema,
+  CameraStatusSchema,
+  CameraSnapshotSchema,
+  safeParseOne,
+  safeParseList,
+} from '../../../shared/schemas';
 
 
 
@@ -15,15 +22,15 @@ export interface CameraDeviceData {
   snapshotSchedule: string;
 }
 
-function parseCameraDeviceData(j: Record<string, unknown>): CameraDeviceData {
+function toCameraDeviceData(c: ReturnType<typeof CameraDeviceSchema.parse>): CameraDeviceData {
   return {
-    id: Number(j.id ?? 0),
-    label: (j.label as string) ?? 'Camera',
-    deviceSn: (j.deviceSn as string) ?? '',
-    status: (j.status as string) ?? 'ONLINE',
-    privacyMode: (j.privacyMode as boolean) ?? false,
-    motionDetectionEnabled: (j.motionDetectionEnabled as boolean) ?? false,
-    snapshotSchedule: (j.snapshotSchedule as string) ?? '',
+    id: c.id,
+    label: c.label ?? 'Camera',
+    deviceSn: c.deviceSn ?? '',
+    status: c.status ?? 'ONLINE',
+    privacyMode: c.privacyMode ?? false,
+    motionDetectionEnabled: c.motionDetectionEnabled ?? false,
+    snapshotSchedule: c.snapshotSchedule ?? '',
   };
 }
 
@@ -47,13 +54,13 @@ const DEFAULT_CAMERA_STATUS: CameraStatusData = {
   statusText: '',
 };
 
-function parseCameraStatusData(j: Record<string, unknown>): CameraStatusData {
+function toCameraStatusData(c: ReturnType<typeof CameraStatusSchema.parse>): CameraStatusData {
   return {
-    hasCamera: (j.hasCamera as boolean) ?? false,
-    cameraCount: Number(j.cameraCount ?? 0),
-    allOnline: (j.allOnline as boolean) ?? false,
-    indicatorColor: (j.indicatorColor as string) ?? 'GRAY',
-    statusText: (j.statusText as string) ?? '',
+    hasCamera: c.hasCamera,
+    cameraCount: c.cameraCount ?? 0,
+    allOnline: c.allOnline ?? false,
+    indicatorColor: c.indicatorColor ?? 'GRAY',
+    statusText: c.statusText ?? '',
   };
 }
 
@@ -65,13 +72,13 @@ export interface CameraSnapshotData {
   createdAt: string;
 }
 
-function parseCameraSnapshotData(j: Record<string, unknown>): CameraSnapshotData {
+function toCameraSnapshotData(s: ReturnType<typeof CameraSnapshotSchema.parse>): CameraSnapshotData {
   return {
-    id: Number(j.id ?? 0),
-    imageUrl: (j.imageUrl as string) ?? '',
-    trigger: (j.trigger as string) ?? 'CHECK_IN',
-    success: (j.success as boolean) ?? true,
-    createdAt: (j.createdAt as string) ?? new Date().toISOString(),
+    id: s.id,
+    imageUrl: s.imageUrl ?? '',
+    trigger: s.trigger ?? 'CHECK_IN',
+    success: s.success ?? true,
+    createdAt: s.createdAt ?? new Date().toISOString(),
   };
 }
 
@@ -86,7 +93,7 @@ interface CameraState {
   liveStreamUrl: string | null;
   voiceActive: boolean;
 
-  load: (elderlyId: string) => Promise<void>;
+  load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
   bindCamera: (elderlyId: string, deviceSn: string, label: string) => Promise<boolean>;
   unbindCamera: (elderlyId: string, deviceId: number) => Promise<boolean>;
   getLiveStream: (deviceId: number) => Promise<string | null>;
@@ -110,29 +117,30 @@ export const useCameraStore = create<CameraState>((set, get) => ({
   liveStreamUrl: null,
   voiceActive: false,
 
-  load: async (elderlyId) => {
+  load: async (elderlyId, signal) => {
     set({ isLoading: true, error: null });
     try {
       const [statusResp, camerasResp, timelineResp] = await Promise.all([
-        api.get(`/elderly/${elderlyId}/camera-status`),
-        api.get(`/elderly/${elderlyId}/cameras`),
-        api.get(`/elderly/${elderlyId}/camera-timeline`, { params: { page: 0, size: 20 } }),
+        api.get(`/elderly/${elderlyId}/camera-status`, { signal }),
+        api.get(`/elderly/${elderlyId}/cameras`, { signal }),
+        api.get(`/elderly/${elderlyId}/camera-timeline`, { params: { page: 0, size: 20 }, signal }),
       ]);
 
-      const statusData = parseCameraStatusData(statusResp.data as Record<string, unknown>);
+      const parsedStatus = safeParseOne(CameraStatusSchema, statusResp.data, 'CameraStatus');
+      const statusData = parsedStatus ? toCameraStatusData(parsedStatus) : get().status;
 
-      const camerasRaw: unknown[] = Array.isArray(camerasResp.data) ? camerasResp.data : [];
-      const cameras = camerasRaw.map((e) => parseCameraDeviceData(e as Record<string, unknown>));
+      const cameras = safeParseList(CameraDeviceSchema, camerasResp.data, 'CameraDeviceList').map(
+        toCameraDeviceData,
+      );
 
-      const timelineRaw: unknown[] = Array.isArray(
-        (timelineResp.data as Record<string, unknown>)?.snapshots,
-      )
-        ? ((timelineResp.data as Record<string, unknown>).snapshots as unknown[])
-        : [];
-      const timeline = timelineRaw.map((e) => parseCameraSnapshotData(e as Record<string, unknown>));
+      const timelineRaw = (timelineResp.data as Record<string, unknown>)?.snapshots;
+      const timeline = safeParseList(CameraSnapshotSchema, timelineRaw, 'CameraSnapshotList').map(
+        toCameraSnapshotData,
+      );
 
       set({ isLoading: false, status: statusData, cameras, timeline });
     } catch (e) {
+      if (isCancelled(e)) return;
       if (getStatus(e) === 404) {
         set({ isLoading: false });
         return;

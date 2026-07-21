@@ -2,7 +2,6 @@ package com.carenest.backend.security;
 
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.repository.AppointmentRepository;
-import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthorizationService {
 
-    private final ElderlyProfileRepository elderlyProfileRepository;
     private final FamilyLinkRepository familyLinkRepository;
     private final MedicationRepository medicationRepository;
     private final HealthMetricRepository healthMetricRepository;
@@ -36,13 +34,6 @@ public class AuthorizationService {
         if (principalId.equals(elderlyId)) return true;
         return familyLinkRepository.existsByElderlyIdAndFamilyIdAndStatusAndDeletedAtIsNull(
             elderlyId, principalId, FamilyLinkStatus.ACTIVE);
-    }
-
-    public boolean canAccessElderlyProfile(Long principalId, Long profileId) {
-        if (principalId == null || profileId == null) return false;
-        return elderlyProfileRepository.findByIdAndDeletedAtIsNull(profileId)
-            .map(p -> isOwnerOrLinkedFamily(principalId, p.getUser().getId()))
-            .orElse(false);
     }
 
     public boolean isFamilyLinkParticipant(Long principalId, Long linkId) {

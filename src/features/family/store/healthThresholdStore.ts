@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
-import { getStatus, getErrorMessage } from '../../../core/api/errors';
+import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
+import {
+  HealthThresholdSchema,
+  HealthThresholdRecommendationSchema,
+  safeParseList,
+} from '../../../shared/schemas';
 
 
 
@@ -15,15 +20,15 @@ export interface ThresholdItem {
   alertFamily: boolean;
 }
 
-function parseThresholdItem(j: Record<string, unknown>): ThresholdItem {
+function toThresholdItem(t: ReturnType<typeof HealthThresholdSchema.parse>): ThresholdItem {
   return {
-    id: Number(j.id ?? 0),
-    metricType: (j.metricType as string) ?? '',
-    minValue: j.minValue != null ? Number(j.minValue) : undefined,
-    maxValue: j.maxValue != null ? Number(j.maxValue) : undefined,
-    minValueSecondary: j.minValueSecondary != null ? Number(j.minValueSecondary) : undefined,
-    maxValueSecondary: j.maxValueSecondary != null ? Number(j.maxValueSecondary) : undefined,
-    alertFamily: (j.alertFamily as boolean) ?? true,
+    id: t.id,
+    metricType: t.metricType,
+    minValue: t.minValue ?? undefined,
+    maxValue: t.maxValue ?? undefined,
+    minValueSecondary: t.minValueSecondary ?? undefined,
+    maxValueSecondary: t.maxValueSecondary ?? undefined,
+    alertFamily: t.alertFamily ?? true,
   };
 }
 
@@ -79,13 +84,13 @@ export interface RecommendData {
   maxValueSecondary?: number;
 }
 
-function parseRecommendData(j: Record<string, unknown>): RecommendData {
+function toRecommendData(r: ReturnType<typeof HealthThresholdRecommendationSchema.parse>): RecommendData {
   return {
-    metricType: (j.metricType as string) ?? '',
-    minValue: j.minValue != null ? Number(j.minValue) : undefined,
-    maxValue: j.maxValue != null ? Number(j.maxValue) : undefined,
-    minValueSecondary: j.minValueSecondary != null ? Number(j.minValueSecondary) : undefined,
-    maxValueSecondary: j.maxValueSecondary != null ? Number(j.maxValueSecondary) : undefined,
+    metricType: r.metricType,
+    minValue: r.minValue ?? undefined,
+    maxValue: r.maxValue ?? undefined,
+    minValueSecondary: r.minValueSecondary ?? undefined,
+    maxValueSecondary: r.maxValueSecondary ?? undefined,
   };
 }
 
@@ -97,7 +102,7 @@ interface ThresholdState {
   thresholds: ThresholdItem[];
   recommendations: RecommendData[] | null;
 
-  load: (elderlyId: string) => Promise<void>;
+  load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
   create: (
     elderlyId: string,
     params: {
@@ -133,14 +138,14 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
   thresholds: [],
   recommendations: null,
 
-  load: async (elderlyId) => {
+  load: async (elderlyId, signal) => {
     set({ isLoading: true, error: null });
     try {
-      const resp = await api.get(`/users/${elderlyId}/health-thresholds`);
-      const list: unknown[] = Array.isArray(resp.data) ? resp.data : [];
-      const thresholds = list.map((e) => parseThresholdItem(e as Record<string, unknown>));
+      const resp = await api.get(`/users/${elderlyId}/health-thresholds`, { signal });
+      const thresholds = safeParseList(HealthThresholdSchema, resp.data, 'HealthThresholdList').map(toThresholdItem);
       set({ isLoading: false, thresholds });
     } catch (e) {
+      if (isCancelled(e)) return;
       if (getStatus(e) === 404) {
         set({ isLoading: false, thresholds: [] });
         return;
@@ -209,8 +214,11 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
     try {
       const resp = await api.get(`/users/${elderlyId}/health-thresholds/recommend`);
       const data = resp.data as Record<string, unknown>;
-      const raw: unknown[] = Array.isArray(data.recommendations) ? data.recommendations : [];
-      const list = raw.map((e) => parseRecommendData(e as Record<string, unknown>));
+      const list = safeParseList(
+        HealthThresholdRecommendationSchema,
+        data.recommendations,
+        'HealthThresholdRecommendations',
+      ).map(toRecommendData);
       set({ isLoading: false, recommendations: list });
       return list;
     } catch (e) {

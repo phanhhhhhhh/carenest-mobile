@@ -52,11 +52,13 @@ export default function ElderlyChatScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   useEffect(() => {
-    loadHistory({ refresh: true });
+    const controller = new AbortController();
+    loadHistory({ refresh: true }, controller.signal);
     (async () => {
       const name = await getName();
       if (name) setUserName(name);
     })();
+    return () => controller.abort();
   }, []);
 
   const welcomeMessage =

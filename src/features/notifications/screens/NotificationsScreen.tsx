@@ -118,7 +118,9 @@ export default function NotificationsScreen() {
   const load = useNotificationStore((s) => s.load);
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const unreadCount = selectUnreadCount(items);

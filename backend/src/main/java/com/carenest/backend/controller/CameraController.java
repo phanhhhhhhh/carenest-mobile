@@ -1,5 +1,6 @@
 package com.carenest.backend.controller;
 
+import com.carenest.backend.dto.camera.CameraStatusResponse;
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.CameraSnapshot;
 import com.carenest.backend.service.CameraService;
@@ -157,19 +158,22 @@ public class CameraController {
 
     @GetMapping("/elderly/{elderlyId}/camera-status")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
-    public ResponseEntity<Map<String, Object>> getElderlyCameraStatus(@PathVariable Long elderlyId) {
+    public ResponseEntity<CameraStatusResponse> getElderlyCameraStatus(@PathVariable Long elderlyId) {
         List<CameraDevice> cameras = cameraService.getCamerasForElderly(elderlyId);
         if (cameras.isEmpty()) {
-            return ResponseEntity.ok(Map.of("hasCamera", false, "message", "No cameras linked"));
+            return ResponseEntity.ok(CameraStatusResponse.builder()
+                    .hasCamera(false)
+                    .message("No cameras linked")
+                    .build());
         }
         boolean allOnline = cameras.stream().allMatch(c -> c.isOnline());
         boolean anyPrivacy = cameras.stream().anyMatch(c -> c.isPrivacyMode());
-        return ResponseEntity.ok(Map.of(
-                "hasCamera", true,
-                "cameraCount", cameras.size(),
-                "allOnline", allOnline,
-                "indicatorColor", anyPrivacy ? "GRAY" : (allOnline ? "GREEN" : "RED"),
-                "statusText",
-                anyPrivacy ? "Privacy mode active" : (allOnline ? "All cameras connected" : "Some cameras offline")));
+        return ResponseEntity.ok(CameraStatusResponse.builder()
+                .hasCamera(true)
+                .cameraCount(cameras.size())
+                .allOnline(allOnline)
+                .indicatorColor(anyPrivacy ? "GRAY" : (allOnline ? "GREEN" : "RED"))
+                .statusText(anyPrivacy ? "Privacy mode active" : (allOnline ? "All cameras connected" : "Some cameras offline"))
+                .build());
     }
 }

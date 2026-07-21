@@ -7,9 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -20,7 +18,7 @@ import java.util.Date;
 @Slf4j
 public class JwtService {
 
-    private static final String DEFAULT_WEAK_SECRET = "dev-secret-key-for-local-dev-only-min-32-chars";
+    private static final int MIN_SECRET_LENGTH = 32;
 
     @Value("${jwt.secret}")
     private String secret;
@@ -28,20 +26,12 @@ public class JwtService {
     @Value("${jwt.access-token-expiration-ms}")
     private long accessTokenExpirationMs;
 
-    @Autowired
-    private Environment environment;
-
     @PostConstruct
     public void init() {
-        boolean isWeak = DEFAULT_WEAK_SECRET.equals(secret) || secret.length() < 32;
-        if (isWeak) {
-            boolean isSafeProfile = environment.matchesProfiles("local") || environment.matchesProfiles("dev");
-            if (!isSafeProfile) {
-                throw new IllegalStateException(
-                        "JWT secret is too weak or using default — set JWT_SECRET env var before deploy");
-            }
-            log.warn(
-                    "JWT secret is weak or default — acceptable only in local/dev profile. Set JWT_SECRET before deploying.");
+        if (secret == null || secret.isBlank() || secret.length() < MIN_SECRET_LENGTH) {
+            throw new IllegalStateException(
+                    "JWT_SECRET is missing or too weak (must be at least " + MIN_SECRET_LENGTH
+                            + " characters) — set the JWT_SECRET env var before starting the app");
         }
     }
 

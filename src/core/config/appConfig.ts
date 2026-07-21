@@ -2,9 +2,11 @@ import { Platform } from 'react-native';
 
 
 
+// Dev-only fallback, used only when EXPO_PUBLIC_API_BASE_URL is not set.
+// Matches the local backend port documented in .env.example / the setup guide.
 function defaultBaseUrl(): string {
-  if (Platform.OS === 'android') return 'https://10.0.2.2:8443/api';
-  return 'https://localhost:8443/api';
+  if (Platform.OS === 'android') return 'http://10.0.2.2:8082/api';
+  return 'http://localhost:8082/api';
 }
 
 export const AppConfig = {
@@ -13,14 +15,4 @@ export const AppConfig = {
     if (envUrl && envUrl.length > 0) return envUrl;
     return defaultBaseUrl();
   },
-
-  get geminiApiKey(): string {
-    return process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
-  },
-
-  geminiSystemPrompt:
-    'You are CareNest AI, a smart health assistant for elderly people. ' +
-    'Mission: support health monitoring, medication reminders, answer health questions. ' +
-    'Always respond concisely, friendly, and easy to understand for elderly users. ' +
-    'Do not diagnose diseases or prescribe medication — when needed, advise seeing a doctor.',
 } as const;

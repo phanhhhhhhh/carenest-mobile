@@ -221,7 +221,9 @@ export default function NotificationSettingsScreen() {
   const setQuietHoursEnd = useNotificationSettingsStore((s) => s.setQuietHoursEnd);
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
   }, []);
 
   if (isLoading) {

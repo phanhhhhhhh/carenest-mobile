@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import api from '../api/client';
 import { getUserId } from '../storage/secureStorage';
-import { navigateToTab } from '../navigation/navigationRef';
+import { navigateToTab, navigationRef } from '../navigation/navigationRef';
 
 
 
@@ -83,9 +83,12 @@ async function registerTokenWithBackend(token: string): Promise<void> {
 function navigateFromPayload(data: Record<string, unknown>): void {
   const type = typeof data?.type === 'string' ? data.type : null;
 
+  if (!navigationRef.isReady()) return;
+
   switch (type) {
     case 'SOS':
-      navigateToTab('FamilyShell', 'FamilyAlerts');
+      // FamilyAlerts is a root-stack screen, not a FamilyShell tab.
+      navigationRef.navigate('FamilyAlerts');
       break;
     case 'MISSED_MEDICATION':
     case 'MEDICATION_REMINDER':
@@ -93,7 +96,8 @@ function navigateFromPayload(data: Record<string, unknown>): void {
       break;
     case 'ABNORMAL_VITALS':
     case 'HEALTH_ALERT':
-      navigateToTab('FamilyShell', 'FamilyHealth');
+      // FamilyHealth is a root-stack screen, not a FamilyShell tab.
+      navigationRef.navigate('FamilyHealth');
       break;
     case 'CHAT_REMINDER':
       navigateToTab('ElderlyShell', 'ElderlyChat');

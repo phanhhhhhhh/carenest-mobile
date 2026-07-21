@@ -157,7 +157,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       const endpoint = method === 'momo' ? '/payment/momo/create' : '/payment/vnpay/create';
       const resp = await api.post(endpoint, { planType: planId });
       const data = resp.data as Record<string, unknown>;
-      const url = (data.paymentUrl as string) ?? (data.payUrl as string) ?? undefined;
+      const url = (data.paymentUrl as string) ?? undefined;
 
       if (url && url.length > 0) {
         set({ isProcessing: false, paymentUrl: url });
