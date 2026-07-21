@@ -23,6 +23,11 @@ public interface HealthMetricRepository extends JpaRepository<HealthMetric, Long
     @Query("SELECT hm FROM HealthMetric hm WHERE hm.elderly.id = :elderlyId AND hm.recordedAt BETWEEN :from AND :to AND hm.deletedAt IS NULL ORDER BY hm.recordedAt DESC")
     List<HealthMetric> findAllByElderlyIdAndDateRange(@Param("elderlyId") Long elderlyId, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 
+    @Query(value = "SELECT DISTINCT ON (elderly_id, type) * FROM health_metrics " +
+            "WHERE elderly_id IN :elderlyIds AND deleted_at IS NULL " +
+            "ORDER BY elderly_id, type, recorded_at DESC", nativeQuery = true)
+    List<HealthMetric> findLatestPerElderlyAndType(@Param("elderlyIds") List<Long> elderlyIds);
+
     Optional<HealthMetric> findByIdAndDeletedAtIsNull(Long id);
 
     List<HealthMetric> findByElderlyIdAndDeletedAtIsNullOrderByRecordedAtDesc(Long elderlyId);

@@ -96,7 +96,9 @@ export default function FamilyAppointmentsScreen() {
   const [timePickerVisible, setTimePickerVisible] = useState(false);
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const upcomingList = upcoming();

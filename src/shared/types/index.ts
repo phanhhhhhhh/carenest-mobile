@@ -94,3 +94,25 @@ export interface ChatMessage {
   sessionId?: string;
   createdAt: string;
 }
+
+export interface CameraStatusResponse {
+  hasCamera: boolean;
+  cameraCount?: number;
+  allOnline?: boolean;
+  indicatorColor?: string;
+  statusText?: string;
+  message?: string;
+}
+
+export interface GoogleFitStatusResponse {
+  connected: boolean;
+  configured: boolean;
+}
+
+export interface PaymentInitResponse {
+  paymentUrl: string;
+  transactionId: string;
+  amount: number;
+  planType: string;
+  provider: 'VNPAY' | 'MOMO';
+}

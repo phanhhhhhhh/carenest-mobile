@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
-import { useMedicationStore } from '../store/medicationStore';
+import { useMedicationStore } from '../../elderly/store/medicationStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import type { MedicationItem } from '../../../shared/types';
 
@@ -112,13 +112,16 @@ export default function FamilyMedicationScreen() {
   const [pickerMinute, setPickerMinute] = useState(0);
 
   useEffect(() => {
-    dashLoad();
+    const controller = new AbortController();
+    dashLoad(controller.signal);
+    return () => controller.abort();
   }, [dashLoad]);
 
   useEffect(() => {
-    if (currentElderlyId) {
-      loadMedications(currentElderlyId);
-    }
+    if (!currentElderlyId) return;
+    const controller = new AbortController();
+    loadMedications(currentElderlyId, controller.signal);
+    return () => controller.abort();
   }, [currentElderlyId, loadMedications]);
 
   const onRefresh = useCallback(async () => {

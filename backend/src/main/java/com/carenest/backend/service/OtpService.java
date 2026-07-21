@@ -1,13 +1,17 @@
 package com.carenest.backend.service;
 
 import com.carenest.backend.entity.OtpVerification;
+import com.carenest.backend.exception.RateLimitExceededException;
 import com.carenest.backend.repository.OtpVerificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -21,8 +25,37 @@ public class OtpService {
     private static final int OTP_EXPIRY_MINUTES = 10;
     private static final int MAX_ATTEMPTS = 5;
 
-    
+    private static final int MAX_REQUESTS_PER_WINDOW = 5;
+    private static final long WINDOW_MINUTES = 10;
+
+    private record RateWindow(Instant windowStart, int count) {
+    }
+
+    private final ConcurrentHashMap<String, RateWindow> sendWindows = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, RateWindow> verifyWindows = new ConcurrentHashMap<>();
+
+    private void checkAndRecord(ConcurrentHashMap<String, RateWindow> windows, String target, String action) {
+        Instant now = Instant.now();
+        RateWindow window = windows.compute(target, (k, existing) -> {
+            if (existing == null || existing.windowStart().plus(WINDOW_MINUTES, ChronoUnit.MINUTES).isBefore(now)) {
+                return new RateWindow(now, 1);
+            }
+            return new RateWindow(existing.windowStart(), existing.count() + 1);
+        });
+
+        if (window.count() > MAX_REQUESTS_PER_WINDOW) {
+            long resetSeconds = window.windowStart().plus(WINDOW_MINUTES, ChronoUnit.MINUTES).getEpochSecond()
+                    - now.getEpochSecond();
+            long retryAfter = Math.max(resetSeconds, 1);
+            log.warn("OTP {} rate limit exceeded for target (count={})", action, window.count());
+            throw new RateLimitExceededException(
+                    "Too many OTP " + action + " requests. Try again in " + retryAfter + " seconds.", retryAfter);
+        }
+    }
+
+
     public String generateAndPersist(String target) {
+        checkAndRecord(sendWindows, target, "send");
         String code = generateOtp();
         OtpVerification otp = OtpVerification.builder()
             .phone(target)
@@ -52,6 +85,7 @@ public class OtpService {
 
     
     public boolean verifyOtp(String target, String code) {
+        checkAndRecord(verifyWindows, target, "verify");
         OtpVerification otp = otpRepository
             .findTopByPhoneAndVerifiedAtIsNullOrderByCreatedAtDesc(target)
             .orElse(null);

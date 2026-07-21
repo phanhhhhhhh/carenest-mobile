@@ -1,8 +1,10 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, type NavigatorScreenParams } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { navigationRef } from './navigationRef';
+import type { ElderlyTabParamList } from './ElderlyShell';
+import type { FamilyTabParamList } from './FamilyShell';
 
 import WelcomeScreen from '../../features/auth/screens/WelcomeScreen';
 import GetStartedScreen from '../../features/auth/screens/GetStartedScreen';
@@ -51,9 +53,9 @@ export type RootStackParamList = {
   PinSetup: undefined;
   PinVerify: undefined;
   VerifyEmail: { token: string };
-  ElderlyShell: undefined;
+  ElderlyShell: NavigatorScreenParams<ElderlyTabParamList> | undefined;
   ElderlyMeds: undefined;
-  FamilyShell: undefined;
+  FamilyShell: NavigatorScreenParams<FamilyTabParamList> | undefined;
   FamilyHealth: undefined;
   FamilyAlerts: undefined;
   FamilyMeds: undefined;

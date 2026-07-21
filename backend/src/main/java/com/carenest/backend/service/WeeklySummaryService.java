@@ -45,8 +45,10 @@ public class WeeklySummaryService {
     private final FcmService fcmService;
     private final GeminiApiService geminiApiService;
 
-    
-    public String generateWeeklySummary(Long elderlyId) {
+    public record GeneratedSummary(String text, Map<String, Object> stats) {}
+
+
+    public GeneratedSummary generateWeeklySummary(Long elderlyId) {
         User elderly = userRepository.findById(elderlyId).orElse(null);
         if (elderly == null)
             return null;
@@ -64,16 +66,21 @@ public class WeeklySummaryService {
         String summary = (aiSummary != null) ? aiSummary
                 : buildSummaryText(elderly.getName(), metrics, logs, weekStart, now);
 
+        Map<String, Object> stats = computeStats(metrics, logs);
+
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("type", "WEEKLY_SUMMARY");
+        data.put("elderlyId", elderlyId.toString());
+        data.put("weekStart", weekStart.toString());
+        data.put("weekEnd", now.toString());
+        data.putAll(stats);
+
         Notification notif = Notification.builder()
                 .user(elderly)
                 .type(NotificationType.FAMILY_UPDATE)
                 .title("📊 Weekly Health Summary")
                 .body(summary)
-                .data(Map.of(
-                        "type", "WEEKLY_SUMMARY",
-                        "elderlyId", elderlyId.toString(),
-                        "weekStart", weekStart.toString(),
-                        "weekEnd", now.toString()))
+                .data(data)
                 .build();
         notificationRepository.save(notif);
 
@@ -107,29 +114,92 @@ public class WeeklySummaryService {
 
         log.info("Weekly summary generated for elderlyId={}, familyCount={}",
                 elderlyId, familyLinks.size());
-        return summary;
+        return new GeneratedSummary(summary, stats);
     }
 
-    
-    public int generateAllSummaries() {
-        List<User> elderlyUsers = userRepository.findAll()
-                .stream()
-                .filter(u -> u.getDeletedAt() == null
-                        && u.getRole() == com.carenest.backend.entity.UserRole.ELDERLY)
-                .collect(Collectors.toList());
 
-        int count = 0;
-        for (User elderly : elderlyUsers) {
-            try {
-                generateWeeklySummary(elderly.getId());
-                count++;
-            } catch (Exception e) {
-                log.error("Failed to generate summary for elderlyId={}: {}",
-                        elderly.getId(), e.getMessage());
-            }
+    private Map<String, Object> computeStats(List<HealthMetric> metrics, List<MedicationLog> logs) {
+        Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("totalMetrics", metrics.size());
+
+        long taken = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.TAKEN).count();
+        long missed = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.MISSED).count();
+        long skipped = logs.stream().filter(l -> l.getStatus() == MedicationLogStatus.SKIPPED).count();
+        long totalDoses = taken + missed + skipped;
+
+        if (totalDoses > 0 && (taken + missed) > 0) {
+            double rate = (double) taken / (taken + missed) * 100;
+            stats.put("medicationAdherence", Math.round(rate));
+        } else {
+            stats.put("medicationAdherence", null);
         }
+
+        Map<HealthMetricType, List<HealthMetric>> byType = metrics.stream()
+                .collect(Collectors.groupingBy(HealthMetric::getType));
+        long abnormalCount = byType.entrySet().stream()
+                .filter(entry -> {
+                    List<BigDecimal> values = entry.getValue().stream()
+                            .map(HealthMetric::getValue).collect(Collectors.toList());
+                    BigDecimal avg = values.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                            .divide(BigDecimal.valueOf(values.size()), 1, RoundingMode.HALF_UP);
+                    return isOutOfRange(entry.getKey(), avg);
+                })
+                .count();
+        stats.put("abnormalMetrics", abnormalCount);
+
+        return stats;
+    }
+
+
+    private static final int BATCH_SIZE = 50;
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final long INITIAL_BACKOFF_MS = 500;
+
+    public int generateAllSummaries() {
+        int count = 0;
+        int page = 0;
+        org.springframework.data.domain.Page<User> batch;
+        do {
+            batch = userRepository.findByRoleAndDeletedAtIsNull(
+                    com.carenest.backend.entity.UserRole.ELDERLY,
+                    org.springframework.data.domain.PageRequest.of(page, BATCH_SIZE));
+
+            for (User elderly : batch.getContent()) {
+                if (generateWithRetry(elderly.getId())) {
+                    count++;
+                }
+            }
+            page++;
+        } while (batch.hasNext());
+
         log.info("Generated {} weekly summaries", count);
         return count;
+    }
+
+    private boolean generateWithRetry(Long elderlyId) {
+        long backoffMs = INITIAL_BACKOFF_MS;
+        for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+            try {
+                generateWeeklySummary(elderlyId);
+                return true;
+            } catch (Exception e) {
+                log.warn("Attempt {}/{} failed to generate summary for elderlyId={}: {}",
+                        attempt, MAX_RETRY_ATTEMPTS, elderlyId, e.getMessage());
+                if (attempt == MAX_RETRY_ATTEMPTS) {
+                    log.error("Giving up on weekly summary for elderlyId={} after {} attempts",
+                            elderlyId, MAX_RETRY_ATTEMPTS);
+                    return false;
+                }
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return false;
+                }
+                backoffMs *= 2;
+            }
+        }
+        return false;
     }
 
     
@@ -232,11 +302,15 @@ public class WeeklySummaryService {
 
         ctx.append("\n=== MEDICATION ADHERENCE ===\n");
         if (total > 0) {
-            double rate = (double) taken / (taken + missed) * 100;
             ctx.append("Total doses tracked: ").append(total).append("\n");
             ctx.append("Taken: ").append(taken).append(", Missed: ").append(missed)
                     .append(", Skipped: ").append(skipped).append("\n");
-            ctx.append("Adherence rate: ").append(String.format("%.0f%%", rate)).append("\n");
+            if (taken + missed > 0) {
+                double rate = (double) taken / (taken + missed) * 100;
+                ctx.append("Adherence rate: ").append(String.format("%.0f%%", rate)).append("\n");
+            } else {
+                ctx.append("Adherence rate: N/A (all doses skipped)\n");
+            }
         } else {
             ctx.append("No medication data this week.\n");
         }

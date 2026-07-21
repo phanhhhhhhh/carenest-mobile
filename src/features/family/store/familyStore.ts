@@ -1,18 +1,15 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
-import { asListOfMaps, getErrorMessage, getStatus, getResponseData } from '../../../core/api/errors';
+import { getErrorMessage, getStatus, getResponseData, isCancelled } from '../../../core/api/errors';
 import type { ElderlySummary } from '../../../shared/types';
+import { FamilyLinkSchema, safeParseList } from '../../../shared/schemas';
 
-
-
-function parseElderlySummary(j: Record<string, unknown>): ElderlySummary {
+function toElderlySummary(l: ReturnType<typeof FamilyLinkSchema.parse>): ElderlySummary {
   return {
-    elderlyId: j.elderlyId != null ? String(j.elderlyId) : '',
-    elderlyName: (j.elderlyName as string) ?? '',
-    healthConditions: Array.isArray(j.healthConditions)
-      ? (j.healthConditions as unknown[]).map((e) => String(e))
-      : [],
+    elderlyId: l.elderlyId ?? '',
+    elderlyName: l.elderlyName ?? '',
+    healthConditions: l.healthConditions ?? [],
   };
 }
 
@@ -30,7 +27,7 @@ interface FamilyDashboardState {
   data: FamilyDashboardData | null;
   lastRefreshed: Date | null;
 
-  load: () => Promise<void>;
+  load: (signal?: AbortSignal) => Promise<void>;
   selectElderly: (index: number) => Promise<void>;
   refresh: () => void;
   elderlyId: () => string | null;
@@ -44,7 +41,7 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
   data: null,
   lastRefreshed: null,
 
-  load: async () => {
+  load: async (signal) => {
     if (get().isLoading) return;
     set({ isLoading: true, error: null });
     try {
@@ -56,9 +53,10 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
 
       let elderlyList: ElderlySummary[] = [];
       try {
-        const familyResp = await api.get(`/family/${userId}/elderly`);
-        elderlyList = asListOfMaps(familyResp.data).map(parseElderlySummary);
+        const familyResp = await api.get(`/family/${userId}/elderly`, { signal });
+        elderlyList = safeParseList(FamilyLinkSchema, familyResp.data, 'FamilyElderlyList').map(toElderlySummary);
       } catch (e) {
+        if (isCancelled(e)) return;
         set({
           isLoading: false,
           error: `API error: ${getStatus(e) ?? ''} ${getErrorMessage(e)}`,
@@ -75,24 +73,24 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
       let takenMeds = 0;
       if (selectedElderlyId != null) {
         try {
-          const medResp = await api.get(`/users/${selectedElderlyId}/medications`);
+          const medResp = await api.get(`/users/${selectedElderlyId}/medications`, { signal });
           const meds: unknown[] = Array.isArray(medResp.data) ? medResp.data : [];
           totalMeds = meds.length;
 
           try {
-            const today = new Date();
-            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
             const logResp = await api.get(`/elderly/${selectedElderlyId}/medication-logs`, {
-              params: { date: todayStr },
+              params: { from: startOfDay.toISOString(), to: endOfDay.toISOString() },
+              signal,
             });
             const logs: unknown[] = Array.isArray(logResp.data) ? logResp.data : [];
             takenMeds = logs.filter(
               (l) => l && typeof l === 'object' && (l as Record<string, unknown>).status === 'TAKEN',
             ).length;
           } catch {
-            takenMeds = meds.filter(
-              (m) => m && typeof m === 'object' && (m as Record<string, unknown>).taken === true,
-            ).length;
+            takenMeds = 0;
           }
         } catch {
         }
@@ -108,7 +106,8 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
           takenMedications: takenMeds,
         },
       });
-    } catch {
+    } catch (e) {
+      if (isCancelled(e)) return;
       set({ isLoading: false, error: 'Connection error' });
     }
   },
@@ -215,11 +214,11 @@ export interface LinkedFamilyMember {
   phone: string;
 }
 
-function parseLinkedFamilyMember(j: Record<string, unknown>): LinkedFamilyMember {
+function toLinkedFamilyMember(l: ReturnType<typeof FamilyLinkSchema.parse>): LinkedFamilyMember {
   return {
-    id: j.id != null ? String(j.id) : '',
-    name: (j.userName as string) ?? '',
-    phone: (j.phoneNumber as string) ?? '',
+    id: l.id ?? l.linkId ?? '',
+    name: l.familyName ?? '',
+    phone: '',
   };
 }
 
@@ -245,7 +244,7 @@ export const useLinkedFamilyStore = create<LinkedFamilyState>((set) => ({
         return;
       }
       const resp = await api.get(`/elderly/${userId}/family`);
-      const members = asListOfMaps(resp.data).map(parseLinkedFamilyMember);
+      const members = safeParseList(FamilyLinkSchema, resp.data, 'LinkedFamilyList').map(toLinkedFamilyMember);
       set({ isLoading: false, members });
     } catch (e) {
       set({ isLoading: false, error: `Error loading list: ${getErrorMessage(e)}` });

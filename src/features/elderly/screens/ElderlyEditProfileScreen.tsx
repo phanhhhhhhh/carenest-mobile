@@ -46,13 +46,15 @@ export default function ElderlyEditProfileScreen() {
   const [bloodTypePickerVisible, setBloodTypePickerVisible] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
     (async () => {
       const storedName = await getName();
       setName(storedName ?? '');
     })();
     if (!profile) {
-      load();
+      load(controller.signal);
     }
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {

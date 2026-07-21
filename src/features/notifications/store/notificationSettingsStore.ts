@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
-import { getStatus, extractError } from '../../../core/api/errors';
+import { getStatus, extractError, isCancelled } from '../../../core/api/errors';
+import { NotificationPreferencesSchema, safeParseOne } from '../../../shared/schemas';
 
 export interface NotificationSettingsData {
   medicationReminder: boolean;
@@ -21,15 +22,14 @@ const DEFAULT_SETTINGS_DATA: NotificationSettingsData = {
   quietHoursEnd: '07:00',
 };
 
-function settingsFromJson(j: Record<string, unknown>): NotificationSettingsData {
+function settingsFromParsed(p: ReturnType<typeof NotificationPreferencesSchema.parse>): NotificationSettingsData {
   return {
-    medicationReminder: (j.medicationReminder as boolean) ?? true,
-    reminderMinutesBefore:
-      typeof j.reminderMinutesBefore === 'number' ? j.reminderMinutesBefore : 15,
-    healthAlert: (j.healthAlert as boolean) ?? true,
-    familyUpdate: (j.familyUpdate as boolean) ?? true,
-    quietHoursStart: (j.quietHoursStart as string) ?? '22:00',
-    quietHoursEnd: (j.quietHoursEnd as string) ?? '07:00',
+    medicationReminder: p.medicationReminder ?? true,
+    reminderMinutesBefore: p.reminderMinutesBefore ?? 15,
+    healthAlert: p.healthAlert ?? true,
+    familyUpdate: p.familyUpdate ?? true,
+    quietHoursStart: p.quietHoursStart ?? '22:00',
+    quietHoursEnd: p.quietHoursEnd ?? '07:00',
   };
 }
 
@@ -63,7 +63,7 @@ interface NotificationSettingsState {
   quietHoursStart: string;
   quietHoursEnd: string;
 
-  load: () => Promise<void>;
+  load: (signal?: AbortSignal) => Promise<void>;
   setMedicationReminder: (v: boolean) => Promise<void>;
   setReminderMinutes: (v: number) => Promise<void>;
   setHealthAlert: (v: boolean) => Promise<void>;
@@ -93,15 +93,17 @@ export const useNotificationSettingsStore = create<NotificationSettingsState>((s
   fcmTokenSaved: false,
   ...deriveFrom(DEFAULT_SETTINGS_DATA),
 
-  load: async () => {
+  load: async (signal) => {
     const userId = await storage.getUserId();
     if (userId == null) return;
     set({ isLoading: true, error: null });
     try {
-      const resp = await api.get(`/users/${userId}/notification-preferences`);
-      const data = settingsFromJson(resp.data ?? {});
+      const resp = await api.get(`/users/${userId}/notification-preferences`, { signal });
+      const parsed = safeParseOne(NotificationPreferencesSchema, resp.data ?? {}, 'NotificationPreferences');
+      const data = settingsFromParsed(parsed ?? {});
       set({ isLoading: false, data, ...deriveFrom(data) });
     } catch (e) {
+      if (isCancelled(e)) return;
       if (getStatus(e) === 404) {
         set({ isLoading: false });
         return;

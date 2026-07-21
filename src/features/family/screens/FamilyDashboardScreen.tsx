@@ -114,17 +114,21 @@ export default function FamilyDashboardScreen() {
   const latestByType = healthStore((s) => s.latestByType);
 
   useEffect(() => {
-    loadDashboard();
-    loadAppointments();
-    loadNotifications();
+    const controller = new AbortController();
+    loadDashboard(controller.signal);
+    loadAppointments(controller.signal);
+    loadNotifications(controller.signal);
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (!elderlyId) return;
-    loadMeds(elderlyId);
-    loadCameras(elderlyId);
-    loadAlerts(elderlyId);
-    healthStore.getState().load();
+    const controller = new AbortController();
+    loadMeds(elderlyId, controller.signal);
+    loadCameras(elderlyId, controller.signal);
+    loadAlerts(elderlyId, controller.signal);
+    healthStore.getState().load(undefined, controller.signal);
+    return () => controller.abort();
   }, [elderlyId]);
 
   const handleRefresh = async () => {

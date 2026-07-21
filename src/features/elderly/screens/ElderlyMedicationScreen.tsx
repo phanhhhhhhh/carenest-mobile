@@ -47,7 +47,9 @@ export default function ElderlyMedicationScreen() {
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(undefined, controller.signal);
+    return () => controller.abort();
   }, []);
 
   const [sheetVisible, setSheetVisible] = useState(false);

@@ -96,17 +96,20 @@ export default function ElderlyHomeScreen() {
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     loadProfile();
-    loadMedications();
-    loadNotifications();
-    loadAppointments();
+    loadMedications(undefined, controller.signal);
+    loadNotifications(controller.signal);
+    loadAppointments(controller.signal);
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
-    if (elderlyId) {
-      healthStore.getState().load();
-      loadCamera(elderlyId);
-    }
+    if (!elderlyId) return;
+    const controller = new AbortController();
+    healthStore.getState().load(undefined, controller.signal);
+    loadCamera(elderlyId, controller.signal);
+    return () => controller.abort();
   }, [elderlyId]);
 
   useEffect(() => {

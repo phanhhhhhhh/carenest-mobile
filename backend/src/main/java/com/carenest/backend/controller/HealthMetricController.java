@@ -119,21 +119,27 @@ public class HealthMetricController {
         if (summary == null) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(Map.of(
-            "title", summary.getTitle(),
-            "body", summary.getBody(),
-            "data", summary.getData(),
-            "createdAt", summary.getCreatedAt()
-        ));
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("title", summary.getTitle());
+        body.put("body", summary.getBody());
+        body.put("content", summary.getBody());
+        body.put("data", summary.getData());
+        body.put("createdAt", summary.getCreatedAt());
+        if (summary.getData() != null) {
+            body.putAll(summary.getData());
+        }
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/elderly/{elderlyId}/weekly-summary/generate")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
     public ResponseEntity<?> generateWeeklySummary(@PathVariable Long elderlyId) {
-        String summary = weeklySummaryService.generateWeeklySummary(elderlyId);
-        return ResponseEntity.ok(Map.of(
-            "message", "Weekly summary generated",
-            "summary", summary
-        ));
+        var result = weeklySummaryService.generateWeeklySummary(elderlyId);
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("message", "Weekly summary generated");
+        body.put("summary", result.text());
+        body.put("content", result.text());
+        body.putAll(result.stats());
+        return ResponseEntity.ok(body);
     }
 }

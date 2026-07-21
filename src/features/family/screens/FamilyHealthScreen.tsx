@@ -74,9 +74,10 @@ export default function FamilyHealthScreen() {
   const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Loved one';
 
   useEffect(() => {
-    if (!dashboardData) {
-      loadDashboard();
-    }
+    if (dashboardData) return;
+    const controller = new AbortController();
+    loadDashboard(controller.signal);
+    return () => controller.abort();
   }, []);
 
   return (
@@ -125,8 +126,10 @@ function HealthBody({
   const loadThresholds = useHealthThresholdStore((s) => s.load);
 
   useEffect(() => {
-    healthStore.getState().load();
-    loadThresholds(elderlyId);
+    const controller = new AbortController();
+    healthStore.getState().load(undefined, controller.signal);
+    loadThresholds(elderlyId, controller.signal);
+    return () => controller.abort();
   }, [elderlyId]);
 
   const deriveStatus = (type: string, metric: HealthMetric): Status => {

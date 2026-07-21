@@ -1,6 +1,7 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import api from '../../../core/api/client';
-import { getStatus, getResponseData, getErrorMessage } from '../../../core/api/errors';
+import { getStatus, getResponseData, getErrorMessage, isCancelled } from '../../../core/api/errors';
+import { GoogleFitStatusSchema, safeParseOne } from '../../../shared/schemas';
 
 
 
@@ -13,7 +14,7 @@ interface GoogleFitState {
   lastSyncResult: string | null;
   authUrl: string | null;
 
-  loadStatus: () => Promise<void>;
+  loadStatus: (signal?: AbortSignal) => Promise<void>;
   connect: () => Promise<string | null>;
   syncNow: () => Promise<Record<string, unknown> | null>;
   disconnect: () => Promise<boolean>;
@@ -35,17 +36,18 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
     lastSyncResult: null,
     authUrl: null,
 
-    loadStatus: async () => {
+    loadStatus: async (signal) => {
       set({ isLoading: true, error: null });
       try {
-        const resp = await api.get(`/google-fit/status/${elderlyId}`);
-        const data = (resp.data ?? {}) as Record<string, unknown>;
+        const resp = await api.get(`/google-fit/status/${elderlyId}`, { signal });
+        const parsed = safeParseOne(GoogleFitStatusSchema, resp.data ?? {}, 'GoogleFitStatus');
         set({
           isLoading: false,
-          isConnected: data.connected === true,
-          isConfigured: data.configured === true,
+          isConnected: parsed?.connected === true,
+          isConfigured: parsed?.configured === true,
         });
       } catch (e) {
+        if (isCancelled(e)) return;
         if (getStatus(e) === 503) {
           set({
             isLoading: false,

@@ -9,7 +9,16 @@ import ElderlyHealthScreen from '../../features/elderly/screens/ElderlyHealthScr
 import ElderlyChatScreen from '../../features/elderly/screens/ElderlyChatScreen';
 import ElderlyProfileScreen from '../../features/elderly/screens/ElderlyProfileScreen';
 
-const Tab = createBottomTabNavigator();
+export type ElderlyTabParamList = {
+  ElderlyHome: undefined;
+  ElderlyMeds: undefined;
+  ElderlyCamera: undefined;
+  ElderlyHealth: undefined;
+  ElderlyChat: undefined;
+  ElderlyProfile: undefined;
+};
+
+const Tab = createBottomTabNavigator<ElderlyTabParamList>();
 
 export default function ElderlyShell() {
   return (

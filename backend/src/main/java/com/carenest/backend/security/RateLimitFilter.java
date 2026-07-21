@@ -27,8 +27,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
 
-        if (path.endsWith("/auth/login") || path.endsWith("/auth/forgot-password")) {
-            String ip = getClientIp(request);
+        if (path.endsWith("/auth/login") || path.endsWith("/auth/forgot-password")
+                || path.endsWith("/auth/send-otp") || path.endsWith("/auth/verify-otp")) {
+            String ip = request.getRemoteAddr();
             String endpoint = path.substring(path.lastIndexOf('/') + 1);
             try {
                 rateLimitService.checkRateLimit(ip, endpoint);
@@ -43,13 +44,5 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String xf = request.getHeader("X-Forwarded-For");
-        if (xf != null && !xf.isBlank()) {
-            return xf.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

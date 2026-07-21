@@ -6,12 +6,14 @@ import com.carenest.backend.entity.Reminder;
 import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.service.FcmService;
 import com.carenest.backend.service.ReminderService;
+import com.carenest.backend.service.SchedulerStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -21,17 +23,21 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReminderScheduler {
 
+    private static final String JOB_NAME = "reminder_scheduler";
+
     private final ReminderService reminderService;
     private final NotificationRepository notificationRepository;
     private final FcmService fcmService;
+    private final SchedulerStateService schedulerStateService;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void processDueReminders() {
         OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime from = schedulerStateService.getLastRunAndAdvance(JOB_NAME, now, Duration.ofMinutes(5));
         OffsetDateTime window = now.plusMinutes(5);
 
-        List<Reminder> dueReminders = reminderService.findDueReminders(now, window);
+        List<Reminder> dueReminders = reminderService.findDueReminders(from, window);
 
         for (Reminder reminder : dueReminders) {
             if (reminder.getElderly().getNotificationPreferences() != null

@@ -1,18 +1,19 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
-import { asListOfMaps, getErrorMessage } from '../../../core/api/errors';
+import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import type { EmergencyEvent } from '../../../shared/types';
+import { EmergencyEventSchema, safeParseList } from '../../../shared/schemas';
 
 
 
-function parseEmergencyEvent(j: Record<string, unknown>): EmergencyEvent {
+function toEmergencyEvent(e: ReturnType<typeof EmergencyEventSchema.parse>): EmergencyEvent {
   return {
-    id: j.id != null ? String(j.id) : '',
-    type: (j.type as string) ?? 'SOS',
-    description: (j.description as string) ?? ((j.notes as string) ?? ''),
-    status: (j.status as string) ?? 'ACTIVE',
-    createdAt: (j.createdAt as string) ?? new Date().toISOString(),
+    id: e.id,
+    type: e.type ?? 'SOS',
+    description: e.description ?? e.notes ?? '',
+    status: e.status,
+    createdAt: e.triggeredAt ?? e.createdAt ?? new Date().toISOString(),
   };
 }
 
@@ -22,7 +23,7 @@ interface EmergencyEventState {
   error: string | null;
   events: EmergencyEvent[];
 
-  load: (elderlyId: string) => Promise<void>;
+  load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
   createSosEvent: (elderlyId: string) => Promise<boolean>;
   acknowledge: (elderlyId: string, eventId: string) => Promise<boolean>;
   markAllRead: (elderlyId: string, userId: string) => Promise<boolean>;
@@ -35,13 +36,19 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
   error: null,
   events: [],
 
-  load: async (elderlyId) => {
+  load: async (elderlyId, signal) => {
     set({ isLoading: true, error: null });
     try {
-      const resp = await api.get(`/elderly/${elderlyId}/emergency-events`);
-      const list = asListOfMaps(resp.data).map(parseEmergencyEvent);
+      const resp = await api.get(`/elderly/${elderlyId}/emergency-events`, { signal });
+      if (!Array.isArray(resp.data)) {
+        console.warn('[schema] EmergencyEventList: expected an array — keeping previous state');
+        set({ isLoading: false, error: 'Unexpected response from server' });
+        return;
+      }
+      const list = safeParseList(EmergencyEventSchema, resp.data, 'EmergencyEventList').map(toEmergencyEvent);
       set({ isLoading: false, events: list });
     } catch (e) {
+      if (isCancelled(e)) return;
       set({ isLoading: false, error: `Error: ${getErrorMessage(e)}` });
     }
   },

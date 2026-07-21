@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
-import { asListOfMaps, extractError } from '../../../core/api/errors';
+import { extractError, isCancelled } from '../../../core/api/errors';
+import { NotificationSchema, safeParseList } from '../../../shared/schemas';
 
 export interface NotificationData {
   id: string;
@@ -12,17 +13,14 @@ export interface NotificationData {
   createdAt: string;
 }
 
-function notificationFromJson(j: Record<string, unknown>): NotificationData {
+function toNotificationData(n: ReturnType<typeof NotificationSchema.parse>): NotificationData {
   return {
-    id: String(j.id),
-    title: (j.title as string) ?? '',
-    body: (j.body as string) ?? '',
-    type: (j.type as string) ?? 'GENERAL',
-    read: (j.read as boolean) ?? false,
-    createdAt:
-      typeof j.createdAt === 'string' && !isNaN(Date.parse(j.createdAt))
-        ? j.createdAt
-        : new Date().toISOString(),
+    id: n.id,
+    title: n.title,
+    body: n.body ?? '',
+    type: n.type,
+    read: n.readAt != null,
+    createdAt: n.createdAt,
   };
 }
 
@@ -31,7 +29,7 @@ interface NotificationState {
   error: string | null;
   items: NotificationData[];
 
-  load: () => Promise<void>;
+  load: (signal?: AbortSignal) => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllRead: () => Promise<void>;
 }
@@ -41,7 +39,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   error: null,
   items: [],
 
-  load: async () => {
+  load: async (signal) => {
     set({ isLoading: true, error: null });
     try {
       const userId = await storage.getUserId();
@@ -49,10 +47,16 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         set({ isLoading: false });
         return;
       }
-      const resp = await api.get(`/users/${userId}/notifications`);
-      const items = asListOfMaps(resp.data).map(notificationFromJson);
+      const resp = await api.get(`/users/${userId}/notifications`, { signal });
+      if (!Array.isArray(resp.data)) {
+        console.warn('[schema] NotificationList: expected an array — keeping previous state');
+        set({ isLoading: false, error: 'Unexpected response from server' });
+        return;
+      }
+      const items = safeParseList(NotificationSchema, resp.data, 'NotificationList').map(toNotificationData);
       set({ isLoading: false, items });
     } catch (e) {
+      if (isCancelled(e)) return;
       set({
         isLoading: false,
         error: extractError(e, 'Error loading notifications'),

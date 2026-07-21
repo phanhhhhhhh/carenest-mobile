@@ -117,7 +117,9 @@ export default function ElderlyAppointmentsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    load();
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const upcomingList = upcoming();

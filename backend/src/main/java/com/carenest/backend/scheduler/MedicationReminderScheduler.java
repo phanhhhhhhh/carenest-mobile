@@ -6,12 +6,14 @@ import com.carenest.backend.entity.NotificationType;
 import com.carenest.backend.repository.MedicationRepository;
 import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.service.FcmService;
+import com.carenest.backend.service.SchedulerStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -22,19 +24,22 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MedicationReminderScheduler {
 
+    private static final String JOB_NAME = "medication_reminder_scheduler";
+
     private final MedicationRepository medicationRepository;
     private final NotificationRepository notificationRepository;
     private final FcmService fcmService;
     private final com.carenest.backend.service.ChatReminderService chatReminderService;
+    private final SchedulerStateService schedulerStateService;
 
-    @Scheduled(fixedRate = 3600000)
+    @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void checkDueMedications() {
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime oneHourAgo = now.minusHours(1);
+        OffsetDateTime from = schedulerStateService.getLastRunAndAdvance(JOB_NAME, now, Duration.ofHours(1));
 
         List<Medication> dueMedications = medicationRepository
-            .findByNextDoseTimeBetweenAndDeletedAtIsNull(oneHourAgo, now);
+            .findByNextDoseTimeBetweenAndDeletedAtIsNull(from, now);
 
         for (Medication med : dueMedications) {
             if (med.getElderly().getNotificationPreferences() != null
@@ -47,7 +52,7 @@ public class MedicationReminderScheduler {
             }
 
             boolean alreadyLogged = medicationRepository
-                .existsLogForMedicationInWindow(med.getId(), oneHourAgo, now);
+                .existsLogForMedicationInWindow(med.getId(), from, now);
 
             if (!alreadyLogged) {
                 Notification notification = Notification.builder()

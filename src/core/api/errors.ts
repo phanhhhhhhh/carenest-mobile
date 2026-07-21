@@ -52,3 +52,11 @@ export function asListOfMaps(data: unknown): Record<string, unknown>[] {
   }
   return [];
 }
+
+
+/** True when `e` is an axios/DOM cancellation from an aborted request — not a real failure. */
+export function isCancelled(e: unknown): boolean {
+  if (!e || typeof e !== 'object') return false;
+  const err = e as Record<string, unknown>;
+  return err.code === 'ERR_CANCELED' || err.name === 'CanceledError' || err.name === 'AbortError';
+}
