@@ -4,10 +4,8 @@ import com.carenest.backend.dto.auth.*;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.repository.UserRepository;
 import com.carenest.backend.service.AuthService;
-import com.carenest.backend.service.JwtService;
 import com.carenest.backend.service.OtpService;
 import com.carenest.backend.exception.NotFoundException;
-import com.carenest.backend.exception.ConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +25,6 @@ public class AuthController {
     private final AuthService authService;
     private final OtpService otpService;
     private final UserRepository userRepository;
-    private final JwtService jwtService;
 
 
     @PostMapping("/register")

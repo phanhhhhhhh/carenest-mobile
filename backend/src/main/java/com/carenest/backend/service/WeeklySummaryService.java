@@ -135,12 +135,12 @@ public class WeeklySummaryService {
         }
 
         Map<HealthMetricType, List<HealthMetric>> byType = metrics.stream()
-                .collect(Collectors.groupingBy(HealthMetric::getType));
+                .collect(Collectors.groupingBy(m -> m.getType()));
         long abnormalCount = byType.entrySet().stream()
                 .filter(entry -> {
                     List<BigDecimal> values = entry.getValue().stream()
-                            .map(HealthMetric::getValue).collect(Collectors.toList());
-                    BigDecimal avg = values.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                            .map(m -> m.getValue()).collect(Collectors.toList());
+                    BigDecimal avg = values.stream().reduce(BigDecimal.ZERO, (a, b) -> a.add(b))
                             .divide(BigDecimal.valueOf(values.size()), 1, RoundingMode.HALF_UP);
                     return isOutOfRange(entry.getKey(), avg);
                 })
