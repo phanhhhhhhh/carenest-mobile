@@ -8,8 +8,6 @@ import com.carenest.backend.dto.dashboard.LatestMetricItem;
 import com.carenest.backend.dto.dashboard.MedicationAdherenceSummary;
 import com.carenest.backend.entity.Appointment;
 import com.carenest.backend.entity.AppointmentStatus;
-import com.carenest.backend.entity.ElderlyProfile;
-import com.carenest.backend.entity.EmergencyEvent;
 import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.FamilyLink;
 import com.carenest.backend.entity.FamilyLinkStatus;
@@ -84,7 +82,7 @@ public class DashboardService {
         Map<Long, List<String>> healthConditionsByElderly = elderlyProfileRepository
                 .findByUserIdInAndDeletedAtIsNull(elderlyIds)
                 .stream()
-                .collect(Collectors.toMap(p -> p.getUser().getId(), ElderlyProfile::getHealthConditions));
+                .collect(Collectors.toMap(p -> p.getUser().getId(), p -> p.getHealthConditions()));
 
         Map<Long, Map<String, LatestMetricItem>> latestMetricsByElderly = healthMetricRepository
                 .findLatestPerElderlyAndType(elderlyIds)
@@ -121,7 +119,7 @@ public class DashboardService {
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(
-                        Map.Entry::getKey,
+                        e -> e.getKey(),
                         e -> e.getValue().stream()
                                 .map(this::toAppointmentResponse)
                                 .limit(5)

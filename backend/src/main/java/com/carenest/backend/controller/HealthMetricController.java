@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,7 +120,7 @@ public class HealthMetricController {
         if (summary == null) {
             return ResponseEntity.noContent().build();
         }
-        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        Map<String, Object> body = new HashMap<>();
         body.put("title", summary.getTitle());
         body.put("body", summary.getBody());
         body.put("content", summary.getBody());
@@ -135,7 +136,7 @@ public class HealthMetricController {
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
     public ResponseEntity<?> generateWeeklySummary(@PathVariable Long elderlyId) {
         var result = weeklySummaryService.generateWeeklySummary(elderlyId);
-        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        Map<String, Object> body = new HashMap<>();
         body.put("message", "Weekly summary generated");
         body.put("summary", result.text());
         body.put("content", result.text());
