@@ -4,6 +4,7 @@ import * as Device from 'expo-device';
 import api from '../api/client';
 import { getUserId } from '../storage/secureStorage';
 import { navigateToTab, navigationRef } from '../navigation/navigationRef';
+import { useAuthStore } from '../../features/auth/store/authStore';
 
 
 
@@ -80,10 +81,28 @@ async function registerTokenWithBackend(token: string): Promise<void> {
   }
 }
 
+// Cold start (app launched by tapping a notification) races NavigationContainer's
+// mount and auth-session restore. The target screens (FamilyAlerts, ElderlyShell/...)
+// only exist once the user is authenticated and the navigator has attached, so a
+// dropped payload here is queued and replayed by flushPendingDeepLink() once both
+// conditions are met — see App.tsx.
+let pendingPayload: Record<string, unknown> | null = null;
+
+export function flushPendingDeepLink(): void {
+  if (!pendingPayload) return;
+  if (!navigationRef.isReady() || !useAuthStore.getState().isAuthenticated) return;
+  const payload = pendingPayload;
+  pendingPayload = null;
+  navigateFromPayload(payload);
+}
+
 function navigateFromPayload(data: Record<string, unknown>): void {
   const type = typeof data?.type === 'string' ? data.type : null;
 
-  if (!navigationRef.isReady()) return;
+  if (!navigationRef.isReady() || !useAuthStore.getState().isAuthenticated) {
+    pendingPayload = data;
+    return;
+  }
 
   switch (type) {
     case 'SOS':

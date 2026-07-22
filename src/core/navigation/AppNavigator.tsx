@@ -3,6 +3,7 @@ import { NavigationContainer, type NavigatorScreenParams } from '@react-navigati
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { navigationRef } from './navigationRef';
+import { flushPendingDeepLink } from '../services/pushNotificationService';
 import type { ElderlyTabParamList } from './ElderlyShell';
 import type { FamilyTabParamList } from './FamilyShell';
 
