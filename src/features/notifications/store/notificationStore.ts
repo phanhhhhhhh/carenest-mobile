@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
-import { extractError, isCancelled } from '../../../core/api/errors';
+import { extractError, getErrorMessage, isCancelled } from '../../../core/api/errors';
 import { NotificationSchema, safeParseList } from '../../../shared/schemas';
+import { showErrorToast } from '../../../shared/components/toastStore';
 
 export interface NotificationData {
   id: string;
@@ -72,7 +73,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       );
       set({ items: updated });
     } catch (e) {
-      console.warn('[notificationStore.markAsRead]', e);
+      showErrorToast(`Could not mark as read: ${getErrorMessage(e)}`);
     }
   },
 
@@ -84,7 +85,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const updated = get().items.map((n) => ({ ...n, read: true }));
       set({ items: updated });
     } catch (e) {
-      console.warn('[notificationStore.markAllRead]', e);
+      showErrorToast(`Could not mark all as read: ${getErrorMessage(e)}`);
     }
   },
 }));

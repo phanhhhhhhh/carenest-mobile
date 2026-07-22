@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,43 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
+import { useAuthStore } from '../../auth/store/authStore';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import {
   useNotificationStore,
   selectUnreadCount,
   type NotificationData,
 } from '../store/notificationStore';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+/** Where tapping a notification of this type should land, per the current user's role. */
+function routeForNotification(type: string, role: string | undefined, navigation: Nav): void {
+  const isFamily = role === 'FAMILY';
+  switch (type) {
+    case 'EMERGENCY':
+      if (isFamily) navigation.navigate('FamilyAlerts');
+      break;
+    case 'HEALTH_ALERT':
+      if (isFamily) navigation.navigate('FamilyHealth');
+      else navigation.navigate('ElderlyShell', { screen: 'ElderlyHealth' });
+      break;
+    case 'MEDICATION_REMINDER':
+      if (isFamily) navigation.navigate('FamilyShell', { screen: 'FamilyMeds' });
+      else navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' });
+      break;
+    case 'APPOINTMENT_REMINDER':
+      if (isFamily) navigation.navigate('FamilyAppointments');
+      else navigation.navigate('ElderlyAppointments');
+      break;
+    default:
+      break;
+  }
+}
 
 function formatTime(createdAt: string): string {
   const dt = new Date(createdAt);
@@ -75,10 +105,16 @@ function withAlpha(hex: string, alpha: number): string {
   return `${hex}${a}`;
 }
 
-function NotificationCard({ notification }: { notification: NotificationData }) {
+function NotificationCard({
+  notification,
+  onPress,
+}: {
+  notification: NotificationData;
+  onPress: () => void;
+}) {
   const color = colorForType(notification.type);
   return (
-    <View
+    <TouchableOpacity
       style={[
         styles.card,
         {
@@ -87,6 +123,8 @@ function NotificationCard({ notification }: { notification: NotificationData }) 
           borderColor: notification.read ? 'transparent' : withAlpha(color, 0.3),
         },
       ]}
+      onPress={onPress}
+      activeOpacity={0.7}
     >
       <View style={[styles.iconWrap, { backgroundColor: withAlpha(color, 0.1) }]}>
         <Ionicons name={iconForType(notification.type)} color={color} size={22} />
@@ -107,15 +145,22 @@ function NotificationCard({ notification }: { notification: NotificationData }) 
         <Text style={styles.notifBody}>{notification.body}</Text>
         <Text style={styles.notifTime}>{formatTime(notification.createdAt)}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 export default function NotificationsScreen() {
+  const navigation = useNavigation<Nav>();
+  const role = useAuthStore((s) => s.user?.role);
+
   const isLoading = useNotificationStore((s) => s.isLoading);
   const error = useNotificationStore((s) => s.error);
   const items = useNotificationStore((s) => s.items);
   const load = useNotificationStore((s) => s.load);
+  const markAsRead = useNotificationStore((s) => s.markAsRead);
+  const markAllRead = useNotificationStore((s) => s.markAllRead);
+
+  const [markingAll, setMarkingAll] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -124,6 +169,17 @@ export default function NotificationsScreen() {
   }, []);
 
   const unreadCount = selectUnreadCount(items);
+
+  const handleCardPress = (notification: NotificationData) => {
+    if (!notification.read) markAsRead(notification.id);
+    routeForNotification(notification.type, role, navigation);
+  };
+
+  const handleMarkAllRead = async () => {
+    setMarkingAll(true);
+    await markAllRead();
+    setMarkingAll(false);
+  };
 
   let body: React.ReactNode;
   if (isLoading && items.length === 0) {
@@ -163,7 +219,9 @@ export default function NotificationsScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => <NotificationCard notification={item} />}
+        renderItem={({ item }) => (
+          <NotificationCard notification={item} onPress={() => handleCardPress(item)} />
+        )}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={() => load()} tintColor={Colors.primary} />
         }
@@ -174,11 +232,22 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <View style={styles.headerTitleRow}>
+          <Text style={styles.headerTitle}>Notifications</Text>
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount} new</Text>
+            </View>
+          )}
+        </View>
         {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unreadCount} new</Text>
-          </View>
+          <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll} style={styles.markAllButton}>
+            {markingAll ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <Text style={styles.markAllText}>Mark all read</Text>
+            )}
+          </TouchableOpacity>
         )}
       </View>
       {body}
@@ -192,10 +261,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
     backgroundColor: Colors.surface,
   },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   badge: {
     marginLeft: 10,
@@ -205,6 +276,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error,
   },
   badgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  markAllButton: { paddingHorizontal: 8, paddingVertical: 4 },
+  markAllText: { color: Colors.primary, fontSize: 13, fontWeight: '600' },
 
   errorBox: { alignItems: 'center', padding: 32 },
   errorText: {
