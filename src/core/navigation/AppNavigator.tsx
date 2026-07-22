@@ -56,11 +56,9 @@ export type RootStackParamList = {
   PinVerify: undefined;
   VerifyEmail: { token: string };
   ElderlyShell: NavigatorScreenParams<ElderlyTabParamList> | undefined;
-  ElderlyMeds: undefined;
   FamilyShell: NavigatorScreenParams<FamilyTabParamList> | undefined;
   FamilyHealth: undefined;
   FamilyAlerts: undefined;
-  FamilyMeds: undefined;
   WeeklySummary: undefined;
   ElderlyEditProfile: undefined;
   ElderlyEmergencyContacts: undefined;
