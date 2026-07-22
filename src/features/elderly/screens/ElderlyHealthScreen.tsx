@@ -270,8 +270,8 @@ export default function ElderlyHealthScreen() {
     if (!valueDialog) return;
     const trimmed = valueInput.trim();
     if (trimmed.length === 0) return;
-    await healthStore.getState().addMetric({ type: valueDialog.type, value: trimmed, unit: valueDialog.unit });
-    setValueDialog(null);
+    const ok = await healthStore.getState().addMetric({ type: valueDialog.type, value: trimmed, unit: valueDialog.unit });
+    if (ok) setValueDialog(null);
   };
 
   const displayText = aiInsight ?? ruleBasedInsight();

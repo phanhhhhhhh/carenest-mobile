@@ -3,6 +3,7 @@ import api from '../../../core/api/client';
 import type { HealthMetric } from '../../../shared/types';
 import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import { HealthMetricSchema, safeParseList } from '../../../shared/schemas';
+import { showErrorToast } from '../../../shared/components/toastStore';
 
 
 
@@ -14,7 +15,7 @@ interface HealthMetricState {
 
   load: (params?: { fromDate?: Date; toDate?: Date }, signal?: AbortSignal) => Promise<void>;
   loadPeriod: (period: 'week' | 'month') => Promise<void>;
-  addMetric: (params: { type: string; value: string; unit?: string }) => Promise<void>;
+  addMetric: (params: { type: string; value: string; unit?: string }) => Promise<boolean>;
 }
 
 type HealthMetricStoreHook = UseBoundStore<StoreApi<HealthMetricState>>;
@@ -91,8 +92,12 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
           ...(unit !== undefined ? { unit } : {}),
         });
         await get().load();
+        return true;
       } catch (e) {
-        set({ error: `Error: ${getErrorMessage(e)}` });
+        const message = `Could not save reading: ${getErrorMessage(e)}`;
+        set({ error: message });
+        showErrorToast(message);
+        return false;
       }
     },
   }));
