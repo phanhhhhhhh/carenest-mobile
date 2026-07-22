@@ -36,8 +36,9 @@ public class AnomalyDetectionService {
     private final ElderlyProfileRepository elderlyProfileRepository;
     private final FcmService fcmService;
     private final GeminiApiService geminiApiService;
+    private final NotificationService notificationService;
 
-    
+
     public AnomalyResult analyze(HealthMetric metric) {
         List<HealthMetric> recentMetrics = fetchRecentMetrics(metric);
 
@@ -206,6 +207,15 @@ public class AnomalyDetectionService {
             .stream().map(fl -> fl.getFamily().getId()).collect(Collectors.toList());
         if (!familyIds.isEmpty()) {
             fcmService.sendToUsers(familyIds, title, body.toString(), pushData);
+            notificationService.createForUsers(familyIds, NotificationType.HEALTH_ALERT, title, body.toString(),
+                Map.of(
+                    "metricId", metric.getId().toString(),
+                    "elderlyId", elderly.getId().toString(),
+                    "type", metric.getType().name(),
+                    "value", metric.getValue().toString(),
+                    "anomaly", "true",
+                    "aiAnalysis", aiInsight != null ? aiInsight : ""
+                ));
         }
     }
 
@@ -232,6 +242,8 @@ public class AnomalyDetectionService {
         if (!familyIds.isEmpty()) {
             fcmService.sendToUsers(familyIds, title, aiInsight,
                 Map.of("type", "AI_INSIGHT", "elderlyId", elderly.getId().toString()));
+            notificationService.createForUsers(familyIds, NotificationType.HEALTH_ALERT, title, aiInsight,
+                Map.of("metricId", metric.getId().toString(), "type", "AI_INSIGHT", "aiAnalysis", aiInsight));
         }
     }
 
