@@ -60,3 +60,12 @@ export function isCancelled(e: unknown): boolean {
   const err = e as Record<string, unknown>;
   return err.code === 'ERR_CANCELED' || err.name === 'CanceledError' || err.name === 'AbortError';
 }
+
+
+/** True when the request never reached the server (backend unreachable, no signal) — distinct from a 4xx/5xx. */
+export function isNetworkError(e: unknown): boolean {
+  if (!e || typeof e !== 'object') return false;
+  const err = e as Record<string, unknown>;
+  if ('response' in err && err.response) return false;
+  return err.code === 'ERR_NETWORK' || err.message === 'Network Error' || err.code === 'ECONNABORTED';
+}

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/core/navigation/AppNavigator';
+import ToastHost from './src/shared/components/ToastHost';
 import { useAuthStore } from './src/features/auth/store/authStore';
 import { initializePushNotifications, flushPendingDeepLink } from './src/core/services/pushNotificationService';
 
@@ -24,6 +25,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="auto" />
       <AppNavigator />
+      <ToastHost />
     </SafeAreaProvider>
   );
 }
