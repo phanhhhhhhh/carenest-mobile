@@ -70,7 +70,7 @@ public class EmergencyEventService {
                 "Emergency Alert",
                 elderly.getName() + " has triggered an emergency alert",
                 Map.of(
-                    "type", "EMERGENCY",
+                    "type", "SOS",
                     "eventId", saved.getId().toString(),
                     "elderlyId", elderly.getId().toString()
                 ));
