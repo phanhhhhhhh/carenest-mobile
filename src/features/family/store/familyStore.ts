@@ -3,7 +3,13 @@ import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { getErrorMessage, getStatus, getResponseData, isCancelled } from '../../../core/api/errors';
 import type { ElderlySummary } from '../../../shared/types';
-import { FamilyLinkSchema, safeParseList } from '../../../shared/schemas';
+import {
+  FamilyLinkSchema,
+  FamilyDashboardResponseSchema,
+  type FamilyDashboardResponseParsed,
+  safeParseList,
+  safeParseOne,
+} from '../../../shared/schemas';
 
 export interface FamilyDashboardData {
   linkedElderly: ElderlySummary[];
@@ -42,19 +48,19 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         return;
       }
 
-      // Single aggregate call replaces what used to be 3 sequential requests
-      // (elderly list, medications, medication-logs) — see DashboardController.
-      let payload: {
-        elderly: Array<{
-          elderlyId: number;
-          elderlyName: string;
-          healthConditions: string[] | null;
-          medicationAdherence: { totalDue: number; taken: number } | null;
-        }>;
-      };
+      // Replaces the elderly-list + per-elderly medication-adherence requests this
+      // screen used to make sequentially — see DashboardController. The screen's
+      // full-detail widgets (medication list, camera, health values, appointments)
+      // still load separately below since this endpoint only returns summary fields.
+      let payload: FamilyDashboardResponseParsed;
       try {
         const dashResp = await api.get(`/dashboard/family/${userId}`, { signal });
-        payload = dashResp.data;
+        const parsed = safeParseOne(FamilyDashboardResponseSchema, dashResp.data, 'FamilyDashboard');
+        if (!parsed) {
+          set({ isLoading: false, error: 'Unexpected dashboard response format' });
+          return;
+        }
+        payload = parsed;
       } catch (e) {
         if (isCancelled(e)) return;
         set({
