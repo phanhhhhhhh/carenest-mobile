@@ -4,6 +4,7 @@ import * as storage from '../../../core/storage/secureStorage';
 import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import type { EmergencyEvent } from '../../../shared/types';
 import { EmergencyEventSchema, safeParseList } from '../../../shared/schemas';
+import { showErrorToast } from '../../../shared/components/toastStore';
 
 
 
@@ -83,7 +84,7 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       await get().load(elderlyId);
       return true;
     } catch (e) {
-      console.warn('[emergencyEventStore.acknowledge]', e);
+      showErrorToast(`Could not acknowledge alert: ${getErrorMessage(e)}`);
       return false;
     }
   },
@@ -94,7 +95,7 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       await get().load(elderlyId);
       return true;
     } catch (e) {
-      console.warn('[emergencyEventStore.markAllRead]', e);
+      showErrorToast(`Could not mark alerts as read: ${getErrorMessage(e)}`);
       return false;
     }
   },
