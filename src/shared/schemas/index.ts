@@ -210,6 +210,23 @@ export const GoogleFitStatusSchema = z.object({
 });
 export type GoogleFitStatusParsed = z.infer<typeof GoogleFitStatusSchema>;
 
+const DashboardLatestMetricSchema = z.object({
+  value: z.union([z.string(), z.number()]),
+  valueSecondary: z.union([z.string(), z.number()]).nullable().optional(),
+  unit: z.string().nullable().optional(),
+  recordedAt: z.string(),
+});
+
+const DashboardAppointmentSchema = z.object({
+  id: z.coerce.string(),
+  doctor: z.string(),
+  specialty: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  datetime: z.string(),
+  status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELLED', 'RESCHEDULED']).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
 export const FamilyDashboardResponseSchema = z.object({
   elderly: z.array(
     z.object({
@@ -220,6 +237,8 @@ export const FamilyDashboardResponseSchema = z.object({
         .object({ totalDue: z.number(), taken: z.number() })
         .nullable()
         .optional(),
+      latestMetrics: z.record(z.string(), DashboardLatestMetricSchema).nullable().optional(),
+      upcomingAppointments: z.array(DashboardAppointmentSchema).nullable().optional(),
     }),
   ),
 });
