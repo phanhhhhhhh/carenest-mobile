@@ -22,6 +22,7 @@ import { useCameraStore } from '../../family/store/cameraStore';
 import { useAppointmentStore } from '../../family/store/appointmentStore';
 import { useEmergencyEventStore } from '../../family/store/emergencyEventStore';
 import { useNotificationStore, selectUnreadCount } from '../../notifications/store/notificationStore';
+import { showErrorToast } from '../../../shared/components/toastStore';
 import type { MedicationItem, AppointmentItem } from '../../../shared/types';
 
 
@@ -244,7 +245,12 @@ export default function ElderlyHomeScreen() {
 
         <View style={{ height: 24 }} />
 
-        {nextMed && <NextMedicationCard medication={nextMed} onToggleTaken={toggleTaken} />}
+        {nextMed && (
+          <NextMedicationCard
+            medication={nextMed}
+            onToggleTaken={(id) => toggleTaken(id, showErrorToast)}
+          />
+        )}
 
         <View style={{ height: 20 }} />
 
