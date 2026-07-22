@@ -5,15 +5,6 @@ import { getErrorMessage, getStatus, getResponseData, isCancelled } from '../../
 import type { ElderlySummary } from '../../../shared/types';
 import { FamilyLinkSchema, safeParseList } from '../../../shared/schemas';
 
-function toElderlySummary(l: ReturnType<typeof FamilyLinkSchema.parse>): ElderlySummary {
-  return {
-    elderlyId: l.elderlyId ?? '',
-    elderlyName: l.elderlyName ?? '',
-    healthConditions: l.healthConditions ?? [],
-  };
-}
-
-
 export interface FamilyDashboardData {
   linkedElderly: ElderlySummary[];
   selectedIndex: number;
@@ -51,10 +42,19 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         return;
       }
 
-      let elderlyList: ElderlySummary[] = [];
+      // Single aggregate call replaces what used to be 3 sequential requests
+      // (elderly list, medications, medication-logs) — see DashboardController.
+      let payload: {
+        elderly: Array<{
+          elderlyId: number;
+          elderlyName: string;
+          healthConditions: string[] | null;
+          medicationAdherence: { totalDue: number; taken: number } | null;
+        }>;
+      };
       try {
-        const familyResp = await api.get(`/family/${userId}/elderly`, { signal });
-        elderlyList = safeParseList(FamilyLinkSchema, familyResp.data, 'FamilyElderlyList').map(toElderlySummary);
+        const dashResp = await api.get(`/dashboard/family/${userId}`, { signal });
+        payload = dashResp.data;
       } catch (e) {
         if (isCancelled(e)) return;
         set({
@@ -64,37 +64,16 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         return;
       }
 
+      const elderlyList: ElderlySummary[] = (payload.elderly ?? []).map((e) => ({
+        elderlyId: String(e.elderlyId),
+        elderlyName: e.elderlyName ?? '',
+        healthConditions: e.healthConditions ?? [],
+      }));
+
       const prevIndex = get().data?.selectedIndex ?? 0;
       const selectedIndex = prevIndex < elderlyList.length ? prevIndex : 0;
-      const selectedElderlyId =
-        elderlyList.length > 0 ? elderlyList[selectedIndex].elderlyId : null;
-
-      let totalMeds = 0;
-      let takenMeds = 0;
-      if (selectedElderlyId != null) {
-        try {
-          const medResp = await api.get(`/users/${selectedElderlyId}/medications`, { signal });
-          const meds: unknown[] = Array.isArray(medResp.data) ? medResp.data : [];
-          totalMeds = meds.length;
-
-          try {
-            const now = new Date();
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-            const logResp = await api.get(`/elderly/${selectedElderlyId}/medication-logs`, {
-              params: { from: startOfDay.toISOString(), to: endOfDay.toISOString() },
-              signal,
-            });
-            const logs: unknown[] = Array.isArray(logResp.data) ? logResp.data : [];
-            takenMeds = logs.filter(
-              (l) => l && typeof l === 'object' && (l as Record<string, unknown>).status === 'TAKEN',
-            ).length;
-          } catch {
-            takenMeds = 0;
-          }
-        } catch {
-        }
-      }
+      const selectedAdherence =
+        elderlyList.length > 0 ? payload.elderly[selectedIndex]?.medicationAdherence : null;
 
       set({
         isLoading: false,
@@ -102,8 +81,8 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         data: {
           linkedElderly: elderlyList,
           selectedIndex,
-          totalMedications: totalMeds,
-          takenMedications: takenMeds,
+          totalMedications: selectedAdherence?.totalDue ?? 0,
+          takenMedications: selectedAdherence?.taken ?? 0,
         },
       });
     } catch (e) {
