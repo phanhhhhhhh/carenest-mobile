@@ -2,15 +2,20 @@ package com.carenest.backend.service;
 
 import com.carenest.backend.dto.notification.NotificationResponse;
 import com.carenest.backend.entity.Notification;
+import com.carenest.backend.entity.NotificationType;
+import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.NotificationRepository;
+import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,6 +24,27 @@ import java.util.stream.Collectors;
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
+
+    /**
+     * Persists one Notification per recipient so it survives past the ephemeral
+     * FCM push and shows up in each recipient's in-app notification list — the
+     * threshold/anomaly alert paths used to send family members a push with no
+     * backing row, so the alert vanished once the OS banner was dismissed.
+     */
+    public void createForUsers(List<Long> userIds, NotificationType type, String title, String body,
+                                Map<String, Object> data) {
+        List<User> users = userRepository.findAllById(userIds);
+        for (User user : users) {
+            notificationRepository.save(Notification.builder()
+                .user(user)
+                .type(type)
+                .title(title)
+                .body(body)
+                .data(data != null ? data : Collections.emptyMap())
+                .build());
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<NotificationResponse> getByUserId(Long userId, int page, int size) {

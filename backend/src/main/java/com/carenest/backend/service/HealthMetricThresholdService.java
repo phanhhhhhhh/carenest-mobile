@@ -37,6 +37,7 @@ public class HealthMetricThresholdService {
     private final ElderlyProfileRepository elderlyProfileRepository;
     private final FcmService fcmService;
     private final GeminiApiService geminiApiService;
+    private final NotificationService notificationService;
 
     public HealthMetricThresholdResponse create(Long elderlyId, HealthMetricThresholdRequest request) {
         User elderly = userRepository.findById(elderlyId)
@@ -135,13 +136,21 @@ public class HealthMetricThresholdService {
                                     .collect(Collectors.toList());
 
                             if (!familyUserIds.isEmpty()) {
-                                fcmService.sendToUsers(familyUserIds,
-                                        "Health Alert: " + metric.getElderly().getName(),
-                                        metric.getElderly().getName() + " - " + body,
+                                String familyTitle = "Health Alert: " + metric.getElderly().getName();
+                                String familyBody = metric.getElderly().getName() + " - " + body;
+                                fcmService.sendToUsers(familyUserIds, familyTitle, familyBody,
                                         Map.of(
                                                 "type", "HEALTH_ALERT",
                                                 "metricId", metric.getId().toString(),
                                                 "elderlyId", metric.getElderly().getId().toString()));
+                                notificationService.createForUsers(familyUserIds, NotificationType.HEALTH_ALERT,
+                                        familyTitle, familyBody,
+                                        Map.of(
+                                                "metricId", metric.getId(),
+                                                "elderlyId", metric.getElderly().getId(),
+                                                "metricType", metric.getType().name(),
+                                                "value", metric.getValue(),
+                                                "thresholdId", threshold.getId()));
                             }
                         }
 
