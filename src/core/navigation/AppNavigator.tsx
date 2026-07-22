@@ -37,6 +37,7 @@ import FamilyAlertsScreen from '../../features/family/screens/FamilyAlertsScreen
 import PremiumPlansScreen from '../../features/family/screens/PremiumPlansScreen';
 import NotificationsScreen from '../../features/notifications/screens/NotificationsScreen';
 import NotificationSettingsScreen from '../../features/notifications/screens/NotificationSettingsScreen';
+import WeeklySummaryScreen from '../../features/family/screens/WeeklySummaryScreen';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -60,6 +61,7 @@ export type RootStackParamList = {
   FamilyHealth: undefined;
   FamilyAlerts: undefined;
   FamilyMeds: undefined;
+  WeeklySummary: undefined;
   ElderlyEditProfile: undefined;
   ElderlyEmergencyContacts: undefined;
   ElderlyMedicationHistory: { medicationId: string; medicationName: string };
@@ -117,6 +119,7 @@ export default function AppNavigator() {
             <Stack.Screen name="HealthThreshold" component={HealthThresholdScreen} />
             <Stack.Screen name="FamilyHealth" component={FamilyHealthScreen} />
             <Stack.Screen name="FamilyAlerts" component={FamilyAlertsScreen} />
+            <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
             <Stack.Screen name="PremiumPlans" component={PremiumPlansScreen} />

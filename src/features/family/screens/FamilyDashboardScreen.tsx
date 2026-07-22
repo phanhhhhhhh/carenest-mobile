@@ -373,6 +373,24 @@ export default function FamilyDashboardScreen() {
         <View style={{ height: 24 }} />
 
         {elderlyId && (
+          <TouchableOpacity
+            style={styles.weeklyReportCard}
+            onPress={() => navigation.navigate('WeeklySummary')}
+          >
+            <View style={styles.weeklyReportIcon}>
+              <Ionicons name="sparkles" size={20} color={Colors.primary} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.sectionTitle}>Báo cáo tuần</Text>
+              <Text style={styles.emptyBoxText}>Tổng hợp sức khỏe do AI tạo</Text>
+            </View>
+            <Ionicons name="chevron-forward" color={Colors.textHint} size={20} />
+          </TouchableOpacity>
+        )}
+
+        <View style={{ height: 24 }} />
+
+        {elderlyId && (
           <>
             <View style={styles.sectionCard}>
               <View style={styles.sectionHeaderRow}>
@@ -690,6 +708,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
+  },
+  weeklyReportCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: hexToRgba(Colors.textHint, 0.25),
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  weeklyReportIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: hexToRgba(Colors.primary, 0.1),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   medCardRow: {
     flexDirection: 'row',
