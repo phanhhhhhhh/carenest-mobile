@@ -18,10 +18,8 @@ import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useEmergencyEventStore } from '../store/emergencyEventStore';
-import { useAppointmentStore } from '../store/appointmentStore';
 import { useCameraStore } from '../store/cameraStore';
 import { useMedicationStore } from '../../elderly/store/medicationStore';
-import { useHealthMetricStore } from '../../elderly/store/healthMetricStore';
 import { useNotificationStore, selectUnreadCount } from '../../notifications/store/notificationStore';
 import type { AppointmentItem, MedicationItem } from '../../../shared/types';
 
@@ -90,11 +88,6 @@ export default function FamilyDashboardScreen() {
   const cameras = useCameraStore((s) => s.cameras);
   const loadCameras = useCameraStore((s) => s.load);
 
-  const appointments = useAppointmentStore((s) => s.appointments);
-  const appointmentsLoading = useAppointmentStore((s) => s.isLoading);
-  const loadAppointments = useAppointmentStore((s) => s.load);
-  const upcomingAppointments = useAppointmentStore((s) => s.upcoming);
-
   const alertEvents = useEmergencyEventStore((s) => s.events);
   const alertLoading = useEmergencyEventStore((s) => s.isLoading);
   const loadAlerts = useEmergencyEventStore((s) => s.load);
@@ -109,14 +102,14 @@ export default function FamilyDashboardScreen() {
       ? dashData.linkedElderly[dashData.selectedIndex]?.elderlyId ?? null
       : null;
 
-  const healthStore = useHealthMetricStore(elderlyId ?? '');
-  const healthIsLoading = healthStore((s) => s.isLoading);
-  const latestByType = healthStore((s) => s.latestByType);
+  // Vitals and upcoming appointments come from the dashboard aggregate response
+  // (familyStore) rather than separate healthMetric/appointment fetches.
+  const latestByType = dashData?.latestMetrics ?? {};
+  const healthIsLoading = dashLoading;
 
   useEffect(() => {
     const controller = new AbortController();
     loadDashboard(controller.signal);
-    loadAppointments(controller.signal);
     loadNotifications(controller.signal);
     return () => controller.abort();
   }, []);
@@ -127,22 +120,20 @@ export default function FamilyDashboardScreen() {
     loadMeds(elderlyId, controller.signal);
     loadCameras(elderlyId, controller.signal);
     loadAlerts(elderlyId, controller.signal);
-    healthStore.getState().load(undefined, controller.signal);
     return () => controller.abort();
   }, [elderlyId]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     refreshDashboard();
-    await loadAppointments();
     if (elderlyId) {
-      await Promise.all([loadMeds(elderlyId), loadCameras(elderlyId), loadAlerts(elderlyId), healthStore.getState().load()]);
+      await Promise.all([loadMeds(elderlyId), loadCameras(elderlyId), loadAlerts(elderlyId)]);
     }
     setRefreshing(false);
   };
 
   const unreadCount = selectUnreadCount(notifItems);
-  const upcoming = upcomingAppointments().slice(0, 3);
+  const upcoming = (dashData?.upcomingAppointments ?? []).slice(0, 3);
 
   const hasElderly = !!dashData?.linkedElderly[dashData.selectedIndex]?.elderlyName;
   const elderlyName = dashData?.linkedElderly[dashData.selectedIndex]?.elderlyName ?? '';
@@ -467,7 +458,7 @@ export default function FamilyDashboardScreen() {
           </TouchableOpacity>
         </View>
         <View style={{ height: 12 }} />
-        {appointmentsLoading && appointments.length === 0 ? (
+        {dashLoading && upcoming.length === 0 ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="small" color={Colors.primary} />
           </View>

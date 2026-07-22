@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { getErrorMessage, getStatus, getResponseData, isCancelled } from '../../../core/api/errors';
-import type { ElderlySummary } from '../../../shared/types';
+import type { ElderlySummary, HealthMetric, AppointmentItem } from '../../../shared/types';
 import {
   FamilyLinkSchema,
   FamilyDashboardResponseSchema,
@@ -16,6 +16,41 @@ export interface FamilyDashboardData {
   selectedIndex: number;
   totalMedications: number;
   takenMedications: number;
+  /** Latest reading per metric type for the selected elderly — sourced from the aggregate endpoint. */
+  latestMetrics: Record<string, HealthMetric>;
+  /** Upcoming appointments for the selected elderly — sourced from the aggregate endpoint. */
+  upcomingAppointments: AppointmentItem[];
+}
+
+function toLatestMetrics(
+  raw: FamilyDashboardResponseParsed['elderly'][number]['latestMetrics'],
+): Record<string, HealthMetric> {
+  const out: Record<string, HealthMetric> = {};
+  for (const [type, m] of Object.entries(raw ?? {})) {
+    out[type] = {
+      id: type,
+      type,
+      value: String(m.value),
+      valueSecondary: m.valueSecondary != null ? String(m.valueSecondary) : undefined,
+      unit: m.unit ?? undefined,
+      recordedAt: m.recordedAt,
+    };
+  }
+  return out;
+}
+
+function toUpcomingAppointments(
+  raw: FamilyDashboardResponseParsed['elderly'][number]['upcomingAppointments'],
+): AppointmentItem[] {
+  return (raw ?? []).map((a) => ({
+    id: a.id,
+    doctor: a.doctor,
+    specialty: a.specialty ?? '',
+    location: a.location ?? undefined,
+    appointmentDate: a.datetime,
+    status: a.status ?? 'SCHEDULED',
+    notes: a.notes ?? undefined,
+  }));
 }
 
 interface FamilyDashboardState {
@@ -48,10 +83,11 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         return;
       }
 
-      // Replaces the elderly-list + per-elderly medication-adherence requests this
-      // screen used to make sequentially — see DashboardController. The screen's
-      // full-detail widgets (medication list, camera, health values, appointments)
-      // still load separately below since this endpoint only returns summary fields.
+      // Replaces the elderly-list, medication-adherence, latest-vitals, and
+      // upcoming-appointments requests this screen used to make separately — see
+      // DashboardController. Medication line-items and camera status still load
+      // from their own stores since the aggregate only returns adherence counts,
+      // not individual medication/camera records.
       let payload: FamilyDashboardResponseParsed;
       try {
         const dashResp = await api.get(`/dashboard/family/${userId}`, { signal });
@@ -78,8 +114,7 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
 
       const prevIndex = get().data?.selectedIndex ?? 0;
       const selectedIndex = prevIndex < elderlyList.length ? prevIndex : 0;
-      const selectedAdherence =
-        elderlyList.length > 0 ? payload.elderly[selectedIndex]?.medicationAdherence : null;
+      const selectedEntry = elderlyList.length > 0 ? payload.elderly[selectedIndex] : null;
 
       set({
         isLoading: false,
@@ -87,8 +122,10 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         data: {
           linkedElderly: elderlyList,
           selectedIndex,
-          totalMedications: selectedAdherence?.totalDue ?? 0,
-          takenMedications: selectedAdherence?.taken ?? 0,
+          totalMedications: selectedEntry?.medicationAdherence?.totalDue ?? 0,
+          takenMedications: selectedEntry?.medicationAdherence?.taken ?? 0,
+          latestMetrics: toLatestMetrics(selectedEntry?.latestMetrics),
+          upcomingAppointments: toUpcomingAppointments(selectedEntry?.upcomingAppointments),
         },
       });
     } catch (e) {
@@ -107,6 +144,8 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         selectedIndex: index,
         totalMedications: 0,
         takenMedications: 0,
+        latestMetrics: {},
+        upcomingAppointments: [],
       },
     });
 
