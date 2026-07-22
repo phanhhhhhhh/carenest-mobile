@@ -7,6 +7,7 @@ import com.carenest.backend.entity.EmergencyContact;
 import com.carenest.backend.entity.FamilyLink;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.HealthMetric;
+import com.carenest.backend.entity.HealthMetricThreshold;
 import com.carenest.backend.entity.HealthMetricType;
 import com.carenest.backend.entity.Medication;
 import com.carenest.backend.entity.MedicationLog;
@@ -28,6 +29,7 @@ import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
+import com.carenest.backend.repository.HealthMetricThresholdRepository;
 import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.MedicationRepository;
 import com.carenest.backend.repository.SubscriptionRepository;
@@ -67,6 +69,7 @@ public class DataSeeder implements CommandLineRunner {
     private final MedicationRepository medicationRepository;
     private final MedicationLogRepository medicationLogRepository;
     private final HealthMetricRepository healthMetricRepository;
+    private final HealthMetricThresholdRepository healthMetricThresholdRepository;
     private final AppointmentRepository appointmentRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final SubscriptionRepository subscriptionRepository;
@@ -95,6 +98,7 @@ public class DataSeeder implements CommandLineRunner {
         seedMedications();
         seedMedicationLogs();
         seedHealthMetrics();
+        seedHealthMetricThresholds();
         seedAppointments();
         seedChatMessages();
         seedSubscriptions();
@@ -382,6 +386,35 @@ public class DataSeeder implements CommandLineRunner {
 
     private BigDecimal bd(double value) {
         return BigDecimal.valueOf(Math.round(value * 100.0) / 100.0);
+    }
+
+    private void seedHealthMetricThresholds() {
+        log.info("Seeding health metric thresholds...");
+        User e1 = elderlyUsers.get(0);
+
+        // Seeded BP history for e1 stays in a tight 130-138 band (see seedHealthMetrics),
+        // so a live reading anywhere near 175 breaches this deterministically — the
+        // reliable trigger for the demo's health-anomaly-alert walkthrough, independent
+        // of the statistical (IQR/z-score) detector's sensitivity to the exact history.
+        healthMetricThresholdRepository.save(HealthMetricThreshold.builder()
+            .elderly(e1)
+            .metricType(HealthMetricType.BLOOD_PRESSURE)
+            .minValue(new BigDecimal("90"))
+            .maxValue(new BigDecimal("140"))
+            .minValueSecondary(new BigDecimal("60"))
+            .maxValueSecondary(new BigDecimal("90"))
+            .alertFamily(true)
+            .build());
+
+        healthMetricThresholdRepository.save(HealthMetricThreshold.builder()
+            .elderly(e1)
+            .metricType(HealthMetricType.HEART_RATE)
+            .minValue(new BigDecimal("50"))
+            .maxValue(new BigDecimal("110"))
+            .alertFamily(true)
+            .build());
+
+        log.info("Health metric thresholds seeded.");
     }
 
     private void seedAppointments() {
