@@ -5,6 +5,7 @@ import type { MedicationItem, MedicationLogEntry } from '../../../shared/types';
 import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import { scheduleFrom } from '../../medication/services/medicationReminderService';
 import { MedicationSchema, MedicationLogSchema, safeParseList } from '../../../shared/schemas';
+import { showErrorToast } from '../../../shared/components/toastStore';
 
 
 
@@ -166,7 +167,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       await get().load();
       return true;
     } catch (e) {
-      console.warn('[medicationStore.deleteMedication]', e);
+      showErrorToast(`Could not delete medication: ${getErrorMessage(e)}`);
       return false;
     }
   },

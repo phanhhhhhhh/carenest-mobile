@@ -3,6 +3,7 @@ import api from '../../../core/api/client';
 import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
 import type { ChatMessage } from '../../../shared/types';
 import { ChatMessageSchema, safeParseOne, safeParseList } from '../../../shared/schemas';
+import { showErrorToast } from '../../../shared/components/toastStore';
 
 
 
@@ -145,7 +146,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       await api.delete('/chat/history');
       set({ messages: [], totalMessages: 0, hasMore: false });
     } catch (e) {
-      console.warn('[chatStore.clearHistory]', e);
+      showErrorToast(`Could not clear chat history: ${getErrorMessage(e)}`);
     }
   },
 
