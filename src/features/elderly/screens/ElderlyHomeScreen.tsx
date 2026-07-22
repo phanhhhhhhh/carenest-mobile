@@ -98,7 +98,7 @@ export default function ElderlyHomeScreen() {
 
   useEffect(() => {
     const controller = new AbortController();
-    loadProfile();
+    loadProfile(controller.signal);
     loadMedications(undefined, controller.signal);
     loadNotifications(controller.signal);
     loadAppointments(controller.signal);
