@@ -415,7 +415,12 @@ export default function FamilyDashboardScreen() {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>Cảnh báo gần đây</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Cảnh báo gần đây</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('FamilyAlerts')}>
+            <Text style={styles.viewAllText}>Xem tất cả →</Text>
+          </TouchableOpacity>
+        </View>
         <View style={{ height: 14 }} />
         <View style={styles.activityCard}>
           {activityItems.map((item, idx) => (
