@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { useMedicationStore } from '../store/medicationStore';
+import { showErrorToast } from '../../../shared/components/toastStore';
 
 
 export default function ProactiveReminderCard() {
@@ -19,7 +20,7 @@ export default function ProactiveReminderCard() {
       <TouchableOpacity
         style={styles.touchable}
         activeOpacity={0.7}
-        onPress={() => toggleTaken(next.id)}
+        onPress={() => toggleTaken(next.id, showErrorToast)}
       >
         <View style={styles.iconWrap}>
           <Ionicons name="notifications" size={24} color={Colors.warning} />
@@ -35,7 +36,7 @@ export default function ProactiveReminderCard() {
         </View>
         <TouchableOpacity
           style={styles.takeButton}
-          onPress={() => toggleTaken(next.id)}
+          onPress={() => toggleTaken(next.id, showErrorToast)}
         >
           <Ionicons name="checkmark" size={18} color="#FFFFFF" />
           <Text style={styles.takeButtonText}>Take</Text>
