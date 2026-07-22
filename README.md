@@ -358,6 +358,7 @@ The `dev` Spring profile enables the `DataSeeder` which creates:
 | Chat messages | 8 | 4 user-AI conversation pairs |
 | Subscriptions | 1 | Premium monthly |
 | Camera devices | 1 | Demo Imou device |
+| Emergency events | 1 | Resolved SOS from 4 days ago, with linked camera snapshot |
 
 **Demo login credentials** (password for all seeded accounts: `Demo@1234`):
 

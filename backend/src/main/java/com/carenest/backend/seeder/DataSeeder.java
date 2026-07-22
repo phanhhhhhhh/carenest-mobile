@@ -15,12 +15,17 @@ import com.carenest.backend.entity.MedicationSchedule;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.entity.CameraDevice;
+import com.carenest.backend.entity.CameraSnapshot;
 import com.carenest.backend.entity.ChatMessage;
+import com.carenest.backend.entity.EmergencyEvent;
+import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.Subscription;
 import com.carenest.backend.repository.AppointmentRepository;
 import com.carenest.backend.repository.CameraDeviceRepository;
+import com.carenest.backend.repository.CameraSnapshotRepository;
 import com.carenest.backend.repository.ChatMessageRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
+import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
 import com.carenest.backend.repository.MedicationLogRepository;
@@ -66,6 +71,8 @@ public class DataSeeder implements CommandLineRunner {
     private final ChatMessageRepository chatMessageRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final CameraDeviceRepository cameraDeviceRepository;
+    private final EmergencyEventRepository emergencyEventRepository;
+    private final CameraSnapshotRepository cameraSnapshotRepository;
 
     private final List<User> elderlyUsers = new ArrayList<>();
     private final List<User> familyUsers = new ArrayList<>();
@@ -91,7 +98,8 @@ public class DataSeeder implements CommandLineRunner {
         seedAppointments();
         seedChatMessages();
         seedSubscriptions();
-        seedCameras();
+        CameraDevice demoCamera = seedCameras();
+        seedEmergencyEvent(demoCamera);
         log.info("Seed data created successfully.");
     }
 
@@ -478,7 +486,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
 
-    private void seedCameras() {
+    private CameraDevice seedCameras() {
         log.info("Seeding camera devices...");
         User e1 = elderlyUsers.get(0);
 
@@ -496,5 +504,40 @@ public class DataSeeder implements CommandLineRunner {
             .build();
         cameraDeviceRepository.save(camera);
         log.info("Camera device seeded (1 demo device).");
+        return camera;
+    }
+
+    private void seedEmergencyEvent(CameraDevice camera) {
+        log.info("Seeding a past resolved SOS event...");
+        User e1 = elderlyUsers.get(0);
+        User f1 = familyUsers.get(0);
+
+        OffsetDateTime triggeredAt = OffsetDateTime.now().minusDays(4).withHour(21).withMinute(12).withSecond(0).withNano(0);
+
+        EmergencyEvent event = EmergencyEvent.builder()
+            .elderly(e1)
+            .latitude(new BigDecimal("10.7769000"))
+            .longitude(new BigDecimal("106.7009000"))
+            .address("123 Nguyen Hue, District 1, Ho Chi Minh City")
+            .status(EmergencyStatus.RESOLVED)
+            .triggeredAt(triggeredAt)
+            .acknowledgedAt(triggeredAt.plusMinutes(2))
+            .acknowledgedBy(f1.getId())
+            .resolvedAt(triggeredAt.plusMinutes(18))
+            .notes("False alarm — accidental button press, confirmed OK by phone call.")
+            .build();
+        event = emergencyEventRepository.save(event);
+
+        CameraSnapshot snapshot = CameraSnapshot.builder()
+            .camera(camera)
+            .elderly(e1)
+            .imageUrl("https://picsum.photos/seed/carenest-sos-demo/640/480")
+            .trigger(CameraSnapshot.SnapshotTrigger.SOS)
+            .emergencyEventId(event.getId())
+            .success(true)
+            .build();
+        cameraSnapshotRepository.save(snapshot);
+
+        log.info("Emergency event + SOS snapshot seeded.");
     }
 }
