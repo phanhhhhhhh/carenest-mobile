@@ -5,6 +5,8 @@ import {
 } from '../storage/secureStorage';
 import { AppConfig } from '../config/appConfig';
 import { emitSessionExpired } from '../auth/sessionEvents';
+import { isNetworkError } from './errors';
+import { showErrorToast } from '../../shared/components/toastStore';
 
 const BASE_URL = AppConfig.apiBaseUrl;
 
@@ -111,9 +113,22 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+const NETWORK_TOAST_COOLDOWN_MS = 5000;
+let lastNetworkToastAt = 0;
+
+function notifyIfUnreachable(error: AxiosError): void {
+  if (!isNetworkError(error)) return;
+  const now = Date.now();
+  if (now - lastNetworkToastAt < NETWORK_TOAST_COOLDOWN_MS) return;
+  lastNetworkToastAt = now;
+  showErrorToast('No connection — check your network and try again.');
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    notifyIfUnreachable(error);
+
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const is401 = error.response?.status === 401;
     const isRefreshPath = originalRequest.url?.includes('/auth/refresh');
