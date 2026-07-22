@@ -31,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +51,10 @@ public class DataSeeder implements CommandLineRunner {
 
     @Value("${carenest.seed.enabled:false}")
     private boolean seedEnabled;
+
+    // Demo login password for all seeded accounts — see README "Demo Data" section.
+    private static final String DEMO_PASSWORD = "Demo@1234";
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private final UserRepository userRepository;
     private final ElderlyProfileRepository elderlyProfileRepository;
@@ -160,6 +165,7 @@ public class DataSeeder implements CommandLineRunner {
             .phone(phone)
             .email(email)
             .emailVerified(true)
+            .passwordHash(passwordEncoder.encode(DEMO_PASSWORD))
             .dob(dob)
             .role(role)
             .build();

@@ -40,9 +40,10 @@ public class ChatMessage {
     private String intent;
 
     
+    @Builder.Default
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> contextData;
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> contextData = Map.of();
 
     
     @Column(length = 64)
