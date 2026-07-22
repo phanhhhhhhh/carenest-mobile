@@ -73,10 +73,10 @@ public class AuthService {
             }
         }
 
-        // Every self-registered account must be verified before first login:
-        // email accounts via email link, phone-only accounts via SMS OTP.
+        // Phone-only accounts are auto-verified (primary registration method).
+        // Email accounts must click the verification link before first login.
         String verificationToken = null;
-        boolean needsVerification = true;
+        boolean needsVerification = !hasPhone;
         if (hasEmail) {
             verificationToken = generateSecureToken();
         }
@@ -100,8 +100,10 @@ public class AuthService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("userId", user.getId());
-        response.put("message", "Registration successful. Verify your account via email or SMS to continue.");
-        response.put("requiresVerification", true);
+        response.put("message", needsVerification
+            ? "Registration successful. Verify your account via email to continue."
+            : "Registration successful.");
+        response.put("requiresVerification", needsVerification);
         return response;
     }
 

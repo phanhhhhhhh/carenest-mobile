@@ -133,7 +133,7 @@ CareNest is a mobile platform connecting elderly users with their families throu
 └─────────────────────────┼─────────────────────────────┘
                           │ HTTPS (REST JSON)
 ┌─────────────────────────┼─────────────────────────────┐
-│        Spring Boot REST API (localhost:8080)          │
+│        Spring Boot REST API (localhost:8082)          │
 │  ┌──────────────────────┴───────────────────────────┐ │
 │  │       JwtAuthenticationFilter (once-per-request)  │ │
 │  └──────┬──────────────────────────────────┬────────┘ │
@@ -221,7 +221,7 @@ cd carenest_mobile
 
 # 2. Environment
 cp .env.example .env
-# → Set API_BASE_URL (Android: http://10.0.2.2:8080/api, iOS/physical: http://<ip>:8080/api)
+# → Set API_BASE_URL (Android: http://10.0.2.2:8082/api, iOS/physical: http://<ip>:8082/api)
 # → Set GEMINI_API_KEY (optional, for AI features)
 
 # 3. Install dependencies
@@ -245,10 +245,10 @@ npx expo start
 
 | Platform | API_BASE_URL |
 |----------|-------------|
-| Android Emulator | `http://10.0.2.2:8080/api` |
-| iOS Simulator | `http://localhost:8080/api` |
-| Web | `http://localhost:8080/api` |
-| Physical Device | `http://<your-lan-ip>:8080/api` |
+| Android Emulator | `http://10.0.2.2:8082/api` |
+| iOS Simulator | `http://localhost:8082/api` |
+| Web | `http://localhost:8082/api` |
+| Physical Device | `http://<your-lan-ip>:8082/api` |
 
 ---
 
@@ -316,7 +316,7 @@ Tokens stored in **expo-secure-store**. The Axios interceptor proactively refres
 | PATCH | `/emergency-events/{id}/acknowledge` | ✅ |
 
 ### Family, Medications, Appointments, Camera, etc.
-Full API docs: `http://localhost:8080/swagger-ui.html` (when backend is running)
+Full API docs: `http://localhost:8082/swagger-ui.html` (when backend is running)
 
 ---
 
@@ -338,7 +338,7 @@ Full API docs: `http://localhost:8080/swagger-ui.html` (when backend is running)
 ### React Native (`.env`)
 | Variable | Default | Required |
 |----------|---------|----------|
-| `API_BASE_URL` | `http://10.0.2.2:8080/api` | For non-emulator devices |
+| `API_BASE_URL` | `http://10.0.2.2:8082/api` | For non-emulator devices |
 | `GEMINI_API_KEY` | (empty) | For AI features |
 
 ---
@@ -359,14 +359,14 @@ The `dev` Spring profile enables the `DataSeeder` which creates:
 | Subscriptions | 1 | Premium monthly |
 | Camera devices | 1 | Demo Imou device |
 
-**Demo login credentials:**
+**Demo login credentials** (password for all seeded accounts: `Demo@1234`):
 
-| Role | Phone | Name |
-|------|-------|------|
-| Elderly | `+84912345001` | John Anderson |
-| Elderly | `+84912345002` | Jane Thompson |
-| Family | `+84918111001` | Linda Nguyen |
-| Family | `+84918111002` | Michael Tran |
+| Role | Phone | Password | Name |
+|------|-------|----------|------|
+| Elderly | `+84912345001` | `Demo@1234` | John Anderson |
+| Elderly | `+84912345002` | `Demo@1234` | Jane Thompson |
+| Family | `+84918111001` | `Demo@1234` | Linda Nguyen |
+| Family | `+84918111002` | `Demo@1234` | Michael Tran |
 
 ---
 
