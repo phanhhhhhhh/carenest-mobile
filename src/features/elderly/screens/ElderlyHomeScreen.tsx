@@ -306,7 +306,7 @@ export default function ElderlyHomeScreen() {
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Today's Medications</Text>
           {medItems.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate('ElderlyMeds')}>
+            <TouchableOpacity onPress={() => navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' })}>
               <Text style={styles.viewAll}>View all</Text>
             </TouchableOpacity>
           )}

@@ -334,7 +334,7 @@ export default function FamilyDashboardScreen() {
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('FamilyMeds')}>
+            <TouchableOpacity onPress={() => navigation.navigate('FamilyShell', { screen: 'FamilyMeds' })}>
               <Text style={styles.viewAllText}>Xem tất cả →</Text>
             </TouchableOpacity>
           </View>
