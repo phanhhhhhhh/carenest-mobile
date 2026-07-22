@@ -210,6 +210,21 @@ export const GoogleFitStatusSchema = z.object({
 });
 export type GoogleFitStatusParsed = z.infer<typeof GoogleFitStatusSchema>;
 
+export const FamilyDashboardResponseSchema = z.object({
+  elderly: z.array(
+    z.object({
+      elderlyId: z.number(),
+      elderlyName: z.string(),
+      healthConditions: z.array(z.string()).nullable().optional(),
+      medicationAdherence: z
+        .object({ totalDue: z.number(), taken: z.number() })
+        .nullable()
+        .optional(),
+    }),
+  ),
+});
+export type FamilyDashboardResponseParsed = z.infer<typeof FamilyDashboardResponseSchema>;
+
 /**
  * Validates a single API object with `schema`. On failure, logs a warning
  * naming the offending field(s) and returns null so the caller can skip the
