@@ -1,81 +1,98 @@
-# CareNest — Demo Script
+# CareNest — Kịch bản Demo
 
-Five flagship use cases, in the order that reads best live. Uses the seeded `dev`-profile demo accounts (see README → Demo Data). All passwords: `Demo@1234`.
+Toàn bộ giao diện app đã chuyển sang tiếng Việt. Dùng 2 thiết bị/trình duyệt song song — một đăng nhập vai Người cao tuổi (John), một vai Người thân (Linda) — để cảnh báo hiện lên "sống" ngay khi vừa demo bên kia xong.
 
-| Role | Phone | Name |
-|---|---|---|
-| Elderly | `+84912345001` | John Anderson |
-| Family | `+84918111001` | Linda Nguyen (John's daughter) |
+## Tài khoản demo
 
-Run two devices/simulators side by side — one logged in as John (elderly), one as Linda (family) — so alerts appear live on the family side as they're triggered on the elderly side.
+| Vai trò | Số điện thoại | Email | Mật khẩu |
+|---|---|---|---|
+| Người cao tuổi | `+84912345001` | `john.anderson@test.com` | `Demo@1234` |
+| Người thân | `+84918111001` | `linda.nguyen@test.com` | `Demo@1234` |
 
----
-
-## 1. SOS Emergency Alert (UC-14)
-
-**Device:** John Anderson (elderly)
-
-1. On the **Home** tab, tap the red **SOS** button.
-2. A 3-second countdown appears — let it run out (don't tap "Cancel"). This debounces accidental taps, worth calling out live.
-3. A confirmation alert appears: "Emergency signal has been sent. All family members have been notified."
-
-**Device:** Linda Nguyen (family)
-
-4. On the **Home** tab, open **Cảnh báo gần đây → Xem tất cả**. The new SOS event appears at the top, status **ACTIVE**.
-5. A best-effort camera snapshot was captured automatically at trigger time — visible in the **Camera** tab's timeline for John's device.
-
-> **Note:** FCM push isn't configured in this build (see README → Known Limitations), so the alert won't arrive as an OS push banner — it shows up via the in-app alert list and dashboard, which is the reliable path for this demo.
+Đăng nhập bằng số điện thoại hoặc email đều được (màn đăng nhập có nút chuyển đổi Số điện thoại / Email).
 
 ---
 
-## 2. AI Chat (UC-16)
+## 1. Đăng nhập & Dashboard (mở màn)
 
-**Device:** John Anderson (elderly)
+**Thiết bị: John (Người cao tuổi)**
+1. Đăng nhập → vào thẳng **Trang chủ**.
+2. Chỉ ra: lời chào theo giờ trong ngày, nút **SOS** to màu đỏ, thẻ "Thuốc tiếp theo", 3 chỉ số sức khỏe hôm nay (Nhịp tim / Huyết áp / Đường huyết), thẻ camera, thẻ "Trò chuyện với AI".
 
-1. Open the **Chat AI** tab.
-2. Type: *"What time do I take my blood pressure medicine?"* and send.
-3. The Gemini-backed reply answers using John's actual seeded Amlodipine schedule (8:00 AM) — the API key lives server-side only, nothing in the mobile app touches it.
-4. Optionally follow up with *"Can you tell me a story? I feel lonely."* to show the general-companionship intent, not just medication Q&A.
-
----
-
-## 3. Health Anomaly Alert (UC-6 / threshold + AI analysis)
-
-**Device:** John Anderson (elderly)
-
-1. Open the **Health** tab and log a new **Blood Pressure** reading well outside the normal range (e.g. systolic 175).
-2. Submit — this triggers both the threshold check and the Gemini-based anomaly analysis server-side.
-
-**Device:** Linda Nguyen (family)
-
-3. Open the notification bell (top-right on **Home**) — a **Health Alert** notification appears with the AI-generated analysis text attached, not just the raw number.
-4. This is backed by a durable in-app record (not just a push), so it's still there after the app is closed and reopened.
+**Thiết bị: Linda (Người thân)**
+3. Đăng nhập → **Trang chủ** hiện dashboard tổng hợp của John: bệnh nền, trạng thái camera, 3 chỉ số mới nhất, vòng tuân thủ thuốc hôm nay, thẻ "Báo cáo tuần", camera trực tiếp, "Cảnh báo gần đây".
+4. Đây là điểm nhấn — một màn hình duy nhất tổng hợp mọi thông tin quan trọng về John.
 
 ---
 
-## 4. Family Dashboard (UC-8, aggregate endpoint)
+## 2. Thêm thuốc (Người cao tuổi)
 
-**Device:** Linda Nguyen (family)
-
-1. Land on the **Home** tab after login — this single screen aggregates John's medication adherence ring, latest vitals (HR/BP/glucose with warning coloring), camera status, recent alerts, and upcoming appointments in one view.
-2. Point out the elderly-selector chips at the top if demoing an account linked to more than one elderly user (Linda is only linked to John in the seed data, so this row won't show — mention it's there for multi-elderly families).
-3. Tap **Xem tất cả** on the Meds or Appointments section to show drill-down into full detail screens.
-
----
-
-## 5. Camera (UC-11/UC-12 — snapshot-based, not embedded live video)
-
-**Device:** Linda Nguyen (family)
-
-1. Open the **Camera** tab (or tap the camera card on the dashboard → "Xem").
-2. Tap **Snapshot** — captures a fresh still image from John's demo Imou device and adds it to the timeline.
-3. Scroll the timeline to show the seeded SOS-triggered snapshot from 4 days ago, tagged **SOS Emergency Snapshot**.
-
-> **Be accurate about scope:** "Live View" opens an external link/app via the real Imou API, not an embedded in-app video player, and needs `IMOU_APP_ID`/`IMOU_APP_SECRET` configured (not set in this build — see README → Known Limitations). Lead with **Snapshot**, which works standalone and is what most of the demo data supports.
+**Thiết bị: John**
+1. Vào tab **Thuốc** → chạm **+ Thêm**.
+2. Nhập tên thuốc, liều lượng, tần suất, giờ uống → **Lưu**.
+3. Thuốc mới xuất hiện ngay trong danh sách "Lịch thuốc hôm nay" — không cần tải lại.
+4. (Trên điện thoại thật) Nhắc nhở uống thuốc được đặt lịch local trên máy — trên web bước này không áp dụng vì không có thông báo hệ thống.
 
 ---
 
-## Fallback notes if something misbehaves live
+## 3. Đo chỉ số sức khỏe & cảnh báo bất thường
 
-- If the backend is unreachable, the app shows a dismissible "No connection" toast rather than crashing or hanging silently — a good moment to point out the offline handling if it happens to trigger.
-- If a screen shows an empty state instead of data, it's likely because the demo seed wasn't loaded (`carenest.seed.enabled=true` under the `dev` profile, first boot only — check backend logs for "Seed data created successfully").
+**Thiết bị: John**
+1. Vào tab **Sức khỏe** → thêm chỉ số mới → chọn **Huyết áp** → nhập giá trị cao bất thường (vd tâm thu 175).
+2. Lưu — hệ thống kiểm tra ngưỡng cảnh báo *và* phân tích bất thường bằng AI ở phía server.
+
+**Thiết bị: Linda**
+3. Mở chuông thông báo (góc trên bên phải màn Trang chủ) → thấy thông báo **Cảnh báo sức khỏe** kèm phân tích do AI tạo, không chỉ con số thô.
+4. Thông báo được lưu lại lâu dài (không chỉ là push) — tắt mở lại app vẫn còn.
+
+---
+
+## 4. SOS khẩn cấp
+
+**Thiết bị: John**
+1. Ở tab **Trang chủ**, nhấn giữ nút **SOS** 3 giây — để đếm ngược chạy hết (không bấm Hủy), đây là cơ chế chống bấm nhầm, nên nhắc tới khi demo.
+2. Xuất hiện thông báo xác nhận đã gửi tín hiệu khẩn cấp tới người thân.
+
+**Thiết bị: Linda**
+3. Vào **Cảnh báo gần đây → Xem tất cả** trên Trang chủ — sự kiện SOS mới xuất hiện đầu danh sách, trạng thái **ACTIVE**.
+4. Có thể xác nhận (acknowledge) ngay trên màn này.
+5. Một ảnh chụp camera cũng được ghi lại tự động lúc trigger — xem trong tab **Camera** của thiết bị John.
+
+> Lưu ý: Push thông báo qua FCM chưa được cấu hình trong bản build này, nên cảnh báo sẽ không hiện dạng thông báo hệ thống (banner) — chỉ hiện trong danh sách thông báo/cảnh báo trong app. Đây là kênh đáng tin cậy nhất cho demo.
+
+---
+
+## 5. Trò chuyện với AI (Gemini)
+
+**Thiết bị: John**
+1. Vào tab **Chat AI**.
+2. Gõ: *"Mấy giờ tôi uống thuốc huyết áp vậy?"* rồi gửi.
+3. AI trả lời dựa trên lịch thuốc thật của John (Amlodipine 8:00 sáng) — API key Gemini chỉ nằm ở server, app di động không chạm vào.
+4. Có thể hỏi thêm: *"Kể cho tôi một câu chuyện được không? Tôi thấy cô đơn quá."* để thể hiện AI không chỉ trả lời về thuốc mà còn trò chuyện tâm sự.
+
+> Lưu ý: Nút micro (nhập bằng giọng nói) hiện là placeholder — chưa được nối vào tính năng ghi âm/nhận diện giọng nói thật, không demo phần này.
+
+---
+
+## 6. Camera
+
+**Thiết bị: Linda**
+1. Vào tab **Camera** (hoặc chạm thẻ camera trên Dashboard → "Xem").
+2. Chạm **Chụp ảnh (Snapshot)** — chụp ảnh mới từ camera demo của John, thêm vào dòng thời gian.
+3. Cuộn xuống thấy ảnh SOS đã được chụp tự động từ 4 ngày trước, gắn nhãn cảnh báo khẩn cấp.
+
+> Lưu ý: "Xem trực tiếp" (Live View) mở qua link/app ngoài qua API Imou thật, không phải video nhúng trong app, và cần `IMOU_APP_ID`/`IMOU_APP_SECRET` (chưa cấu hình trong bản build này). Nên demo **Chụp ảnh** là chính.
+
+---
+
+## Điều hướng — mỗi màn đều có nút quay lại
+
+Mọi màn hình con (Lịch hẹn, Liên hệ khẩn cấp, Lịch sử thuốc, Báo cáo sức khỏe, Cảnh báo, Gói Premium, Báo cáo tuần, Thông báo, Cài đặt thông báo...) đều có nút mũi tên quay lại ở góc trên bên trái. Các màn gốc trong tab bar (Trang chủ, Thuốc, Camera, Sức khỏe, Hồ sơ) không có nút quay lại vì chuyển bằng tab bar phía dưới, không phải điều hướng "đẩy" (push).
+
+---
+
+## Nếu có sự cố khi demo trực tiếp
+
+- Backend mất kết nối → app hiện toast "Không có kết nối — vui lòng kiểm tra mạng và thử lại" thay vì treo máy im lặng — nếu gặp, đây cũng là lúc hay để nói về xử lý mất kết nối.
+- Màn hình trống không có dữ liệu → có thể do seed chưa chạy — kiểm tra log backend tìm dòng "Seed data created successfully".
+- Backend đột ngột dừng (crash JVM) → khởi động lại bằng lệnh trong `DEMO_CHECKLIST.md`; đã gặp hiện tượng này vài lần trong lúc test, có vẻ là lỗi JIT/JVM ngẫu nhiên của máy, không liên quan tới code — nên có người túc trực sẵn sàng restart nếu cần.
