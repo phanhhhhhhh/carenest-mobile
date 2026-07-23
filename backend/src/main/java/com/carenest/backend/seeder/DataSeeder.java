@@ -119,29 +119,29 @@ public class DataSeeder implements CommandLineRunner {
         elderlyUsers.addAll(List.of(e1, e2, e3, e4, e5));
 
         saveElderlyProfile(e1,
-            List.of("Type 2 Diabetes", "Hypertension"),
+            List.of("Tiểu đường Tuýp 2", "Tăng huyết áp"),
             List.of(EmergencyContact.builder()
-                .name("Linda Nguyen").phone("0912111001").relationship("Daughter").build()));
+                .name("Linda Nguyen").phone("0912111001").relationship("Con gái").build()));
 
         saveElderlyProfile(e2,
-            List.of("Heart Failure Class II", "Atrial Fibrillation"),
+            List.of("Suy tim độ II", "Rung nhĩ"),
             List.of(EmergencyContact.builder()
-                .name("Michael Tran").phone("0912111002").relationship("Son").build()));
+                .name("Michael Tran").phone("0912111002").relationship("Con trai").build()));
 
         saveElderlyProfile(e3,
-            List.of("COPD", "Knee Osteoarthritis"),
+            List.of("Bệnh phổi tắc nghẽn mạn tính (COPD)", "Thoái hóa khớp gối"),
             List.of(EmergencyContact.builder()
-                .name("Sarah Le").phone("0912111003").relationship("Wife").build()));
+                .name("Sarah Le").phone("0912111003").relationship("Vợ").build()));
 
         saveElderlyProfile(e4,
-            List.of("Early-stage Alzheimer", "Osteoporosis"),
+            List.of("Alzheimer giai đoạn đầu", "Loãng xương"),
             List.of(EmergencyContact.builder()
-                .name("David Pham").phone("0912111004").relationship("Son").build()));
+                .name("David Pham").phone("0912111004").relationship("Con trai").build()));
 
         saveElderlyProfile(e5,
-            List.of("Parkinson Stage 2", "Depression"),
+            List.of("Parkinson giai đoạn 2", "Trầm cảm"),
             List.of(EmergencyContact.builder()
-                .name("Emily Hoang").phone("0912111005").relationship("Daughter").build()));
+                .name("Emily Hoang").phone("0912111005").relationship("Con gái").build()));
 
         User f1  = saveUser("Linda Nguyen",  "+84918111001", "linda.nguyen@test.com",  null, UserRole.FAMILY);
         User f2  = saveUser("Michael Tran",    "+84918111002", "michael.tran@test.com",   null, UserRole.FAMILY);
@@ -156,17 +156,17 @@ public class DataSeeder implements CommandLineRunner {
 
         familyUsers.addAll(List.of(f1, f2, f3, f4, f5, f6, f7, f8, f9, f10));
 
-        saveFamilyLink(e1, f1, "Daughter");
-        saveFamilyLink(e2, f2, "Son");
-        saveFamilyLink(e3, f3, "Wife");
-        saveFamilyLink(e4, f4, "Son");
-        saveFamilyLink(e5, f5, "Daughter");
+        saveFamilyLink(e1, f1, "Con gái");
+        saveFamilyLink(e2, f2, "Con trai");
+        saveFamilyLink(e3, f3, "Vợ");
+        saveFamilyLink(e4, f4, "Con trai");
+        saveFamilyLink(e5, f5, "Con gái");
 
-        saveFamilyLink(e1, f6,  "Relative");
-        saveFamilyLink(e1, f7,  "Relative");
-        saveFamilyLink(e1, f8,  "Relative");
-        saveFamilyLink(e2, f9,  "Relative");
-        saveFamilyLink(e2, f10, "Relative");
+        saveFamilyLink(e1, f6,  "Người thân");
+        saveFamilyLink(e1, f7,  "Người thân");
+        saveFamilyLink(e1, f8,  "Người thân");
+        saveFamilyLink(e2, f9,  "Người thân");
+        saveFamilyLink(e2, f10, "Người thân");
 
         log.info("Seeded {} elderly + {} family users.", elderlyUsers.size(), familyUsers.size());
     }
@@ -213,35 +213,35 @@ public class DataSeeder implements CommandLineRunner {
         OffsetDateTime now = OffsetDateTime.now();
 
         medications.add(saveMedication(e1, "Metformin", "500mg",
-            schedule("TWICE_DAILY", "07:30", "19:30"), "Take after meals",
+            schedule("TWICE_DAILY", "07:30", "19:30"), "Uống sau bữa ăn",
             nextDoseFromNow(now, 12)));
 
         medications.add(saveMedication(e1, "Amlodipine", "5mg",
-            schedule("DAILY", "08:00"), "Take in the morning",
+            schedule("DAILY", "08:00"), "Uống vào buổi sáng",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e1, "Aspirin", "81mg",
-            schedule("DAILY", "08:00"), "Take after breakfast",
+            schedule("DAILY", "08:00"), "Uống sau bữa sáng",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e2, "Furosemide", "40mg",
-            schedule("DAILY", "07:00"), "Monitor for edema",
+            schedule("DAILY", "07:00"), "Theo dõi dấu hiệu phù nề",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e2, "Bisoprolol", "2.5mg",
-            schedule("DAILY", "08:00"), "Do not stop abruptly",
+            schedule("DAILY", "08:00"), "Không tự ý ngừng thuốc đột ngột",
             nextDoseFromNow(now, 24)));
 
         medications.add(saveMedication(e2, "Warfarin", "5mg",
-            schedule("DAILY", "18:00"), "Monitor INR regularly",
+            schedule("DAILY", "18:00"), "Theo dõi chỉ số INR thường xuyên",
             nextDoseFromNow(now, 8)));
 
-        medications.add(saveMedication(e3, "Salbutamol inhaler", "100mcg/dose",
-            scheduleAsNeeded(), "Use when short of breath",
+        medications.add(saveMedication(e3, "Ống hít Salbutamol", "100mcg/liều",
+            scheduleAsNeeded(), "Dùng khi khó thở",
             null));
 
-        medications.add(saveMedication(e3, "Tiotropium inhaler", "18mcg/dose",
-            schedule("DAILY", "08:00"), "Inhale in the morning",
+        medications.add(saveMedication(e3, "Ống hít Tiotropium", "18mcg/liều",
+            schedule("DAILY", "08:00"), "Hít vào buổi sáng",
             nextDoseFromNow(now, 24)));
 
         log.info("Seeded {} medications.", medications.size());
@@ -425,24 +425,24 @@ public class DataSeeder implements CommandLineRunner {
         for (User elderly : elderlyUsers) {
 
             saveAppointment(elderly,
-                "Endocrinology follow-up",
-                "Dr. Michael Nguyen",
-                "Endocrinology - Diabetes",
-                "City General Hospital",
+                "Tái khám nội tiết",
+                "BS. Michael Nguyen",
+                "Nội tiết - Tiểu đường",
+                "Bệnh viện Đa khoa Thành phố",
                 now.plusWeeks(2).withHour(9).withMinute(0).withSecond(0).withNano(0));
 
             saveAppointment(elderly,
-                "Routine blood work",
-                "Dr. Hannah Tran",
-                "Laboratory",
-                "Lab Medlatec",
+                "Xét nghiệm máu định kỳ",
+                "BS. Hannah Tran",
+                "Xét nghiệm",
+                "Phòng khám Medlatec",
                 now.plusWeeks(3).withHour(7).withMinute(30).withSecond(0).withNano(0));
 
             saveAppointment(elderly,
-                "Cardiology check-up",
-                "Dr. Felix Le",
-                "Cardiology",
-                "Heart Institute",
+                "Khám tim mạch",
+                "BS. Felix Le",
+                "Tim mạch",
+                "Viện Tim mạch",
                 now.plusWeeks(6).withHour(10).withMinute(0).withSecond(0).withNano(0));
         }
 
@@ -470,17 +470,17 @@ public class DataSeeder implements CommandLineRunner {
         User e1 = elderlyUsers.get(0);
 
         String[][] convos = {
-            {"Good morning! How are you feeling today?",
-             "I'm a bit tired. My back hurts.",
+            {"Chào buổi sáng! Hôm nay ông cảm thấy thế nào?",
+             "Tôi hơi mệt. Lưng tôi đau.",
              "HEALTH"},
-            {"What time do I take my blood pressure medicine?",
-             "Your Amlodipine 5mg is scheduled for 8:00 AM. You've already taken today's morning dose! ✅",
+            {"Mấy giờ tôi uống thuốc huyết áp vậy?",
+             "Amlodipine 5mg của ông được lên lịch lúc 8:00 sáng. Ông đã uống liều sáng nay rồi đó! ✅",
              "MEDICATION"},
-            {"Can you tell me a story? I feel lonely.",
-             "Of course! Did you know that in Vietnam, there's a legend about the origins of bánh chưng and bánh dày? The 6th Hùng King...",
+            {"Kể cho tôi một câu chuyện được không? Tôi thấy cô đơn quá.",
+             "Được chứ! Ông có biết ở Việt Nam có truyền thuyết về nguồn gốc bánh chưng và bánh dày không? Vua Hùng thứ 6...",
              "GENERAL"},
-            {"Thank you. That was a nice story.",
-             "I'm glad you enjoyed it! What would you like to talk about next? Your family or maybe a memory from your youth?",
+            {"Cảm ơn nhé. Câu chuyện hay đấy.",
+             "Tôi rất vui vì ông thích! Ông muốn trò chuyện tiếp về điều gì? Gia đình của ông, hay một kỷ niệm thời trẻ chẳng hạn?",
              "GENERAL"}
         };
 
@@ -525,7 +525,7 @@ public class DataSeeder implements CommandLineRunner {
 
         CameraDevice camera = CameraDevice.builder()
             .elderly(e1)
-            .label("Living Room")
+            .label("Phòng khách")
             .deviceSn("IMOU-DEMO-001")
             .deviceId("demo-device-001")
             .status(CameraDevice.CameraStatus.ONLINE)
@@ -551,13 +551,13 @@ public class DataSeeder implements CommandLineRunner {
             .elderly(e1)
             .latitude(new BigDecimal("10.7769000"))
             .longitude(new BigDecimal("106.7009000"))
-            .address("123 Nguyen Hue, District 1, Ho Chi Minh City")
+            .address("123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh")
             .status(EmergencyStatus.RESOLVED)
             .triggeredAt(triggeredAt)
             .acknowledgedAt(triggeredAt.plusMinutes(2))
             .acknowledgedBy(f1.getId())
             .resolvedAt(triggeredAt.plusMinutes(18))
-            .notes("False alarm — accidental button press, confirmed OK by phone call.")
+            .notes("Báo động giả — bấm nhầm nút, đã xác nhận ổn qua điện thoại.")
             .build();
         event = emergencyEventRepository.save(event);
 

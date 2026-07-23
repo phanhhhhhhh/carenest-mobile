@@ -76,8 +76,8 @@ public class FamilyLinkService {
         Notification notification = Notification.builder()
             .user(elderly)
             .type(NotificationType.FAMILY_LINK_REQUEST)
-            .title("Family Link Request")
-            .body(family.getName() + " wants to link to monitor your health")
+            .title("Yêu cầu kết nối gia đình")
+            .body(family.getName() + " muốn kết nối để theo dõi sức khỏe của bạn")
             .data(Map.of(
                 "linkId", saved.getId(),
                 "familyId", family.getId(),
