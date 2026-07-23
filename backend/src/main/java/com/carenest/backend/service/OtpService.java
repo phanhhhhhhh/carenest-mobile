@@ -20,6 +20,7 @@ public class OtpService {
 
     private final OtpVerificationRepository otpRepository;
     private final EmailService emailService;
+    private final SmsService smsService;
 
     private static final int OTP_LENGTH = 6;
     private static final int OTP_EXPIRY_MINUTES = 10;
@@ -80,7 +81,8 @@ public class OtpService {
     
     public void sendOtpViaSms(String phone, String userName) {
         String code = generateAndPersist(phone);
-        log.info("OTP via SMS to {}: code={} (DEV MODE — log only)", phone, code);
+        smsService.sendOtp(phone, code);
+        log.info("OTP send attempted via SMS to {}", phone);
     }
 
     
