@@ -145,7 +145,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
         set({ isLoading: false });
         return;
       }
-      set({ isLoading: false, error: `Could not load cameras: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Không thể tải camera: ${getErrorMessage(e)}` });
     }
   },
 
@@ -157,7 +157,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       set({ isProcessing: false });
       return true;
     } catch (e) {
-      set({ isProcessing: false, error: `Could not bind camera: ${getErrorMessage(e)}` });
+      set({ isProcessing: false, error: `Không thể kết nối camera: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -170,7 +170,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       set({ isProcessing: false });
       return true;
     } catch (e) {
-      set({ isProcessing: false, error: `Could not remove camera: ${getErrorMessage(e)}` });
+      set({ isProcessing: false, error: `Không thể gỡ camera: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -184,7 +184,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
       set({ isProcessing: false, liveStreamUrl: url });
       return url.length > 0 ? url : null;
     } catch (e) {
-      set({ isProcessing: false, error: `Could not get stream: ${getErrorMessage(e)}` });
+      set({ isProcessing: false, error: `Không thể lấy luồng video: ${getErrorMessage(e)}` });
       return null;
     }
   },

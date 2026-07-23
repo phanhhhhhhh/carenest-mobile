@@ -43,14 +43,14 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       const resp = await api.get(`/elderly/${elderlyId}/emergency-events`, { signal });
       if (!Array.isArray(resp.data)) {
         console.warn('[schema] EmergencyEventList: expected an array — keeping previous state');
-        set({ isLoading: false, error: 'Unexpected response from server' });
+        set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
       const list = safeParseList(EmergencyEventSchema, resp.data, 'EmergencyEventList').map(toEmergencyEvent);
       set({ isLoading: false, events: list });
     } catch (e) {
       if (isCancelled(e)) return;
-      set({ isLoading: false, error: `Error: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Lỗi: ${getErrorMessage(e)}` });
     }
   },
 
@@ -84,7 +84,7 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       await get().load(elderlyId);
       return true;
     } catch (e) {
-      showErrorToast(`Could not acknowledge alert: ${getErrorMessage(e)}`);
+      showErrorToast(`Không thể xác nhận cảnh báo: ${getErrorMessage(e)}`);
       return false;
     }
   },
@@ -95,7 +95,7 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       await get().load(elderlyId);
       return true;
     } catch (e) {
-      showErrorToast(`Could not mark alerts as read: ${getErrorMessage(e)}`);
+      showErrorToast(`Không thể đánh dấu đã đọc cảnh báo: ${getErrorMessage(e)}`);
       return false;
     }
   },

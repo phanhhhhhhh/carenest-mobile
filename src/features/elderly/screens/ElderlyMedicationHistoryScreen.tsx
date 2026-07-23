@@ -11,14 +11,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useMedicationStore } from '../store/medicationStore';
 import type { MedicationLogEntry } from '../../../shared/types';
 
-const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEK_DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
 function formatDateLabel(dt: Date): string {
   const now = new Date();
@@ -26,8 +26,8 @@ function formatDateLabel(dt: Date): string {
   const date = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
   const diffMs = today.getTime() - date.getTime();
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
+  if (diffDays === 0) return 'Hôm nay';
+  if (diffDays === 1) return 'Hôm qua';
   const jsDay = dt.getDay();
   const weekdayIdx = jsDay === 0 ? 6 : jsDay - 1;
   return `${WEEK_DAYS[weekdayIdx]}, ${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
@@ -38,6 +38,7 @@ function pad2(n: number): string {
 }
 
 export default function ElderlyMedicationHistoryScreen() {
+  const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, 'ElderlyMedicationHistory'>>();
   const { medicationId, medicationName } = route.params;
 
@@ -68,8 +69,15 @@ export default function ElderlyMedicationHistoryScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
         <Text style={styles.appBarTitle} numberOfLines={1}>
-          History - {medicationName}
+          Lịch sử - {medicationName}
         </Text>
       </View>
 
@@ -85,7 +93,7 @@ export default function ElderlyMedicationHistoryScreen() {
             style={styles.retryButton}
             onPress={() => fetchLogs(medicationId)}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : logs.length === 0 ? (
@@ -95,7 +103,7 @@ export default function ElderlyMedicationHistoryScreen() {
             style={{ width: 120, height: 120 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>No medication history yet</Text>
+          <Text style={styles.emptyText}>Chưa có lịch sử dùng thuốc</Text>
         </View>
       ) : (
         <ScrollView
@@ -110,7 +118,7 @@ export default function ElderlyMedicationHistoryScreen() {
           }
         >
           <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Adherence Overview</Text>
+            <Text style={styles.summaryLabel}>Tổng quan tuân thủ</Text>
             <Text style={styles.summaryValue}>{Math.round(adherence * 100)}%</Text>
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${adherence * 100}%` }]} />
@@ -119,13 +127,13 @@ export default function ElderlyMedicationHistoryScreen() {
               <View style={styles.statPill}>
                 <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
                 <Text style={[styles.statPillText, { color: Colors.success }]}>
-                  {taken} taken
+                  {taken} đã uống
                 </Text>
               </View>
               <View style={styles.statPill}>
                 <Ionicons name="close-circle" size={16} color={Colors.error} />
                 <Text style={[styles.statPillText, { color: Colors.error }]}>
-                  {missed} missed
+                  {missed} bỏ lỡ
                 </Text>
               </View>
             </View>
@@ -177,7 +185,7 @@ function LogEntryTile({ log }: { log: MedicationLogEntry }) {
       <Text
         style={[styles.logStatusText, { color: isTaken ? Colors.success : Colors.error }]}
       >
-        {isTaken ? 'Taken' : 'Missed'}
+        {isTaken ? 'Đã uống' : 'Bỏ lỡ'}
       </Text>
       <View style={styles.logTimePill}>
         <Text style={styles.logTimeText}>{timeStr}</Text>
@@ -189,11 +197,14 @@ function LogEntryTile({ log }: { log: MedicationLogEntry }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   appBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  appBarTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  backButton: { marginRight: 12 },
+  appBarTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center', marginTop: 12 },
   emptyText: { color: Colors.textSecondary, fontSize: 14, marginTop: 12 },

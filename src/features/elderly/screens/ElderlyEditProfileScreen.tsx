@@ -7,10 +7,11 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
+
   Modal,
   FlatList,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -112,7 +113,7 @@ export default function ElderlyEditProfileScreen() {
 
       const storeError = useElderlyProfileStore.getState().error;
       if (storeError) {
-        Alert.alert('Error', storeError);
+        Alert.alert('Lỗi', storeError);
         return;
       }
 
@@ -120,10 +121,10 @@ export default function ElderlyEditProfileScreen() {
         await saveName(name.trim());
       }
 
-      Alert.alert('Success', 'Profile updated');
+      Alert.alert('Thành công', 'Hồ sơ đã được cập nhật');
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Something went wrong');
+      Alert.alert('Lỗi', e instanceof Error ? e.message : 'Đã xảy ra lỗi');
     } finally {
       setIsSaving(false);
     }
@@ -132,12 +133,12 @@ export default function ElderlyEditProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>Edit Profile</Text>
+        <Text style={styles.appBarTitle}>Chỉnh sửa hồ sơ</Text>
         <TouchableOpacity onPress={handleSave} disabled={isSaving} style={styles.saveBtn}>
           {isSaving ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <Text style={styles.saveBtnText}>Save</Text>
+            <Text style={styles.saveBtnText}>Lưu</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -154,12 +155,12 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 28 }} />
 
-        <Card title="Personal Information">
+        <Card title="Thông tin cá nhân">
           <View style={styles.inputWrap}>
             <Ionicons name="person" size={18} color={Colors.primary} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
+              placeholder="Họ và tên"
               placeholderTextColor={Colors.textHint}
               value={name}
               onChangeText={setName}
@@ -170,7 +171,7 @@ export default function ElderlyEditProfileScreen() {
             <Ionicons name="call" size={18} color={Colors.textHint} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Linked via Firebase"
+              placeholder="Liên kết qua Firebase"
               placeholderTextColor={Colors.textHint}
               editable={false}
             />
@@ -179,17 +180,17 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        <Card title="Body Measurements">
+        <Card title="Chỉ số cơ thể">
           <View style={styles.bloodTypeRow}>
             <Ionicons name="water" size={20} color={Colors.error} />
-            <Text style={styles.bloodTypeLabel}>Blood Type</Text>
+            <Text style={styles.bloodTypeLabel}>Nhóm máu</Text>
             <View style={{ flex: 1 }} />
             <TouchableOpacity
               style={styles.bloodTypeSelect}
               onPress={() => setBloodTypePickerVisible(true)}
             >
               <Text style={bloodType ? styles.bloodTypeValue : styles.bloodTypePlaceholder}>
-                {bloodType ?? 'Select'}
+                {bloodType ?? 'Chọn'}
               </Text>
               <Ionicons name="chevron-down" size={14} color={Colors.textHint} />
             </TouchableOpacity>
@@ -207,7 +208,7 @@ export default function ElderlyEditProfileScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Weight (kg)"
+                placeholder="Cân nặng (kg)"
                 placeholderTextColor={Colors.textHint}
                 keyboardType="numeric"
                 value={weight}
@@ -224,7 +225,7 @@ export default function ElderlyEditProfileScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Height (cm)"
+                placeholder="Chiều cao (cm)"
                 placeholderTextColor={Colors.textHint}
                 keyboardType="numeric"
                 value={height}
@@ -236,7 +237,7 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        <Card title="Medical Conditions">
+        <Card title="Bệnh nền">
           <View style={styles.row}>
             <View style={[styles.inputWrap, { flex: 1 }]}>
               <Ionicons
@@ -247,7 +248,7 @@ export default function ElderlyEditProfileScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="e.g. Diabetes, Hypertension..."
+                placeholder="VD: Tiểu đường, Cao huyết áp..."
                 placeholderTextColor={Colors.textHint}
                 value={conditionInput}
                 onChangeText={setConditionInput}
@@ -256,7 +257,7 @@ export default function ElderlyEditProfileScreen() {
             </View>
             <View style={{ width: 10 }} />
             <TouchableOpacity style={styles.addBtn} onPress={addCondition}>
-              <Text style={styles.addBtnText}>Add</Text>
+              <Text style={styles.addBtnText}>Thêm</Text>
             </TouchableOpacity>
           </View>
           {conditions.length > 0 && (
@@ -278,7 +279,7 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        <Card title="Drug Allergies">
+        <Card title="Dị ứng thuốc">
           <View style={styles.row}>
             <View style={[styles.inputWrap, { flex: 1 }]}>
               <Ionicons
@@ -289,7 +290,7 @@ export default function ElderlyEditProfileScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="e.g. Penicillin, Aspirin..."
+                placeholder="VD: Penicillin, Aspirin..."
                 placeholderTextColor={Colors.textHint}
                 value={allergyInput}
                 onChangeText={setAllergyInput}
@@ -298,7 +299,7 @@ export default function ElderlyEditProfileScreen() {
             </View>
             <View style={{ width: 10 }} />
             <TouchableOpacity style={styles.addBtnError} onPress={addAllergy}>
-              <Text style={styles.addBtnText}>Add</Text>
+              <Text style={styles.addBtnText}>Thêm</Text>
             </TouchableOpacity>
           </View>
           {allergies.length > 0 && (
@@ -320,10 +321,10 @@ export default function ElderlyEditProfileScreen() {
 
         <View style={{ height: 20 }} />
 
-        <Card title="Medical Notes">
+        <Card title="Ghi chú y tế">
           <TextInput
             style={styles.notesInput}
-            placeholder="e.g. Special notes, surgery history..."
+            placeholder="VD: Ghi chú đặc biệt, tiền sử phẫu thuật..."
             placeholderTextColor={Colors.textHint}
             value={notes}
             onChangeText={setNotes}
@@ -348,7 +349,7 @@ export default function ElderlyEditProfileScreen() {
           onPress={() => setBloodTypePickerVisible(false)}
         >
           <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Select Blood Type</Text>
+            <Text style={styles.modalTitle}>Chọn nhóm máu</Text>
             <FlatList
               data={BLOOD_TYPES}
               keyExtractor={(item) => item}

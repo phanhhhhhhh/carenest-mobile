@@ -57,7 +57,7 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
         });
         if (!Array.isArray(resp.data)) {
           console.warn('[schema] HealthMetricList: expected an array — keeping previous state');
-          set({ isLoading: false, error: 'Unexpected response from server' });
+          set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
           return;
         }
         const list = safeParseList(HealthMetricSchema, resp.data, 'HealthMetricList').map(toHealthMetric);
@@ -71,7 +71,7 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
         set({ isLoading: false, metrics: list, latestByType: latest });
       } catch (e) {
         if (isCancelled(e)) return;
-        set({ isLoading: false, error: `Error: ${getErrorMessage(e)}` });
+        set({ isLoading: false, error: `Lỗi: ${getErrorMessage(e)}` });
       }
     },
 
@@ -94,7 +94,7 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
         await get().load();
         return true;
       } catch (e) {
-        const message = `Could not save reading: ${getErrorMessage(e)}`;
+        const message = `Không thể lưu chỉ số: ${getErrorMessage(e)}`;
         set({ error: message });
         showErrorToast(message);
         return false;

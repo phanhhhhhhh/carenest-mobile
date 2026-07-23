@@ -127,7 +127,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (e) {
       const status = getStatus(e);
       if (status === 404) {
-        const msg = 'No account found. Please register first.';
+        const msg = 'Không tìm thấy tài khoản. Vui lòng đăng ký trước.';
         set({ isLoading: false, error: msg });
         return { type: 'error', message: msg };
       }
@@ -145,7 +145,7 @@ export const useAuthStore = create<AuthState>((set) => ({
               };
         }
       }
-      const msg = extractError(e, 'Invalid credentials');
+      const msg = extractError(e, 'Thông tin đăng nhập không hợp lệ');
       set({ isLoading: false, error: msg });
       return { type: 'error', message: msg };
     }
@@ -159,7 +159,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false, user: res.data.user ?? null });
       return true;
     } catch (e) {
-      const msg = extractError(e, 'Invalid or expired code');
+      const msg = extractError(e, 'Mã không hợp lệ hoặc đã hết hạn');
       set({ isLoading: false, error: msg });
       return false;
     }
@@ -174,7 +174,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
       return true;
     } catch (e) {
-      const msg = extractError(e, 'Cannot change password');
+      const msg = extractError(e, 'Không thể đổi mật khẩu');
       set({ isLoading: false, error: msg });
       return false;
     }
@@ -187,7 +187,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
       return { success: true };
     } catch (e) {
-      const msg = getErrorMessage(e) || 'Could not send reset email. Please try again.';
+      const msg = getErrorMessage(e) || 'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại.';
       set({ isLoading: false, error: msg });
       return { success: false, error: msg };
     }
@@ -200,7 +200,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
       return true;
     } catch (e) {
-      const msg = extractError(e, 'Could not reset password');
+      const msg = extractError(e, 'Không thể đặt lại mật khẩu');
       set({ isLoading: false, error: msg });
       return false;
     }
@@ -213,7 +213,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
       return { success: true };
     } catch (e) {
-      const msg = getErrorMessage(e) || 'Invalid or expired verification link';
+      const msg = getErrorMessage(e) || 'Liên kết xác minh không hợp lệ hoặc đã hết hạn';
       set({ isLoading: false, error: msg });
       return { success: false, error: msg };
     }
@@ -226,7 +226,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
       return true;
     } catch (e) {
-      const msg = extractError(e, 'Could not resend verification email');
+      const msg = extractError(e, 'Không thể gửi lại email xác minh');
       set({ isLoading: false, error: msg });
       return false;
     }
@@ -239,7 +239,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
       return true;
     } catch (e) {
-      const msg = extractError(e, 'Could not send OTP');
+      const msg = extractError(e, 'Không thể gửi mã OTP');
       set({ isLoading: false, error: msg });
       return false;
     }
@@ -252,7 +252,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false });
       return true;
     } catch (e) {
-      const msg = extractError(e, 'Could not set up PIN');
+      const msg = extractError(e, 'Không thể thiết lập mã PIN');
       set({ isLoading: false, error: msg });
       return false;
     }
@@ -263,10 +263,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const res = await api.post('/auth/verify-pin', { pin });
       const valid = res.data?.valid === true;
-      set({ isLoading: false, error: valid ? null : 'Invalid PIN' });
+      set({ isLoading: false, error: valid ? null : 'Mã PIN không hợp lệ' });
       return { valid };
     } catch (e) {
-      set({ isLoading: false, error: 'Could not verify PIN' });
+      set({ isLoading: false, error: 'Không thể xác minh mã PIN' });
       return { valid: false };
     }
   },
@@ -304,7 +304,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Registered but no token and no verification needed -> go log in
       return { type: 'success' };
     } catch (e) {
-      const msg = extractError(e, 'Registration failed');
+      const msg = extractError(e, 'Đăng ký thất bại');
       set({ isLoading: false, error: msg });
       return { type: 'error', message: msg };
     }

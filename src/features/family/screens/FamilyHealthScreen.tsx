@@ -32,10 +32,10 @@ interface MetricDef {
 }
 
 const METRIC_DEFS: Record<string, MetricDef> = {
-  BLOOD_PRESSURE: { title: 'Blood Pressure', icon: 'heart', color: Colors.error, unit: 'mmHg' },
-  BLOOD_GLUCOSE: { title: 'Blood Sugar', icon: 'water', color: '#1565C0', unit: 'mmol/L' },
-  HEART_RATE: { title: 'Heart Rate', icon: 'pulse', color: Colors.secondary, unit: 'bpm' },
-  WEIGHT: { title: 'Weight', icon: 'speedometer', color: Colors.warning, unit: 'kg' },
+  BLOOD_PRESSURE: { title: 'Huyết áp', icon: 'heart', color: Colors.error, unit: 'mmHg' },
+  BLOOD_GLUCOSE: { title: 'Đường huyết', icon: 'water', color: '#1565C0', unit: 'mmol/L' },
+  HEART_RATE: { title: 'Nhịp tim', icon: 'pulse', color: Colors.secondary, unit: 'bpm' },
+  WEIGHT: { title: 'Cân nặng', icon: 'speedometer', color: Colors.warning, unit: 'kg' },
 };
 
 interface Status {
@@ -55,10 +55,10 @@ function formatTime(iso: string): string {
     86400000,
   );
 
-  if (diffMin < 1) return 'Just now';
-  if (diffHours < 1) return `${diffMin}m ago`;
+  if (diffMin < 1) return 'Vừa xong';
+  if (diffHours < 1) return `${diffMin} phút trước`;
   if (diffDays === 0) return `${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
-  if (diffDays === 1) return 'Yesterday';
+  if (diffDays === 1) return 'Hôm qua';
   return `${dt.getDate()}/${dt.getMonth() + 1}`;
 }
 
@@ -71,7 +71,7 @@ export default function FamilyHealthScreen() {
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
   const elderlyId = useFamilyDashboardStore((s) => s.elderlyId());
-  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Loved one';
+  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Người thân';
 
   useEffect(() => {
     if (dashboardData) return;
@@ -83,7 +83,14 @@ export default function FamilyHealthScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>{`Health — ${elderlyName}`}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.appBarTitle}>{`Sức khỏe — ${elderlyName}`}</Text>
         <TouchableOpacity
           style={styles.appBarAction}
           onPress={() => navigation.navigate('HealthThreshold')}
@@ -99,7 +106,7 @@ export default function FamilyHealthScreen() {
             style={{ width: 140, height: 140 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>No elderly person linked yet</Text>
+          <Text style={styles.emptyText}>Chưa liên kết người thân nào</Text>
         </View>
       ) : (
         <HealthBody elderlyId={elderlyId} period={period} setPeriod={setPeriod} />
@@ -139,27 +146,27 @@ function HealthBody({
     if (threshold && !Number.isNaN(val)) {
       const minOk = threshold.minValue != null ? val >= threshold.minValue : true;
       const maxOk = threshold.maxValue != null ? val <= threshold.maxValue : true;
-      if (minOk && maxOk) return { label: 'Normal', color: Colors.success };
-      if (!minOk) return { label: 'Low', color: Colors.warning };
-      if (!maxOk) return { label: 'High', color: Colors.error };
+      if (minOk && maxOk) return { label: 'Bình thường', color: Colors.success };
+      if (!minOk) return { label: 'Thấp', color: Colors.warning };
+      if (!maxOk) return { label: 'Cao', color: Colors.error };
     }
 
     switch (type) {
       case 'BLOOD_PRESSURE':
-        if (!Number.isNaN(val) && val < 130) return { label: 'Normal', color: Colors.success };
-        if (!Number.isNaN(val) && val < 140) return { label: 'Slightly High', color: Colors.warning };
-        return { label: 'High', color: Colors.error };
+        if (!Number.isNaN(val) && val < 130) return { label: 'Bình thường', color: Colors.success };
+        if (!Number.isNaN(val) && val < 140) return { label: 'Hơi cao', color: Colors.warning };
+        return { label: 'Cao', color: Colors.error };
       case 'BLOOD_GLUCOSE':
-        if (!Number.isNaN(val) && val < 7.0) return { label: 'Normal', color: Colors.success };
-        if (!Number.isNaN(val) && val < 11.1) return { label: 'High', color: Colors.warning };
-        return { label: 'Very High', color: Colors.error };
+        if (!Number.isNaN(val) && val < 7.0) return { label: 'Bình thường', color: Colors.success };
+        if (!Number.isNaN(val) && val < 11.1) return { label: 'Cao', color: Colors.warning };
+        return { label: 'Rất cao', color: Colors.error };
       case 'HEART_RATE':
         if (!Number.isNaN(val) && val >= 60 && val <= 100) {
-          return { label: 'Normal', color: Colors.success };
+          return { label: 'Bình thường', color: Colors.success };
         }
-        return { label: 'Abnormal', color: Colors.warning };
+        return { label: 'Bất thường', color: Colors.warning };
       default:
-        return { label: 'Recorded', color: Colors.success };
+        return { label: 'Đã ghi nhận', color: Colors.success };
     }
   };
 
@@ -185,7 +192,7 @@ function HealthBody({
         <View style={{ height: 16 }} />
         <TouchableOpacity style={styles.retryButton} onPress={() => healthStore.getState().load()}>
           <Ionicons name="refresh" size={18} color="#FFFFFF" />
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryButtonText}>Thử lại</Text>
         </TouchableOpacity>
       </View>
     );
@@ -200,7 +207,7 @@ function HealthBody({
           resizeMode="contain"
         />
         <View style={{ height: 4 }} />
-        <Text style={styles.emptyText}>No health data yet</Text>
+        <Text style={styles.emptyText}>Chưa có dữ liệu sức khỏe</Text>
       </View>
     );
   }
@@ -218,9 +225,9 @@ function HealthBody({
       }
     >
       <View style={styles.periodRow}>
-        <PeriodChip label="7 days" selected={period === 'week'} onTap={() => onSelectPeriod('week')} />
+        <PeriodChip label="7 ngày" selected={period === 'week'} onTap={() => onSelectPeriod('week')} />
         <View style={{ width: 8 }} />
-        <PeriodChip label="30 days" selected={period === 'month'} onTap={() => onSelectPeriod('month')} />
+        <PeriodChip label="30 ngày" selected={period === 'month'} onTap={() => onSelectPeriod('month')} />
       </View>
       <View style={{ height: 16 }} />
 
@@ -309,7 +316,7 @@ function MiniChart({ metrics, color }: { metrics: HealthMetric[]; color: string 
   if (metrics.length < 2) {
     return (
       <View style={styles.chartEmpty}>
-        <Text style={styles.chartEmptyText}>Need more data</Text>
+        <Text style={styles.chartEmptyText}>Cần thêm dữ liệu</Text>
       </View>
     );
   }
@@ -349,6 +356,7 @@ const styles = StyleSheet.create({
   },
   appBarTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
   appBarAction: { padding: 4 },
+  backButton: { marginRight: 12 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyText: { color: Colors.textSecondary, fontSize: 15, textAlign: 'center' },
   errorText: { color: Colors.error, fontSize: 14, textAlign: 'center' },

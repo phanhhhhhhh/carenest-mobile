@@ -5,11 +5,12 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
+
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -28,7 +29,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSend = async () => {
     if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email address');
+      Alert.alert('Lỗi', 'Vui lòng nhập địa chỉ email của bạn');
       return;
     }
 
@@ -37,7 +38,7 @@ export default function ForgotPasswordScreen() {
     if (result.success) {
       setSent(true);
     } else {
-      Alert.alert('Error', result.error || 'Could not send reset email. Please try again.');
+      Alert.alert('Lỗi', result.error || 'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại.');
     }
     setLoading(false);
   };
@@ -53,23 +54,23 @@ export default function ForgotPasswordScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>← Back</Text>
+            <Text style={styles.backText}>← Quay lại</Text>
           </TouchableOpacity>
 
           {sent ? (
             <View style={styles.successWrap}>
               <Text style={styles.successIcon}>✉️</Text>
-              <Text style={styles.successTitle}>Check your email</Text>
+              <Text style={styles.successTitle}>Kiểm tra email của bạn</Text>
               <Text style={styles.successSub}>
-                We sent a password reset link to {email.trim()}
+                Chúng tôi đã gửi liên kết đặt lại mật khẩu đến {email.trim()}
               </Text>
             </View>
           ) : (
             <>
-              <Text style={styles.title}>Forgot Password</Text>
+              <Text style={styles.title}>Quên mật khẩu</Text>
               <Text style={styles.subtitle}>
-                Enter your email address and we will send you a link to reset your
-                password.
+                Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một liên kết để
+                đặt lại mật khẩu.
               </Text>
 
               <View style={styles.inputWrap}>
@@ -92,7 +93,7 @@ export default function ForgotPasswordScreen() {
                 disabled={loading}
               >
                 <Text style={styles.btnText}>
-                  {loading ? 'Sending...' : 'Send Reset Link'}
+                  {loading ? 'Đang gửi...' : 'Gửi liên kết đặt lại'}
                 </Text>
               </TouchableOpacity>
             </>

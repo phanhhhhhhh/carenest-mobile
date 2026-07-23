@@ -26,7 +26,7 @@ export default function VerifyEmailScreen() {
       if (result.success) {
         setState('success');
       } else {
-        setErrorMsg(result.error || 'Invalid or expired verification link');
+        setErrorMsg(result.error || 'Liên kết xác minh không hợp lệ hoặc đã hết hạn');
         setState('error');
       }
     })();
@@ -38,17 +38,17 @@ export default function VerifyEmailScreen() {
         {state === 'loading' ? (
           <>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Verifying your email...</Text>
+            <Text style={styles.loadingText}>Đang xác minh email của bạn...</Text>
           </>
         ) : state === 'success' ? (
           <>
             <View style={styles.iconSuccess}>
               <Ionicons name="checkmark-circle" size={50} color={Colors.success} />
             </View>
-            <Text style={styles.title}>Email Verified!</Text>
-            <Text style={styles.subtitle}>Your account is now active</Text>
+            <Text style={styles.title}>Email đã được xác minh!</Text>
+            <Text style={styles.subtitle}>Tài khoản của bạn hiện đã hoạt động</Text>
             <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('Phone')}>
-              <Text style={styles.btnText}>Go to Sign In</Text>
+              <Text style={styles.btnText}>Đến trang đăng nhập</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -58,7 +58,7 @@ export default function VerifyEmailScreen() {
             </View>
             <Text style={styles.errorText}>{errorMsg}</Text>
             <TouchableOpacity style={[styles.btn, { backgroundColor: Colors.success }]} onPress={() => navigation.navigate('Phone')}>
-              <Text style={styles.btnText}>Go to Sign In</Text>
+              <Text style={styles.btnText}>Đến trang đăng nhập</Text>
             </TouchableOpacity>
           </>
         )}

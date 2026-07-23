@@ -10,13 +10,15 @@ import {
   Modal,
   TextInput,
   ScrollView,
-  Alert,
+
   KeyboardAvoidingView,
   Image,
   Platform,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useAppointmentStore } from '../store/appointmentStore';
 import type { AppointmentItem } from '../../../shared/types';
@@ -24,10 +26,10 @@ import type { AppointmentItem } from '../../../shared/types';
 
 
 const STATUS_LABELS: Record<string, string> = {
-  SCHEDULED: 'Upcoming',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
-  RESCHEDULED: 'Rescheduled',
+  SCHEDULED: 'Sắp tới',
+  COMPLETED: 'Đã hoàn thành',
+  CANCELLED: 'Đã hủy',
+  RESCHEDULED: 'Đã dời lịch',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -37,8 +39,8 @@ const STATUS_COLORS: Record<string, string> = {
   RESCHEDULED: Colors.warning,
 };
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
+const WEEK_DAYS = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
 
 function statusColor(status: string): string {
   return STATUS_COLORS[status] ?? Colors.textHint;
@@ -67,6 +69,7 @@ function daysInMonth(year: number, month: number): number {
 }
 
 export default function FamilyAppointmentsScreen() {
+  const navigation = useNavigation();
   const isLoading = useAppointmentStore((s) => s.isLoading);
   const error = useAppointmentStore((s) => s.error);
   const appointments = useAppointmentStore((s) => s.appointments);
@@ -177,12 +180,12 @@ export default function FamilyAppointmentsScreen() {
 
   const confirmDelete = (item: AppointmentItem) => {
     Alert.alert(
-      'Delete appointment',
-      `Are you sure you want to delete the appointment with "${item.doctor}"?`,
+      'Xóa lịch hẹn',
+      `Bạn có chắc chắn muốn xóa lịch hẹn với "${item.doctor}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => remove(item.id),
         },
@@ -204,8 +207,8 @@ export default function FamilyAppointmentsScreen() {
             style={{ width: 130, height: 130 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>No appointments yet</Text>
-          <Text style={styles.emptySubtext}>Tap + to add appointment</Text>
+          <Text style={styles.emptyText}>Chưa có lịch hẹn nào</Text>
+          <Text style={styles.emptySubtext}>Nhấn + để thêm lịch hẹn</Text>
         </ScrollView>
       );
     }
@@ -235,19 +238,26 @@ export default function FamilyAppointmentsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Appointments</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Lịch hẹn</Text>
       </View>
 
       <View style={styles.tabBar}>
         <TouchableOpacity style={styles.tabItem} onPress={() => setTab(0)}>
           <Text style={[styles.tabText, tab === 0 && styles.tabTextActive]}>
-            Upcoming ({upcomingList.length})
+            Sắp tới ({upcomingList.length})
           </Text>
           {tab === 0 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
         <TouchableOpacity style={styles.tabItem} onPress={() => setTab(1)}>
           <Text style={[styles.tabText, tab === 1 && styles.tabTextActive]}>
-            Past ({pastList.length})
+            Đã qua ({pastList.length})
           </Text>
           {tab === 1 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
@@ -264,7 +274,7 @@ export default function FamilyAppointmentsScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <View style={{ height: 12 }} />
           <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Text style={styles.retryBtnText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -291,15 +301,15 @@ export default function FamilyAppointmentsScreen() {
               <View style={styles.sheetHandle} />
               <View style={{ height: 16 }} />
               <Text style={styles.sheetTitle}>
-                {editing ? 'Edit appointment' : 'Add new appointment'}
+                {editing ? 'Chỉnh sửa lịch hẹn' : 'Thêm lịch hẹn mới'}
               </Text>
               <View style={{ height: 20 }} />
 
-              <FormField icon="person" placeholder="Doctor name" hint="e.g., Dr. Smith" value={doctor} onChangeText={setDoctor} />
+              <FormField icon="person" placeholder="Tên bác sĩ" hint="VD: BS. Smith" value={doctor} onChangeText={setDoctor} />
               <View style={{ height: 14 }} />
-              <FormField icon="medical" placeholder="Specialty" hint="e.g., Cardiology" value={specialty} onChangeText={setSpecialty} />
+              <FormField icon="medical" placeholder="Chuyên khoa" hint="VD: Tim mạch" value={specialty} onChangeText={setSpecialty} />
               <View style={{ height: 14 }} />
-              <FormField icon="location" placeholder="Location (optional)" hint="e.g., City Hospital" value={location} onChangeText={setLocation} />
+              <FormField icon="location" placeholder="Địa điểm (tùy chọn)" hint="VD: Bệnh viện Thành phố" value={location} onChangeText={setLocation} />
               <View style={{ height: 14 }} />
 
               <TouchableOpacity style={styles.pickerRow} onPress={() => setDatePickerVisible(true)}>
@@ -322,8 +332,8 @@ export default function FamilyAppointmentsScreen() {
 
               <FormField
                 icon="document-text"
-                placeholder="Notes (optional)"
-                hint="e.g., Fast before test"
+                placeholder="Ghi chú (tùy chọn)"
+                hint="VD: Nhịn ăn trước khi xét nghiệm"
                 value={notes}
                 onChangeText={setNotes}
                 multiline
@@ -338,7 +348,7 @@ export default function FamilyAppointmentsScreen() {
                 {isSaving ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitBtnText}>{editing ? 'Update' : 'Add appointment'}</Text>
+                  <Text style={styles.submitBtnText}>{editing ? 'Cập nhật' : 'Thêm lịch hẹn'}</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -467,14 +477,14 @@ function AppointmentCard({
           <View style={{ height: 10 }} />
           <View style={styles.actionsRow}>
             <View style={styles.actionsGroup}>
-              <ActionChip icon="create-outline" label="Edit" color={Colors.primary} onPress={onEdit} />
+              <ActionChip icon="create-outline" label="Sửa" color={Colors.primary} onPress={onEdit} />
               <View style={{ width: 8 }} />
-              <ActionChip icon="trash-outline" label="Delete" color={Colors.error} onPress={onDelete} />
+              <ActionChip icon="trash-outline" label="Xóa" color={Colors.error} onPress={onDelete} />
             </View>
             <View style={styles.actionsGroup}>
-              <ActionChip icon="checkmark-circle-outline" label="Completed" color={Colors.success} onPress={onComplete} />
+              <ActionChip icon="checkmark-circle-outline" label="Hoàn thành" color={Colors.success} onPress={onComplete} />
               <View style={{ width: 8 }} />
-              <ActionChip icon="close-circle-outline" label="Cancel" color={Colors.warning} onPress={onCancel} />
+              <ActionChip icon="close-circle-outline" label="Hủy" color={Colors.warning} onPress={onCancel} />
             </View>
           </View>
         </>
@@ -548,7 +558,7 @@ function DatePickerModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
         <TouchableOpacity activeOpacity={1} style={styles.pickerModalSheet}>
-          <Text style={styles.modalTitle}>Select date</Text>
+          <Text style={styles.modalTitle}>Chọn ngày</Text>
           <View style={styles.pickerColumns}>
             <PickerColumn
               data={days}
@@ -574,7 +584,7 @@ function DatePickerModal({
             style={styles.pickerConfirmBtn}
             onPress={() => onConfirm(new Date(year, month, Math.min(day, dayCount)))}
           >
-            <Text style={styles.pickerConfirmBtnText}>Done</Text>
+            <Text style={styles.pickerConfirmBtnText}>Xong</Text>
           </TouchableOpacity>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -613,14 +623,14 @@ function TimePickerModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
         <TouchableOpacity activeOpacity={1} style={styles.pickerModalSheet}>
-          <Text style={styles.modalTitle}>Select time</Text>
+          <Text style={styles.modalTitle}>Chọn giờ</Text>
           <View style={styles.pickerColumns}>
             <PickerColumn data={hours} selected={h} onSelect={setH} renderLabel={(v) => String(v).padStart(2, '0')} />
             <PickerColumn data={minutes} selected={m} onSelect={setM} renderLabel={(v) => String(v).padStart(2, '0')} />
           </View>
           <View style={{ height: 12 }} />
           <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => onConfirm(h, m)}>
-            <Text style={styles.pickerConfirmBtnText}>Done</Text>
+            <Text style={styles.pickerConfirmBtnText}>Xong</Text>
           </TouchableOpacity>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -662,10 +672,13 @@ function PickerColumn({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
     backgroundColor: Colors.surface,
   },
+  backButton: { marginRight: 12 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   tabBar: {
     flexDirection: 'row',

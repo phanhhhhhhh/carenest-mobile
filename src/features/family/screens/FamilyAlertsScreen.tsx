@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
@@ -22,15 +23,15 @@ function eventTitle(type: string): string {
   switch (type) {
     case 'SOS':
     case 'EMERGENCY':
-      return 'SOS Emergency';
+      return 'Khẩn cấp SOS';
     case 'MISSED_MEDICATION':
     case 'MEDICATION_REMINDER':
-      return 'Missed Medication';
+      return 'Bỏ lỡ uống thuốc';
     case 'ABNORMAL_VITALS':
     case 'HEALTH_ALERT':
-      return 'Abnormal Vitals';
+      return 'Chỉ số sức khỏe bất thường';
     default:
-      return 'Alert';
+      return 'Cảnh báo';
   }
 }
 
@@ -80,11 +81,11 @@ function formatRelative(createdAt: string): string {
   const hh = dt.getHours();
   const mm = String(dt.getMinutes()).padStart(2, '0');
 
-  if (diffMinutes < 1) return 'Just now';
-  if (diffHours < 1) return `${diffMinutes}m ago`;
-  if (diffDays === 0) return `Today ${hh}:${mm}`;
-  if (diffDays === 1) return `Yesterday ${hh}:${mm}`;
-  return `${diffDays}d ago`;
+  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffHours < 1) return `${diffMinutes} phút trước`;
+  if (diffDays === 0) return `Hôm nay ${hh}:${mm}`;
+  if (diffDays === 1) return `Hôm qua ${hh}:${mm}`;
+  return `${diffDays} ngày trước`;
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -97,6 +98,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function FamilyAlertsScreen() {
+  const navigation = useNavigation();
   const user = useAuthStore((s) => s.user);
 
   const dashboardData = useFamilyDashboardStore((s) => s.data);
@@ -159,7 +161,7 @@ export default function FamilyAlertsScreen() {
             style={{ width: 140, height: 140 }}
             resizeMode="contain"
           />
-          <Text style={styles.noElderlyText}>No elderly person linked yet</Text>
+          <Text style={styles.noElderlyText}>Chưa liên kết người thân nào</Text>
         </View>
       </SafeAreaView>
     );
@@ -175,11 +177,18 @@ export default function FamilyAlertsScreen() {
   function renderHeader(count: number, marking: boolean, onMarkAllRead: () => void) {
     return (
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
         <View style={styles.headerTitleRow}>
-          <Text style={styles.headerTitle}>Alerts</Text>
+          <Text style={styles.headerTitle}>Cảnh báo</Text>
           {count > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{count} new</Text>
+              <Text style={styles.badgeText}>{count} mới</Text>
             </View>
           )}
         </View>
@@ -192,7 +201,7 @@ export default function FamilyAlertsScreen() {
             {marking ? (
               <ActivityIndicator size="small" color={Colors.primary} />
             ) : (
-              <Text style={styles.markAllText}>Mark all read</Text>
+              <Text style={styles.markAllText}>Đánh dấu đã đọc tất cả</Text>
             )}
           </TouchableOpacity>
         )}
@@ -216,7 +225,7 @@ export default function FamilyAlertsScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => elderlyId && load(elderlyId)}>
             <Ionicons name="refresh" size={18} color={Colors.surface} />
-            <Text style={styles.retryText}>Retry</Text>
+            <Text style={styles.retryText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       );
@@ -230,8 +239,8 @@ export default function FamilyAlertsScreen() {
             style={{ width: 130, height: 130 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyTitle}>No alerts</Text>
-          <Text style={styles.emptySubtitle}>Everything is fine!</Text>
+          <Text style={styles.emptyTitle}>Không có cảnh báo</Text>
+          <Text style={styles.emptySubtitle}>Mọi thứ đều ổn!</Text>
         </View>
       );
     }
@@ -246,7 +255,7 @@ export default function FamilyAlertsScreen() {
       >
         {active.length > 0 && (
           <>
-            <Text style={styles.sectionTitleActive}>Active</Text>
+            <Text style={styles.sectionTitleActive}>Đang hoạt động</Text>
             {active.map((e) => (
               <View key={e.id} style={styles.cardWrapper}>
                 {renderEventCard(e)}
@@ -257,7 +266,7 @@ export default function FamilyAlertsScreen() {
         {resolved.length > 0 && (
           <>
             {active.length > 0 && <View style={{ height: 10 }} />}
-            <Text style={styles.sectionTitleResolved}>Resolved</Text>
+            <Text style={styles.sectionTitleResolved}>Đã xử lý</Text>
             {resolved.map((e) => (
               <View key={e.id} style={styles.cardWrapper}>
                 {renderEventCard(e)}
@@ -308,7 +317,7 @@ export default function FamilyAlertsScreen() {
               ]}
             >
               <Text style={[styles.statusBadgeText, { color: isActive ? Colors.error : Colors.success }]}>
-                {isActive ? 'ACTIVE' : 'RESOLVED'}
+                {isActive ? 'ĐANG HOẠT ĐỘNG' : 'ĐÃ XỬ LÝ'}
               </Text>
             </View>
             {isActive && (
@@ -322,7 +331,7 @@ export default function FamilyAlertsScreen() {
                 ) : (
                   <>
                     <Ionicons name="checkmark-circle-outline" size={16} color={Colors.success} />
-                    <Text style={styles.ackText}>Acknowledge</Text>
+                    <Text style={styles.ackText}>Xác nhận đã biết</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -345,7 +354,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  backButton: { marginRight: 12 },
+  headerTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   badge: { backgroundColor: Colors.error, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },

@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
+import { showSuccessToast } from '../../../shared/components/toastStore';
 import { Colors } from '../../../core/theme/colors';
 import { useAuthStore } from '../../auth/store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
@@ -57,13 +59,13 @@ function formatTime(createdAt: string): string {
 
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMinutes < 1) return 'Just now';
-  if (diffHours < 1) return `${diffMinutes}m ago`;
+  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffHours < 1) return `${diffMinutes} phút trước`;
   const hh = dt.getHours();
   const mm = dt.getMinutes().toString().padStart(2, '0');
-  if (diffDays === 0) return `Today ${hh}:${mm}`;
-  if (diffDays === 1) return `Yesterday ${hh}:${mm}`;
-  return `${diffDays} days ago`;
+  if (diffDays === 0) return `Hôm nay ${hh}:${mm}`;
+  if (diffDays === 1) return `Hôm qua ${hh}:${mm}`;
+  return `${diffDays} ngày trước`;
 }
 
 function iconForType(type: string): keyof typeof Ionicons.glyphMap {
@@ -159,6 +161,7 @@ export default function NotificationsScreen() {
   const load = useNotificationStore((s) => s.load);
   const markAsRead = useNotificationStore((s) => s.markAsRead);
   const markAllRead = useNotificationStore((s) => s.markAllRead);
+  const respondToFamilyLinkRequest = useNotificationStore((s) => s.respondToFamilyLinkRequest);
 
   const [markingAll, setMarkingAll] = useState(false);
 
@@ -170,8 +173,44 @@ export default function NotificationsScreen() {
 
   const unreadCount = selectUnreadCount(items);
 
+  const handleFamilyLinkRequest = (notification: NotificationData) => {
+    const linkId = Number(notification.data?.linkId);
+    const familyName = String(notification.data?.familyName ?? 'Người thân');
+    const relationship = notification.data?.relationship ? String(notification.data.relationship) : null;
+    if (!linkId || Number.isNaN(linkId)) return;
+
+    Alert.alert(
+      'Yêu cầu kết nối gia đình',
+      `${familyName}${relationship ? ` (${relationship})` : ''} muốn kết nối để theo dõi sức khỏe của bạn. Bạn có đồng ý không?`,
+      [
+        {
+          text: 'Từ chối',
+          style: 'cancel',
+          onPress: async () => {
+            const ok = await respondToFamilyLinkRequest(linkId, false);
+            if (ok) load();
+          },
+        },
+        {
+          text: 'Chấp nhận',
+          onPress: async () => {
+            const ok = await respondToFamilyLinkRequest(linkId, true);
+            if (ok) {
+              showSuccessToast(`Đã kết nối với ${familyName}`);
+              load();
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleCardPress = (notification: NotificationData) => {
     if (!notification.read) markAsRead(notification.id);
+    if (notification.type === 'FAMILY_LINK_REQUEST') {
+      handleFamilyLinkRequest(notification);
+      return;
+    }
     routeForNotification(notification.type, role, navigation);
   };
 
@@ -196,7 +235,7 @@ export default function NotificationsScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => load()}>
             <Ionicons name="refresh" size={18} color={Colors.surface} />
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -209,8 +248,8 @@ export default function NotificationsScreen() {
           style={{ width: 140, height: 140 }}
           resizeMode="contain"
         />
-        <Text style={styles.emptyTitle}>No notifications yet</Text>
-        <Text style={styles.emptySubtitle}>System notifications will appear here</Text>
+        <Text style={styles.emptyTitle}>Chưa có thông báo nào</Text>
+        <Text style={styles.emptySubtitle}>Thông báo hệ thống sẽ xuất hiện tại đây</Text>
       </View>
     );
   } else {
@@ -233,10 +272,17 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Thông báo</Text>
           {unreadCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount} new</Text>
+              <Text style={styles.badgeText}>{unreadCount} mới</Text>
             </View>
           )}
         </View>
@@ -245,7 +291,7 @@ export default function NotificationsScreen() {
             {markingAll ? (
               <ActivityIndicator size="small" color={Colors.primary} />
             ) : (
-              <Text style={styles.markAllText}>Mark all read</Text>
+              <Text style={styles.markAllText}>Đánh dấu đã đọc tất cả</Text>
             )}
           </TouchableOpacity>
         )}
@@ -267,6 +313,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
+  backButton: { marginRight: 12 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   badge: {
     marginLeft: 10,

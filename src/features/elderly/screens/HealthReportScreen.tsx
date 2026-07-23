@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { getUserId } from '../../../core/storage/secureStorage';
 import {
@@ -22,6 +23,7 @@ import {
 
 
 export default function HealthReportScreen() {
+  const navigation = useNavigation();
   const [elderlyId, setElderlyId] = useState('');
 
   const isLoading = useHealthReportStore((s) => s.isLoading);
@@ -52,7 +54,14 @@ export default function HealthReportScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>Health Report</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.appBarTitle}>Báo cáo sức khỏe</Text>
         {!isLoading && metricReports.length > 0 && (
           <TouchableOpacity onPress={() => load(elderlyId)} style={styles.refreshButton}>
             <Ionicons name="refresh" size={22} color={Colors.textPrimary} />
@@ -70,7 +79,7 @@ export default function HealthReportScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => load(elderlyId)}>
             <Ionicons name="refresh" size={18} color="#FFFFFF" />
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -87,8 +96,8 @@ export default function HealthReportScreen() {
         >
           {elderlyName != null && (
             <SectionCard
-              title={`Report for ${elderlyName}`}
-              subtitle={fromDate && toDate ? `${fromDate} → ${toDate}` : 'Last 30 days'}
+              title={`Báo cáo của ${elderlyName}`}
+              subtitle={fromDate && toDate ? `${fromDate} → ${toDate}` : '30 ngày gần đây'}
               icon="person"
               color={Colors.primary}
             />
@@ -98,19 +107,19 @@ export default function HealthReportScreen() {
           <View style={styles.statsRow}>
             <StatCard
               value={`${metricReports.length}`}
-              label="Metrics Tracked"
+              label="Chỉ số theo dõi"
               icon="trending-up"
               color={Colors.primary}
             />
             <StatCard
               value={`${dosesTaken}`}
-              label="Doses Taken"
+              label="Liều đã uống"
               icon="medkit"
               color={Colors.success}
             />
             <StatCard
               value={`${totalAppointments}`}
-              label="Appointments"
+              label="Lịch hẹn"
               icon="calendar"
               color={Colors.secondary}
             />
@@ -118,7 +127,7 @@ export default function HealthReportScreen() {
 
           {adherenceData.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Medication Adherence</Text>
+              <Text style={styles.sectionTitle}>Tuân thủ uống thuốc</Text>
               {adherenceData.map((m, i) => (
                 <AdherenceCard key={`${m.medicationName}-${i}`} m={m} />
               ))}
@@ -127,7 +136,7 @@ export default function HealthReportScreen() {
 
           {metricReports.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Health Metrics</Text>
+              <Text style={styles.sectionTitle}>Chỉ số sức khỏe</Text>
               {metricReports.map((r, i) => (
                 <MetricCard key={`${r.type}-${i}`} report={r} />
               ))}
@@ -136,7 +145,7 @@ export default function HealthReportScreen() {
 
           {!!aiSummary && (
             <>
-              <Text style={styles.sectionTitle}>AI Weekly Summary</Text>
+              <Text style={styles.sectionTitle}>Tóm tắt AI hàng tuần</Text>
               <AiSummaryCard summary={aiSummary} />
             </>
           )}
@@ -200,7 +209,7 @@ function AdherenceCard({ m }: { m: MedicationAdherenceData }) {
       <View style={{ flex: 1 }}>
         <Text style={styles.adherenceName}>{m.medicationName}</Text>
         <Text style={styles.adherenceDetail}>
-          Taken: {m.taken}  •  Missed: {m.missed}
+          Đã uống: {m.taken}  •  Bỏ lỡ: {m.missed}
         </Text>
       </View>
       <View style={[styles.adherenceBadge, { backgroundColor: `${color}1A` }]}>
@@ -257,13 +266,13 @@ function MetricCard({ report }: { report: MetricReportData }) {
 
       <View style={styles.metricStatsRow}>
         <MetricStat
-          label="Avg"
+          label="TB"
           value={`${report.avgValue !== undefined ? report.avgValue.toFixed(1) : '--'} ${report.unit}`}
         />
-        <MetricStat label="Min" value={`${report.minValue !== undefined ? report.minValue.toFixed(1) : '--'}`} />
-        <MetricStat label="Max" value={`${report.maxValue !== undefined ? report.maxValue.toFixed(1) : '--'}`} />
+        <MetricStat label="Thấp nhất" value={`${report.minValue !== undefined ? report.minValue.toFixed(1) : '--'}`} />
+        <MetricStat label="Cao nhất" value={`${report.maxValue !== undefined ? report.maxValue.toFixed(1) : '--'}`} />
         <View style={{ flex: 1 }} />
-        <MetricStat label="Readings" value={`${report.count}`} />
+        <MetricStat label="Lượt đo" value={`${report.count}`} />
       </View>
     </View>
   );
@@ -299,7 +308,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  appBarTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  backButton: { marginRight: 12 },
+  appBarTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   refreshButton: { padding: 4 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   errorText: {

@@ -6,11 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
+
   Linking,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import {
   usePaymentStore,
@@ -24,8 +26,8 @@ import {
 
 function formatDate(dt: Date): string {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6',
+    'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12',
   ];
   return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
 }
@@ -36,6 +38,7 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 export default function PremiumPlansScreen() {
+  const navigation = useNavigation();
   const isLoading = usePaymentStore((s) => s.isLoading);
   const isProcessing = usePaymentStore((s) => s.isProcessing);
   const error = usePaymentStore((s) => s.error);
@@ -57,7 +60,7 @@ export default function PremiumPlansScreen() {
   const handleSubscribe = async () => {
     const premiumPlan = plans.find((p) => !isFreePlan(p));
     if (!premiumPlan) {
-      Alert.alert('', 'No premium plans available');
+      Alert.alert('', 'Không có gói Premium nào khả dụng');
       return;
     }
 
@@ -68,7 +71,7 @@ export default function PremiumPlansScreen() {
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('', `Payment URL: ${url}`);
+        Alert.alert('', `Đường dẫn thanh toán: ${url}`);
       }
     }
 
@@ -82,16 +85,16 @@ export default function PremiumPlansScreen() {
 
   const confirmCancel = () => {
     Alert.alert(
-      'Cancel Premium?',
-      'You will lose access to premium features at the end of the current billing period.',
+      'Hủy Premium?',
+      'Bạn sẽ mất quyền truy cập các tính năng Premium khi kết thúc chu kỳ thanh toán hiện tại.',
       [
-        { text: 'Keep Plan', style: 'cancel' },
+        { text: 'Giữ gói hiện tại', style: 'cancel' },
         {
-          text: 'Cancel Subscription',
+          text: 'Hủy gói đăng ký',
           style: 'destructive',
           onPress: async () => {
             const ok = await cancelSubscription();
-            Alert.alert('', ok ? 'Subscription cancelled' : 'Could not cancel subscription');
+            Alert.alert('', ok ? 'Đã hủy gói đăng ký' : 'Không thể hủy gói đăng ký');
           },
         },
       ],
@@ -101,7 +104,14 @@ export default function PremiumPlansScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>Premium Plans</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.appBarTitle}>Gói Premium</Text>
       </View>
 
       {isLoading ? (
@@ -115,7 +125,7 @@ export default function PremiumPlansScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <View style={{ height: 12 }} />
           <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Text style={styles.retryBtnText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -127,9 +137,9 @@ export default function PremiumPlansScreen() {
           />
           <View style={{ height: 24 }} />
 
-          <Text style={styles.sectionTitle}>Choose Your Plan</Text>
+          <Text style={styles.sectionTitle}>Chọn gói của bạn</Text>
           <View style={{ height: 4 }} />
-          <Text style={styles.sectionSubtitle}>Upgrade to unlock all premium features</Text>
+          <Text style={styles.sectionSubtitle}>Nâng cấp để mở khóa tất cả tính năng Premium</Text>
           <View style={{ height: 16 }} />
 
           {plans.map((plan) => (
@@ -144,14 +154,14 @@ export default function PremiumPlansScreen() {
 
           {!isPremium && (
             <>
-              <Text style={styles.sectionTitle}>Payment Method</Text>
+              <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
               <View style={{ height: 12 }} />
               <View style={styles.methodRow}>
                 <View style={{ flex: 1 }}>
                   <MethodCard
                     icon="VNPay"
                     label="VNPay"
-                    subtitle="Internet banking"
+                    subtitle="Ngân hàng trực tuyến"
                     selected={selectedMethod === 'vnpay'}
                     onPress={() => setSelectedMethod('vnpay')}
                   />
@@ -161,7 +171,7 @@ export default function PremiumPlansScreen() {
                   <MethodCard
                     icon="MoMo"
                     label="MoMo"
-                    subtitle="E-wallet"
+                    subtitle="Ví điện tử"
                     selected={selectedMethod === 'momo'}
                     onPress={() => setSelectedMethod('momo')}
                   />
@@ -180,7 +190,7 @@ export default function PremiumPlansScreen() {
               {isProcessing ? (
                 <ActivityIndicator size="small" color={Colors.error} />
               ) : (
-                <Text style={styles.manageBtnText}>Cancel Subscription</Text>
+                <Text style={styles.manageBtnText}>Hủy gói đăng ký</Text>
               )}
             </TouchableOpacity>
           ) : (
@@ -192,7 +202,7 @@ export default function PremiumPlansScreen() {
               {isProcessing ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.subscribeBtnText}>Subscribe Now</Text>
+                <Text style={styles.subscribeBtnText}>Đăng ký ngay</Text>
               )}
             </TouchableOpacity>
           )}
@@ -235,7 +245,7 @@ function CurrentPlanBanner({
         />
         <View style={{ width: 12 }} />
         <View>
-          <Text style={styles.currentPlanLabel}>Current Plan</Text>
+          <Text style={styles.currentPlanLabel}>Gói hiện tại</Text>
           <View style={{ height: 2 }} />
           <Text style={styles.currentPlanValue}>{currentPlanLabel}</Text>
         </View>
@@ -244,7 +254,7 @@ function CurrentPlanBanner({
         <>
           <View style={{ height: 12 }} />
           <Text style={styles.currentPlanValid}>
-            Valid until {formatDate(new Date(endDate))}
+            Có hiệu lực đến {formatDate(new Date(endDate))}
           </Text>
         </>
       )}
@@ -273,12 +283,12 @@ function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boolean }) {
         <Text style={styles.planName}>{plan.name}</Text>
         {isRecommended && (
           <View style={[styles.badge, { backgroundColor: withAlpha(Colors.warning, 0.1), borderWidth: 1, borderColor: withAlpha(Colors.warning, 0.3) }]}>
-            <Text style={[styles.badgeText, { color: Colors.warning }]}>Best Value</Text>
+            <Text style={[styles.badgeText, { color: Colors.warning }]}>Đáng giá nhất</Text>
           </View>
         )}
         {isCurrent && (
           <View style={[styles.badge, { backgroundColor: withAlpha(Colors.success, 0.1) }]}>
-            <Text style={[styles.badgeText, { color: Colors.success }]}>Current</Text>
+            <Text style={[styles.badgeText, { color: Colors.success }]}>Hiện tại</Text>
           </View>
         )}
       </View>
@@ -344,7 +354,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
+  backButton: { marginRight: 12 },
   appBarTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
 
   errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },

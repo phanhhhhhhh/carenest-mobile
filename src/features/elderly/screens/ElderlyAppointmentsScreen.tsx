@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useAppointmentStore } from '../../family/store/appointmentStore';
 import type { AppointmentItem } from '../../../shared/types';
@@ -18,10 +19,10 @@ import type { AppointmentItem } from '../../../shared/types';
 
 
 const STATUS_LABELS: Record<string, string> = {
-  SCHEDULED: 'Upcoming',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
-  RESCHEDULED: 'Rescheduled',
+  SCHEDULED: 'Sắp tới',
+  COMPLETED: 'Đã hoàn thành',
+  CANCELLED: 'Đã hủy',
+  RESCHEDULED: 'Đã đổi lịch',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -31,8 +32,8 @@ const STATUS_COLORS: Record<string, string> = {
   RESCHEDULED: '#F9A825',
 };
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
+const WEEK_DAYS = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 
 function formatDate(iso: string): string {
   const dt = new Date(iso);
@@ -106,6 +107,7 @@ function AppointmentCard({ item }: { item: AppointmentItem }) {
 }
 
 export default function ElderlyAppointmentsScreen() {
+  const navigation = useNavigation();
   const isLoading = useAppointmentStore((s) => s.isLoading);
   const error = useAppointmentStore((s) => s.error);
   const appointments = useAppointmentStore((s) => s.appointments);
@@ -140,7 +142,7 @@ export default function ElderlyAppointmentsScreen() {
             style={{ width: 130, height: 130 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>No appointments yet</Text>
+          <Text style={styles.emptyText}>Chưa có lịch hẹn nào</Text>
         </View>
       );
     }
@@ -160,19 +162,26 @@ export default function ElderlyAppointmentsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Appointments</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Lịch hẹn của tôi</Text>
       </View>
 
       <View style={styles.tabBar}>
         <TouchableOpacity style={styles.tabItem} onPress={() => setTab(0)}>
           <Text style={[styles.tabText, tab === 0 && styles.tabTextActive]}>
-            Upcoming ({upcomingList.length})
+            Sắp tới ({upcomingList.length})
           </Text>
           {tab === 0 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
         <TouchableOpacity style={styles.tabItem} onPress={() => setTab(1)}>
           <Text style={[styles.tabText, tab === 1 && styles.tabTextActive]}>
-            Past ({pastList.length})
+            Đã qua ({pastList.length})
           </Text>
           {tab === 1 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
@@ -189,7 +198,7 @@ export default function ElderlyAppointmentsScreen() {
           <Text style={styles.errorText}>{error}</Text>
           <View style={{ height: 12 }} />
           <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Text style={styles.retryBtnText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -202,10 +211,13 @@ export default function ElderlyAppointmentsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
     backgroundColor: Colors.surface,
   },
+  backButton: { marginRight: 12 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   tabBar: {
     flexDirection: 'row',

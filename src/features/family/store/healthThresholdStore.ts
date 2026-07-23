@@ -39,13 +39,13 @@ function fmt(v: number | undefined): string {
 export function getDisplayType(t: ThresholdItem): string {
   switch (t.metricType) {
     case 'BLOOD_PRESSURE':
-      return 'Blood Pressure';
+      return 'Huyết áp';
     case 'BLOOD_GLUCOSE':
-      return 'Blood Sugar';
+      return 'Đường huyết';
     case 'HEART_RATE':
-      return 'Heart Rate';
+      return 'Nhịp tim';
     case 'WEIGHT':
-      return 'Weight';
+      return 'Cân nặng';
     default:
       return t.metricType;
   }
@@ -150,7 +150,7 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
         set({ isLoading: false, thresholds: [] });
         return;
       }
-      set({ isLoading: false, error: `Could not load thresholds: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Không thể tải ngưỡng cảnh báo: ${getErrorMessage(e)}` });
     }
   },
 
@@ -170,7 +170,7 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
       set({ isSaving: false });
       return true;
     } catch (e) {
-      set({ isSaving: false, error: `Could not save: ${getErrorMessage(e)}` });
+      set({ isSaving: false, error: `Không thể lưu: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -193,7 +193,7 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
       set({ isSaving: false });
       return true;
     } catch (e) {
-      set({ isSaving: false, error: `Could not update: ${getErrorMessage(e)}` });
+      set({ isSaving: false, error: `Không thể cập nhật: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -204,7 +204,7 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
       await get().load(elderlyId);
       return true;
     } catch (e) {
-      set({ error: `Could not delete: ${getErrorMessage(e)}` });
+      set({ error: `Không thể xóa: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -222,7 +222,7 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
       set({ isLoading: false, recommendations: list });
       return list;
     } catch (e) {
-      set({ isLoading: false, error: `Could not get recommendations: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Không thể lấy đề xuất: ${getErrorMessage(e)}` });
       return null;
     }
   },

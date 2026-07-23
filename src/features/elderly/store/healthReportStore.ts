@@ -46,15 +46,15 @@ interface HealthReportState {
 export function metricDisplayName(type: string): string {
   switch (type) {
     case 'BLOOD_PRESSURE':
-      return 'Blood Pressure';
+      return 'Huyết áp';
     case 'HEART_RATE':
-      return 'Heart Rate';
+      return 'Nhịp tim';
     case 'BLOOD_GLUCOSE':
-      return 'Blood Sugar';
+      return 'Đường huyết';
     case 'WEIGHT':
-      return 'Weight';
+      return 'Cân nặng';
     case 'TEMPERATURE':
-      return 'Temperature';
+      return 'Nhiệt độ';
     case 'SPO2':
       return 'SpO₂';
     default:
@@ -65,13 +65,13 @@ export function metricDisplayName(type: string): string {
 export function trendLabel(trend: string): string {
   switch (trend) {
     case 'INCREASING':
-      return '↑ Rising';
+      return '↑ Đang tăng';
     case 'DECREASING':
-      return '↓ Falling';
+      return '↓ Đang giảm';
     case 'STABLE':
-      return '→ Stable';
+      return '→ Ổn định';
     default:
-      return '— Insufficient data';
+      return '— Không đủ dữ liệu';
   }
 }
 
@@ -198,9 +198,9 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
       });
     } catch (e) {
       if (getStatus(e) === 404) {
-        set({ isLoading: false, error: 'No health data available for this period' });
+        set({ isLoading: false, error: 'Không có dữ liệu sức khỏe cho khoảng thời gian này' });
       } else {
-        set({ isLoading: false, error: `Could not load health report: ${getErrorMessage(e)}` });
+        set({ isLoading: false, error: `Không thể tải báo cáo sức khỏe: ${getErrorMessage(e)}` });
       }
     }
   },

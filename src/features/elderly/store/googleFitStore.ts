@@ -52,11 +52,11 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
           set({
             isLoading: false,
             isConfigured: false,
-            error: 'Google Fit is not configured on this server',
+            error: 'Google Fit chưa được cấu hình trên máy chủ này',
           });
           return;
         }
-        set({ isLoading: false, error: `Could not check status: ${getErrorMessage(e)}` });
+        set({ isLoading: false, error: `Không thể kiểm tra trạng thái: ${getErrorMessage(e)}` });
       }
     },
 
@@ -70,10 +70,10 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
         return url;
       } catch (e) {
         if (getStatus(e) === 503) {
-          set({ isLoading: false, error: 'Google Fit is not configured. Contact admin.' });
+          set({ isLoading: false, error: 'Google Fit chưa được cấu hình. Vui lòng liên hệ quản trị viên.' });
           return null;
         }
-        set({ isLoading: false, error: `Could not connect: ${getErrorMessage(e)}` });
+        set({ isLoading: false, error: `Không thể kết nối: ${getErrorMessage(e)}` });
         return null;
       }
     },
@@ -83,11 +83,11 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
       try {
         const resp = await api.post(`/google-fit/sync/${elderlyId}`);
         const data = (resp.data ?? {}) as Record<string, unknown>;
-        set({ isSyncing: false, lastSyncResult: 'Sync completed successfully' });
+        set({ isSyncing: false, lastSyncResult: 'Đồng bộ thành công' });
         return data;
       } catch (e) {
         const respData = getResponseData(e) as Record<string, unknown> | undefined;
-        const msg = respData && typeof respData.message === 'string' ? respData.message : 'Sync failed';
+        const msg = respData && typeof respData.message === 'string' ? respData.message : 'Đồng bộ thất bại';
         set({ isSyncing: false, error: msg });
         return null;
       }
@@ -100,7 +100,7 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
         set({ isLoading: false, isConnected: false });
         return true;
       } catch (e) {
-        set({ isLoading: false, error: `Could not disconnect: ${getErrorMessage(e)}` });
+        set({ isLoading: false, error: `Không thể ngắt kết nối: ${getErrorMessage(e)}` });
         return false;
       }
     },

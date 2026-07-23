@@ -26,7 +26,7 @@ export default function ProactiveReminderCard() {
           <Ionicons name="notifications" size={24} color={Colors.warning} />
         </View>
         <View style={styles.textWrap}>
-          <Text style={styles.title}>⏰ Time to take your medication</Text>
+          <Text style={styles.title}>⏰ Đến giờ uống thuốc</Text>
           <Text style={styles.medName}>
             {next.name} — {next.dosage}
           </Text>
@@ -39,7 +39,7 @@ export default function ProactiveReminderCard() {
           onPress={() => toggleTaken(next.id, showErrorToast)}
         >
           <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-          <Text style={styles.takeButtonText}>Take</Text>
+          <Text style={styles.takeButtonText}>Uống</Text>
         </TouchableOpacity>
       </TouchableOpacity>
     </View>

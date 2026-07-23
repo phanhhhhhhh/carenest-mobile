@@ -9,10 +9,11 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
-  Alert,
+
   Linking,
   Image,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -41,7 +42,7 @@ interface MetricConfig {
 
 const METRIC_CONFIGS: Record<string, MetricConfig> = {
   BLOOD_PRESSURE: {
-    label: 'Blood Pressure',
+    label: 'Huyết áp',
     icon: 'heart',
     color: Colors.error,
     bgColor: '#FFEBEE',
@@ -49,7 +50,7 @@ const METRIC_CONFIGS: Record<string, MetricConfig> = {
     normalRange: [90, 140],
   },
   BLOOD_GLUCOSE: {
-    label: 'Blood Sugar',
+    label: 'Đường huyết',
     icon: 'water',
     color: '#1565C0',
     bgColor: '#E3F2FD',
@@ -57,7 +58,7 @@ const METRIC_CONFIGS: Record<string, MetricConfig> = {
     normalRange: [3.9, 6.7],
   },
   HEART_RATE: {
-    label: 'Heart Rate',
+    label: 'Nhịp tim',
     icon: 'pulse',
     color: Colors.secondary,
     bgColor: '#E8F5E9',
@@ -65,7 +66,7 @@ const METRIC_CONFIGS: Record<string, MetricConfig> = {
     normalRange: [60, 100],
   },
   WEIGHT: {
-    label: 'Weight',
+    label: 'Cân nặng',
     icon: 'barbell',
     color: Colors.warning,
     bgColor: '#FFF3E0',
@@ -84,15 +85,15 @@ function formatTime(iso: string): string {
   const diffHours = Math.floor(diffMinutes / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMinutes < 1) return 'Just now';
-  if (diffHours < 1) return `${diffMinutes}m ago`;
+  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffHours < 1) return `${diffMinutes} phút trước`;
   if (diffDays === 0) {
     const h = String(dt.getHours()).padStart(2, '0');
     const m = String(dt.getMinutes()).padStart(2, '0');
     return `${h}:${m}`;
   }
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays === 1) return 'Hôm qua';
+  if (diffDays < 7) return `${diffDays} ngày trước`;
   return `${dt.getDate()}/${dt.getMonth() + 1}`;
 }
 
@@ -168,15 +169,15 @@ export default function ElderlyHealthScreen() {
     const entries = Object.entries(latestByTypeStore);
     const abnormal = entries.filter(([, v]) => getStatus(v) !== 'normal');
     if (abnormal.length === 0) {
-      return 'All your readings today are within normal range. Keep up the healthy lifestyle!';
+      return 'Tất cả chỉ số hôm nay của bạn đều trong ngưỡng bình thường. Hãy duy trì lối sống lành mạnh!';
     }
     const names = abnormal.map(([k]) => METRIC_CONFIGS[k]?.label ?? k).join(', ');
-    return `Note: ${names} are outside normal range. Monitor closely and consult your doctor if it persists.`;
+    return `Lưu ý: ${names} đang nằm ngoài ngưỡng bình thường. Hãy theo dõi sát và hỏi ý kiến bác sĩ nếu tình trạng này tiếp diễn.`;
   };
 
   const buildHealthPrompt = (): string => {
     const lines: string[] = [
-      'Briefly analyze the following health metrics for an elderly person (reply in English, max 3-4 sentences, friendly tone like a care assistant):',
+      'Hãy phân tích ngắn gọn các chỉ số sức khỏe sau đây cho một người cao tuổi (trả lời bằng tiếng Việt, tối đa 3-4 câu, giọng điệu thân thiện như một trợ lý chăm sóc):',
     ];
     for (const [type, data] of Object.entries(latestByTypeStore)) {
       const config = METRIC_CONFIGS[type];
@@ -186,18 +187,18 @@ export default function ElderlyHealthScreen() {
         const timeStr = Number.isNaN(dt.getTime())
           ? ''
           : `${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
-        lines.push(`- ${config.label}: ${display} ${config.unit} (at ${timeStr})`);
+        lines.push(`- ${config.label}: ${display} ${config.unit} (lúc ${timeStr})`);
       }
     }
-    lines.push('Evaluate each metric, flag any abnormalities, and give one short piece of advice.');
+    lines.push('Đánh giá từng chỉ số, cảnh báo nếu có bất thường, và đưa ra một lời khuyên ngắn gọn.');
     return lines.join('\n');
   };
 
   const loadAiInsight = async () => {
     if (Object.keys(latestByTypeStore).length === 0) {
       setAiInsight(
-        'Start tracking your health by adding your first reading. ' +
-        'I will help you analyze trends and provide personalized advice!',
+        'Hãy bắt đầu theo dõi sức khỏe bằng cách thêm chỉ số đầu tiên. ' +
+        'Tôi sẽ giúp bạn phân tích xu hướng và đưa ra lời khuyên phù hợp!',
       );
       setAiLoading(false);
       setAiError(null);
@@ -217,7 +218,7 @@ export default function ElderlyHealthScreen() {
     } catch {
       setAiInsight(ruleBasedInsight());
       setAiLoading(false);
-      setAiError('Cannot connect to AI, showing basic analysis');
+      setAiError('Không thể kết nối với AI, đang hiển thị phân tích cơ bản');
     }
   };
 
@@ -242,7 +243,7 @@ export default function ElderlyHealthScreen() {
         try {
           await Linking.openURL(url);
         } catch {
-          Alert.alert('Error', 'Could not open browser');
+          Alert.alert('Lỗi', 'Không thể mở trình duyệt');
         }
       }
     }
@@ -280,7 +281,7 @@ export default function ElderlyHealthScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>Health Metrics</Text>
+        <Text style={styles.appBarTitle}>Chỉ số sức khỏe</Text>
         <TouchableOpacity onPress={() => navigation.navigate('HealthReport')}>
           <Ionicons name="stats-chart" size={22} color={Colors.primary} />
         </TouchableOpacity>
@@ -295,15 +296,15 @@ export default function ElderlyHealthScreen() {
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textHint} />
           <Text style={styles.errorText}>{healthError}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => healthStore.getState().load()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.periodRow}>
-            <PeriodChip label="7 days" selected={period === 'week'} onPress={() => handlePeriodChange('week')} />
+            <PeriodChip label="7 ngày" selected={period === 'week'} onPress={() => handlePeriodChange('week')} />
             <View style={{ width: 8 }} />
-            <PeriodChip label="30 days" selected={period === 'month'} onPress={() => handlePeriodChange('month')} />
+            <PeriodChip label="30 ngày" selected={period === 'month'} onPress={() => handlePeriodChange('month')} />
           </View>
 
           <View style={{ height: 16 }} />
@@ -324,8 +325,8 @@ export default function ElderlyHealthScreen() {
               </View>
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={styles.aiTitle}>AI Insight</Text>
-                  {aiLoading && <Text style={styles.aiAnalyzing}>  analyzing...</Text>}
+                  <Text style={styles.aiTitle}>Nhận định từ AI</Text>
+                  {aiLoading && <Text style={styles.aiAnalyzing}>  đang phân tích...</Text>}
                 </View>
                 <Text style={styles.aiText}>{displayText}</Text>
               </View>
@@ -344,7 +345,7 @@ export default function ElderlyHealthScreen() {
             <EmptyState />
           ) : (
             <>
-              <Text style={styles.sectionTitle}>Latest Readings</Text>
+              <Text style={styles.sectionTitle}>Chỉ số mới nhất</Text>
               <View style={{ height: 14 }} />
               {METRIC_KEYS.map((key) => {
                 const data = latestByTypeStore[key];
@@ -390,7 +391,7 @@ export default function ElderlyHealthScreen() {
         >
           <View style={styles.bottomSheet}>
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>Add health metric</Text>
+            <Text style={styles.sheetTitle}>Thêm chỉ số sức khỏe</Text>
             <View style={{ height: 12 }} />
             {METRIC_KEYS.map((key) => {
               const config = METRIC_CONFIGS[key];
@@ -401,7 +402,7 @@ export default function ElderlyHealthScreen() {
                   </View>
                   <View style={{ flex: 1, marginLeft: 14 }}>
                     <Text style={styles.sheetItemLabel}>{config.label}</Text>
-                    <Text style={styles.sheetItemUnit}>Unit: {config.unit}</Text>
+                    <Text style={styles.sheetItemUnit}>Đơn vị: {config.unit}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={Colors.textHint} />
                 </TouchableOpacity>
@@ -419,11 +420,11 @@ export default function ElderlyHealthScreen() {
       >
         <View style={styles.modalOverlayCenter}>
           <View style={styles.dialogCard}>
-            <Text style={styles.dialogTitle}>Enter {valueDialog?.label}</Text>
+            <Text style={styles.dialogTitle}>Nhập {valueDialog?.label}</Text>
             <View style={{ height: 12 }} />
             <TextInput
               style={styles.dialogInput}
-              placeholder={`Value (${valueDialog?.unit})`}
+              placeholder={`Giá trị (${valueDialog?.unit})`}
               placeholderTextColor={Colors.textHint}
               keyboardType="numeric"
               autoFocus
@@ -433,11 +434,11 @@ export default function ElderlyHealthScreen() {
             <View style={{ height: 16 }} />
             <View style={styles.dialogActions}>
               <TouchableOpacity onPress={() => setValueDialog(null)} style={styles.dialogCancelBtn}>
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <View style={{ width: 10 }} />
               <TouchableOpacity onPress={saveValue} style={styles.dialogSaveBtn}>
-                <Text style={styles.dialogSaveText}>Save</Text>
+                <Text style={styles.dialogSaveText}>Lưu</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -460,15 +461,15 @@ export default function ElderlyHealthScreen() {
             <TouchableOpacity style={styles.sheetItem} onPress={handleFitSync}>
               <Ionicons name="sync" size={22} color={Colors.primary} />
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={styles.sheetItemLabel}>Sync Now</Text>
-                <Text style={styles.sheetItemUnit}>Pull latest data from Google Fit</Text>
+                <Text style={styles.sheetItemLabel}>Đồng bộ ngay</Text>
+                <Text style={styles.sheetItemUnit}>Lấy dữ liệu mới nhất từ Google Fit</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sheetItem} onPress={handleFitDisconnect}>
               <Ionicons name="link" size={22} color={Colors.error} />
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={styles.sheetItemLabel}>Disconnect</Text>
-                <Text style={styles.sheetItemUnit}>Stop syncing with Google Fit</Text>
+                <Text style={styles.sheetItemLabel}>Ngắt kết nối</Text>
+                <Text style={styles.sheetItemUnit}>Dừng đồng bộ với Google Fit</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -504,9 +505,9 @@ function EmptyState() {
         resizeMode="contain"
       />
       <View style={{ height: 4 }} />
-      <Text style={styles.emptyTitle}>No health data yet</Text>
+      <Text style={styles.emptyTitle}>Chưa có dữ liệu sức khỏe</Text>
       <View style={{ height: 6 }} />
-      <Text style={styles.emptySubtitle}>Press + to add your first reading</Text>
+      <Text style={styles.emptySubtitle}>Nhấn + để thêm chỉ số đầu tiên</Text>
     </View>
   );
 }
@@ -514,11 +515,11 @@ function EmptyState() {
 function statusLabel(status: Status): string {
   switch (status) {
     case 'high':
-      return 'High';
+      return 'Cao';
     case 'low':
-      return 'Low';
+      return 'Thấp';
     case 'normal':
-      return 'Normal';
+      return 'Bình thường';
     default:
       return '';
   }
@@ -598,7 +599,7 @@ function MetricSection({
 
       {values.length < 2 ? (
         <View style={styles.miniChartEmpty}>
-          <Text style={styles.miniChartEmptyText}>Need more data to show chart</Text>
+          <Text style={styles.miniChartEmptyText}>Cần thêm dữ liệu để hiển thị biểu đồ</Text>
         </View>
       ) : (
         <View style={styles.miniChart}>

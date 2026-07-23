@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,7 +23,7 @@ export default function VerificationChoiceScreen() {
   const sendOtp = async (method: string) => {
     const target = method === 'EMAIL' ? email : phone;
     if (!target) {
-      Alert.alert('Error', `No ${method === 'EMAIL' ? 'email' : 'phone'} provided`);
+      Alert.alert('Lỗi', `Chưa cung cấp ${method === 'EMAIL' ? 'email' : 'số điện thoại'}`);
       return;
     }
     setLoading(method);
@@ -30,7 +31,7 @@ export default function VerificationChoiceScreen() {
     if (ok) {
       navigation.navigate('OtpVerify', { target, method, userName });
     } else {
-      Alert.alert('Error', `Could not send ${method === 'EMAIL' ? 'email' : 'SMS'}`);
+      Alert.alert('Lỗi', `Không thể gửi ${method === 'EMAIL' ? 'email' : 'tin nhắn SMS'}`);
     }
     setLoading('');
   };
@@ -39,11 +40,11 @@ export default function VerificationChoiceScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← Back</Text>
+          <Text style={styles.backText}>← Quay lại</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Verify your account</Text>
-        <Text style={styles.subtitle}>Choose how you'd like to verify</Text>
+        <Text style={styles.title}>Xác minh tài khoản của bạn</Text>
+        <Text style={styles.subtitle}>Chọn cách bạn muốn xác minh</Text>
 
         {email ? (
           <TouchableOpacity
@@ -53,11 +54,11 @@ export default function VerificationChoiceScreen() {
           >
             <Ionicons name="mail-outline" size={28} color={Colors.primary} />
             <View style={styles.optionInfo}>
-              <Text style={styles.optionTitle}>Verify via Email</Text>
-              <Text style={styles.optionDesc}>Send code to {email}</Text>
+              <Text style={styles.optionTitle}>Xác minh qua Email</Text>
+              <Text style={styles.optionDesc}>Gửi mã đến {email}</Text>
             </View>
             {loading === 'EMAIL' ? (
-              <Text style={styles.loadingText}>Sending...</Text>
+              <Text style={styles.loadingText}>Đang gửi...</Text>
             ) : (
               <Ionicons name="chevron-forward" size={20} color={Colors.textHint} />
             )}
@@ -72,11 +73,11 @@ export default function VerificationChoiceScreen() {
           >
             <Ionicons name="chatbubble-outline" size={28} color={Colors.secondary} />
             <View style={styles.optionInfo}>
-              <Text style={styles.optionTitle}>Verify via SMS</Text>
-              <Text style={styles.optionDesc}>Send code to {phone}</Text>
+              <Text style={styles.optionTitle}>Xác minh qua SMS</Text>
+              <Text style={styles.optionDesc}>Gửi mã đến {phone}</Text>
             </View>
             {loading === 'SMS' ? (
-              <Text style={styles.loadingText}>Sending...</Text>
+              <Text style={styles.loadingText}>Đang gửi...</Text>
             ) : (
               <Ionicons name="chevron-forward" size={20} color={Colors.textHint} />
             )}

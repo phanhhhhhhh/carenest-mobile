@@ -17,10 +17,10 @@ export default function PasswordResetSuccessScreen() {
         <View style={styles.iconWrap}>
           <Ionicons name="checkmark-circle" size={60} color={Colors.success} />
         </View>
-        <Text style={styles.title}>Password Reset Successfully!</Text>
-        <Text style={styles.subtitle}>You can now sign in with your new password</Text>
+        <Text style={styles.title}>Đặt lại mật khẩu thành công!</Text>
+        <Text style={styles.subtitle}>Giờ đây bạn có thể đăng nhập bằng mật khẩu mới</Text>
         <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('Phone')}>
-          <Text style={styles.btnText}>Go to Sign In</Text>
+          <Text style={styles.btnText}>Đến trang đăng nhập</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

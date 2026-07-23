@@ -35,7 +35,7 @@ export default function ElderlyProfileScreen() {
   useEffect(() => {
     (async () => {
       const [n, p, r] = await Promise.all([getName(), getPhone(), getRole()]);
-      setName(n || 'User');
+      setName(n || 'Người dùng');
       setPhone(p || '');
       setRole(r || 'ELDERLY');
     })();
@@ -58,42 +58,42 @@ export default function ElderlyProfileScreen() {
   }> = [
     {
       icon: 'create-outline',
-      label: 'Edit Profile',
+      label: 'Chỉnh sửa hồ sơ',
       color: Colors.primary,
       bg: 'rgba(46, 125, 154, 0.08)',
       onPress: () => navigation.navigate('ElderlyEditProfile'),
     },
     {
       icon: 'call-outline',
-      label: 'Emergency Contacts',
+      label: 'Liên hệ khẩn cấp',
       color: Colors.sosPrimary,
       bg: 'rgba(211, 47, 47, 0.08)',
       onPress: () => navigation.navigate('ElderlyEmergencyContacts'),
     },
     {
       icon: 'notifications-outline',
-      label: 'Notification Settings',
+      label: 'Cài đặt thông báo',
       color: Colors.secondary,
       bg: 'rgba(76, 175, 130, 0.08)',
       onPress: () => navigation.navigate('NotificationSettings'),
     },
     {
       icon: 'ribbon-outline',
-      label: 'Upgrade to Premium',
+      label: 'Nâng cấp Premium',
       color: Colors.warning,
       bg: 'rgba(255, 167, 38, 0.08)',
       onPress: () => navigation.navigate('PremiumPlans'),
     },
     {
       icon: 'lock-closed-outline',
-      label: 'Set PIN Lock',
+      label: 'Đặt mã PIN',
       color: Colors.primary,
       bg: 'rgba(46, 125, 154, 0.08)',
       onPress: () => navigation.navigate('PinSetup'),
     },
     {
       icon: 'help-circle-outline',
-      label: 'Help & Support',
+      label: 'Trợ giúp & Hỗ trợ',
       color: Colors.textSecondary,
       bg: 'rgba(173, 181, 189, 0.08)',
       onPress: () => {},
@@ -128,7 +128,7 @@ export default function ElderlyProfileScreen() {
             ]}
           >
             <Text style={[styles.roleBadgeText, { color: isElderlyRole ? Colors.primary : Colors.secondary }]}>
-              {isElderlyRole ? 'Elderly' : 'Family'}
+              {isElderlyRole ? 'Người cao tuổi' : 'Gia đình'}
             </Text>
           </View>
         </View>
@@ -138,7 +138,7 @@ export default function ElderlyProfileScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="medical" size={22} color={Colors.primary} />
-            <Text style={styles.cardHeaderText}>Health Profile</Text>
+            <Text style={styles.cardHeaderText}>Hồ sơ sức khỏe</Text>
           </View>
           <View style={styles.divider} />
 
@@ -151,7 +151,7 @@ export default function ElderlyProfileScreen() {
               <Text style={styles.errorText}>{profileError}</Text>
               <View style={{ height: 8 }} />
               <TouchableOpacity onPress={() => loadProfile()}>
-                <Text style={styles.retryLink}>Retry</Text>
+                <Text style={styles.retryLink}>Thử lại</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -160,19 +160,19 @@ export default function ElderlyProfileScreen() {
               {!!profile?.bloodType && (
                 <>
                   <View style={{ height: 14 }} />
-                  <InfoRow label="Blood Type" value={profile.bloodType} />
+                  <InfoRow label="Nhóm máu" value={profile.bloodType} />
                 </>
               )}
               {profile?.weight != null && (
                 <>
                   <View style={{ height: 8 }} />
-                  <InfoRow label="Weight" value={`${profile.weight} kg`} />
+                  <InfoRow label="Cân nặng" value={`${profile.weight} kg`} />
                 </>
               )}
               {profile?.height != null && (
                 <>
                   <View style={{ height: 8 }} />
-                  <InfoRow label="Height" value={`${profile.height} cm`} />
+                  <InfoRow label="Chiều cao" value={`${profile.height} cm`} />
                 </>
               )}
               {(profile?.allergies ?? []).length > 0 && (
@@ -184,7 +184,7 @@ export default function ElderlyProfileScreen() {
               {!!profile?.notes && (
                 <>
                   <View style={{ height: 14 }} />
-                  <InfoRow label="Notes" value={profile.notes} />
+                  <InfoRow label="Ghi chú" value={profile.notes} />
                 </>
               )}
             </>
@@ -196,7 +196,7 @@ export default function ElderlyProfileScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="people" size={22} color={Colors.secondary} />
-            <Text style={styles.cardHeaderText}>Connected Family Members</Text>
+            <Text style={styles.cardHeaderText}>Người thân đã kết nối</Text>
           </View>
           <View style={styles.divider} />
 
@@ -207,7 +207,7 @@ export default function ElderlyProfileScreen() {
           ) : members.length === 0 ? (
             <View style={styles.centerPadSmall}>
               <Text style={styles.emptyFamilyText}>
-                No family members connected yet.{'\n'}Ask your family to add you by phone number.
+                Chưa có người thân nào kết nối.{'\n'}Nhờ người thân thêm bạn bằng số điện thoại.
               </Text>
             </View>
           ) : (
@@ -247,7 +247,7 @@ export default function ElderlyProfileScreen() {
             <View style={[styles.menuIconWrap, { backgroundColor: 'rgba(229, 57, 53, 0.08)' }]}>
               <Ionicons name="log-out-outline" size={20} color={Colors.error} />
             </View>
-            <Text style={[styles.menuLabel, { color: Colors.error }]}>Sign Out</Text>
+            <Text style={[styles.menuLabel, { color: Colors.error }]}>Đăng xuất</Text>
             <View style={{ flex: 1 }} />
             <Ionicons name="chevron-forward" size={20} color={Colors.textHint} />
           </TouchableOpacity>
@@ -261,7 +261,7 @@ export default function ElderlyProfileScreen() {
 
 function ConditionTags({ conditions }: { conditions: string[] }) {
   if (conditions.length === 0) {
-    return <Text style={styles.noDataText}>No medical conditions recorded</Text>;
+    return <Text style={styles.noDataText}>Chưa ghi nhận bệnh lý nào</Text>;
   }
   return (
     <View style={styles.tagsWrap}>
@@ -288,7 +288,7 @@ function ConditionTags({ conditions }: { conditions: string[] }) {
 function AllergyTags({ allergies }: { allergies: string[] }) {
   return (
     <View>
-      <Text style={styles.allergyLabel}>Drug Allergies</Text>
+      <Text style={styles.allergyLabel}>Dị ứng thuốc</Text>
       <View style={{ height: 8 }} />
       <View style={styles.tagsWrap}>
         {allergies.map((a) => (

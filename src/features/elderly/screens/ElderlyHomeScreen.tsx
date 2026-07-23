@@ -5,9 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
+
   ActivityIndicator,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -30,16 +31,16 @@ import type { MedicationItem, AppointmentItem } from '../../../shared/types';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 function formatDateHeader(): string {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
   const now = new Date();
   return `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
 }
 
 function greeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Chào buổi sáng';
+  if (hour < 18) return 'Chào buổi chiều';
+  return 'Chào buổi tối';
 }
 
 function formatTimeFromIso(iso?: string): string {
@@ -51,7 +52,7 @@ function formatTimeFromIso(iso?: string): string {
   return `${h}:${m}`;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
 
 export default function ElderlyHomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -145,26 +146,26 @@ export default function ElderlyHomeScreen() {
 
   const sendSos = async () => {
     if (!elderlyId) {
-      Alert.alert('Emergency', 'Unable to send SOS: account not identified');
+      Alert.alert('Khẩn cấp', 'Không thể gửi tín hiệu SOS: chưa xác định được tài khoản');
       return;
     }
     try {
       const ok = await createSosEvent(elderlyId);
       if (ok) {
         Alert.alert(
-          'SOS Sent',
-          'Emergency signal has been sent. All family members have been notified.',
+          'Đã gửi SOS',
+          'Tín hiệu khẩn cấp đã được gửi. Người thân đã nhận được thông báo.',
         );
       } else {
         Alert.alert(
-          'Emergency',
-          'Cannot send SOS. Please call your family directly in case of emergency!',
+          'Khẩn cấp',
+          'Không thể gửi SOS. Vui lòng gọi trực tiếp cho người thân nếu có việc khẩn cấp!',
         );
       }
     } catch {
       Alert.alert(
-        'Emergency',
-        'Cannot send SOS. Please call your family directly in case of emergency!',
+        'Khẩn cấp',
+        'Không thể gửi SOS. Vui lòng gọi trực tiếp cho người thân nếu có việc khẩn cấp!',
       );
     }
   };
@@ -220,7 +221,7 @@ export default function ElderlyHomeScreen() {
         <View style={styles.sosWrap}>
           {sosCountdown ? (
             <>
-              <Text style={styles.sosSendingText}>Sending emergency signal...</Text>
+              <Text style={styles.sosSendingText}>Đang gửi tín hiệu khẩn cấp...</Text>
               <View style={{ height: 16 }} />
               <View style={styles.sosRing}>
                 <Text style={styles.sosCountdownNumber}>{countdown}</Text>
@@ -228,17 +229,17 @@ export default function ElderlyHomeScreen() {
               <View style={{ height: 16 }} />
               <TouchableOpacity onPress={cancelSos} style={styles.cancelBtn}>
                 <Ionicons name="close" size={18} color={Colors.textSecondary} />
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>Hủy</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
               <TouchableOpacity onPress={onSosPressed} activeOpacity={0.85} style={styles.sosCircle}>
                 <Text style={styles.sosText}>SOS</Text>
-                <Text style={styles.sosSubText}>Emergency Alert</Text>
+                <Text style={styles.sosSubText}>Cảnh báo khẩn cấp</Text>
               </TouchableOpacity>
               <View style={{ height: 14 }} />
-              <Text style={styles.sosHint}>Press and hold 3 seconds to send emergency signal</Text>
+              <Text style={styles.sosHint}>Nhấn giữ 3 giây để gửi tín hiệu khẩn cấp</Text>
             </>
           )}
         </View>
@@ -271,16 +272,33 @@ export default function ElderlyHomeScreen() {
           </View>
         )}
 
+        <View style={{ height: 20 }} />
+
+        <TouchableOpacity
+          style={styles.chatCard}
+          onPress={() => navigation.navigate('ElderlyChat')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.chatIcon}>
+            <Ionicons name="chatbubble-ellipses" size={22} color={Colors.primary} />
+          </View>
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.cameraTitle}>Trò chuyện với AI</Text>
+            <Text style={styles.cameraSubtitle}>Hỏi đáp, nhắc nhở và trò chuyện hằng ngày</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textHint} />
+        </TouchableOpacity>
+
         <View style={{ height: 28 }} />
 
-        <Text style={styles.sectionTitle}>Today's Readings</Text>
+        <Text style={styles.sectionTitle}>Chỉ số hôm nay</Text>
         <View style={{ height: 14 }} />
         <View style={styles.healthRow}>
           <HealthCard
             icon="heart"
             iconBgColor="#FFEBEE"
             iconColor={Colors.error}
-            label="Heart Rate"
+            label="Nhịp tim"
             value={heartRate ?? '--'}
           />
           <View style={{ width: 10 }} />
@@ -288,7 +306,7 @@ export default function ElderlyHomeScreen() {
             icon="water"
             iconBgColor="#E3F2FD"
             iconColor="#1565C0"
-            label="Blood Pressure"
+            label="Huyết áp"
             value={bloodPressure ?? '--'}
           />
           <View style={{ width: 10 }} />
@@ -296,7 +314,7 @@ export default function ElderlyHomeScreen() {
             icon="flask-outline"
             iconBgColor="#FFF3E0"
             iconColor={Colors.warning}
-            label="Blood Sugar"
+            label="Đường huyết"
             value={bloodSugar ?? '--'}
           />
         </View>
@@ -304,10 +322,10 @@ export default function ElderlyHomeScreen() {
         <View style={{ height: 28 }} />
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Today's Medications</Text>
+          <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
           {medItems.length > 0 && (
             <TouchableOpacity onPress={() => navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' })}>
-              <Text style={styles.viewAll}>View all</Text>
+              <Text style={styles.viewAll}>Xem tất cả</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -319,7 +337,7 @@ export default function ElderlyHomeScreen() {
         ) : medItems.length === 0 ? (
           <View style={styles.emptyCard}>
             <Ionicons name="medkit-outline" size={36} color={Colors.textHint} />
-            <Text style={styles.emptyText}>No medications yet</Text>
+            <Text style={styles.emptyText}>Chưa có thuốc nào</Text>
           </View>
         ) : (
           medItems.slice(0, 3).map((med) => <MedicationTile key={med.id} medication={med} />)
@@ -328,10 +346,10 @@ export default function ElderlyHomeScreen() {
         <View style={{ height: 28 }} />
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+          <Text style={styles.sectionTitle}>Lịch hẹn sắp tới</Text>
           {upcoming.length > 0 && (
             <TouchableOpacity onPress={() => navigation.navigate('ElderlyAppointments')}>
-              <Text style={styles.viewAll}>View all</Text>
+              <Text style={styles.viewAll}>Xem tất cả</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -346,7 +364,7 @@ export default function ElderlyHomeScreen() {
             onPress={() => navigation.navigate('ElderlyAppointments')}
           >
             <Ionicons name="calendar-outline" size={32} color={Colors.textHint} />
-            <Text style={styles.emptyTextSmall}>No appointments</Text>
+            <Text style={styles.emptyTextSmall}>Chưa có lịch hẹn</Text>
           </TouchableOpacity>
         ) : (
           upcoming.map((apt) => (
@@ -584,6 +602,22 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(46, 125, 154, 0.4)',
   },
   callButtonText: { color: Colors.primary, fontSize: Typography.bodySmall.fontSize, fontWeight: '600' },
+
+  chatCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surface,
+  },
+  chatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(46, 125, 154, 0.1)',
+  },
 
   sectionTitle: { fontSize: Typography.sectionTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

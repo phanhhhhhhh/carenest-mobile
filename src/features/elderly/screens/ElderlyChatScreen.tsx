@@ -9,11 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
+
   Animated,
   Easing,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { useChatStore } from '../store/chatStore';
@@ -23,13 +25,13 @@ import type { ChatMessage } from '../../../shared/types';
 
 
 
-const QUICK_REPLIES = ['Blood pressure today?', 'Medication schedule?', 'I have a headache'];
+const QUICK_REPLIES = ['Huyết áp hôm nay?', 'Lịch uống thuốc?', 'Tôi bị đau đầu'];
 
 function greeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Chào buổi sáng';
+  if (hour < 18) return 'Chào buổi chiều';
+  return 'Chào buổi tối';
 }
 
 function formatTime(iso: string): string {
@@ -38,6 +40,7 @@ function formatTime(iso: string): string {
 }
 
 export default function ElderlyChatScreen() {
+  const navigation = useNavigation();
   const messages = useChatStore((s) => s.messages);
   const isLoading = useChatStore((s) => s.isLoading);
   const isSending = useChatStore((s) => s.isSending);
@@ -62,11 +65,11 @@ export default function ElderlyChatScreen() {
   }, []);
 
   const welcomeMessage =
-    `${greeting()} ${userName}! I am your health care assistant. ` +
-    'How are you feeling today? I can help you:\n' +
-    '• Check health indicators\n' +
-    '• Medication reminders\n' +
-    '• Chat with you';
+    `${greeting()} ${userName}! Tôi là trợ lý chăm sóc sức khỏe của bạn. ` +
+    'Hôm nay bạn cảm thấy thế nào? Tôi có thể giúp bạn:\n' +
+    '• Kiểm tra chỉ số sức khỏe\n' +
+    '• Nhắc uống thuốc\n' +
+    '• Trò chuyện cùng bạn';
 
   const scrollToBottom = () => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
@@ -85,17 +88,17 @@ export default function ElderlyChatScreen() {
       setIsListening(false);
       return;
     }
-    Alert.alert('', 'Voice input is not available');
+    Alert.alert('', 'Nhập bằng giọng nói chưa khả dụng');
   };
 
   const confirmClearHistory = () => {
     Alert.alert(
-      'Clear chat history?',
-      'This will delete all messages in this conversation.',
+      'Xóa lịch sử trò chuyện?',
+      'Thao tác này sẽ xóa toàn bộ tin nhắn trong cuộc trò chuyện này.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Clear',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => clearHistory(),
         },
@@ -107,6 +110,9 @@ export default function ElderlyChatScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
         <View style={styles.appBarLeft}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+          </TouchableOpacity>
           <View style={styles.avatarWrap}>
             <View style={styles.avatarCircle}>
               <Ionicons name="sparkles" size={22} color="#FFFFFF" />
@@ -126,7 +132,7 @@ export default function ElderlyChatScreen() {
                 { color: aiAvailable ? Colors.success : Colors.textSecondary },
               ]}
             >
-              {aiAvailable ? 'Online — AI-powered' : 'Offline mode'}
+              {aiAvailable ? 'Trực tuyến — Hỗ trợ bởi AI' : 'Chế độ ngoại tuyến'}
             </Text>
           </View>
         </View>
@@ -199,7 +205,7 @@ export default function ElderlyChatScreen() {
             style={styles.textInput}
             value={input}
             onChangeText={setInput}
-            placeholder="Type a message..."
+            placeholder="Nhập tin nhắn..."
             placeholderTextColor={Colors.textHint}
             editable={!isSending}
             onSubmitEditing={() => handleSend()}
@@ -336,6 +342,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   appBarLeft: { flexDirection: 'row', alignItems: 'center' },
+  backBtn: { marginRight: 8, padding: 4 },
   avatarWrap: { width: 40, height: 40 },
   avatarCircle: {
     width: 40,

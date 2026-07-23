@@ -76,14 +76,14 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       const resp = await api.get(`/users/${userId}/appointments`, { signal });
       if (!Array.isArray(resp.data)) {
         console.warn('[schema] AppointmentList: expected an array — keeping previous state');
-        set({ isLoading: false, error: 'Unexpected response from server' });
+        set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
       const items = safeParseList(AppointmentSchema, resp.data, 'AppointmentList').map(toAppointmentItem);
       set({ isLoading: false, appointments: items });
     } catch (e) {
       if (isCancelled(e)) return;
-      set({ isLoading: false, error: `Error loading appointments: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Lỗi khi tải lịch hẹn: ${getErrorMessage(e)}` });
     }
   },
 
@@ -104,7 +104,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       set({ isSaving: false });
       return true;
     } catch (e) {
-      set({ isSaving: false, error: `Error creating appointment: ${getErrorMessage(e)}` });
+      set({ isSaving: false, error: `Lỗi khi tạo lịch hẹn: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -123,7 +123,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       set({ isSaving: false });
       return true;
     } catch (e) {
-      set({ isSaving: false, error: `Error updating appointment: ${getErrorMessage(e)}` });
+      set({ isSaving: false, error: `Lỗi khi cập nhật lịch hẹn: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -134,7 +134,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       await get().load();
       return true;
     } catch (e) {
-      set({ error: `Error deleting appointment: ${getErrorMessage(e)}` });
+      set({ error: `Lỗi khi xóa lịch hẹn: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -145,7 +145,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       await get().load();
       return true;
     } catch (e) {
-      set({ error: `Error updating status: ${getErrorMessage(e)}` });
+      set({ error: `Lỗi khi cập nhật trạng thái: ${getErrorMessage(e)}` });
       return false;
     }
   },

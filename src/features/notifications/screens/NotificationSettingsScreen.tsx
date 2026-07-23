@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useNotificationSettingsStore } from '../store/notificationSettingsStore';
 
@@ -98,10 +99,10 @@ function ReminderMinutesTile({
   return (
     <View style={styles.reminderRow}>
       <Ionicons name="timer-outline" color={Colors.textHint} size={16} />
-      <Text style={styles.reminderLabel}>Remind before:</Text>
+      <Text style={styles.reminderLabel}>Nhắc trước:</Text>
       <View style={{ flex: 1 }} />
       <TouchableOpacity style={styles.reminderDropdown} onPress={() => setOpen(true)}>
-        <Text style={styles.reminderDropdownText}>{current} min</Text>
+        <Text style={styles.reminderDropdownText}>{current} phút</Text>
         <Ionicons name="chevron-down" size={14} color={Colors.primary} />
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -117,7 +118,7 @@ function ReminderMinutesTile({
                 }}
               >
                 <Text style={[styles.optionText, m === current && styles.optionTextActive]}>
-                  {m} min
+                  {m} phút
                 </Text>
                 {m === current && <Ionicons name="checkmark" size={18} color={Colors.primary} />}
               </TouchableOpacity>
@@ -171,7 +172,7 @@ function TimePickerTile({
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setOpen(false)}>
           <Pressable style={styles.timePickerSheet} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.timePickerTitle}>Select {label} Time</Text>
+            <Text style={styles.timePickerTitle}>Chọn giờ {label}</Text>
             <View style={styles.timePickerColumns}>
               <ScrollView style={styles.timePickerColumn}>
                 {hours.map((h) => (
@@ -194,7 +195,7 @@ function TimePickerTile({
               </ScrollView>
             </View>
             <TouchableOpacity style={styles.timePickerConfirm} onPress={confirm}>
-              <Text style={styles.timePickerConfirmText}>OK</Text>
+              <Text style={styles.timePickerConfirmText}>Đồng ý</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -204,6 +205,7 @@ function TimePickerTile({
 }
 
 export default function NotificationSettingsScreen() {
+  const navigation = useNavigation();
   const isLoading = useNotificationSettingsStore((s) => s.isLoading);
   const medicationReminder = useNotificationSettingsStore((s) => s.medicationReminder);
   const reminderMinutesBefore = useNotificationSettingsStore((s) => s.reminderMinutesBefore);
@@ -239,15 +241,22 @@ export default function NotificationSettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Notification Settings</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Cài đặt thông báo</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Section title="Alert Types">
+        <Section title="Loại cảnh báo">
           <ToggleTile
             icon="medkit-outline"
             iconColor={Colors.primary}
-            title="Medication Reminders"
-            subtitle="Get notified when it's time to take medication"
+            title="Nhắc uống thuốc"
+            subtitle="Nhận thông báo khi đến giờ uống thuốc"
             value={medicationReminder}
             onChanged={setMedicationReminder}
           />
@@ -257,16 +266,16 @@ export default function NotificationSettingsScreen() {
           <ToggleTile
             icon="medical-outline"
             iconColor={Colors.error}
-            title="Health Alerts"
-            subtitle="Get notified when health metrics are abnormal"
+            title="Cảnh báo sức khỏe"
+            subtitle="Nhận thông báo khi chỉ số sức khỏe bất thường"
             value={healthAlert}
             onChanged={setHealthAlert}
           />
           <ToggleTile
             icon="warning"
             iconColor={Colors.sosPrimary}
-            title="SOS Emergency Alerts"
-            subtitle="Always enabled — SOS alerts cannot be turned off"
+            title="Cảnh báo khẩn cấp SOS"
+            subtitle="Luôn được bật — cảnh báo SOS không thể tắt"
             value={true}
             enabled={false}
             onChanged={() => {}}
@@ -274,8 +283,8 @@ export default function NotificationSettingsScreen() {
           <ToggleTile
             icon="people"
             iconColor={Colors.secondary}
-            title="Family Updates"
-            subtitle="Get notified about family link requests and status changes"
+            title="Cập nhật gia đình"
+            subtitle="Nhận thông báo về yêu cầu kết nối gia đình và thay đổi trạng thái"
             value={familyUpdate}
             onChanged={setFamilyUpdate}
           />
@@ -284,17 +293,17 @@ export default function NotificationSettingsScreen() {
         <View style={{ height: 20 }} />
 
         <Section
-          title="Quiet Hours"
-          subtitle="During quiet hours, only SOS alerts will be delivered"
+          title="Giờ yên tĩnh"
+          subtitle="Trong giờ yên tĩnh, chỉ cảnh báo SOS sẽ được gửi"
         >
           <ToggleTile
             icon="moon"
             iconColor="#7B1FA2"
-            title="Do Not Disturb"
+            title="Không làm phiền"
             subtitle={
               quietHoursEnabled
                 ? `${quietHoursStart} – ${quietHoursEnd}`
-                : 'All notifications delivered normally'
+                : 'Tất cả thông báo được gửi bình thường'
             }
             value={quietHoursEnabled}
             onChanged={(v) => {
@@ -310,11 +319,11 @@ export default function NotificationSettingsScreen() {
           {quietHoursEnabled && (
             <View style={styles.quietHoursRow}>
               <View style={{ flex: 1 }}>
-                <TimePickerTile label="Start" time={quietHoursStart} onSet={setQuietHoursStart} />
+                <TimePickerTile label="Bắt đầu" time={quietHoursStart} onSet={setQuietHoursStart} />
               </View>
-              <Text style={styles.toLabel}>to</Text>
+              <Text style={styles.toLabel}>đến</Text>
               <View style={{ flex: 1 }}>
-                <TimePickerTile label="End" time={quietHoursEnd} onSet={setQuietHoursEnd} />
+                <TimePickerTile label="Kết thúc" time={quietHoursEnd} onSet={setQuietHoursEnd} />
               </View>
             </View>
           )}
@@ -330,10 +339,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
     backgroundColor: Colors.surface,
   },
+  backButton: { marginRight: 12 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   scroll: { padding: 16 },
 
