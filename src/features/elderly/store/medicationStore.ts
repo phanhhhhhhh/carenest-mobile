@@ -94,7 +94,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       const resp = await api.get(`/users/${userId}/medications`, { signal });
       if (!Array.isArray(resp.data)) {
         console.warn('[schema] MedicationList: expected an array — keeping previous state');
-        set({ isLoading: false, error: 'Unexpected response from server' });
+        set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
       let items = safeParseList(MedicationSchema, resp.data, 'MedicationList').map(toMedicationItem);
@@ -116,7 +116,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       scheduleFrom(items);
     } catch (e) {
       if (isCancelled(e)) return;
-      set({ isLoading: false, error: `Error loading medication: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Lỗi khi tải thuốc: ${getErrorMessage(e)}` });
     }
   },
 
@@ -139,7 +139,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       await api.post('/medications', data);
       await get().load();
     } catch (e) {
-      set({ error: `Error adding medication: ${getErrorMessage(e)}` });
+      set({ error: `Lỗi khi thêm thuốc: ${getErrorMessage(e)}` });
     }
   },
 
@@ -157,7 +157,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       await api.patch(`/medications/${medicationId}`, data);
       await get().load();
     } catch (e) {
-      set({ error: `Error updating medication: ${getErrorMessage(e)}` });
+      set({ error: `Lỗi khi cập nhật thuốc: ${getErrorMessage(e)}` });
     }
   },
 
@@ -167,7 +167,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       await get().load();
       return true;
     } catch (e) {
-      showErrorToast(`Could not delete medication: ${getErrorMessage(e)}`);
+      showErrorToast(`Không thể xóa thuốc: ${getErrorMessage(e)}`);
       return false;
     }
   },
@@ -179,7 +179,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       const logs = safeParseList(MedicationLogSchema, resp.data, 'MedicationLog').map(toLogEntry);
       set({ logs });
     } catch (e) {
-      set({ logsError: `Error loading history: ${getErrorMessage(e)}` });
+      set({ logsError: `Lỗi khi tải lịch sử: ${getErrorMessage(e)}` });
     }
   },
 
@@ -233,7 +233,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
       const revertIdx = reverted.findIndex((m) => m.id === medicationId);
       if (revertIdx >= 0) reverted[revertIdx] = { ...reverted[revertIdx], taken: previousTaken };
       set({ items: reverted });
-      onError?.(`Error: ${getErrorMessage(e)}`);
+      onError?.(`Lỗi: ${getErrorMessage(e)}`);
       return false;
     }
   },

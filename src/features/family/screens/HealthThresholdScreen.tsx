@@ -7,11 +7,12 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
+
   Modal,
   Switch,
   Image,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -71,7 +72,7 @@ export default function HealthThresholdScreen() {
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
   const elderlyId = useFamilyDashboardStore((s) => s.elderlyId());
-  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Loved one';
+  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Người thân';
 
   const isLoading = useHealthThresholdStore((s) => s.isLoading);
   const isSaving = useHealthThresholdStore((s) => s.isSaving);
@@ -158,7 +159,7 @@ export default function HealthThresholdScreen() {
       setPendingRecs(recs);
       setRecommendDialogVisible(true);
     } else {
-      Alert.alert('', 'No recommendations available');
+      Alert.alert('', 'Không có đề xuất nào');
     }
   };
 
@@ -184,7 +185,7 @@ export default function HealthThresholdScreen() {
         <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
       </TouchableOpacity>
       <Text style={styles.appBarTitle} numberOfLines={1}>
-        Health Thresholds — {elderlyName}
+        Ngưỡng cảnh báo sức khỏe — {elderlyName}
       </Text>
       <View style={styles.backBtn} />
     </View>
@@ -200,7 +201,7 @@ export default function HealthThresholdScreen() {
             style={{ width: 140, height: 140 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>No elderly person linked yet</Text>
+          <Text style={styles.emptyText}>Chưa liên kết với người cao tuổi nào</Text>
         </View>
       </SafeAreaView>
     );
@@ -223,8 +224,8 @@ export default function HealthThresholdScreen() {
               <Ionicons name="sparkles" size={20} color={Colors.success} />
             </View>
             <Text style={styles.recommendText}>
-              AI can analyze the health profile and suggest personalized thresholds for each
-              metric.
+              AI có thể phân tích hồ sơ sức khỏe và đề xuất ngưỡng cảnh báo phù hợp cho từng
+              chỉ số.
             </Text>
             <TouchableOpacity
               style={styles.recommendBtn}
@@ -232,16 +233,16 @@ export default function HealthThresholdScreen() {
               onPress={handleRecommend}
             >
               <Ionicons name="sparkles" size={16} color="#FFFFFF" />
-              <Text style={styles.recommendBtnText}>Recommend</Text>
+              <Text style={styles.recommendBtnText}>Đề xuất</Text>
             </TouchableOpacity>
           </View>
 
           <View style={{ height: 20 }} />
 
-          <Text style={styles.sectionTitle}>Alert Thresholds</Text>
+          <Text style={styles.sectionTitle}>Ngưỡng cảnh báo</Text>
           <View style={{ height: 4 }} />
           <Text style={styles.sectionSubtitle}>
-            Set personal limits — AI will alert when exceeded
+            Đặt giới hạn cá nhân — AI sẽ cảnh báo khi vượt ngưỡng
           </Text>
           <View style={{ height: 16 }} />
 
@@ -277,13 +278,13 @@ export default function HealthThresholdScreen() {
                 <View style={{ width: 10 }} />
                 <Text style={styles.sheetTitle}>
                   {sheetExisting
-                    ? `Edit ${getDisplayType({ metricType: sheetMetricType } as ThresholdItem)} Threshold`
-                    : `Set ${getDisplayType({ metricType: sheetMetricType } as ThresholdItem)} Threshold`}
+                    ? `Chỉnh sửa ngưỡng ${getDisplayType({ metricType: sheetMetricType } as ThresholdItem)}`
+                    : `Đặt ngưỡng ${getDisplayType({ metricType: sheetMetricType } as ThresholdItem)}`}
                 </Text>
               </View>
               <View style={{ height: 6 }} />
               <Text style={styles.sheetUnit}>
-                Unit: {getUnit({ metricType: sheetMetricType } as ThresholdItem)}
+                Đơn vị: {getUnit({ metricType: sheetMetricType } as ThresholdItem)}
               </Text>
               <View style={{ height: 20 }} />
 
@@ -291,13 +292,13 @@ export default function HealthThresholdScreen() {
                 <>
                   <View style={styles.fieldRow}>
                     <NumberField
-                      label="Systolic Min"
+                      label="Tâm thu Tối thiểu"
                       value={minValue}
                       onChangeText={setMinValue}
                     />
                     <View style={{ width: 12 }} />
                     <NumberField
-                      label="Diastolic Min"
+                      label="Tâm trương Tối thiểu"
                       value={minValueSecondary}
                       onChangeText={setMinValueSecondary}
                     />
@@ -305,13 +306,13 @@ export default function HealthThresholdScreen() {
                   <View style={{ height: 12 }} />
                   <View style={styles.fieldRow}>
                     <NumberField
-                      label="Systolic Max"
+                      label="Tâm thu Tối đa"
                       value={maxValue}
                       onChangeText={setMaxValue}
                     />
                     <View style={{ width: 12 }} />
                     <NumberField
-                      label="Diastolic Max"
+                      label="Tâm trương Tối đa"
                       value={maxValueSecondary}
                       onChangeText={setMaxValueSecondary}
                     />
@@ -319,15 +320,15 @@ export default function HealthThresholdScreen() {
                 </>
               ) : (
                 <View style={styles.fieldRow}>
-                  <NumberField label="Min Value" value={minValue} onChangeText={setMinValue} />
+                  <NumberField label="Giá trị Tối thiểu" value={minValue} onChangeText={setMinValue} />
                   <View style={{ width: 12 }} />
-                  <NumberField label="Max Value" value={maxValue} onChangeText={setMaxValue} />
+                  <NumberField label="Giá trị Tối đa" value={maxValue} onChangeText={setMaxValue} />
                 </View>
               )}
 
               <View style={{ height: 14 }} />
               <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Alert family when out of range</Text>
+                <Text style={styles.switchLabel}>Cảnh báo gia đình khi vượt ngưỡng</Text>
                 <Switch
                   value={alertFamily}
                   onValueChange={setAlertFamily}
@@ -338,7 +339,7 @@ export default function HealthThresholdScreen() {
               <View style={{ height: 20 }} />
               <TouchableOpacity style={styles.saveBtn} onPress={handleSaveSheet}>
                 <Text style={styles.saveBtnText}>
-                  {sheetExisting ? 'Update' : 'Save Threshold'}
+                  {sheetExisting ? 'Cập nhật' : 'Lưu ngưỡng'}
                 </Text>
               </TouchableOpacity>
 
@@ -346,7 +347,7 @@ export default function HealthThresholdScreen() {
                 <>
                   <View style={{ height: 10 }} />
                   <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteSheet}>
-                    <Text style={styles.deleteBtnText}>Delete Threshold</Text>
+                    <Text style={styles.deleteBtnText}>Xóa ngưỡng</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -367,12 +368,12 @@ export default function HealthThresholdScreen() {
             <View style={styles.dialogTitleRow}>
               <Ionicons name="sparkles" size={24} color={Colors.primary} />
               <View style={{ width: 8 }} />
-              <Text style={styles.dialogTitle}>AI Recommendations</Text>
+              <Text style={styles.dialogTitle}>Đề xuất từ AI</Text>
             </View>
             <View style={{ height: 12 }} />
             <Text style={styles.dialogBody}>
-              Gemini AI analyzed the health profile and suggests the following thresholds. Apply
-              them?
+              Gemini AI đã phân tích hồ sơ sức khỏe và đề xuất các ngưỡng sau. Áp dụng
+              chúng?
             </Text>
             <View style={{ height: 20 }} />
             <View style={styles.dialogActions}>
@@ -380,11 +381,11 @@ export default function HealthThresholdScreen() {
                 style={styles.dialogCancelBtn}
                 onPress={() => setRecommendDialogVisible(false)}
               >
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <View style={{ width: 8 }} />
               <TouchableOpacity style={styles.dialogApplyBtn} onPress={applyAllRecommendations}>
-                <Text style={styles.dialogApplyText}>Apply All</Text>
+                <Text style={styles.dialogApplyText}>Áp dụng tất cả</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -448,7 +449,7 @@ function ThresholdCard({
         <Text style={styles.cardTitle}>{displayType}</Text>
         <View style={{ height: 3 }} />
         <Text style={[styles.cardSubtitle, { color: isSet ? Colors.textSecondary : Colors.textHint }]}>
-          {isSet ? `${getRangeDisplay(existing)} ${unit}` : 'Tap to set range'}
+          {isSet ? `${getRangeDisplay(existing)} ${unit}` : 'Chạm để đặt phạm vi'}
         </Text>
       </View>
       <View
@@ -458,7 +459,7 @@ function ThresholdCard({
         ]}
       >
         <Text style={[styles.statusPillText, { color: isSet ? Colors.success : Colors.textHint }]}>
-          {isSet ? 'Set' : 'Not set'}
+          {isSet ? 'Đã đặt' : 'Chưa đặt'}
         </Text>
       </View>
       <View style={{ width: 4 }} />

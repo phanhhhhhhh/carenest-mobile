@@ -5,10 +5,11 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
+
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -73,7 +74,7 @@ export default function PinSetupScreen() {
   const handleSubmit = async (pinStr?: string) => {
     const finalPin = pinStr ?? pin.join('');
     if (finalPin.length !== PIN_LENGTH) {
-      Alert.alert('Error', 'Please enter a 4-digit PIN');
+      Alert.alert('Lỗi', 'Vui lòng nhập mã PIN gồm 4 chữ số');
       return;
     }
 
@@ -83,7 +84,7 @@ export default function PinSetupScreen() {
       setStep('confirm');
     } else {
       if (finalPin !== firstPin) {
-        Alert.alert('Error', 'PINs do not match. Please try again.', [
+        Alert.alert('Lỗi', 'Mã PIN không khớp. Vui lòng thử lại.', [
           { text: 'OK', onPress: () => { clearPin(); setStep('setup'); } },
         ]);
         return;
@@ -93,7 +94,7 @@ export default function PinSetupScreen() {
       if (ok) {
         useAuthStore.getState().completeLogin();
       } else {
-        Alert.alert('Error', 'Could not set up PIN. Please try again.', [
+        Alert.alert('Lỗi', 'Không thể thiết lập mã PIN. Vui lòng thử lại.', [
           { text: 'OK', onPress: clearPin },
         ]);
       }
@@ -113,7 +114,7 @@ export default function PinSetupScreen() {
             style={styles.backBtn}
             activeOpacity={0.7}
           >
-            <Text style={styles.backText}>{'← Back'}</Text>
+            <Text style={styles.backText}>{'← Quay lại'}</Text>
           </TouchableOpacity>
 
           <View style={styles.stepRow}>
@@ -123,12 +124,12 @@ export default function PinSetupScreen() {
           </View>
 
           <Text style={styles.title}>
-            {step === 'setup' ? 'Set Up PIN' : 'Confirm PIN'}
+            {step === 'setup' ? 'Thiết lập mã PIN' : 'Xác nhận mã PIN'}
           </Text>
           <Text style={styles.subtitle}>
             {step === 'setup'
-              ? 'Create a 4-digit PIN to secure your app'
-              : 'Re-enter your PIN to confirm'}
+              ? 'Tạo mã PIN gồm 4 chữ số để bảo vệ ứng dụng của bạn'
+              : 'Nhập lại mã PIN để xác nhận'}
           </Text>
 
           <View style={styles.pinRow}>
@@ -158,10 +159,10 @@ export default function PinSetupScreen() {
           >
             <Text style={styles.btnText}>
               {loading
-                ? 'Setting up...'
+                ? 'Đang thiết lập...'
                 : step === 'setup'
-                  ? 'Continue'
-                  : 'Confirm PIN'}
+                  ? 'Tiếp tục'
+                  : 'Xác nhận mã PIN'}
             </Text>
           </TouchableOpacity>
 
@@ -175,7 +176,7 @@ export default function PinSetupScreen() {
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.resetText}>Start over</Text>
+              <Text style={styles.resetText}>Bắt đầu lại</Text>
             </TouchableOpacity>
           )}
         </View>

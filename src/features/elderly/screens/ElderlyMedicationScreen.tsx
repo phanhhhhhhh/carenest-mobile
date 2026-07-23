@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  Alert,
+
   FlatList,
   Image,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -26,7 +27,7 @@ import type { MedicationItem } from '../../../shared/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
 
@@ -125,12 +126,12 @@ export default function ElderlyMedicationScreen() {
 
   const confirmDelete = (item: MedicationItem) => {
     Alert.alert(
-      'Delete medication',
-      `Are you sure you want to delete "${item.name}"?`,
+      'Xóa thuốc',
+      `Bạn có chắc muốn xóa "${item.name}" không?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => {
             deleteMedication(item.id);
@@ -195,7 +196,7 @@ export default function ElderlyMedicationScreen() {
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textHint} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => load()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -239,14 +240,14 @@ export default function ElderlyMedicationScreen() {
 
           <View style={styles.progressCard}>
             <View style={styles.progressHeaderRow}>
-              <Text style={styles.progressHeaderText}>Today</Text>
+              <Text style={styles.progressHeaderText}>Hôm nay</Text>
               <View style={styles.progressPct}>
                 <Text style={styles.progressPctText}>{Math.trunc(progress * 100)}%</Text>
               </View>
             </View>
             <View style={{ height: 8 }} />
             <Text style={styles.progressBig}>
-              Taken {takenCount} / {totalCount} doses
+              Đã uống {takenCount} / {totalCount} liều
             </Text>
             <View style={{ height: 14 }} />
             <View style={styles.progressTrack}>
@@ -255,10 +256,10 @@ export default function ElderlyMedicationScreen() {
             <View style={{ height: 10 }} />
             <Text style={styles.progressSub}>
               {totalCount === 0
-                ? 'Add medication to start tracking'
+                ? 'Thêm thuốc để bắt đầu theo dõi'
                 : takenCount === totalCount
-                  ? 'Great! You have taken all medication today'
-                  : `${totalCount - takenCount} doses remaining`}
+                  ? 'Tuyệt vời! Bạn đã uống hết thuốc hôm nay'
+                  : `Còn ${totalCount - takenCount} liều chưa uống`}
             </Text>
           </View>
 
@@ -267,7 +268,7 @@ export default function ElderlyMedicationScreen() {
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Hôm nay</Text>
             <Text style={styles.sectionCount}>
-              {takenCount}/{totalCount} taken
+              {takenCount}/{totalCount} đã uống
             </Text>
           </View>
 
@@ -281,9 +282,9 @@ export default function ElderlyMedicationScreen() {
                 resizeMode="contain"
               />
               <View style={{ height: 4 }} />
-              <Text style={styles.emptyText}>No medications yet</Text>
+              <Text style={styles.emptyText}>Chưa có thuốc nào</Text>
               <View style={{ height: 4 }} />
-              <Text style={styles.emptyHint}>Press + to add medication</Text>
+              <Text style={styles.emptyHint}>Nhấn + để thêm thuốc</Text>
             </View>
           ) : (
             items.map((m) => (
@@ -323,7 +324,7 @@ export default function ElderlyMedicationScreen() {
               <View style={styles.sheetHandle} />
               <View style={{ height: 16 }} />
               <Text style={styles.sheetTitle}>
-                {editing ? 'Edit medication' : 'Add new medication'}
+                {editing ? 'Sửa thuốc' : 'Thêm thuốc mới'}
               </Text>
               <View style={{ height: 20 }} />
 
@@ -331,7 +332,7 @@ export default function ElderlyMedicationScreen() {
                 <Ionicons name="medkit" size={18} color={Colors.primary} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Medication name (e.g. Metformin)"
+                  placeholder="Tên thuốc (ví dụ: Metformin)"
                   placeholderTextColor={Colors.textHint}
                   value={name}
                   onChangeText={setName}
@@ -344,7 +345,7 @@ export default function ElderlyMedicationScreen() {
                 <Ionicons name="scale-outline" size={18} color={Colors.primary} style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Dosage (e.g. 500mg)"
+                  placeholder="Liều lượng (ví dụ: 500mg)"
                   placeholderTextColor={Colors.textHint}
                   value={dosage}
                   onChangeText={setDosage}
@@ -356,7 +357,7 @@ export default function ElderlyMedicationScreen() {
               <View style={styles.rowBetween}>
                 <View style={styles.rowStart}>
                   <Ionicons name="time-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.label}>Medication time</Text>
+                  <Text style={styles.label}>Giờ uống thuốc</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.addTimeBtn}
@@ -367,7 +368,7 @@ export default function ElderlyMedicationScreen() {
                   }}
                 >
                   <Ionicons name="add" size={18} color={Colors.primary} />
-                  <Text style={styles.addTimeBtnText}>Add time</Text>
+                  <Text style={styles.addTimeBtnText}>Thêm giờ</Text>
                 </TouchableOpacity>
               </View>
 
@@ -388,7 +389,7 @@ export default function ElderlyMedicationScreen() {
               )}
 
               <View style={{ height: 14 }} />
-              <Text style={styles.label}>Days of week</Text>
+              <Text style={styles.label}>Ngày trong tuần</Text>
               <View style={{ height: 8 }} />
               <View style={styles.daysRow}>
                 {DAY_LABELS.map((label, i) => {
@@ -418,7 +419,7 @@ export default function ElderlyMedicationScreen() {
                 />
                 <TextInput
                   style={styles.input}
-                  placeholder="Instructions (optional, e.g. Take after meals)"
+                  placeholder="Hướng dẫn (không bắt buộc, ví dụ: Uống sau khi ăn)"
                   placeholderTextColor={Colors.textHint}
                   value={instructions}
                   onChangeText={setInstructions}
@@ -432,7 +433,7 @@ export default function ElderlyMedicationScreen() {
                 onPress={handleSave}
                 disabled={!name.trim() || !dosage.trim()}
               >
-                <Text style={styles.saveBtnText}>{editing ? 'Update' : 'Add medication'}</Text>
+                <Text style={styles.saveBtnText}>{editing ? 'Cập nhật' : 'Thêm thuốc'}</Text>
               </TouchableOpacity>
 
               <View style={{ height: 24 }} />
@@ -453,7 +454,7 @@ export default function ElderlyMedicationScreen() {
           onPress={() => setTimePickerVisible(false)}
         >
           <TouchableOpacity activeOpacity={1} style={styles.timePickerSheet}>
-            <Text style={styles.modalTitle}>Select time</Text>
+            <Text style={styles.modalTitle}>Chọn giờ</Text>
             <View style={{ height: 12 }} />
             <View style={styles.timePickerColumns}>
               <FlatList
@@ -500,7 +501,7 @@ export default function ElderlyMedicationScreen() {
             </View>
             <View style={{ height: 16 }} />
             <TouchableOpacity style={styles.timePickerConfirm} onPress={confirmAddTime}>
-              <Text style={styles.timePickerConfirmText}>Add</Text>
+              <Text style={styles.timePickerConfirmText}>Thêm</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>

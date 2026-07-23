@@ -58,7 +58,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
     try {
       const userId = await getUserId();
       if (!userId) {
-        set({ isLoading: false, error: 'Not logged in' });
+        set({ isLoading: false, error: 'Chưa đăng nhập' });
         return;
       }
       const resp = await api.get(`/elderly-profiles/${userId}`, { signal });
@@ -69,7 +69,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
       const status = getStatus(e);
       set({
         isLoading: false,
-        error: status === 404 ? null : 'Error loading profile',
+        error: status === 404 ? null : 'Lỗi khi tải hồ sơ',
       });
     }
   },
@@ -79,7 +79,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
     try {
       const userId = await getUserId();
       if (!userId) {
-        set({ isLoading: false, error: 'Not logged in' });
+        set({ isLoading: false, error: 'Chưa đăng nhập' });
         return [];
       }
       const resp = await api.get(`/elderly-profiles/${userId}`);
@@ -93,7 +93,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
       set({ isLoading: false });
       return contacts;
     } catch (e) {
-      set({ isLoading: false, error: `Error loading contacts: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Lỗi khi tải danh bạ khẩn cấp: ${getErrorMessage(e)}` });
       return [];
     }
   },
@@ -103,7 +103,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
     try {
       const userId = await getUserId();
       if (!userId) {
-        set({ isUpdating: false, error: 'Not logged in' });
+        set({ isUpdating: false, error: 'Chưa đăng nhập' });
         return false;
       }
       await api.put(`/elderly-profiles/${userId}`, {
@@ -117,7 +117,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
       set({ isUpdating: false });
       return true;
     } catch (e) {
-      set({ isUpdating: false, error: `Update error: ${getErrorMessage(e)}` });
+      set({ isUpdating: false, error: `Lỗi cập nhật: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -138,7 +138,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
       await api.put(`/elderly-profiles/${userId}`, data);
       await get().load();
     } catch (e) {
-      set({ isUpdating: false, error: `Update error: ${getErrorMessage(e)}` });
+      set({ isUpdating: false, error: `Lỗi cập nhật: ${getErrorMessage(e)}` });
     }
   },
 }));

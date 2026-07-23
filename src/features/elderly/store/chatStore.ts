@@ -85,7 +85,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set({ isLoading: false, aiAvailable: false, messages: [] });
         return;
       }
-      set({ isLoading: false, error: `Could not load chat history: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Không thể tải lịch sử trò chuyện: ${getErrorMessage(e)}` });
     }
   },
 
@@ -120,14 +120,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       let fallback: string;
       if (getStatus(e) === 404) {
         set({ isSending: false, messages: msgs, aiAvailable: false });
-        fallback = 'AI service is temporarily unavailable.';
+        fallback = 'Dịch vụ AI tạm thời không khả dụng.';
       } else {
         set({
           isSending: false,
           messages: msgs,
-          error: `Could not send message: ${getErrorMessage(e)}`,
+          error: `Không thể gửi tin nhắn: ${getErrorMessage(e)}`,
         });
-        fallback = 'Sorry, I cannot connect right now. Please try again later.';
+        fallback = 'Xin lỗi, hiện không thể kết nối. Vui lòng thử lại sau.';
       }
 
       const errorMsg: ChatMessage = {
@@ -146,7 +146,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       await api.delete('/chat/history');
       set({ messages: [], totalMessages: 0, hasMore: false });
     } catch (e) {
-      showErrorToast(`Could not clear chat history: ${getErrorMessage(e)}`);
+      showErrorToast(`Không thể xóa lịch sử trò chuyện: ${getErrorMessage(e)}`);
     }
   },
 
@@ -188,7 +188,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ isSending: false, messages: [...get().messages, aiMsg] });
       return aiMsg.content;
     } catch (e) {
-      set({ isSending: false, error: `Voice processing failed: ${getErrorMessage(e)}` });
+      set({ isSending: false, error: `Xử lý giọng nói thất bại: ${getErrorMessage(e)}` });
       return null;
     }
   },

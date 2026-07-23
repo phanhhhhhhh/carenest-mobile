@@ -10,10 +10,11 @@ import {
   Switch,
   TextInput,
   Modal,
-  Alert,
+
   Image,
   Linking,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -38,7 +39,7 @@ export default function CameraScreen() {
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
   const elderlyId = useFamilyDashboardStore((s) => s.elderlyId());
-  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Loved one';
+  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Người thân';
 
   const isLoading = useCameraStore((s) => s.isLoading);
   const error = useCameraStore((s) => s.error);
@@ -120,13 +121,13 @@ export default function CameraScreen() {
         if (supported) {
           await Linking.openURL(url);
         } else {
-          Alert.alert('', `Stream URL: ${url}`);
+          Alert.alert('', `Đường dẫn xem trực tiếp: ${url}`);
         }
       } catch {
-        Alert.alert('', `Stream URL: ${url}`);
+        Alert.alert('', `Đường dẫn xem trực tiếp: ${url}`);
       }
     } else {
-      Alert.alert('', 'Live stream not available');
+      Alert.alert('', 'Không có luồng xem trực tiếp');
     }
     clearLiveStream();
   };
@@ -134,14 +135,14 @@ export default function CameraScreen() {
   const handleSnapshot = async () => {
     if (!elderlyId) return;
     const url = await captureSosSnapshot(elderlyId);
-    Alert.alert('', url ? 'Snapshot captured successfully!' : 'No camera available for snapshot');
+    Alert.alert('', url ? 'Đã chụp ảnh thành công!' : 'Không có camera nào để chụp ảnh');
   };
 
   const handleVoiceToggle = async (deviceId: number, currentlyActive: boolean) => {
     const ok = currentlyActive ? await stopVoiceCall(deviceId) : await startVoiceCall(deviceId);
     Alert.alert(
       '',
-      ok ? (currentlyActive ? 'Voice call ended' : 'Voice call started') : 'Could not change voice state',
+      ok ? (currentlyActive ? 'Đã kết thúc cuộc gọi thoại' : 'Đã bắt đầu cuộc gọi thoại') : 'Không thể thay đổi trạng thái gọi thoại',
     );
   };
 
@@ -150,7 +151,7 @@ export default function CameraScreen() {
     const ok = await setPrivacyMode(elderlyId, deviceId, !currentlyEnabled);
     Alert.alert(
       '',
-      ok ? `Privacy mode ${!currentlyEnabled ? 'ON' : 'OFF'}` : 'Could not change privacy mode',
+      ok ? `Chế độ riêng tư ${!currentlyEnabled ? 'BẬT' : 'TẮT'}` : 'Không thể thay đổi chế độ riêng tư',
     );
   };
 
@@ -159,7 +160,7 @@ export default function CameraScreen() {
     const ok = await toggleMotionDetection(elderlyId, deviceId, enabled);
     Alert.alert(
       '',
-      ok ? `Motion detection ${enabled ? 'ON' : 'OFF'}` : 'Could not update motion detection',
+      ok ? `Phát hiện chuyển động ${enabled ? 'BẬT' : 'TẮT'}` : 'Không thể cập nhật phát hiện chuyển động',
     );
   };
 
@@ -189,13 +190,13 @@ export default function CameraScreen() {
   const triggerLabel = (trigger: string): string => {
     switch (trigger) {
       case 'SOS':
-        return 'SOS Emergency Snapshot';
+        return 'Ảnh chụp khẩn cấp SOS';
       case 'CHECK_IN':
-        return 'Scheduled Check-in';
+        return 'Kiểm tra định kỳ';
       case 'MOTION':
-        return 'Motion Detected';
+        return 'Phát hiện chuyển động';
       default:
-        return 'Snapshot';
+        return 'Ảnh chụp';
     }
   };
 
@@ -231,15 +232,15 @@ export default function CameraScreen() {
     const diffMinutes = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMinutes < 1) return 'Just now';
-    if (diffHours < 1) return `${diffMinutes}m ago`;
+    if (diffMinutes < 1) return 'Vừa xong';
+    if (diffHours < 1) return `${diffMinutes} phút trước`;
     const pad = (n: number) => String(n).padStart(2, '0');
     const isSameDay = dt.toDateString() === new Date().toDateString();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const isYesterday = dt.toDateString() === yesterday.toDateString();
-    if (isSameDay) return `Today ${dt.getHours()}:${pad(dt.getMinutes())}`;
-    if (isYesterday) return `Yesterday ${dt.getHours()}:${pad(dt.getMinutes())}`;
+    if (isSameDay) return `Hôm nay ${dt.getHours()}:${pad(dt.getMinutes())}`;
+    if (isYesterday) return `Hôm qua ${dt.getHours()}:${pad(dt.getMinutes())}`;
     return `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
   };
 
@@ -268,11 +269,11 @@ export default function CameraScreen() {
       <View style={styles.statusBar}>
         <View style={[styles.statusDot, { backgroundColor: indicatorColor }]} />
         <Text style={styles.statusText} numberOfLines={1}>
-          {status.hasCamera ? status.statusText : 'No cameras linked'}
+          {status.hasCamera ? status.statusText : 'Chưa liên kết camera nào'}
         </Text>
         {status.hasCamera && (
           <Text style={styles.statusCount}>
-            {status.cameraCount} camera{status.cameraCount > 1 ? 's' : ''}
+            {status.cameraCount} camera
           </Text>
         )}
       </View>
@@ -306,7 +307,7 @@ export default function CameraScreen() {
         <View style={styles.heroActionsRow}>
           <ActionBtn
             icon="camera"
-            label="Snapshot"
+            label="Ảnh chụp"
             color={Colors.secondary}
             onPress={handleSnapshot}
             style={{ flex: 1 }}
@@ -336,7 +337,7 @@ export default function CameraScreen() {
     <View style={styles.tabBar}>
       <TouchableOpacity style={styles.tabItem} onPress={() => setTab(0)}>
         <Text style={[styles.tabLabel, tab === 0 && styles.tabLabelActive]}>
-          {`Check-in (${timeline.length})`}
+          {`Kiểm tra (${timeline.length})`}
         </Text>
         <View style={[styles.tabIndicator, tab === 0 && styles.tabIndicatorActive]} />
       </TouchableOpacity>
@@ -358,7 +359,7 @@ export default function CameraScreen() {
         <View style={{ height: 16 }} />
         <TouchableOpacity style={styles.retryBtn} onPress={() => elderlyId && load(elderlyId)}>
           <Ionicons name="refresh" size={18} color="#FFFFFF" />
-          <Text style={styles.retryBtnText}>Retry</Text>
+          <Text style={styles.retryBtnText}>Thử lại</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -370,7 +371,7 @@ export default function CameraScreen() {
         <View style={styles.center}>
           <Ionicons name="images-outline" size={56} color={Colors.textHint} />
           <View style={{ height: 12 }} />
-          <Text style={styles.emptyText}>No check-in history yet</Text>
+          <Text style={styles.emptyText}>Chưa có lịch sử kiểm tra</Text>
         </View>
       );
     }
@@ -408,13 +409,13 @@ export default function CameraScreen() {
               resizeMode="contain"
             />
             <View style={{ height: 4 }} />
-            <Text style={styles.emptyDevicesTitle}>No cameras linked</Text>
+            <Text style={styles.emptyDevicesTitle}>Chưa liên kết camera nào</Text>
             <View style={{ height: 6 }} />
-            <Text style={styles.emptyDevicesSubtitle}>Link an Imou camera to start monitoring</Text>
+            <Text style={styles.emptyDevicesSubtitle}>Liên kết camera Imou để bắt đầu giám sát</Text>
             <View style={{ height: 24 }} />
             <TouchableOpacity style={styles.linkBtn} onPress={showBindDialog}>
               <Ionicons name="link-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.linkBtnText}>Link Camera</Text>
+              <Text style={styles.linkBtnText}>Liên kết camera</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -443,7 +444,7 @@ export default function CameraScreen() {
         ))}
         <TouchableOpacity style={styles.linkAnotherBtn} onPress={showBindDialog}>
           <Ionicons name="link-outline" size={18} color={Colors.primary} />
-          <Text style={styles.linkAnotherBtnText}>Link Another Camera</Text>
+          <Text style={styles.linkAnotherBtnText}>Liên kết camera khác</Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -457,7 +458,7 @@ export default function CameraScreen() {
         <View style={styles.center}>
           <Ionicons name="people-outline" size={56} color={Colors.textHint} />
           <View style={{ height: 16 }} />
-          <Text style={styles.emptyText}>No elderly person linked yet</Text>
+          <Text style={styles.emptyText}>Chưa liên kết người thân nào</Text>
         </View>
       </SafeAreaView>
     );
@@ -487,15 +488,15 @@ export default function CameraScreen() {
       <Modal visible={bindVisible} transparent animationType="fade" onRequestClose={() => setBindVisible(false)}>
         <View style={styles.dialogOverlay}>
           <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Link Camera</Text>
+            <Text style={styles.dialogTitle}>Liên kết camera</Text>
             <View style={{ height: 12 }} />
-            <Text style={styles.dialogBody}>Enter the camera serial number (device SN) and a label.</Text>
+            <Text style={styles.dialogBody}>Nhập số seri camera (SN thiết bị) và một nhãn.</Text>
             <View style={{ height: 16 }} />
             <View style={styles.inputWrap}>
               <Ionicons name="qr-code-outline" size={18} color={Colors.primary} />
               <TextInput
                 style={styles.input}
-                placeholder="Device SN  (e.g., 5L0A1B2C3D4E5F6G)"
+                placeholder="Số seri thiết bị (VD: 5L0A1B2C3D4E5F6G)"
                 placeholderTextColor={Colors.textHint}
                 value={snValue}
                 onChangeText={setSnValue}
@@ -506,7 +507,7 @@ export default function CameraScreen() {
               <Ionicons name="pricetag-outline" size={18} color={Colors.primary} />
               <TextInput
                 style={styles.input}
-                placeholder="Label (optional)  (e.g., Living Room)"
+                placeholder="Nhãn (tùy chọn) (VD: Phòng khách)"
                 placeholderTextColor={Colors.textHint}
                 value={labelValue}
                 onChangeText={setLabelValue}
@@ -515,11 +516,11 @@ export default function CameraScreen() {
             <View style={{ height: 20 }} />
             <View style={styles.dialogActions}>
               <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setBindVisible(false)}>
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <View style={{ width: 8 }} />
               <TouchableOpacity style={styles.dialogApplyBtn} onPress={confirmBind}>
-                <Text style={styles.dialogApplyText}>Link</Text>
+                <Text style={styles.dialogApplyText}>Liên kết</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -534,17 +535,17 @@ export default function CameraScreen() {
       >
         <View style={styles.dialogOverlay}>
           <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Remove Camera?</Text>
+            <Text style={styles.dialogTitle}>Xóa camera?</Text>
             <View style={{ height: 12 }} />
-            <Text style={styles.dialogBody}>This will disconnect the camera from the account.</Text>
+            <Text style={styles.dialogBody}>Thao tác này sẽ ngắt kết nối camera khỏi tài khoản.</Text>
             <View style={{ height: 20 }} />
             <View style={styles.dialogActions}>
               <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setUnbindTarget(null)}>
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <View style={{ width: 8 }} />
               <TouchableOpacity style={[styles.dialogApplyBtn, { backgroundColor: Colors.error }]} onPress={doUnbind}>
-                <Text style={styles.dialogApplyText}>Remove</Text>
+                <Text style={styles.dialogApplyText}>Xóa</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -568,7 +569,7 @@ export default function CameraScreen() {
               }}
             >
               <Ionicons name="eye-off-outline" size={18} color={Colors.textSecondary} />
-              <Text style={styles.menuItemText}>Toggle Privacy</Text>
+              <Text style={styles.menuItemText}>Bật/tắt chế độ riêng tư</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuItem}
@@ -579,7 +580,7 @@ export default function CameraScreen() {
               }}
             >
               <Ionicons name="close-circle-outline" size={18} color={Colors.error} />
-              <Text style={[styles.menuItemText, { color: Colors.error }]}>Remove Camera</Text>
+              <Text style={[styles.menuItemText, { color: Colors.error }]}>Xóa camera</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -681,7 +682,7 @@ function CameraCard({
       ? 'rgba(67,160,71,0.1)'
       : 'rgba(229,57,53,0.08)';
   const iconColor = privacy ? Colors.textHint : online ? Colors.success : Colors.error;
-  const statusLabel = privacy ? 'Privacy mode' : online ? 'Online' : 'Offline';
+  const statusLabel = privacy ? 'Chế độ riêng tư' : online ? 'Trực tuyến' : 'Ngoại tuyến';
   const statusColor = privacy ? Colors.textSecondary : online ? Colors.success : Colors.error;
 
   return (
@@ -704,7 +705,7 @@ function CameraCard({
 
       <View style={styles.motionRow}>
         <Ionicons name="walk-outline" size={18} color={Colors.textSecondary} />
-        <Text style={styles.motionLabel}>Motion Detection</Text>
+        <Text style={styles.motionLabel}>Phát hiện chuyển động</Text>
         <Switch
           value={cam.motionDetectionEnabled}
           onValueChange={onMotionToggle}
@@ -715,17 +716,17 @@ function CameraCard({
       <View style={{ height: 10 }} />
 
       <View style={styles.cardActionsWrap}>
-        <ActionBtn icon="tv-outline" label="Live View" color={Colors.primary} onPress={onLiveView} />
-        <ActionBtn icon="camera" label="Snapshot" color={Colors.secondary} onPress={onSnapshot} />
+        <ActionBtn icon="tv-outline" label="Xem trực tiếp" color={Colors.primary} onPress={onLiveView} />
+        <ActionBtn icon="camera" label="Ảnh chụp" color={Colors.secondary} onPress={onSnapshot} />
         <ActionBtn
           icon={voiceActive ? 'mic-off' : 'mic'}
-          label={voiceActive ? 'End Call' : 'Talk'}
+          label={voiceActive ? 'Kết thúc' : 'Gọi thoại'}
           color={voiceActive ? Colors.error : Colors.warning}
           onPress={onVoiceToggle}
         />
         <ActionBtn
           icon={privacy ? 'eye' : 'eye-off'}
-          label={privacy ? 'Show' : 'Privacy'}
+          label={privacy ? 'Hiện' : 'Riêng tư'}
           color={Colors.textSecondary}
           onPress={onPrivacyToggle}
         />

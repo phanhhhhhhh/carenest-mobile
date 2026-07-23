@@ -7,12 +7,14 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
+
   Modal,
   Image,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 
@@ -42,6 +44,7 @@ function relationIcon(relationship: string): keyof typeof Ionicons.glyphMap {
 }
 
 export default function ElderlyEmergencyContactsScreen() {
+  const navigation = useNavigation();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -93,8 +96,8 @@ export default function ElderlyEmergencyContactsScreen() {
       const result = await loadEmergencyContacts();
       setContacts(result);
     } else {
-      const errMsg = useElderlyProfileStore.getState().error || 'Could not save contact';
-      Alert.alert('Error', errMsg);
+      const errMsg = useElderlyProfileStore.getState().error || 'Không thể lưu liên hệ';
+      Alert.alert('Lỗi', errMsg);
     }
   };
 
@@ -114,8 +117,8 @@ export default function ElderlyEmergencyContactsScreen() {
       const result = await loadEmergencyContacts();
       setContacts(result);
     } else {
-      const errMsg = useElderlyProfileStore.getState().error || 'Could not remove contact';
-      Alert.alert('Error', errMsg);
+      const errMsg = useElderlyProfileStore.getState().error || 'Không thể xóa liên hệ';
+      Alert.alert('Lỗi', errMsg);
     }
   };
 
@@ -124,7 +127,14 @@ export default function ElderlyEmergencyContactsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>Emergency Contacts</Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.appBarTitle}>Liên hệ khẩn cấp</Text>
       </View>
 
       {isLoading ? (
@@ -138,7 +148,7 @@ export default function ElderlyEmergencyContactsScreen() {
           <View style={styles.infoBanner}>
             <Ionicons name="information-circle-outline" size={20} color={Colors.sosPrimary} />
             <Text style={styles.infoBannerText}>
-              These people will be notified when you press the SOS button.
+              Những người này sẽ được thông báo khi bạn nhấn nút SOS.
             </Text>
           </View>
 
@@ -155,7 +165,7 @@ export default function ElderlyEmergencyContactsScreen() {
 
       <TouchableOpacity style={styles.fab} onPress={openAddDialog}>
         <Ionicons name="add" size={20} color="#FFFFFF" />
-        <Text style={styles.fabText}>Add Contact</Text>
+        <Text style={styles.fabText}>Thêm liên hệ</Text>
       </TouchableOpacity>
 
       <Modal
@@ -166,7 +176,7 @@ export default function ElderlyEmergencyContactsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Add Emergency Contact</Text>
+            <Text style={styles.dialogTitle}>Thêm liên hệ khẩn cấp</Text>
 
             <View style={{ height: 16 }} />
 
@@ -174,7 +184,7 @@ export default function ElderlyEmergencyContactsScreen() {
               <Ionicons name="person" size={18} color={Colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Full Name"
+                placeholder="Họ và tên"
                 placeholderTextColor={Colors.textHint}
                 value={nameInput}
                 onChangeText={setNameInput}
@@ -187,7 +197,7 @@ export default function ElderlyEmergencyContactsScreen() {
               <Ionicons name="call" size={18} color={Colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Phone Number"
+                placeholder="Số điện thoại"
                 placeholderTextColor={Colors.textHint}
                 keyboardType="phone-pad"
                 value={phoneInput}
@@ -201,7 +211,7 @@ export default function ElderlyEmergencyContactsScreen() {
               <Ionicons name="people" size={18} color={Colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Relationship (e.g. Son, Doctor...)"
+                placeholder="Mối quan hệ (VD: Con trai, Bác sĩ...)"
                 placeholderTextColor={Colors.textHint}
                 value={relationshipInput}
                 onChangeText={setRelationshipInput}
@@ -215,10 +225,10 @@ export default function ElderlyEmergencyContactsScreen() {
                 style={styles.dialogCancelBtn}
                 onPress={() => setAddModalVisible(false)}
               >
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.dialogAddBtn} onPress={handleAdd}>
-                <Text style={styles.dialogAddText}>Add</Text>
+                <Text style={styles.dialogAddText}>Thêm</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -233,10 +243,10 @@ export default function ElderlyEmergencyContactsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Delete Contact?</Text>
+            <Text style={styles.dialogTitle}>Xóa liên hệ?</Text>
             <View style={{ height: 8 }} />
             <Text style={styles.dialogBody}>
-              Remove {deleteTarget?.name ?? ''} from emergency contacts?
+              Xóa {deleteTarget?.name ?? ''} khỏi danh sách liên hệ khẩn cấp?
             </Text>
             <View style={{ height: 20 }} />
             <View style={styles.dialogActions}>
@@ -244,7 +254,7 @@ export default function ElderlyEmergencyContactsScreen() {
                 style={styles.dialogCancelBtn}
                 onPress={() => setDeleteTargetIndex(null)}
               >
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.dialogCancelBtn}
@@ -254,7 +264,7 @@ export default function ElderlyEmergencyContactsScreen() {
                   if (index != null) removeContact(index);
                 }}
               >
-                <Text style={styles.dialogDeleteText}>Delete</Text>
+                <Text style={styles.dialogDeleteText}>Xóa</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -274,15 +284,15 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           resizeMode="contain"
         />
         <View style={{ height: 8 }} />
-        <Text style={styles.emptyTitle}>No Emergency Contacts</Text>
+        <Text style={styles.emptyTitle}>Chưa có liên hệ khẩn cấp</Text>
         <View style={{ height: 8 }} />
         <Text style={styles.emptySubtitle}>
-          Add at least one person to receive{'\n'}notifications when you need help.
+          Thêm ít nhất một người để nhận{'\n'}thông báo khi bạn cần giúp đỡ.
         </Text>
         <View style={{ height: 24 }} />
         <TouchableOpacity style={styles.emptyAddBtn} onPress={onAdd}>
           <Ionicons name="add" size={18} color="#FFFFFF" />
-          <Text style={styles.emptyAddBtnText}>Add Contact</Text>
+          <Text style={styles.emptyAddBtnText}>Thêm liên hệ</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -322,7 +332,7 @@ function ContactCard({
       </View>
       {isPriority && (
         <View style={styles.priorityBadge}>
-          <Text style={styles.priorityBadgeText}>Priority</Text>
+          <Text style={styles.priorityBadgeText}>Ưu tiên</Text>
         </View>
       )}
       <TouchableOpacity onPress={onDelete} style={styles.deleteBtn}>
@@ -335,10 +345,13 @@ function ContactCard({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   appBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
+  backButton: { marginRight: 12 },
   appBarTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   centerFill: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 16 },

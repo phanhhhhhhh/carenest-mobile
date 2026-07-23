@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  Alert,
+
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -81,13 +82,13 @@ export default function FamilyProfileScreen() {
     const elderlyId = await lookupUserByPhone(normalized);
 
     if (elderlyId == null) {
-      Alert.alert('', 'No user found with that phone number');
+      Alert.alert('', 'Không tìm thấy người dùng với số điện thoại này');
       return;
     }
 
     const ok = await sendLinkRequest(elderlyId);
     setAddDialogVisible(false);
-    Alert.alert('', ok ? 'Connection request sent!' : linkError || 'Could not send request');
+    Alert.alert('', ok ? 'Đã gửi yêu cầu kết nối!' : linkError || 'Không thể gửi yêu cầu');
     if (ok) {
       loadDashboard();
     }
@@ -127,17 +128,17 @@ export default function FamilyProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>Add family member</Text>
+            <Text style={styles.dialogTitle}>Thêm thành viên gia đình</Text>
             <View style={{ height: 16 }} />
             <Text style={styles.dialogBody}>
-              Enter the elderly person&apos;s phone number to send a connection request.
+              Nhập số điện thoại của người cao tuổi để gửi yêu cầu kết nối.
             </Text>
             <View style={{ height: 16 }} />
             <View style={styles.inputWrap}>
               <Ionicons name="call" size={18} color={Colors.primary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="e.g., 0912345678"
+                placeholder="VD: 0912345678"
                 placeholderTextColor={Colors.textHint}
                 keyboardType="phone-pad"
                 value={phoneInput}
@@ -150,14 +151,14 @@ export default function FamilyProfileScreen() {
                 style={styles.dialogCancelBtn}
                 onPress={() => setAddDialogVisible(false)}
               >
-                <Text style={styles.dialogCancelText}>Cancel</Text>
+                <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.dialogSendBtn, linkIsLoading && styles.dialogSendBtnDisabled]}
                 onPress={handleSendRequest}
                 disabled={linkIsLoading}
               >
-                <Text style={styles.dialogSendText}>{linkIsLoading ? 'Sending...' : 'Send request'}</Text>
+                <Text style={styles.dialogSendText}>{linkIsLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -188,7 +189,7 @@ function Avatar({ name, phone }: { name: string; phone: string }) {
       )}
       <View style={{ height: 10 }} />
       <View style={styles.roleBadge}>
-        <Text style={styles.roleBadgeText}>Family / Caregiver</Text>
+        <Text style={styles.roleBadgeText}>Gia đình / Người chăm sóc</Text>
       </View>
     </View>
   );
@@ -207,7 +208,7 @@ function ConnectedElderly({
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <Ionicons name="people" size={22} color={Colors.primary} />
-        <Text style={styles.cardHeaderTitle}>Connected family member</Text>
+        <Text style={styles.cardHeaderTitle}>Thành viên gia đình đã kết nối</Text>
       </View>
       <View style={styles.divider} />
       <View style={styles.elderlyRow}>
@@ -221,7 +222,7 @@ function ConnectedElderly({
             {totalMeds > 0 && (
               <>
                 {conditions.length > 0 && <Text style={styles.elderlySubtitle}> • </Text>}
-                <Text style={styles.elderlySubtitle}>{`${totalMeds} medications`}</Text>
+                <Text style={styles.elderlySubtitle}>{`${totalMeds} loại thuốc`}</Text>
               </>
             )}
           </View>
@@ -239,8 +240,8 @@ function AddFamilyCard({ onPress }: { onPress: () => void }) {
         <Ionicons name="person-add" size={22} color={Colors.primary} />
       </View>
       <View style={styles.addFamilyText}>
-        <Text style={styles.addFamilyTitle}>Add family member</Text>
-        <Text style={styles.addFamilySubtitle}>Connect with an elderly account to monitor health</Text>
+        <Text style={styles.addFamilyTitle}>Thêm thành viên gia đình</Text>
+        <Text style={styles.addFamilySubtitle}>Kết nối với tài khoản người cao tuổi để theo dõi sức khỏe</Text>
       </View>
       <Ionicons name="chevron-forward" size={22} color={Colors.primary} />
     </TouchableOpacity>
@@ -267,24 +268,24 @@ function Settings({
     bg: string;
     onPress: () => void;
   }[] = [
-    { icon: 'create-outline', label: 'Edit Profile', color: Colors.primary, bg: `${Colors.primary}14`, onPress: onEditProfile },
+    { icon: 'create-outline', label: 'Chỉnh sửa hồ sơ', color: Colors.primary, bg: `${Colors.primary}14`, onPress: onEditProfile },
     {
       icon: 'notifications-outline',
-      label: 'Notification Settings',
+      label: 'Cài đặt thông báo',
       color: Colors.secondary,
       bg: `${Colors.secondary}14`,
       onPress: onNotificationSettings,
     },
     {
       icon: 'ribbon-outline',
-      label: 'Upgrade Premium',
+      label: 'Nâng cấp Premium',
       color: Colors.warning,
       bg: `${Colors.warning}14`,
       onPress: onUpgradePremium,
     },
     {
       icon: 'help-circle-outline',
-      label: 'Help & Support',
+      label: 'Trợ giúp & Hỗ trợ',
       color: Colors.textSecondary,
       bg: `${Colors.textHint}14`,
       onPress: onHelpSupport,
@@ -310,7 +311,7 @@ function Settings({
         <View style={[styles.settingIconWrap, { backgroundColor: `${Colors.error}14` }]}>
           <Ionicons name="log-out" size={20} color={Colors.error} />
         </View>
-        <Text style={[styles.settingLabel, { color: Colors.error }]}>Log out</Text>
+        <Text style={[styles.settingLabel, { color: Colors.error }]}>Đăng xuất</Text>
         <Ionicons name="chevron-forward" size={20} color={Colors.textHint} />
       </TouchableOpacity>
     </View>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,9 +24,9 @@ export default function VerifyEmailPromptScreen() {
     setResending(true);
     const ok = await resendVerification(email);
     if (ok) {
-      Alert.alert('Sent', 'Verification email sent. Check your inbox.');
+      Alert.alert('Đã gửi', 'Email xác minh đã được gửi. Vui lòng kiểm tra hộp thư của bạn.');
     } else {
-      Alert.alert('Error', 'Could not resend verification email');
+      Alert.alert('Lỗi', 'Không thể gửi lại email xác minh');
     }
     setResending(false);
   };
@@ -36,15 +37,15 @@ export default function VerifyEmailPromptScreen() {
         <View style={styles.iconWrap}>
           <Ionicons name="mail-outline" size={50} color={Colors.primary} />
         </View>
-        <Text style={styles.title}>Verify Your Email</Text>
-        <Text style={styles.subtitle}>A verification link has been sent to</Text>
+        <Text style={styles.title}>Xác minh Email của bạn</Text>
+        <Text style={styles.subtitle}>Một liên kết xác minh đã được gửi đến</Text>
         <Text style={styles.email}>{email}</Text>
-        <Text style={styles.hint}>Click the link in the email to activate your account</Text>
+        <Text style={styles.hint}>Nhấn vào liên kết trong email để kích hoạt tài khoản của bạn</Text>
         <TouchableOpacity style={[styles.btn, resending && styles.btnDisabled]} onPress={handleResend} disabled={resending}>
-          <Text style={styles.btnText}>{resending ? 'Sending...' : 'Resend Email'}</Text>
+          <Text style={styles.btnText}>{resending ? 'Đang gửi...' : 'Gửi lại Email'}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Phone')}>
-          <Text style={styles.backLink}>Back to Sign In</Text>
+          <Text style={styles.backLink}>Quay lại đăng nhập</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

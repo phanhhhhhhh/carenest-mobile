@@ -9,10 +9,11 @@ import {
   Modal,
   TextInput,
   FlatList,
-  Alert,
+
   RefreshControl,
   Image,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
@@ -87,7 +88,7 @@ export default function FamilyMedicationScreen() {
     return dashData.linkedElderly[dashData.selectedIndex];
   }, [dashData]);
   const currentElderlyId = currentElderly?.elderlyId ?? null;
-  const currentElderlyName = currentElderly?.elderlyName ?? 'Loved one';
+  const currentElderlyName = currentElderly?.elderlyName ?? 'Người thân';
 
   const [activeTab, setActiveTab] = useState<TabKey>('today');
   const [refreshing, setRefreshing] = useState(false);
@@ -199,7 +200,7 @@ export default function FamilyMedicationScreen() {
 
   const openAddForm = (existing?: MedicationItem) => {
     if (!currentElderlyId) {
-      Alert.alert('Notice', 'Please link a family member first');
+      Alert.alert('Thông báo', 'Vui lòng liên kết người thân trước');
       return;
     }
     setEditing(existing ?? null);
@@ -259,12 +260,12 @@ export default function FamilyMedicationScreen() {
 
   const confirmDelete = (item: MedicationItem) => {
     Alert.alert(
-      'Delete medication',
-      `Are you sure you want to delete "${item.name}"?`,
+      'Xóa thuốc',
+      `Bạn có chắc chắn muốn xóa "${item.name}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => {
             deleteMedication(item.id);
@@ -275,7 +276,7 @@ export default function FamilyMedicationScreen() {
   };
 
   const handleToggle = (item: MedicationItem) => {
-    toggleTaken(item.id, (error) => Alert.alert('Error', error));
+    toggleTaken(item.id, (error) => Alert.alert('Lỗi', error));
   };
 
   const handleSelectHistoryMed = (id: string) => {
@@ -585,7 +586,7 @@ export default function FamilyMedicationScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Medication Manager</Text>
+        <Text style={styles.headerTitle}>Quản lý thuốc</Text>
         <TouchableOpacity
           style={styles.addBtn}
           onPress={() => {
@@ -628,7 +629,7 @@ export default function FamilyMedicationScreen() {
       >
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setTimePickerVisible(false)}>
           <TouchableOpacity activeOpacity={1} style={styles.timePickerSheet}>
-            <Text style={styles.modalTitle}>Select time</Text>
+            <Text style={styles.modalTitle}>Chọn giờ</Text>
             <View style={styles.timePickerColumns}>
               <FlatList
                 data={HOURS}
@@ -663,7 +664,7 @@ export default function FamilyMedicationScreen() {
               />
             </View>
             <TouchableOpacity style={styles.timePickerConfirmBtn} onPress={confirmAddTime}>
-              <Text style={styles.timePickerConfirmBtnText}>Add</Text>
+              <Text style={styles.timePickerConfirmBtnText}>Thêm</Text>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>

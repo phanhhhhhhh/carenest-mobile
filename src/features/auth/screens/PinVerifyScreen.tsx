@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../../core/theme/colors';
 import { useAuthStore } from '../store/authStore';
@@ -42,7 +43,7 @@ export default function PinVerifyScreen() {
     if (result.valid) {
       useAuthStore.getState().completeLogin();
     } else {
-      Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect. Please try again.');
+      Alert.alert('Mã PIN không đúng', 'Mã PIN bạn nhập không chính xác. Vui lòng thử lại.');
       setPin(['', '', '', '']);
       inputs.current[0]?.focus();
     }
@@ -52,8 +53,8 @@ export default function PinVerifyScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Enter your PIN to unlock</Text>
-        <Text style={styles.subtitle}>Enter your 4-digit PIN</Text>
+        <Text style={styles.title}>Nhập mã PIN để mở khóa</Text>
+        <Text style={styles.subtitle}>Nhập mã PIN gồm 4 chữ số</Text>
 
         <View style={styles.pinRow}>
           {pin.map((digit, i) => (
@@ -78,7 +79,7 @@ export default function PinVerifyScreen() {
         {loading && (
           <View style={styles.loadingRow}>
             <ActivityIndicator size="small" color={Colors.primary} />
-            <Text style={styles.loadingText}>Verifying PIN...</Text>
+            <Text style={styles.loadingText}>Đang xác thực mã PIN...</Text>
           </View>
         )}
       </View>

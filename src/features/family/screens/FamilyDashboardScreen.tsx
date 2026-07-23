@@ -29,9 +29,9 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return 'Chào buổi sáng';
+  if (hour < 18) return 'Chào buổi chiều';
+  return 'Chào buổi tối';
 }
 
 function formatRelative(iso: string): string {
@@ -43,11 +43,11 @@ function formatRelative(iso: string): string {
   const diffDays = Math.floor(
     (startOfDay(new Date()).getTime() - startOfDay(dt).getTime()) / (24 * 60 * 60 * 1000),
   );
-  if (diffMinutes < 1) return 'Just now';
-  if (diffHours < 1) return `${diffMinutes}m ago`;
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  return `${diffDays}d ago`;
+  if (diffMinutes < 1) return 'Vừa xong';
+  if (diffHours < 1) return `${diffMinutes} phút trước`;
+  if (diffDays === 0) return 'Hôm nay';
+  if (diffDays === 1) return 'Hôm qua';
+  return `${diffDays} ngày trước`;
 }
 
 function formatDoseTime(med: MedicationItem): string {
@@ -69,7 +69,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
 
 export default function FamilyDashboardScreen() {
   const navigation = useNavigation<Nav>();
@@ -281,7 +281,7 @@ export default function FamilyDashboardScreen() {
             {hasElderly && (
               <View style={styles.onlinePill}>
                 <View style={[styles.onlineDot, { backgroundColor: isRecentlyActive ? Colors.success : Colors.textHint }]} />
-                <Text style={styles.onlinePillText}>{isRecentlyActive ? 'Online' : 'Offline'}</Text>
+                <Text style={styles.onlinePillText}>{isRecentlyActive ? 'Trực tuyến' : 'Ngoại tuyến'}</Text>
               </View>
             )}
           </View>
@@ -389,7 +389,7 @@ export default function FamilyDashboardScreen() {
                 {hasCamera && camOnline && (
                   <View style={styles.liveRow}>
                     <View style={styles.liveDot} />
-                    <Text style={styles.liveBadgeText}>Live</Text>
+                    <Text style={styles.liveBadgeText}>Trực tiếp</Text>
                   </View>
                 )}
               </View>
@@ -415,7 +415,7 @@ export default function FamilyDashboardScreen() {
                     <View style={{ width: 8 }} />
                     <CameraActionButton icon="mic" label="Gọi" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
                     <View style={{ width: 8 }} />
-                    <CameraActionButton icon="calendar" label="Check-in" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
+                    <CameraActionButton icon="calendar" label="Kiểm tra" onPress={() => navigation.navigate('CameraScreen', { elderlyId })} />
                   </View>
                 </View>
               )}
@@ -465,7 +465,7 @@ export default function FamilyDashboardScreen() {
         ) : upcoming.length === 0 ? (
           <View style={styles.emptyBox}>
             <Ionicons name="calendar-outline" color={Colors.textHint} size={32} />
-            <Text style={[styles.emptyBoxText, { marginTop: 8 }]}>No appointments yet</Text>
+            <Text style={[styles.emptyBoxText, { marginTop: 8 }]}>Chưa có lịch hẹn nào</Text>
           </View>
         ) : (
           upcoming.map((apt) => (

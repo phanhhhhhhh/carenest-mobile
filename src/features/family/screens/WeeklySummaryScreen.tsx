@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useWeeklySummaryStore, getWeekLabel, type WeeklySummaryData } from '../store/weeklySummaryStore';
@@ -18,10 +19,11 @@ import { useWeeklySummaryStore, getWeekLabel, type WeeklySummaryData } from '../
 
 
 export default function WeeklySummaryScreen() {
+  const navigation = useNavigation();
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
   const elderlyId = useFamilyDashboardStore((s) => s.elderlyId());
-  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Loved one';
+  const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Người thân';
 
   const isLoading = useWeeklySummaryStore((s) => s.isLoading);
   const error = useWeeklySummaryStore((s) => s.error);
@@ -55,8 +57,15 @@ export default function WeeklySummaryScreen() {
 
   const renderAppBar = () => (
     <View style={styles.appBar}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+      </TouchableOpacity>
       <Text style={styles.appBarTitle} numberOfLines={1}>
-        Weekly Report — {elderlyName}
+        Báo cáo hàng tuần — {elderlyName}
       </Text>
     </View>
   );
@@ -71,7 +80,7 @@ export default function WeeklySummaryScreen() {
             style={{ width: 140, height: 140 }}
             resizeMode="contain"
           />
-          <Text style={styles.noElderlyText}>No elderly person linked yet</Text>
+          <Text style={styles.noElderlyText}>Chưa liên kết với người cao tuổi nào</Text>
         </View>
       </SafeAreaView>
     );
@@ -105,7 +114,7 @@ export default function WeeklySummaryScreen() {
           ) : (
             <Ionicons name="sparkles" size={18} color="#FFFFFF" />
           )}
-          <Text style={styles.fabText}>{isLoading ? 'Generating...' : 'Generate Now'}</Text>
+          <Text style={styles.fabText}>{isLoading ? 'Đang tạo...' : 'Tạo ngay'}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -121,7 +130,7 @@ function renderError(error: string, onRetry: () => void) {
       <View style={{ height: 16 }} />
       <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
         <Ionicons name="refresh" size={18} color={Colors.surface} />
-        <Text style={styles.retryBtnText}>Retry</Text>
+        <Text style={styles.retryBtnText}>Thử lại</Text>
       </TouchableOpacity>
     </View>
   );
@@ -136,15 +145,15 @@ function renderEmpty(onGenerate: () => void) {
         resizeMode="contain"
       />
       <View style={{ height: 4 }} />
-      <Text style={styles.emptyTitle}>No weekly reports yet</Text>
+      <Text style={styles.emptyTitle}>Chưa có báo cáo hàng tuần nào</Text>
       <View style={{ height: 6 }} />
       <Text style={styles.emptySubtitle}>
-        AI-generated weekly health summaries{'\n'}will appear here
+        Tổng kết sức khỏe hàng tuần do AI tạo{'\n'}sẽ xuất hiện tại đây
       </Text>
       <View style={{ height: 24 }} />
       <TouchableOpacity style={styles.generateBtn} onPress={onGenerate}>
         <Ionicons name="sparkles" size={18} color="#FFFFFF" />
-        <Text style={styles.generateBtnText}>Generate First Report</Text>
+        <Text style={styles.generateBtnText}>Tạo báo cáo đầu tiên</Text>
       </TouchableOpacity>
     </View>
   );
@@ -189,7 +198,7 @@ function SummaryCard({ summary, isLatest }: { summary: WeeklySummaryData; isLate
         </View>
         {isLatest && (
           <View style={styles.latestBadge}>
-            <Text style={styles.latestBadgeText}>Latest</Text>
+            <Text style={styles.latestBadgeText}>Mới nhất</Text>
           </View>
         )}
       </View>
@@ -201,21 +210,21 @@ function SummaryCard({ summary, isLatest }: { summary: WeeklySummaryData; isLate
           icon="medical"
           color={Colors.primary}
           value={`${summary.medicationAdherence}%`}
-          label="Adherence"
+          label="Tuân thủ"
         />
         <View style={{ width: 16 }} />
         <StatMini
           icon="pulse"
           color={Colors.secondary}
           value={`${summary.totalMetrics}`}
-          label="Metrics"
+          label="Chỉ số"
         />
         <View style={{ width: 16 }} />
         <StatMini
           icon="warning"
           color={summary.abnormalMetrics > 0 ? Colors.error : Colors.success}
           value={`${summary.abnormalMetrics}`}
-          label="Abnormal"
+          label="Bất thường"
         />
       </View>
 
@@ -260,7 +269,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
+  backButton: { marginRight: 12 },
   appBarTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
 
   noElderlyText: { color: Colors.textSecondary, fontSize: 15, textAlign: 'center' },

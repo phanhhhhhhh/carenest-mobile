@@ -6,12 +6,13 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
+
   KeyboardAvoidingView,
   Platform,
   Image,
   Dimensions,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -36,6 +37,7 @@ const TextDark = '#37404A';
 interface FieldErrors {
   name?: string;
   phone?: string;
+  email?: string;
   password?: string;
   confirmPassword?: string;
   terms?: string;
@@ -64,6 +66,16 @@ function validatePhone(v: string): string | undefined {
 
 function normalizePhone(v: string): string {
   return '+84' + v.replace(/\D/g, '').replace(/^0+/, '');
+}
+
+/** Mirrors backend's @Email + 255-char-max rule on RegisterRequest.email. */
+function validateEmail(v: string): string | undefined {
+  if (!v.trim()) return 'Vui lòng nhập email';
+  if (v.trim().length > 255) return 'Email quá dài';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) {
+    return 'Email không đúng định dạng (VD: ten@gmail.com)';
+  }
+  return undefined;
 }
 
 // Password rules (mirror backend regex) - drives both the live
@@ -151,8 +163,10 @@ export default function RegisterScreen() {
   const navigation = useNavigation<Nav>();
   const { register, sendOtp, isLoading } = useAuthStore();
 
+  const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -165,13 +179,15 @@ export default function RegisterScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   const phoneRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmRef = useRef<TextInput>(null);
 
   const runValidation = useCallback((): FieldErrors => {
     const e: FieldErrors = {
       name: validateName(name),
-      phone: validatePhone(phone),
+      phone: method === 'phone' ? validatePhone(phone) : undefined,
+      email: method === 'email' ? validateEmail(email) : undefined,
       password: validatePassword(password),
       confirmPassword: validateConfirmPassword(password, confirmPassword),
       terms: agreedToTerms
@@ -182,7 +198,7 @@ export default function RegisterScreen() {
       if (e[k] === undefined) delete e[k];
     });
     return e;
-  }, [name, phone, password, confirmPassword, agreedToTerms]);
+  }, [name, phone, email, method, password, confirmPassword, agreedToTerms]);
 
   // Validate on blur (user leaves the field)
   const handleBlur = (field: keyof FieldErrors) => {
@@ -196,33 +212,35 @@ export default function RegisterScreen() {
     setTouched({
       name: true,
       phone: true,
+      email: true,
       password: true,
       confirmPassword: true,
       terms: true,
     });
     if (Object.keys(allErrors).length > 0) {
-      Alert.alert('Validation', 'Lỗi: ' + JSON.stringify(allErrors));
+      Alert.alert('Lỗi xác thực', 'Lỗi: ' + JSON.stringify(allErrors));
       return;
     }
 
-    const normalizedPhone = normalizePhone(phone);
+    const otpMethod: 'SMS' | 'EMAIL' = method === 'phone' ? 'SMS' : 'EMAIL';
+    const target = method === 'phone' ? normalizePhone(phone) : email.trim();
     setSubmitting(true);
 
     try {
       const result = await register({
       name: name.trim(),
-      phone: normalizedPhone,
+      ...(method === 'phone' ? { phone: target } : { email: target }),
       password,
       confirmPassword,
       role,
     });
 
     if (result.type === 'needsVerification') {
-      await sendOtp(normalizedPhone, 'SMS');
+      await sendOtp(target, otpMethod);
       setSubmitting(false);
       navigation.navigate('OtpVerify', {
-        target: normalizedPhone,
-        method: 'SMS',
+        target,
+        method: otpMethod,
         userName: name.trim(),
       });
     } else if (result.type === 'success') {
@@ -235,7 +253,9 @@ export default function RegisterScreen() {
       setSubmitting(false);
       const raw = result.message || '';
       const friendly = /already registered/i.test(raw)
-        ? 'Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.'
+        ? method === 'phone'
+          ? 'Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.'
+          : 'Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.'
         : raw || 'Đăng ký thất bại. Vui lòng thử lại.';
       Alert.alert('Đăng ký thất bại', friendly);
     }
@@ -297,32 +317,81 @@ export default function RegisterScreen() {
             />
           </PillField>
 
-          <PillField label="Số điện thoại" error={errors.phone} touched={touched.phone}>
-            <Ionicons name="phone-portrait-outline" size={18} color={HintGray} style={styles.leftIcon} />
-            <Text style={styles.phonePrefix}>+84</Text>
-            <View style={styles.prefixDivider} />
-            <TextInput
-              ref={phoneRef}
-              style={styles.input}
-              value={phone}
-              onChangeText={(v) => {
-                const cleaned = v.replace(/\D/g, '');
-                setPhone(cleaned);
-                if (touched.phone) {
-                  setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
-                }
-              }}
-              onBlur={() => handleBlur('phone')}
-              placeholder="Nhập số điện thoại"
-              placeholderTextColor={HintGray}
-              keyboardType="phone-pad"
-              returnKeyType="next"
-              onSubmitEditing={() => passwordRef.current?.focus()}
-              blurOnSubmit={false}
-              editable={!busy}
-              maxLength={10}
-            />
-          </PillField>
+          {/* Đăng ký bằng số điện thoại hoặc email */}
+          <View style={styles.roleRow}>
+            {(
+              [
+                ['phone', 'Số điện thoại'],
+                ['email', 'Email'],
+              ] as const
+            ).map(([value, text]) => (
+              <TouchableOpacity
+                key={value}
+                style={[styles.roleBtn, method === value && styles.roleBtnActive]}
+                onPress={() => setMethod(value)}
+                activeOpacity={0.8}
+                disabled={busy}
+              >
+                <Text style={[styles.roleText, method === value && styles.roleTextActive]}>
+                  {text}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {method === 'phone' ? (
+            <PillField label="Số điện thoại" error={errors.phone} touched={touched.phone}>
+              <Ionicons name="phone-portrait-outline" size={18} color={HintGray} style={styles.leftIcon} />
+              <Text style={styles.phonePrefix}>+84</Text>
+              <View style={styles.prefixDivider} />
+              <TextInput
+                ref={phoneRef}
+                style={styles.input}
+                value={phone}
+                onChangeText={(v) => {
+                  const cleaned = v.replace(/\D/g, '');
+                  setPhone(cleaned);
+                  if (touched.phone) {
+                    setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
+                  }
+                }}
+                onBlur={() => handleBlur('phone')}
+                placeholder="Nhập số điện thoại"
+                placeholderTextColor={HintGray}
+                keyboardType="phone-pad"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
+                editable={!busy}
+                maxLength={10}
+              />
+            </PillField>
+          ) : (
+            <PillField label="Email" error={errors.email} touched={touched.email}>
+              <Ionicons name="mail-outline" size={18} color={HintGray} style={styles.leftIcon} />
+              <TextInput
+                ref={emailRef}
+                style={styles.input}
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  if (touched.email) {
+                    setErrors((prev) => ({ ...prev, email: validateEmail(v) }));
+                  }
+                }}
+                onBlur={() => handleBlur('email')}
+                placeholder="Nhập email"
+                placeholderTextColor={HintGray}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
+                editable={!busy}
+              />
+            </PillField>
+          )}
 
           <PillField label="Mật khẩu" error={errors.password} touched={touched.password}>
             <Ionicons name="lock-closed-outline" size={18} color={HintGray} style={styles.leftIcon} />

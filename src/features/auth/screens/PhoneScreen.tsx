@@ -5,13 +5,14 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
+
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Image,
   Dimensions,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -34,6 +35,7 @@ const TextDark = '#37404A';
 
 interface FieldErrors {
   phone?: string;
+  email?: string;
   password?: string;
 }
 
@@ -50,6 +52,14 @@ function normalizePhone(v: string): string {
   return '+84' + v.replace(/\D/g, '').replace(/^0+/, '');
 }
 
+function validateEmail(v: string): string | undefined {
+  if (!v.trim()) return 'Vui lòng nhập email';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) {
+    return 'Email không đúng định dạng (VD: ten@gmail.com)';
+  }
+  return undefined;
+}
+
 function validateLoginPassword(v: string): string | undefined {
   if (!v) return 'Vui lòng nhập mật khẩu';
   if (v.length < 8) return 'Mật khẩu phải có ít nhất 8 ký tự';
@@ -60,7 +70,9 @@ export default function PhoneScreen() {
   const navigation = useNavigation<Nav>();
   const { login, sendOtp, isLoading, clearError } = useAuthStore();
 
+  const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -77,27 +89,35 @@ export default function PhoneScreen() {
     setErrors((prev) => ({
       ...prev,
       [field]:
-        field === 'phone' ? validatePhone(phone) : validateLoginPassword(password),
+        field === 'phone'
+          ? validatePhone(phone)
+          : field === 'email'
+            ? validateEmail(email)
+            : validateLoginPassword(password),
     }));
   };
 
   const handleLogin = async () => {
     const allErrors: FieldErrors = {
-      phone: validatePhone(phone),
+      phone: method === 'phone' ? validatePhone(phone) : undefined,
+      email: method === 'email' ? validateEmail(email) : undefined,
       password: validateLoginPassword(password),
     };
     (Object.keys(allErrors) as (keyof FieldErrors)[]).forEach((k) => {
       if (allErrors[k] === undefined) delete allErrors[k];
     });
     setErrors(allErrors);
-    setTouched({ phone: true, password: true });
+    setTouched({ phone: true, email: true, password: true });
     if (Object.keys(allErrors).length > 0) {
-      Alert.alert('Validation', 'Lỗi: ' + JSON.stringify(allErrors));
+      Alert.alert('Lỗi xác thực', 'Lỗi: ' + JSON.stringify(allErrors));
       return;
     }
 
     try {
-    const result = await login({ phone: normalizePhone(phone), password });
+    const result =
+      method === 'phone'
+        ? await login({ phone: normalizePhone(phone), password })
+        : await login({ email: email.trim(), password });
 
     if (result.type === 'success') {
       navigation.navigate('WelcomeBack', {});
@@ -130,6 +150,7 @@ export default function PhoneScreen() {
   };
 
   const phoneError = !!(touched.phone && errors.phone);
+  const emailError = !!(touched.email && errors.email);
   const passwordError = !!(touched.password && errors.password);
 
   return (
@@ -159,43 +180,99 @@ export default function PhoneScreen() {
             />
           </View>
 
-          {/* Số điện thoại */}
-          <View style={styles.fieldBlock}>
-            <Text style={[styles.label, phoneError && styles.labelError]}>
-              Số điện thoại
-            </Text>
-            <View style={[styles.inputPill, phoneError && styles.inputPillError]}>
-              <Ionicons
-                name="phone-portrait-outline"
-                size={18}
-                color={HintGray}
-                style={styles.leftIcon}
-              />
-              <Text style={styles.phonePrefix}>+84</Text>
-              <View style={styles.prefixDivider} />
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={(v) => {
-                  const cleaned = v.replace(/\D/g, '');
-                  setPhone(cleaned);
-                  if (touched.phone) {
-                    setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
-                  }
-                }}
-                onBlur={() => handleBlur('phone')}
-                placeholder="Nhập số điện thoại"
-                placeholderTextColor={HintGray}
-                keyboardType="phone-pad"
-                returnKeyType="next"
-                onSubmitEditing={() => passwordRef.current?.focus()}
-                blurOnSubmit={false}
-                editable={!isLoading}
-                maxLength={10}
-              />
-            </View>
-            {phoneError && <Text style={styles.fieldError}>{errors.phone}</Text>}
+          {/* Đăng nhập bằng số điện thoại hoặc email */}
+          <View style={styles.roleRow}>
+            {(
+              [
+                ['phone', 'Số điện thoại'],
+                ['email', 'Email'],
+              ] as const
+            ).map(([value, text]) => (
+              <TouchableOpacity
+                key={value}
+                style={[styles.roleBtn, method === value && styles.roleBtnActive]}
+                onPress={() => setMethod(value)}
+                activeOpacity={0.8}
+                disabled={isLoading}
+              >
+                <Text style={[styles.roleText, method === value && styles.roleTextActive]}>
+                  {text}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
+
+          {method === 'phone' ? (
+            <View style={styles.fieldBlock}>
+              <Text style={[styles.label, phoneError && styles.labelError]}>
+                Số điện thoại
+              </Text>
+              <View style={[styles.inputPill, phoneError && styles.inputPillError]}>
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={18}
+                  color={HintGray}
+                  style={styles.leftIcon}
+                />
+                <Text style={styles.phonePrefix}>+84</Text>
+                <View style={styles.prefixDivider} />
+                <TextInput
+                  style={styles.input}
+                  value={phone}
+                  onChangeText={(v) => {
+                    const cleaned = v.replace(/\D/g, '');
+                    setPhone(cleaned);
+                    if (touched.phone) {
+                      setErrors((prev) => ({ ...prev, phone: validatePhone(cleaned) }));
+                    }
+                  }}
+                  onBlur={() => handleBlur('phone')}
+                  placeholder="Nhập số điện thoại"
+                  placeholderTextColor={HintGray}
+                  keyboardType="phone-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  blurOnSubmit={false}
+                  editable={!isLoading}
+                  maxLength={10}
+                />
+              </View>
+              {phoneError && <Text style={styles.fieldError}>{errors.phone}</Text>}
+            </View>
+          ) : (
+            <View style={styles.fieldBlock}>
+              <Text style={[styles.label, emailError && styles.labelError]}>Email</Text>
+              <View style={[styles.inputPill, emailError && styles.inputPillError]}>
+                <Ionicons
+                  name="mail-outline"
+                  size={18}
+                  color={HintGray}
+                  style={styles.leftIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={(v) => {
+                    setEmail(v);
+                    if (touched.email) {
+                      setErrors((prev) => ({ ...prev, email: validateEmail(v) }));
+                    }
+                  }}
+                  onBlur={() => handleBlur('email')}
+                  placeholder="Nhập email"
+                  placeholderTextColor={HintGray}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
+                  blurOnSubmit={false}
+                  editable={!isLoading}
+                />
+              </View>
+              {emailError && <Text style={styles.fieldError}>{errors.email}</Text>}
+            </View>
+          )}
 
           {/* Mật khẩu */}
           <View style={styles.fieldBlock}>
@@ -335,6 +412,33 @@ const styles = StyleSheet.create({
   mascot: {
     width: width * 0.55,
     height: width * 0.55,
+  },
+
+  roleRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  roleBtn: {
+    flex: 1,
+    borderWidth: 1.2,
+    borderColor: BorderGray,
+    borderRadius: 9999,
+    paddingVertical: 13,
+    alignItems: 'center',
+    backgroundColor: White,
+  },
+  roleBtnActive: {
+    borderColor: Teal,
+    backgroundColor: '#E8F7F5',
+  },
+  roleText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: LabelGray,
+  },
+  roleTextActive: {
+    color: Teal,
   },
 
   fieldBlock: {

@@ -28,12 +28,12 @@ export function isFreePlan(p: PlanData): boolean {
 }
 
 export function getPriceLabel(p: PlanData): string {
-  return isFreePlan(p) ? 'Free' : `${Math.trunc(p.price)}đ`;
+  return isFreePlan(p) ? 'Miễn phí' : `${Math.trunc(p.price)}đ`;
 }
 
 export function getPeriodLabel(p: PlanData): string | null {
-  if (p.id === 'PREMIUM_MONTHLY') return '/month';
-  if (p.id === 'PREMIUM_YEARLY') return '/year';
+  if (p.id === 'PREMIUM_MONTHLY') return '/tháng';
+  if (p.id === 'PREMIUM_YEARLY') return '/năm';
   return null;
 }
 
@@ -62,34 +62,34 @@ export function isPremiumSubscription(s: SubscriptionData): boolean {
 const DEFAULT_PLANS: PlanData[] = [
   {
     id: 'FREE',
-    name: 'Free Plan',
+    name: 'Gói Miễn phí',
     price: 0,
     features: [
-      'Monitor 1 elderly profile',
-      '7-day data history',
-      'Basic health tracking',
-      'SOS alerts',
+      'Theo dõi 1 hồ sơ người cao tuổi',
+      'Lịch sử dữ liệu 7 ngày',
+      'Theo dõi sức khỏe cơ bản',
+      'Cảnh báo SOS',
     ],
   },
   {
     id: 'PREMIUM_MONTHLY',
-    name: 'Premium Monthly',
+    name: 'Premium Hàng tháng',
     price: 49000,
     currency: 'VND',
     features: [
-      'Monitor multiple elderly profiles',
-      'Unlimited data history',
-      'AI Weekly Summary Reports',
-      'Export health reports as PDF',
-      'Priority support',
+      'Theo dõi nhiều hồ sơ người cao tuổi',
+      'Lịch sử dữ liệu không giới hạn',
+      'Báo cáo tổng kết hàng tuần bằng AI',
+      'Xuất báo cáo sức khỏe dạng PDF',
+      'Hỗ trợ ưu tiên',
     ],
   },
   {
     id: 'PREMIUM_YEARLY',
-    name: 'Premium Yearly',
+    name: 'Premium Hàng năm',
     price: 399000,
     currency: 'VND',
-    features: ['All Premium Monthly features', '2 months free (save 17%)'],
+    features: ['Đầy đủ tính năng của gói Premium Hàng tháng', 'Miễn phí 2 tháng (tiết kiệm 17%)'],
   },
 ];
 
@@ -147,7 +147,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         set({ isLoading: false, plans: DEFAULT_PLANS });
         return;
       }
-      set({ isLoading: false, error: `Could not load plans: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Không thể tải các gói: ${getErrorMessage(e)}` });
     }
   },
 
@@ -166,11 +166,11 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
       set({
         isProcessing: false,
-        paymentSuccess: 'Payment initiated. Please complete in your banking app.',
+        paymentSuccess: 'Đã khởi tạo thanh toán. Vui lòng hoàn tất trong ứng dụng ngân hàng của bạn.',
       });
       return null;
     } catch (e) {
-      set({ isProcessing: false, error: `Payment failed: ${getErrorMessage(e)}` });
+      set({ isProcessing: false, error: `Thanh toán thất bại: ${getErrorMessage(e)}` });
       return null;
     }
   },
@@ -183,7 +183,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       set({ isProcessing: false });
       return true;
     } catch (e) {
-      set({ isProcessing: false, error: `Could not cancel: ${getErrorMessage(e)}` });
+      set({ isProcessing: false, error: `Không thể hủy: ${getErrorMessage(e)}` });
       return false;
     }
   },
@@ -193,7 +193,9 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
   currentPlanLabel: () => {
     const sub = get().subscription;
-    if (!sub || sub.planId === 'FREE') return 'Free Plan';
+    if (!sub || sub.planId === 'FREE') return 'Gói Miễn phí';
+    if (sub.planId === 'PREMIUM_MONTHLY') return 'Premium Hàng tháng';
+    if (sub.planId === 'PREMIUM_YEARLY') return 'Premium Hàng năm';
     return sub.planId
       .replaceAll('_', ' ')
       .toLowerCase()

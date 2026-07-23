@@ -78,7 +78,7 @@ export const useWeeklySummaryStore = create<WeeklySummaryState>((set) => ({
       }
       const summary = parseWeeklySummaryData(data);
       if (!summary) {
-        set({ isLoading: false, error: 'Unexpected response from server' });
+        set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
       set({ isLoading: false, summaries: [summary], latest: summary });
@@ -89,7 +89,7 @@ export const useWeeklySummaryStore = create<WeeklySummaryState>((set) => ({
         set({ isLoading: false, summaries: [] });
         return;
       }
-      set({ isLoading: false, error: `Could not load reports: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Không thể tải báo cáo: ${getErrorMessage(e)}` });
     }
   },
 
@@ -100,7 +100,7 @@ export const useWeeklySummaryStore = create<WeeklySummaryState>((set) => ({
       const raw = resp.data as Record<string, unknown>;
       const data = parseWeeklySummaryData(raw);
       if (!data) {
-        set({ isLoading: false, error: 'Unexpected response from server' });
+        set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return null;
       }
       set((state) => ({
@@ -110,7 +110,7 @@ export const useWeeklySummaryStore = create<WeeklySummaryState>((set) => ({
       }));
       return data;
     } catch (e) {
-      set({ isLoading: false, error: `Could not generate report: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Không thể tạo báo cáo: ${getErrorMessage(e)}` });
       return null;
     }
   },
