@@ -79,7 +79,7 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
     try {
       const userId = await storage.getUserId();
       if (!userId) {
-        set({ isLoading: false, error: 'Not logged in' });
+        set({ isLoading: false, error: 'Chưa đăng nhập' });
         return;
       }
 
@@ -93,7 +93,7 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         const dashResp = await api.get(`/dashboard/family/${userId}`, { signal });
         const parsed = safeParseOne(FamilyDashboardResponseSchema, dashResp.data, 'FamilyDashboard');
         if (!parsed) {
-          set({ isLoading: false, error: 'Unexpected dashboard response format' });
+          set({ isLoading: false, error: 'Định dạng phản hồi dashboard không hợp lệ' });
           return;
         }
         payload = parsed;
@@ -101,7 +101,7 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
         if (isCancelled(e)) return;
         set({
           isLoading: false,
-          error: `API error: ${getStatus(e) ?? ''} ${getErrorMessage(e)}`,
+          error: `Lỗi API: ${getStatus(e) ?? ''} ${getErrorMessage(e)}`,
         });
         return;
       }
@@ -130,7 +130,7 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
       });
     } catch (e) {
       if (isCancelled(e)) return;
-      set({ isLoading: false, error: 'Connection error' });
+      set({ isLoading: false, error: 'Lỗi kết nối' });
     }
   },
 
@@ -198,23 +198,23 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
     try {
       const familyId = await storage.getUserId();
       if (!familyId) {
-        set({ isLoading: false, error: 'Not logged in' });
+        set({ isLoading: false, error: 'Chưa đăng nhập' });
         return false;
       }
       await api.post('/family-links', {
         familyId: Number.parseInt(familyId, 10),
         elderlyId: Number.parseInt(elderlyId, 10),
-        relationship: 'family',
+        relationship: 'Người thân',
       });
       set({ isLoading: false, success: true });
       return true;
     } catch (e) {
       const data = getResponseData(e) as Record<string, unknown> | undefined;
       if (data) {
-        const msg = String(data.error ?? data.message ?? 'Cannot send request');
+        const msg = String(data.error ?? data.message ?? 'Không thể gửi yêu cầu');
         set({ isLoading: false, error: msg });
       } else {
-        set({ isLoading: false, error: 'Connection error' });
+        set({ isLoading: false, error: 'Lỗi kết nối' });
       }
       return false;
     }
@@ -271,7 +271,7 @@ export const useLinkedFamilyStore = create<LinkedFamilyState>((set) => ({
       const members = safeParseList(FamilyLinkSchema, resp.data, 'LinkedFamilyList').map(toLinkedFamilyMember);
       set({ isLoading: false, members });
     } catch (e) {
-      set({ isLoading: false, error: `Error loading list: ${getErrorMessage(e)}` });
+      set({ isLoading: false, error: `Lỗi khi tải danh sách: ${getErrorMessage(e)}` });
     }
   },
 }));

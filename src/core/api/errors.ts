@@ -14,25 +14,27 @@ export function getErrorMessage(e: unknown): string {
   if (typeof e === 'string') return e;
   if (typeof e === 'object') {
     const err = e as Record<string, unknown>;
-    if (typeof err.message === 'string' && err.message.length > 0) return err.message;
+    // The backend's actual reason (GlobalExceptionHandler's { error: "..." } body) takes
+    // priority — axios's own `.message` is a generic "Request failed with status code NNN"
+    // that carries no information about *why*.
     if (err.response && typeof err.response === 'object') {
       const res = err.response as Record<string, unknown>;
       if (res.data && typeof res.data === 'object') {
         const data = res.data as Record<string, unknown>;
-        if (typeof data.message === 'string') return data.message;
-        if (typeof data.error === 'string') return data.error;
+        if (typeof data.message === 'string' && data.message.length > 0) return data.message;
+        if (typeof data.error === 'string' && data.error.length > 0) return data.error;
       }
     }
+    if (typeof err.message === 'string' && err.message.length > 0) return err.message;
   }
   return 'unknown error';
 }
 
 
 export function extractError(e: unknown, fallback: string): string {
-  if (e && typeof e === 'object' && 'message' in e) {
-    return `${fallback}: ${(e as { message?: string }).message ?? ''}`;
-  }
-  return fallback;
+  const message = getErrorMessage(e);
+  if (message === 'unknown error') return fallback;
+  return `${fallback}: ${message}`;
 }
 
 

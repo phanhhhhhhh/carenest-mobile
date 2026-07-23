@@ -121,7 +121,7 @@ function notifyIfUnreachable(error: AxiosError): void {
   const now = Date.now();
   if (now - lastNetworkToastAt < NETWORK_TOAST_COOLDOWN_MS) return;
   lastNetworkToastAt = now;
-  showErrorToast('No connection — check your network and try again.');
+  showErrorToast('Không có kết nối — vui lòng kiểm tra mạng và thử lại.');
 }
 
 api.interceptors.response.use(

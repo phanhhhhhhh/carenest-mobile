@@ -119,7 +119,8 @@ function navigateFromPayload(data: Record<string, unknown>): void {
       navigationRef.navigate('FamilyHealth');
       break;
     case 'CHAT_REMINDER':
-      navigateToTab('ElderlyShell', 'ElderlyChat');
+      // ElderlyChat is a root-stack screen, not an ElderlyShell tab.
+      navigationRef.navigate('ElderlyChat');
       break;
     default:
       break;
