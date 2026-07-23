@@ -57,4 +57,12 @@ The brief for this round asked for 10 rounds spanning the entire codebase — ev
 
 ---
 
+## Demo-day verification pass (2026-07-23)
+
+- Re-verified all 5 demo flows' supporting code against `DONE.md`'s prior fixes — no regressions found, no code changes needed (the phase 1–3 work above already covered them).
+- Confirmed `DEMO_SCRIPT.md`'s seeded credentials (`+84912345001` / `+84918111001`, password `Demo@1234`) match `DataSeeder.java` exactly.
+- `mvn compile` and `npx tsc --noEmit` both pass with zero errors.
+- Added `DEMO_CHECKLIST.md` with exact fresh-start steps. Caught one real footgun while writing it: `application-local.properties` doesn't set `server.port`, so running with `-Dspring-boot.run.profiles=local` falls back to Spring Boot's default port `8080` while the mobile app expects `8082` (only `application-dev.properties` sets that) — every API call would silently fail. README already correctly documents the `dev` profile; checklist reinforces it.
+- Left uncommitted, unrelated to the 5 flows: an in-progress SpeedSMS-backed SMS OTP feature (`SmsService.java`, `OtpService.java`, `RegisterScreen.tsx`, a phone-column-widening migration) — compiles/typechecks clean, but registration isn't one of the 5 demo flows, so it wasn't reviewed in depth this pass.
+
 CareNest MVP is demo-ready as of 2026-07-22. Remaining known scope boundaries: FCM push notifications require a Firebase project (`google-services.json`) not present in this build — the in-app notification list is the reliable channel for all alert UCs; Imou camera live-view and voice-call features require `IMOU_APP_ID`/`IMOU_APP_SECRET` not present in this build — snapshot capture and the check-in timeline work without them; Payment and Google Fit integrations are functional but need sandbox/OAuth credentials not present in this build; codebase-wide mechanical passes (TypeScript strictness, React perf memoization, exhaustive JSDoc) were intentionally deferred in favor of verified bug fixes — see "Explicitly not attempted" above.
