@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
@@ -19,11 +20,16 @@ const Tab = createBottomTabNavigator<FamilyTabParamList>();
 export default function FamilyShell() {
   return (
     <Tab.Navigator
+      // See ElderlyShell.tsx — web has no safe-area bottom inset (no
+      // viewport-fit=cover), so the tab bar's label row renders flush
+      // against — and partly past — the physical screen edge there.
+      safeAreaInsets={Platform.OS === 'web' ? { bottom: 6 } : undefined}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textHint,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarStyle: { height: 64, paddingTop: 6, paddingBottom: 6 },
         tabBarIcon: ({ color, focused }) => {
           const icons: Record<string, [string, string]> = {
             FamilyDashboard: ['home-outline', 'home'],
@@ -42,10 +48,10 @@ export default function FamilyShell() {
         },
       })}
     >
-      <Tab.Screen name="FamilyDashboard" component={FamilyDashboardScreen} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="FamilyMeds" component={FamilyMedicationScreen} options={{ tabBarLabel: 'Meds' }} />
+      <Tab.Screen name="FamilyDashboard" component={FamilyDashboardScreen} options={{ tabBarLabel: 'Trang chủ' }} />
+      <Tab.Screen name="FamilyMeds" component={FamilyMedicationScreen} options={{ tabBarLabel: 'Thuốc' }} />
       <Tab.Screen name="FamilyCamera" component={CameraScreen} options={{ tabBarLabel: 'Camera' }} />
-      <Tab.Screen name="FamilyProfile" component={FamilyProfileScreen} options={{ tabBarLabel: 'Profile' }} />
+      <Tab.Screen name="FamilyProfile" component={FamilyProfileScreen} options={{ tabBarLabel: 'Hồ sơ' }} />
     </Tab.Navigator>
   );
 }

@@ -10,6 +10,7 @@ export interface NotificationData {
   title: string;
   body: string;
   type: string;
+  data?: Record<string, unknown> | null;
   read: boolean;
   createdAt: string;
 }
@@ -20,6 +21,7 @@ function toNotificationData(n: ReturnType<typeof NotificationSchema.parse>): Not
     title: n.title,
     body: n.body ?? '',
     type: n.type,
+    data: n.data ?? null,
     read: n.readAt != null,
     createdAt: n.createdAt,
   };
@@ -33,6 +35,7 @@ interface NotificationState {
   load: (signal?: AbortSignal) => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllRead: () => Promise<void>;
+  respondToFamilyLinkRequest: (linkId: number, accept: boolean) => Promise<boolean>;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -51,7 +54,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const resp = await api.get(`/users/${userId}/notifications`, { signal });
       if (!Array.isArray(resp.data)) {
         console.warn('[schema] NotificationList: expected an array — keeping previous state');
-        set({ isLoading: false, error: 'Unexpected response from server' });
+        set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
       const items = safeParseList(NotificationSchema, resp.data, 'NotificationList').map(toNotificationData);
@@ -60,7 +63,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       if (isCancelled(e)) return;
       set({
         isLoading: false,
-        error: extractError(e, 'Error loading notifications'),
+        error: extractError(e, 'Lỗi khi tải thông báo'),
       });
     }
   },
@@ -73,7 +76,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       );
       set({ items: updated });
     } catch (e) {
-      showErrorToast(`Could not mark as read: ${getErrorMessage(e)}`);
+      showErrorToast(`Không thể đánh dấu đã đọc: ${getErrorMessage(e)}`);
     }
   },
 
@@ -85,7 +88,19 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const updated = get().items.map((n) => ({ ...n, read: true }));
       set({ items: updated });
     } catch (e) {
-      showErrorToast(`Could not mark all as read: ${getErrorMessage(e)}`);
+      showErrorToast(`Không thể đánh dấu tất cả đã đọc: ${getErrorMessage(e)}`);
+    }
+  },
+
+  respondToFamilyLinkRequest: async (linkId, accept) => {
+    try {
+      await api.patch(`/family-links/${linkId}/status`, {
+        status: accept ? 'ACTIVE' : 'REVOKED',
+      });
+      return true;
+    } catch (e) {
+      showErrorToast(`Không thể xử lý yêu cầu kết nối: ${getErrorMessage(e)}`);
+      return false;
     }
   },
 }));

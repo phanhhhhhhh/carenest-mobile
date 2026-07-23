@@ -108,7 +108,7 @@ export const useNotificationSettingsStore = create<NotificationSettingsState>((s
         set({ isLoading: false });
         return;
       }
-      set({ isLoading: false, error: extractError(e, 'Could not load settings') });
+      set({ isLoading: false, error: extractError(e, 'Không thể tải cài đặt') });
     }
   },
 
@@ -150,7 +150,7 @@ async function save(
       set({ isSaving: false });
       return;
     }
-    set({ isSaving: false, error: extractError(e, 'Could not save settings') });
+    set({ isSaving: false, error: extractError(e, 'Không thể lưu cài đặt') });
     await useNotificationSettingsStore.getState().load();
   }
 }

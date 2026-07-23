@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
@@ -6,7 +7,6 @@ import ElderlyHomeScreen from '../../features/elderly/screens/ElderlyHomeScreen'
 import ElderlyMedicationScreen from '../../features/elderly/screens/ElderlyMedicationScreen';
 import ElderlyCameraScreen from '../../features/elderly/screens/ElderlyCameraScreen';
 import ElderlyHealthScreen from '../../features/elderly/screens/ElderlyHealthScreen';
-import ElderlyChatScreen from '../../features/elderly/screens/ElderlyChatScreen';
 import ElderlyProfileScreen from '../../features/elderly/screens/ElderlyProfileScreen';
 
 export type ElderlyTabParamList = {
@@ -14,7 +14,6 @@ export type ElderlyTabParamList = {
   ElderlyMeds: undefined;
   ElderlyCamera: undefined;
   ElderlyHealth: undefined;
-  ElderlyChat: undefined;
   ElderlyProfile: undefined;
 };
 
@@ -23,18 +22,23 @@ const Tab = createBottomTabNavigator<ElderlyTabParamList>();
 export default function ElderlyShell() {
   return (
     <Tab.Navigator
+      // On native, the tab bar auto-detects real safe-area insets (home indicator /
+      // gesture bar). On web there's no viewport-fit=cover, so that inset is always 0
+      // and the bar's label row renders flush against — and partly past — the physical
+      // screen edge. Override it for web only; native keeps its real detected inset.
+      safeAreaInsets={Platform.OS === 'web' ? { bottom: 6 } : undefined}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textHint,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarStyle: { height: 64, paddingTop: 6, paddingBottom: 6 },
         tabBarIcon: ({ color, focused }) => {
           const icons: Record<string, [string, string]> = {
             ElderlyHome: ['home-outline', 'home'],
             ElderlyMeds: ['medkit-outline', 'medkit'],
             ElderlyCamera: ['videocam-outline', 'videocam'],
             ElderlyHealth: ['heart-outline', 'heart'],
-            ElderlyChat: ['chatbubble-outline', 'chatbubble'],
             ElderlyProfile: ['person-outline', 'person'],
           };
           const [outline, filled] = icons[route.name] || ['ellipse-outline', 'ellipse'];
@@ -48,12 +52,11 @@ export default function ElderlyShell() {
         },
       })}
     >
-      <Tab.Screen name="ElderlyHome" component={ElderlyHomeScreen} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="ElderlyMeds" component={ElderlyMedicationScreen} options={{ tabBarLabel: 'Meds' }} />
+      <Tab.Screen name="ElderlyHome" component={ElderlyHomeScreen} options={{ tabBarLabel: 'Trang chủ' }} />
+      <Tab.Screen name="ElderlyMeds" component={ElderlyMedicationScreen} options={{ tabBarLabel: 'Thuốc' }} />
       <Tab.Screen name="ElderlyCamera" component={ElderlyCameraScreen} options={{ tabBarLabel: 'Camera' }} />
-      <Tab.Screen name="ElderlyHealth" component={ElderlyHealthScreen} options={{ tabBarLabel: 'Health' }} />
-      <Tab.Screen name="ElderlyChat" component={ElderlyChatScreen} options={{ tabBarLabel: 'Chat AI' }} />
-      <Tab.Screen name="ElderlyProfile" component={ElderlyProfileScreen} options={{ tabBarLabel: 'Profile' }} />
+      <Tab.Screen name="ElderlyHealth" component={ElderlyHealthScreen} options={{ tabBarLabel: 'Sức khỏe' }} />
+      <Tab.Screen name="ElderlyProfile" component={ElderlyProfileScreen} options={{ tabBarLabel: 'Hồ sơ' }} />
     </Tab.Navigator>
   );
 }

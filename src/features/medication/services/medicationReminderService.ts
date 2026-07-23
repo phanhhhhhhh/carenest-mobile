@@ -17,14 +17,14 @@ export async function initializeMedicationReminders(): Promise<void> {
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: 'Medication Reminders',
-      description: 'Daily medication dose reminders',
+      name: 'Nhắc uống thuốc',
+      description: 'Nhắc nhở uống thuốc hàng ngày',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
     });
     await Notifications.setNotificationChannelAsync(SNOOZE_CHANNEL_ID, {
-      name: 'Medication Snooze Reminders',
-      description: 'One-off reminders after snoozing a dose',
+      name: 'Nhắc lại sau khi hoãn',
+      description: 'Nhắc nhở một lần sau khi hoãn uống thuốc',
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
     });
@@ -68,7 +68,7 @@ async function scheduleOne(med: MedicationItem, slot: number): Promise<void> {
     await Notifications.scheduleNotificationAsync({
       identifier: dailyId(med, slot),
       content: {
-        title: `💊 Time for ${med.name}`,
+        title: `💊 Đến giờ uống ${med.name}`,
         body: reminderBody(med),
         sound: 'default',
         data: { type: 'MEDICATION_REMINDER', medicationId: med.id },

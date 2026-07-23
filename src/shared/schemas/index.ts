@@ -17,8 +17,8 @@ export const UserSchema = z.object({
 export type UserParsed = z.infer<typeof UserSchema>;
 
 export const MedicationScheduleSchema = z.object({
-  times: z.array(z.string()).optional(),
-  daysOfWeek: z.array(z.number()).optional(),
+  times: z.array(z.string()).optional().nullable(),
+  daysOfWeek: z.array(z.number()).optional().nullable(),
 });
 
 export const MedicationSchema = z.object({
@@ -91,6 +91,7 @@ export const NotificationSchema = z.object({
   title: z.string(),
   body: z.string().optional().nullable(),
   type: z.string(),
+  data: z.record(z.string(), z.unknown()).optional().nullable(),
   readAt: z.string().optional().nullable(),
   createdAt: z.string(),
 });
@@ -127,7 +128,7 @@ export const CameraStatusSchema = z.object({
   allOnline: z.boolean().optional(),
   indicatorColor: z.string().optional(),
   statusText: z.string().optional(),
-  message: z.string().optional(),
+  message: z.string().optional().nullable(),
 });
 export type CameraStatusParsed = z.infer<typeof CameraStatusSchema>;
 
