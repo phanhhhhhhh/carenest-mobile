@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -106,7 +106,11 @@ export default function ElderlyProfileScreen() {
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatarCircle}>
-              <Ionicons name="person" size={56} color={Colors.primary} />
+              <Image
+                source={require('../../../../assets/mascot/mascot_nurse.jpg')}
+                style={styles.avatarMascot}
+                resizeMode="cover"
+              />
             </View>
             <View style={styles.avatarBadge}>
               <Ionicons name="camera" size={16} color="#FFFFFF" />
@@ -253,6 +257,14 @@ export default function ElderlyProfileScreen() {
           </TouchableOpacity>
         </View>
 
+        <View style={styles.brandFooter}>
+          <Image
+            source={require('../../../../assets/brand/logo_wordmark.jpg')}
+            style={styles.brandFooterImage}
+            resizeMode="contain"
+          />
+        </View>
+
         <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
@@ -311,6 +323,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  avatarMascot: { width: '100%', height: '100%', borderRadius: 999 },
+  brandFooter: { alignItems: 'center', marginTop: 24 },
+  brandFooterImage: { width: 140, height: 44, opacity: 0.85 },
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: 20 },
   avatarSection: { alignItems: 'center' },
@@ -322,6 +337,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(46, 125, 154, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   avatarBadge: {
     position: 'absolute',

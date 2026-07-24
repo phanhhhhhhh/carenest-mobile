@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-
+  Image,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -117,6 +117,13 @@ export default function FamilyProfileScreen() {
           onHelpSupport={() => {}}
           onLogout={logout}
         />
+        <View style={styles.brandFooter}>
+          <Image
+            source={require('../../../../assets/brand/logo_wordmark.jpg')}
+            style={styles.brandFooterImage}
+            resizeMode="contain"
+          />
+        </View>
         <View style={{ height: 20 }} />
       </ScrollView>
 
@@ -173,7 +180,11 @@ function Avatar({ name, phone }: { name: string; phone: string }) {
     <View style={styles.avatarWrap}>
       <View style={styles.avatarStack}>
         <View style={styles.avatarCircle}>
-          <Ionicons name="person" size={56} color={Colors.secondary} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
+            style={styles.avatarMascot}
+            resizeMode="cover"
+          />
         </View>
         <View style={styles.avatarCameraBadge}>
           <Ionicons name="camera" size={16} color="#FFFFFF" />
@@ -321,6 +332,9 @@ function Settings({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: 20 },
+  avatarMascot: { width: '100%', height: '100%', borderRadius: 999 },
+  brandFooter: { alignItems: 'center', marginTop: 24 },
+  brandFooterImage: { width: 140, height: 44, opacity: 0.85 },
   avatarWrap: { alignItems: 'center' },
   avatarStack: { position: 'relative' },
   avatarCircle: {
@@ -330,6 +344,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.secondary}1A`,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   avatarCameraBadge: {
     position: 'absolute',

@@ -45,21 +45,21 @@ const slides: SlideData[] = [
     title: `Chăm sóc sức khỏe từ xa\nmọi lúc, mọi nơi`,
     subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhập tình trạng nhanh chóng`,
     image: require('../../../../assets/mascot/mascot_dashboard.jpg'),
-    imageSize: Math.round(width * 0.82),
+    imageSize: Math.round(width * 0.88),
   },
   {
     id: '2',
     title: `Đa tiện ích\nchăm sóc sức khỏe`,
     subtitle: `Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày`,
     image: require('../../../../assets/icons/health_icon_grid.jpg'),
-    imageSize: Math.round(width * 0.74),
+    imageSize: Math.round(width * 0.8),
   },
   {
     id: '3',
     title: `Chủ động theo dõi\nsức khỏe mỗi ngày`,
     subtitle: `Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh`,
     image: require('../../../../assets/mascot/mascot_bigphone.jpg'),
-    imageSize: Math.round(width * 0.88),
+    imageSize: Math.round(width * 0.92),
   },
 ];
 
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: 32,
-    paddingTop: 64,
+    paddingTop: 84,
   },
   slideTitle: {
     fontSize: 24,
@@ -455,7 +455,8 @@ const styles = StyleSheet.create({
   imageWrapper: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 20,
   },
   footer: {
     alignItems: 'center',
@@ -466,6 +467,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
+    marginTop: 16,
     marginBottom: 20,
   },
   dot: {

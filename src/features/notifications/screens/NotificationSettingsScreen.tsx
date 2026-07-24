@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -251,6 +252,13 @@ export default function NotificationSettingsScreen() {
         <Text style={styles.headerTitle}>Cài đặt thông báo</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.mascotBanner}>
+          <Image
+            source={require('../../../../assets/mascot/mascot_notifications.jpg')}
+            style={styles.mascotBannerImage}
+            resizeMode="contain"
+          />
+        </View>
         <Section title="Loại cảnh báo">
           <ToggleTile
             icon="medkit-outline"
@@ -336,6 +344,8 @@ export default function NotificationSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  mascotBanner: { alignItems: 'center', marginBottom: 8 },
+  mascotBannerImage: { width: 130, height: 130 },
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {

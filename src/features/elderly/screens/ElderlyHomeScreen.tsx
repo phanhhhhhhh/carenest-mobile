@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-
+  Image,
   ActivityIndicator,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
@@ -175,6 +175,11 @@ export default function ElderlyHomeScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.headerRow}>
+          <Image
+            source={require('../../../../assets/mascot/mascot_nurse.jpg')}
+            style={styles.greetingMascot}
+            resizeMode="contain"
+          />
           <View style={{ flex: 1 }}>
             <Text style={styles.greeting}>{`${greeting()},`}</Text>
             <Text style={styles.greetingName}>{displayName}</Text>
@@ -378,6 +383,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: 20 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  greetingMascot: { width: 56, height: 56, marginRight: 10 },
   greeting: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary },
   greetingName: { marginTop: 2, fontSize: Typography.h2.fontSize, fontWeight: '700', color: Colors.textPrimary },
   dateText: { marginTop: 6, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },

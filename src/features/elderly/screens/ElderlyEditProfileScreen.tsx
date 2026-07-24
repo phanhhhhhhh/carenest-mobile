@@ -7,7 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-
+  Image,
   Modal,
   FlatList,
 } from 'react-native';
@@ -146,7 +146,11 @@ export default function ElderlyEditProfileScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatarCircle}>
-            <Ionicons name="person" size={64} color={Colors.primary} />
+            <Image
+              source={require('../../../../assets/mascot/mascot_nurse.jpg')}
+              style={styles.avatarMascot}
+              resizeMode="cover"
+            />
           </View>
           <View style={styles.avatarBadge}>
             <Ionicons name="camera" size={18} color="#FFFFFF" />
@@ -386,6 +390,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 const styles = StyleSheet.create({
+  avatarMascot: { width: '100%', height: '100%', borderRadius: 999 },
   container: { flex: 1, backgroundColor: Colors.background },
   appBar: {
     backgroundColor: Colors.surface,
@@ -407,6 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(46, 125, 154, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   avatarBadge: {
     position: 'absolute',
