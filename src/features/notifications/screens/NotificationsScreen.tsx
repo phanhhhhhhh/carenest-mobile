@@ -35,14 +35,14 @@ function routeForNotification(type: string, role: string | undefined, navigation
       break;
     case 'HEALTH_ALERT':
       if (isFamily) navigation.navigate('FamilyHealth');
-      else navigation.navigate('ElderlyShell', { screen: 'ElderlyHealth' });
+      else navigation.navigate('ElderlyHealth');
       break;
     case 'MEDICATION_REMINDER':
       if (isFamily) navigation.navigate('FamilyShell', { screen: 'FamilyMeds' });
       else navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' });
       break;
     case 'APPOINTMENT_REMINDER':
-      if (isFamily) navigation.navigate('FamilyAppointments');
+      if (isFamily) navigation.navigate('FamilyShell', { screen: 'FamilyAppointmentsTab' });
       else navigation.navigate('ElderlyAppointments');
       break;
     default:

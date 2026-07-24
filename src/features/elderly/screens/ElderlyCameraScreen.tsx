@@ -7,12 +7,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Switch,
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../../core/theme/colors';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { getUserId } from '../../../core/storage/secureStorage';
 import { useCameraStore, type CameraDeviceData } from '../../family/store/cameraStore';
 
@@ -96,34 +95,31 @@ export default function ElderlyCameraScreen() {
           }
         >
           <View style={styles.statusCard}>
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: anyActive ? Colors.success : Colors.textHint },
-              ]}
-            />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.statusTitle}>
-                {anyActive ? 'Camera đang bật' : 'Camera đang tắt'}
-              </Text>
-              <Text style={styles.statusSubtitle}>
-                {anyActive
-                  ? 'Con của bố/mẹ đang có thể nhìn thấy'
-                  : 'Không ai có thể xem lúc này'}
-              </Text>
+            <View style={styles.statusIconRing}>
+              <View
+                style={[
+                  styles.statusIconDot,
+                  { backgroundColor: anyActive ? Colors.textPrimary : Colors.textHint },
+                ]}
+              />
             </View>
+            <View style={{ height: 14 }} />
+            <Text style={styles.statusTitle}>
+              {anyActive ? 'Camera đang bật' : 'Camera đang tắt'}
+            </Text>
+            <Text style={styles.statusSubtitle}>
+              {anyActive
+                ? 'Con của bố/mẹ đang có thể nhìn thấy'
+                : 'Không ai có thể xem lúc này'}
+            </Text>
           </View>
 
-          <View style={{ height: 20 }} />
+          <View style={{ height: 16 }} />
 
-          <TouchableOpacity
-            style={[
-              styles.mainToggleButton,
-              { backgroundColor: allPrivate ? Colors.success : Colors.sosPrimary },
-            ]}
-            onPress={() => togglePrivacyForAll(!allPrivate)}
-          >
-            <Ionicons name={allPrivate ? 'videocam' : 'power'} size={22} color="#FFFFFF" />
+          <TouchableOpacity style={styles.mainToggleButton} onPress={() => togglePrivacyForAll(!allPrivate)}>
+            <View style={styles.mainToggleIconBox}>
+              <Ionicons name={allPrivate ? 'videocam' : 'power'} size={18} color={Colors.textPrimary} />
+            </View>
             <Text style={styles.mainToggleText}>
               {allPrivate ? 'BẬT LẠI CAMERA' : 'TẮT CAMERA TẠM THỜI'}
             </Text>
@@ -134,44 +130,24 @@ export default function ElderlyCameraScreen() {
           </Text>
 
           <View style={{ height: 24 }} />
-          <Text style={styles.sectionLabel}>Từng phòng</Text>
-          <View style={{ height: 10 }} />
-          {cameras.map((cam) => (
-            <RoomTile
-              key={cam.id}
-              cam={cam}
-              onToggle={(value) => setPrivacyMode(elderlyId, cam.id, !value)}
-            />
-          ))}
+          <View style={styles.roomListCard}>
+            {cameras.map((cam, index) => (
+              <RoomRow key={cam.id} cam={cam} isLast={index === cameras.length - 1} />
+            ))}
+          </View>
         </ScrollView>
       )}
     </SafeAreaView>
   );
 }
 
-function RoomTile({
-  cam,
-  onToggle,
-}: {
-  cam: CameraDeviceData;
-  onToggle: (value: boolean) => void;
-}) {
-  const isOnline = cam.status === 'ONLINE';
-  const isActive = isOnline && !cam.privacyMode;
+function RoomRow({ cam, isLast }: { cam: CameraDeviceData; isLast: boolean }) {
+  const isActive = cam.status === 'ONLINE' && !cam.privacyMode;
 
   return (
-    <View style={styles.roomTile}>
-      <Ionicons name="videocam" size={22} color={isActive ? Colors.success : Colors.textHint} />
+    <View style={[styles.roomRow, !isLast && styles.roomRowDivider]}>
       <Text style={styles.roomLabel}>{cam.label}</Text>
-      <Text style={[styles.roomStatus, { color: isActive ? Colors.success : Colors.textHint }]}>
-        {isActive ? 'Đang bật' : 'Đã tắt'}
-      </Text>
-      <Switch
-        value={isActive}
-        onValueChange={isOnline ? onToggle : undefined}
-        disabled={!isOnline}
-        trackColor={{ true: Colors.success }}
-      />
+      <Text style={styles.roomStatus}>{isActive ? 'Đang bật' : 'Đã tắt'}</Text>
     </View>
   );
 }
@@ -189,36 +165,62 @@ const styles = StyleSheet.create({
   emptySubtitle: { color: Colors.textHint, fontSize: 13, textAlign: 'center' },
   scroll: { padding: 20 },
   statusCard: {
-    flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
+    padding: Spacing.xl,
     backgroundColor: Colors.surface,
-    borderRadius: 18,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.textPrimary,
   },
-  statusDot: { width: 14, height: 14, borderRadius: 7 },
-  statusTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  statusSubtitle: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  statusIconRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 2,
+    borderColor: Colors.textPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusIconDot: { width: 14, height: 14, borderRadius: 7 },
+  statusTitle: { fontSize: Typography.h2.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  statusSubtitle: { marginTop: 4, fontSize: Typography.bodySmall.fontSize, color: Colors.textSecondary, textAlign: 'center' },
   mainToggleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
     paddingVertical: 18,
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.textPrimary,
+    backgroundColor: Colors.surface,
   },
-  mainToggleText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  hintText: { color: Colors.textSecondary, fontSize: 12, textAlign: 'center' },
-  sectionLabel: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  roomTile: {
+  mainToggleIconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: 'rgba(26, 26, 46, 0.4)',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  mainToggleText: { color: Colors.textPrimary, fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 0.5 },
+  hintText: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize, textAlign: 'center' },
+  roomListCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    paddingHorizontal: Spacing.lg,
+  },
+  roomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    gap: 12,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
   },
-  roomLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
-  roomStatus: { fontSize: 12, fontWeight: '600', marginRight: 4 },
+  roomRowDivider: { borderBottomWidth: 1, borderBottomColor: Colors.divider },
+  roomLabel: { fontSize: Typography.body.fontSize, color: Colors.textPrimary },
+  roomStatus: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
 });

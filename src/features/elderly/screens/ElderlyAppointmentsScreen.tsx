@@ -120,7 +120,7 @@ export default function ElderlyAppointmentsScreen() {
 
   useEffect(() => {
     const controller = new AbortController();
-    load(controller.signal);
+    load(undefined, controller.signal);
     return () => controller.abort();
   }, []);
 

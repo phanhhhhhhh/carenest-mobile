@@ -281,7 +281,16 @@ export default function ElderlyHealthScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>Chỉ số sức khỏe</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{ marginRight: 12 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.appBarTitle}>Chỉ số sức khỏe</Text>
+        </View>
         <TouchableOpacity onPress={() => navigation.navigate('HealthReport')}>
           <Ionicons name="stats-chart" size={22} color={Colors.primary} />
         </TouchableOpacity>

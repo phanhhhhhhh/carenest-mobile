@@ -30,8 +30,8 @@ import ElderlyMedicationHistoryScreen from '../../features/elderly/screens/Elder
 import ElderlyAppointmentsScreen from '../../features/elderly/screens/ElderlyAppointmentsScreen';
 import HealthReportScreen from '../../features/elderly/screens/HealthReportScreen';
 import ElderlyChatScreen from '../../features/elderly/screens/ElderlyChatScreen';
+import ElderlyHealthScreen from '../../features/elderly/screens/ElderlyHealthScreen';
 import CameraScreen from '../../features/family/screens/CameraScreen';
-import FamilyAppointmentsScreen from '../../features/family/screens/FamilyAppointmentsScreen';
 import HealthThresholdScreen from '../../features/family/screens/HealthThresholdScreen';
 import FamilyHealthScreen from '../../features/family/screens/FamilyHealthScreen';
 import FamilyAlertsScreen from '../../features/family/screens/FamilyAlertsScreen';
@@ -67,8 +67,8 @@ export type RootStackParamList = {
   ElderlyAppointments: undefined;
   HealthReport: undefined;
   ElderlyChat: undefined;
+  ElderlyHealth: undefined;
   CameraScreen: { elderlyId: string };
-  FamilyAppointments: undefined;
   HealthThreshold: undefined;
   Notifications: undefined;
   NotificationSettings: undefined;
@@ -115,8 +115,8 @@ export default function AppNavigator() {
             <Stack.Screen name="ElderlyAppointments" component={ElderlyAppointmentsScreen} />
             <Stack.Screen name="HealthReport" component={HealthReportScreen} />
             <Stack.Screen name="ElderlyChat" component={ElderlyChatScreen} />
+            <Stack.Screen name="ElderlyHealth" component={ElderlyHealthScreen} />
             <Stack.Screen name="CameraScreen" component={CameraScreen} />
-            <Stack.Screen name="FamilyAppointments" component={FamilyAppointmentsScreen} />
             <Stack.Screen name="HealthThreshold" component={HealthThresholdScreen} />
             <Stack.Screen name="FamilyHealth" component={FamilyHealthScreen} />
             <Stack.Screen name="FamilyAlerts" component={FamilyAlertsScreen} />

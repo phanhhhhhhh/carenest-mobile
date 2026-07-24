@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -18,9 +18,9 @@ import {
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useAppointmentStore } from '../store/appointmentStore';
+import { useFamilyDashboardStore } from '../store/familyStore';
 import type { AppointmentItem } from '../../../shared/types';
 
 
@@ -69,7 +69,6 @@ function daysInMonth(year: number, month: number): number {
 }
 
 export default function FamilyAppointmentsScreen() {
-  const navigation = useNavigation();
   const isLoading = useAppointmentStore((s) => s.isLoading);
   const error = useAppointmentStore((s) => s.error);
   const appointments = useAppointmentStore((s) => s.appointments);
@@ -81,6 +80,15 @@ export default function FamilyAppointmentsScreen() {
   const update = useAppointmentStore((s) => s.update);
   const remove = useAppointmentStore((s) => s.delete);
   const updateStatus = useAppointmentStore((s) => s.updateStatus);
+
+  // Family dashboard store — provides the currently-selected linked elderly
+  const dashData = useFamilyDashboardStore((s) => s.data);
+  const dashLoad = useFamilyDashboardStore((s) => s.load);
+  const currentElderlyId = useMemo(() => {
+    if (!dashData || dashData.linkedElderly.length === 0) return null;
+    if (dashData.selectedIndex >= dashData.linkedElderly.length) return null;
+    return dashData.linkedElderly[dashData.selectedIndex].elderlyId;
+  }, [dashData]);
 
   const [tab, setTab] = useState<0 | 1>(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -100,16 +108,23 @@ export default function FamilyAppointmentsScreen() {
 
   useEffect(() => {
     const controller = new AbortController();
-    load(controller.signal);
+    dashLoad(controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [dashLoad]);
+
+  useEffect(() => {
+    if (!currentElderlyId) return;
+    const controller = new AbortController();
+    load(currentElderlyId, controller.signal);
+    return () => controller.abort();
+  }, [currentElderlyId, load]);
 
   const upcomingList = upcoming();
   const pastList = past();
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await load();
+    await load(currentElderlyId ?? undefined);
     setRefreshing(false);
   };
 
@@ -173,6 +188,7 @@ export default function FamilyAppointmentsScreen() {
         location: trimmedLocation.length > 0 ? trimmedLocation : undefined,
         appointmentDate: combined,
         notes: trimmedNotes.length > 0 ? trimmedNotes : undefined,
+        elderlyId: currentElderlyId ?? undefined,
       });
     }
     if (ok) closeSheet();
@@ -238,13 +254,6 @@ export default function FamilyAppointmentsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
         <Text style={styles.headerTitle}>Lịch hẹn</Text>
       </View>
 
@@ -678,7 +687,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: Colors.surface,
   },
-  backButton: { marginRight: 12 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
   tabBar: {
     flexDirection: 'row',

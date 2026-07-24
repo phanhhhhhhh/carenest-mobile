@@ -453,7 +453,7 @@ export default function FamilyDashboardScreen() {
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Lịch hẹn sắp tới</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('FamilyAppointments')}>
+          <TouchableOpacity onPress={() => navigation.navigate('FamilyShell', { screen: 'FamilyAppointmentsTab' })}>
             <Text style={styles.viewAllText}>Xem tất cả →</Text>
           </TouchableOpacity>
         </View>
@@ -469,7 +469,7 @@ export default function FamilyDashboardScreen() {
           </View>
         ) : (
           upcoming.map((apt) => (
-            <AppointmentPreviewCard key={apt.id} apt={apt} onPress={() => navigation.navigate('FamilyAppointments')} />
+            <AppointmentPreviewCard key={apt.id} apt={apt} onPress={() => navigation.navigate('FamilyShell', { screen: 'FamilyAppointmentsTab' })} />
           ))
         )}
       </ScrollView>
