@@ -6,14 +6,12 @@ import { Colors } from '../theme/colors';
 import ElderlyHomeScreen from '../../features/elderly/screens/ElderlyHomeScreen';
 import ElderlyMedicationScreen from '../../features/elderly/screens/ElderlyMedicationScreen';
 import ElderlyCameraScreen from '../../features/elderly/screens/ElderlyCameraScreen';
-import ElderlyHealthScreen from '../../features/elderly/screens/ElderlyHealthScreen';
 import ElderlyProfileScreen from '../../features/elderly/screens/ElderlyProfileScreen';
 
 export type ElderlyTabParamList = {
   ElderlyHome: undefined;
   ElderlyMeds: undefined;
   ElderlyCamera: undefined;
-  ElderlyHealth: undefined;
   ElderlyProfile: undefined;
 };
 
@@ -38,7 +36,6 @@ export default function ElderlyShell() {
             ElderlyHome: ['home-outline', 'home'],
             ElderlyMeds: ['medkit-outline', 'medkit'],
             ElderlyCamera: ['videocam-outline', 'videocam'],
-            ElderlyHealth: ['heart-outline', 'heart'],
             ElderlyProfile: ['person-outline', 'person'],
           };
           const [outline, filled] = icons[route.name] || ['ellipse-outline', 'ellipse'];
@@ -55,7 +52,6 @@ export default function ElderlyShell() {
       <Tab.Screen name="ElderlyHome" component={ElderlyHomeScreen} options={{ tabBarLabel: 'Trang chủ' }} />
       <Tab.Screen name="ElderlyMeds" component={ElderlyMedicationScreen} options={{ tabBarLabel: 'Thuốc' }} />
       <Tab.Screen name="ElderlyCamera" component={ElderlyCameraScreen} options={{ tabBarLabel: 'Camera' }} />
-      <Tab.Screen name="ElderlyHealth" component={ElderlyHealthScreen} options={{ tabBarLabel: 'Sức khỏe' }} />
       <Tab.Screen name="ElderlyProfile" component={ElderlyProfileScreen} options={{ tabBarLabel: 'Hồ sơ' }} />
     </Tab.Navigator>
   );

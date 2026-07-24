@@ -1,24 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  TextInput,
-
-  FlatList,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
-import { Colors } from '../../../core/theme/colors';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useMedicationStore } from '../store/medicationStore';
 import { snoozeOneOff, cancelSnooze } from '../../medication/services/medicationReminderService';
 import type { MedicationItem } from '../../../shared/types';
@@ -27,9 +15,7 @@ import type { MedicationItem } from '../../../shared/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
+const UPCOMING_WINDOW_MS = 15 * 60 * 1000;
 
 function pad2(n: number): string {
   return n.toString().padStart(2, '0');
@@ -42,10 +28,9 @@ export default function ElderlyMedicationScreen() {
   const isLoading = useMedicationStore((s) => s.isLoading);
   const error = useMedicationStore((s) => s.error);
   const load = useMedicationStore((s) => s.load);
-  const addMedication = useMedicationStore((s) => s.addMedication);
-  const updateMedication = useMedicationStore((s) => s.updateMedication);
-  const deleteMedication = useMedicationStore((s) => s.deleteMedication);
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
+
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const controller = new AbortController();
@@ -53,97 +38,12 @@ export default function ElderlyMedicationScreen() {
     return () => controller.abort();
   }, []);
 
-  const [sheetVisible, setSheetVisible] = useState(false);
-  const [editing, setEditing] = useState<MedicationItem | null>(null);
-  const [name, setName] = useState('');
-  const [dosage, setDosage] = useState('');
-  const [instructions, setInstructions] = useState('');
-  const [times, setTimes] = useState<string[]>([]);
-  const [days, setDays] = useState<Set<number>>(new Set());
-
-  const [timePickerVisible, setTimePickerVisible] = useState(false);
-  const [pickHour, setPickHour] = useState(8);
-  const [pickMinute, setPickMinute] = useState(0);
-
-  const openAddSheet = (existing?: MedicationItem) => {
-    setEditing(existing ?? null);
-    setName(existing?.name ?? '');
-    setDosage(existing?.dosage ?? '');
-    setInstructions(existing?.instructions ?? '');
-    setTimes(existing?.scheduleTimes ? [...existing.scheduleTimes] : []);
-    setDays(new Set(existing?.daysOfWeek ?? []));
-    setSheetVisible(true);
-  };
-
-  const closeSheet = () => setSheetVisible(false);
-
-  const toggleDay = (i: number) => {
-    setDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-  };
-
-  const removeTime = (idx: number) => {
-    setTimes((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const confirmAddTime = () => {
-    setTimes((prev) => [...prev, `${pad2(pickHour)}:${pad2(pickMinute)}`]);
-    setTimePickerVisible(false);
-  };
-
-  const handleSave = async () => {
-    const trimmedName = name.trim();
-    const trimmedDosage = dosage.trim();
-    if (!trimmedName || !trimmedDosage) return;
-
-    const dayList = Array.from(days).sort((a, b) => a - b);
-    const trimmedInstructions = instructions.trim();
-
-    if (editing) {
-      await updateMedication({
-        medicationId: editing.id,
-        name: trimmedName,
-        dosage: trimmedDosage,
-        instructions: trimmedInstructions.length > 0 ? trimmedInstructions : undefined,
-        scheduleTimes: times.length > 0 ? times : undefined,
-        daysOfWeek: dayList.length > 0 ? dayList : undefined,
-      });
-    } else {
-      await addMedication({
-        name: trimmedName,
-        dosage: trimmedDosage,
-        instructions: trimmedInstructions.length > 0 ? trimmedInstructions : undefined,
-        scheduleTimes: times.length > 0 ? times : undefined,
-        daysOfWeek: dayList.length > 0 ? dayList : undefined,
-      });
-    }
-    setSheetVisible(false);
-  };
-
-  const confirmDelete = (item: MedicationItem) => {
-    Alert.alert(
-      'Xóa thuốc',
-      `Bạn có chắc muốn xóa "${item.name}" không?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: () => {
-            deleteMedication(item.id);
-          },
-        },
-      ],
-    );
-  };
-
-  const handleToggle = (med: MedicationItem) => {
-    toggleTaken(med.id);
-  };
+  // Ticks the "còn X phút" countdown and the upcoming→due transition live,
+  // without needing a manual refresh, for the 15-minutes-before demo flow.
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleTakeNow = (med: MedicationItem) => {
     cancelSnooze(med);
@@ -163,10 +63,6 @@ export default function ElderlyMedicationScreen() {
     }
   };
 
-  const takenCount = items.filter((m) => m.taken).length;
-  const totalCount = items.length;
-  const progress = totalCount === 0 ? 0 : takenCount / totalCount;
-
   const pending = [...items.filter((m) => !m.taken)].sort((a, b) => {
     const at = a.nextDoseTime ? new Date(a.nextDoseTime).getTime() : Number.MAX_SAFE_INTEGER;
     const bt = b.nextDoseTime ? new Date(b.nextDoseTime).getTime() : Number.MAX_SAFE_INTEGER;
@@ -180,6 +76,21 @@ export default function ElderlyMedicationScreen() {
         ? dueNow.scheduleTimes[0]
         : ''
     : '';
+
+  // Real-time gating: with no scheduled time we can't tell how close it is, so
+  // always surface it (fallback). Otherwise only show the banner once we're
+  // within the 15-minute window — "upcoming" (countdown) before the dose
+  // time, "due" once it has arrived — and hide it entirely if it's still far off.
+  const msUntilDue = dueNow?.nextDoseTime ? new Date(dueNow.nextDoseTime).getTime() - now : null;
+  const reminderPhase: 'none' | 'upcoming' | 'due' =
+    !dueNow ? 'none' : msUntilDue === null || msUntilDue <= 0 ? 'due' : msUntilDue <= UPCOMING_WINDOW_MS ? 'upcoming' : 'none';
+  const minutesUntilDue = msUntilDue !== null ? Math.max(1, Math.ceil(msUntilDue / 60_000)) : null;
+
+  const sortedItems = [...items].sort((a, b) => {
+    const at = a.nextDoseTime ? new Date(a.nextDoseTime).getTime() : Number.MAX_SAFE_INTEGER;
+    const bt = b.nextDoseTime ? new Date(b.nextDoseTime).getTime() : Number.MAX_SAFE_INTEGER;
+    return at - bt;
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -201,76 +112,56 @@ export default function ElderlyMedicationScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
-          {dueNow && (
-            <View style={styles.dueBanner}>
+          {dueNow && reminderPhase !== 'none' && (
+            <View style={[styles.dueBanner, reminderPhase === 'upcoming' && styles.upcomingBanner]}>
               <View style={styles.dueHeaderRow}>
-                <Ionicons name="alarm-outline" size={18} color={Colors.warning} />
-                <Text style={styles.dueHeaderText}>Đến giờ uống thuốc</Text>
+                <Ionicons
+                  name={reminderPhase === 'upcoming' ? 'time-outline' : 'alarm'}
+                  size={18}
+                  color={reminderPhase === 'upcoming' ? Colors.primary : Colors.warning}
+                />
+                <Text style={[styles.dueHeaderText, reminderPhase === 'upcoming' && styles.upcomingHeaderText]}>
+                  {reminderPhase === 'upcoming' ? 'SẮP ĐẾN GIỜ UỐNG THUỐC' : 'ĐẾN GIỜ UỐNG THUỐC'}
+                </Text>
               </View>
-              <View style={{ height: 10 }} />
+              <View style={{ height: 14 }} />
               <View style={styles.dueRow}>
-                <View style={styles.dueIconWrap}>
-                  <Ionicons name="medkit" size={24} color={Colors.warning} />
+                <View style={[styles.dueIconWrap, reminderPhase === 'upcoming' && styles.upcomingIconWrap]}>
+                  <Ionicons name="medkit" size={26} color={reminderPhase === 'upcoming' ? Colors.primary : Colors.warning} />
                 </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flex: 1, marginLeft: 14 }}>
                   <Text style={styles.dueMedName}>
                     {dueNow.name} {dueNow.dosage}
                   </Text>
-                  {!!dueTimeLabel && <Text style={styles.dueTimeLabel}>{dueTimeLabel}</Text>}
+                  {!!dueNow.instructions && <Text style={styles.dueInstructions}>{dueNow.instructions}</Text>}
+                  <Text style={styles.dueTimeLabel}>
+                    {reminderPhase === 'upcoming'
+                      ? `Còn khoảng ${minutesUntilDue} phút nữa${dueTimeLabel ? ` · ${dueTimeLabel}` : ''}`
+                      : dueTimeLabel}
+                  </Text>
                 </View>
               </View>
-              <View style={{ height: 14 }} />
-              <View style={styles.dueActionsRow}>
-                <TouchableOpacity
-                  style={styles.dueTakeBtn}
-                  onPress={() => handleTakeNow(dueNow)}
-                >
-                  <Text style={styles.dueTakeBtnText}>ĐÃ UỐNG</Text>
-                </TouchableOpacity>
-                <View style={{ width: 10 }} />
-                <TouchableOpacity
-                  style={styles.dueSnoozeBtn}
-                  onPress={() => handleSnooze(dueNow)}
-                >
-                  <Text style={styles.dueSnoozeBtnText}>Hoãn 10 phút</Text>
-                </TouchableOpacity>
-              </View>
+              <View style={{ height: 16 }} />
+              <TouchableOpacity
+                style={[styles.dueTakeBtn, reminderPhase === 'upcoming' && styles.upcomingTakeBtn]}
+                onPress={() => handleTakeNow(dueNow)}
+              >
+                <Text style={styles.dueTakeBtnText}>✓ ĐÃ UỐNG</Text>
+              </TouchableOpacity>
+              {reminderPhase === 'due' && (
+                <>
+                  <View style={{ height: 10 }} />
+                  <TouchableOpacity style={styles.dueSnoozeBtn} onPress={() => handleSnooze(dueNow)}>
+                    <Text style={styles.dueSnoozeBtnText}>Hoãn 10 phút</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           )}
 
-          <View style={styles.progressCard}>
-            <View style={styles.progressHeaderRow}>
-              <Text style={styles.progressHeaderText}>Hôm nay</Text>
-              <View style={styles.progressPct}>
-                <Text style={styles.progressPctText}>{Math.trunc(progress * 100)}%</Text>
-              </View>
-            </View>
-            <View style={{ height: 8 }} />
-            <Text style={styles.progressBig}>
-              Đã uống {takenCount} / {totalCount} liều
-            </Text>
-            <View style={{ height: 14 }} />
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${Math.min(100, progress * 100)}%` }]} />
-            </View>
-            <View style={{ height: 10 }} />
-            <Text style={styles.progressSub}>
-              {totalCount === 0
-                ? 'Thêm thuốc để bắt đầu theo dõi'
-                : takenCount === totalCount
-                  ? 'Tuyệt vời! Bạn đã uống hết thuốc hôm nay'
-                  : `Còn ${totalCount - takenCount} liều chưa uống`}
-            </Text>
-          </View>
+          <View style={{ height: 24 }} />
 
-          <View style={{ height: 20 }} />
-
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Hôm nay</Text>
-            <Text style={styles.sectionCount}>
-              {takenCount}/{totalCount} đã uống
-            </Text>
-          </View>
+          <Text style={styles.sectionTitle}>Hôm nay</Text>
 
           <View style={{ height: 14 }} />
 
@@ -283,18 +174,13 @@ export default function ElderlyMedicationScreen() {
               />
               <View style={{ height: 4 }} />
               <Text style={styles.emptyText}>Chưa có thuốc nào</Text>
-              <View style={{ height: 4 }} />
-              <Text style={styles.emptyHint}>Nhấn + để thêm thuốc</Text>
             </View>
           ) : (
-            items.map((m) => (
-              <MedCard
+            sortedItems.map((m) => (
+              <MedRow
                 key={m.id}
                 item={m}
-                onToggle={() => handleToggle(m)}
-                onEdit={() => openAddSheet(m)}
-                onDelete={() => confirmDelete(m)}
-                onHistory={() =>
+                onPress={() =>
                   navigation.navigate('ElderlyMedicationHistory', {
                     medicationId: m.id,
                     medicationName: m.name,
@@ -304,279 +190,40 @@ export default function ElderlyMedicationScreen() {
             ))
           )}
 
-          <View style={{ height: 90 }} />
+          <View style={{ height: 20 }} />
         </ScrollView>
       )}
-
-      <TouchableOpacity style={styles.fab} onPress={() => openAddSheet()}>
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      <Modal
-        visible={sheetVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeSheet}
-      >
-        <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={closeSheet}>
-          <TouchableOpacity activeOpacity={1} style={styles.sheet}>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <View style={styles.sheetHandle} />
-              <View style={{ height: 16 }} />
-              <Text style={styles.sheetTitle}>
-                {editing ? 'Sửa thuốc' : 'Thêm thuốc mới'}
-              </Text>
-              <View style={{ height: 20 }} />
-
-              <View style={styles.inputWrap}>
-                <Ionicons name="medkit" size={18} color={Colors.primary} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Tên thuốc (ví dụ: Metformin)"
-                  placeholderTextColor={Colors.textHint}
-                  value={name}
-                  onChangeText={setName}
-                />
-              </View>
-
-              <View style={{ height: 14 }} />
-
-              <View style={styles.inputWrap}>
-                <Ionicons name="scale-outline" size={18} color={Colors.primary} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Liều lượng (ví dụ: 500mg)"
-                  placeholderTextColor={Colors.textHint}
-                  value={dosage}
-                  onChangeText={setDosage}
-                />
-              </View>
-
-              <View style={{ height: 14 }} />
-
-              <View style={styles.rowBetween}>
-                <View style={styles.rowStart}>
-                  <Ionicons name="time-outline" size={20} color={Colors.primary} />
-                  <Text style={styles.label}>Giờ uống thuốc</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.addTimeBtn}
-                  onPress={() => {
-                    setPickHour(8);
-                    setPickMinute(0);
-                    setTimePickerVisible(true);
-                  }}
-                >
-                  <Ionicons name="add" size={18} color={Colors.primary} />
-                  <Text style={styles.addTimeBtnText}>Thêm giờ</Text>
-                </TouchableOpacity>
-              </View>
-
-              {times.length > 0 && (
-                <>
-                  <View style={{ height: 8 }} />
-                  <View style={styles.chipsWrap}>
-                    {times.map((t, i) => (
-                      <View key={`${t}-${i}`} style={styles.timeChip}>
-                        <Text style={styles.timeChipText}>{t}</Text>
-                        <TouchableOpacity onPress={() => removeTime(i)}>
-                          <Ionicons name="close" size={16} color={Colors.primary} />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                </>
-              )}
-
-              <View style={{ height: 14 }} />
-              <Text style={styles.label}>Ngày trong tuần</Text>
-              <View style={{ height: 8 }} />
-              <View style={styles.daysRow}>
-                {DAY_LABELS.map((label, i) => {
-                  const selected = days.has(i);
-                  return (
-                    <TouchableOpacity
-                      key={label}
-                      style={[styles.dayChip, selected && styles.dayChipSelected]}
-                      onPress={() => toggleDay(i)}
-                    >
-                      <Text style={[styles.dayChipText, selected && styles.dayChipTextSelected]}>
-                        {label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              <View style={{ height: 14 }} />
-
-              <View style={styles.inputWrap}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={18}
-                  color={Colors.primary}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Hướng dẫn (không bắt buộc, ví dụ: Uống sau khi ăn)"
-                  placeholderTextColor={Colors.textHint}
-                  value={instructions}
-                  onChangeText={setInstructions}
-                />
-              </View>
-
-              <View style={{ height: 20 }} />
-
-              <TouchableOpacity
-                style={[styles.saveBtn, (!name.trim() || !dosage.trim()) && styles.saveBtnDisabled]}
-                onPress={handleSave}
-                disabled={!name.trim() || !dosage.trim()}
-              >
-                <Text style={styles.saveBtnText}>{editing ? 'Cập nhật' : 'Thêm thuốc'}</Text>
-              </TouchableOpacity>
-
-              <View style={{ height: 24 }} />
-            </ScrollView>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-
-      <Modal
-        visible={timePickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setTimePickerVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setTimePickerVisible(false)}
-        >
-          <TouchableOpacity activeOpacity={1} style={styles.timePickerSheet}>
-            <Text style={styles.modalTitle}>Chọn giờ</Text>
-            <View style={{ height: 12 }} />
-            <View style={styles.timePickerColumns}>
-              <FlatList
-                style={styles.timePickerList}
-                data={HOURS}
-                keyExtractor={(h) => `h-${h}`}
-                renderItem={({ item: h }) => (
-                  <TouchableOpacity
-                    style={[styles.timePickerOption, pickHour === h && styles.timePickerOptionSelected]}
-                    onPress={() => setPickHour(h)}
-                  >
-                    <Text
-                      style={[
-                        styles.timePickerOptionText,
-                        pickHour === h && styles.timePickerOptionTextSelected,
-                      ]}
-                    >
-                      {pad2(h)}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
-              <Text style={styles.timePickerColon}>:</Text>
-              <FlatList
-                style={styles.timePickerList}
-                data={MINUTES}
-                keyExtractor={(m) => `m-${m}`}
-                renderItem={({ item: m }) => (
-                  <TouchableOpacity
-                    style={[styles.timePickerOption, pickMinute === m && styles.timePickerOptionSelected]}
-                    onPress={() => setPickMinute(m)}
-                  >
-                    <Text
-                      style={[
-                        styles.timePickerOptionText,
-                        pickMinute === m && styles.timePickerOptionTextSelected,
-                      ]}
-                    >
-                      {pad2(m)}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
-            <View style={{ height: 16 }} />
-            <TouchableOpacity style={styles.timePickerConfirm} onPress={confirmAddTime}>
-              <Text style={styles.timePickerConfirmText}>Thêm</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
     </SafeAreaView>
   );
 }
 
-function MedCard({
-  item,
-  onToggle,
-  onEdit,
-  onDelete,
-  onHistory,
-}: {
-  item: MedicationItem;
-  onToggle: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onHistory: () => void;
-}) {
-  const nextTimeLabel = item.nextDoseTime
+function MedRow({ item, onPress }: { item: MedicationItem; onPress: () => void }) {
+  const timeLabel = item.nextDoseTime
     ? `${pad2(new Date(item.nextDoseTime).getHours())}:${pad2(new Date(item.nextDoseTime).getMinutes())}`
-    : null;
+    : item.scheduleTimes.length > 0
+      ? item.scheduleTimes[0]
+      : '--:--';
 
   return (
-    <View style={[styles.medCard, item.taken && styles.medCardTaken]}>
-      <View style={[styles.medIconWrap, item.taken && styles.medIconWrapTaken]}>
-        <Ionicons name="medkit" size={24} color={item.taken ? Colors.success : Colors.primary} />
-      </View>
-      <View style={{ flex: 1, marginLeft: 14 }}>
-        <Text style={[styles.medName, item.taken && styles.medNameTaken]}>{item.name}</Text>
-        <View style={{ height: 3 }} />
-        <View style={styles.medMetaRow}>
-          <Text style={styles.medDosage}>{item.dosage}</Text>
-          {item.scheduleTimes.length > 0 && (
-            <>
-              <Ionicons name="time-outline" size={12} color={Colors.textHint} style={{ marginLeft: 6 }} />
-              <Text style={styles.medTimes}> {item.scheduleTimes.join(', ')}</Text>
-            </>
-          )}
-          {!!item.instructions && (
-            <>
-              <View style={styles.dot} />
-              <Text style={styles.medInstructions} numberOfLines={1}>
-                {item.instructions}
-              </Text>
-            </>
-          )}
+    <TouchableOpacity style={styles.medRow} onPress={onPress} activeOpacity={0.8}>
+      <Text style={styles.medRowTime}>{timeLabel}</Text>
+      <View style={{ flex: 1, marginLeft: 16 }}>
+        <Text style={styles.medRowName}>
+          {item.name} {item.dosage}
+        </Text>
+        <View style={{ height: 4 }} />
+        <View style={styles.medRowStatusRow}>
+          <Ionicons
+            name={item.taken ? 'checkmark' : 'alarm-outline'}
+            size={14}
+            color={item.taken ? Colors.success : Colors.warning}
+          />
+          <Text style={[styles.medRowStatusText, { color: item.taken ? Colors.success : Colors.warning }]}>
+            {item.taken ? ' Đã uống' : ' Sắp tới'}
+          </Text>
         </View>
       </View>
-
-      {nextTimeLabel && (
-        <View style={styles.medTimeBadge}>
-          <Text style={styles.medTimeBadgeText}>{nextTimeLabel}</Text>
-        </View>
-      )}
-
-      <TouchableOpacity style={styles.medActionHistory} onPress={onHistory}>
-        <Ionicons name="time" size={16} color={Colors.success} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.medActionEdit} onPress={onEdit}>
-        <Ionicons name="create-outline" size={16} color={Colors.primary} />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.medActionDelete} onPress={onDelete}>
-        <Ionicons name="trash-outline" size={16} color={Colors.error} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.checkCircle, item.taken && styles.checkCircleTaken]}
-        onPress={onToggle}
-      >
-        {item.taken && <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
-      </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -598,80 +245,54 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
-  scroll: { padding: 16 },
+  scroll: { padding: 20 },
 
   dueBanner: {
-    marginBottom: 16,
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 167, 38, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 167, 38, 0.4)',
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.textPrimary,
   },
   dueHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dueHeaderText: { fontSize: 13, fontWeight: '700', color: Colors.warning },
+  dueHeaderText: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, letterSpacing: 0.5 },
+  upcomingHeaderText: { color: Colors.primary },
   dueRow: { flexDirection: 'row', alignItems: 'center' },
   dueIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 167, 38, 0.15)',
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 167, 38, 0.4)',
+    borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dueMedName: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  dueTimeLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  dueActionsRow: { flexDirection: 'row' },
+  upcomingBanner: { borderColor: Colors.primary },
+  upcomingIconWrap: { borderColor: 'rgba(46, 125, 154, 0.4)' },
+  upcomingTakeBtn: { backgroundColor: Colors.primary },
+  dueMedName: { fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  dueInstructions: { fontSize: Typography.bodySmall.fontSize, color: Colors.textSecondary, marginTop: 2 },
+  dueTimeLabel: { fontSize: 12, color: Colors.textHint, marginTop: 2 },
   dueTakeBtn: {
-    flex: 1,
-    backgroundColor: Colors.success,
-    paddingVertical: 14,
-    borderRadius: 12,
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.textPrimary,
     alignItems: 'center',
   },
-  dueTakeBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  dueTakeBtnText: { color: '#FFFFFF', fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 0.5 },
   dueSnoozeBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.5)',
-    paddingVertical: 14,
-    borderRadius: 12,
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
     alignItems: 'center',
   },
-  dueSnoozeBtnText: { color: Colors.textSecondary, fontSize: 13 },
+  dueSnoozeBtnText: { color: Colors.textPrimary, fontSize: Typography.button.fontSize, fontWeight: '600' },
 
-  progressCard: {
-    padding: 20,
-    borderRadius: 18,
-    backgroundColor: Colors.primaryDark,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  progressHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  progressHeaderText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: '500' },
-  progressPct: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  progressPctText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  progressBig: { color: '#FFFFFF', fontSize: 22, fontWeight: '700' },
-  progressTrack: {
-    height: 10,
-    borderRadius: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    overflow: 'hidden',
-  },
-  progressFill: { height: 10, borderRadius: 6, backgroundColor: '#81D4FA' },
-  progressSub: { color: 'rgba(255,255,255,0.8)', fontSize: 13 },
-
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  sectionCount: { color: Colors.textSecondary, fontSize: 13 },
+  sectionTitle: { fontSize: Typography.sectionTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
 
   emptyCard: {
     paddingVertical: 40,
@@ -680,199 +301,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: { color: Colors.textSecondary, fontSize: 14 },
-  emptyHint: { color: Colors.textHint, fontSize: 13 },
 
-  medCard: {
-    marginBottom: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.15)',
+  medRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  medCardTaken: { borderColor: 'rgba(67, 160, 71, 0.3)' },
-  medIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  medIconWrapTaken: { backgroundColor: 'rgba(67, 160, 71, 0.1)' },
-  medName: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  medNameTaken: { textDecorationLine: 'line-through', textDecorationColor: Colors.textHint },
-  medMetaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
-  medDosage: { color: Colors.textSecondary, fontSize: 13 },
-  medTimes: { color: Colors.textHint, fontSize: 11 },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.textHint,
-    marginHorizontal: 8,
-  },
-  medInstructions: { color: Colors.textSecondary, fontSize: 12, flexShrink: 1 },
-  medTimeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-    marginLeft: 8,
-  },
-  medTimeBadgeText: { color: Colors.primary, fontSize: 13, fontWeight: '600' },
-  medActionHistory: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(67, 160, 71, 0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 6,
-  },
-  medActionEdit: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(46, 125, 154, 0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 6,
-  },
-  medActionDelete: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(229, 57, 53, 0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 6,
-  },
-  checkCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: 'rgba(173, 181, 189, 0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  checkCircleTaken: { backgroundColor: Colors.success, borderColor: Colors.success },
-
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-
-  sheetOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: {
+    marginBottom: 12,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 16,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 24,
-    maxHeight: '90%',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: Colors.textHint,
-  },
-  sheetTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.4)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  inputIcon: { marginRight: 8 },
-  input: { flex: 1, fontSize: 15, color: Colors.textPrimary, height: '100%' },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  rowStart: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  label: { fontWeight: '600', color: Colors.textPrimary, fontSize: 14 },
-  addTimeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addTimeBtnText: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  timeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-  },
-  timeChipText: { color: Colors.primary, fontSize: 13 },
-  daysRow: { flexDirection: 'row', gap: 6 },
-  dayChip: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.3)',
-    backgroundColor: Colors.surface,
-  },
-  dayChipSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  dayChipText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
-  dayChipTextSelected: { color: '#FFFFFF' },
-  saveBtn: {
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveBtnDisabled: { opacity: 0.5 },
-  saveBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  timePickerSheet: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-  },
-  timePickerColumns: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 220 },
-  timePickerList: { width: 70, maxHeight: 220 },
-  timePickerColon: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary, marginHorizontal: 8 },
-  timePickerOption: { paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
-  timePickerOptionSelected: { backgroundColor: 'rgba(46, 125, 154, 0.1)' },
-  timePickerOptionText: { fontSize: 16, color: Colors.textSecondary },
-  timePickerOptionTextSelected: { color: Colors.primary, fontWeight: '700' },
-  timePickerConfirm: {
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timePickerConfirmText: { color: '#FFFFFF', fontWeight: '600', fontSize: 15 },
+  medRowTime: { fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  medRowName: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  medRowStatusRow: { flexDirection: 'row', alignItems: 'center' },
+  medRowStatusText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600' },
 });

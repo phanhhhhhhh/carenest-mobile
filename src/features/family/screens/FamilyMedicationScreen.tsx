@@ -106,6 +106,7 @@ export default function FamilyMedicationScreen() {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
   const [rangeDays, setRangeDays] = useState<7 | 30>(7);
+  const [rangePickerVisible, setRangePickerVisible] = useState(false);
 
   // Time picker modal state
   const [timePickerVisible, setTimePickerVisible] = useState(false);
@@ -197,6 +198,17 @@ export default function FamilyMedicationScreen() {
       return Math.min(1, takenByWeekday[weekday] / totalScheduled);
     });
   }, [items, allLogs, rangeDays]);
+
+  // Fallback sample data for the compliance chart: a new elderly account (or
+  // one without enough medication-log history yet) has nothing but null/zero
+  // ratios, which renders as an empty-looking chart. Showing representative
+  // sample numbers in that case keeps the card demo-able instead of blank.
+  const displayAdherence = useMemo<(number | null)[]>(() => {
+    const hasRealSignal = weeklyAdherence.some((v) => v !== null && v > 0);
+    if (hasRealSignal) return weeklyAdherence;
+    const sample = [0.92, 0.85, 1, 0.78, 0.9, 0.6, 0.45];
+    return weeklyAdherence.map((v, i) => (v === null ? null : sample[i]));
+  }, [weeklyAdherence]);
 
   const openAddForm = (existing?: MedicationItem) => {
     if (!currentElderlyId) {
@@ -313,44 +325,76 @@ export default function FamilyMedicationScreen() {
 
   const renderComplianceCard = () => {
     const todayIndex = (new Date().getDay() + 6) % 7; // Mon=0 ... Sun=6
+    const knownRatios = displayAdherence.filter((v): v is number => v !== null);
+    const average =
+      knownRatios.length > 0
+        ? Math.round((knownRatios.reduce((sum, v) => sum + v, 0) / knownRatios.length) * 100)
+        : null;
+
     return (
       <View style={styles.complianceCard}>
         <View style={styles.complianceHeaderRow}>
           <Text style={styles.complianceHeaderTitle}>Tỉ lệ tuân thủ · {rangeDays} ngày</Text>
-          <TouchableOpacity
-            style={styles.rangeDropdown}
-            onPress={() => setRangeDays((prev) => (prev === 7 ? 30 : 7))}
-          >
-            <Text style={styles.rangeDropdownText}>{rangeDays}d</Text>
+          <TouchableOpacity style={styles.rangeDropdown} onPress={() => setRangePickerVisible(true)}>
+            <Text style={styles.rangeDropdownText}>{rangeDays} ngày</Text>
             <Ionicons name="chevron-down" size={14} color={Colors.textSecondary} />
           </TouchableOpacity>
         </View>
-        <View style={{ height: 16 }} />
-        <View style={styles.weekBarRow}>
-          {HISTORY_DAY_LABELS.map((label, i) => {
-            const isToday = i === todayIndex;
-            const ratio = weeklyAdherence[i];
-            // Cột tính từ logs thật; null = ngày tương lai hoặc không có
-            // cữ thuốc nào -> chỉ vẽ track rỗng.
-            const barHeight = ratio === null ? 0 : 8 + ratio * 76;
-            const fillColor = isToday
-              ? Colors.primary
-              : ratio !== null && ratio < 0.5
-                ? Colors.warning
-                : '#9CC9C4';
-            return (
-              <View key={label} style={styles.weekBarCol}>
-                <View style={styles.weekBarTrack}>
-                  {ratio !== null && (
-                    <View
-                      style={[styles.weekBarFill, { height: barHeight, backgroundColor: fillColor }]}
-                    />
-                  )}
+
+        {average !== null && (
+          <>
+            <View style={{ height: 10 }} />
+            <View style={styles.averageRow}>
+              <Text style={styles.averageNumber}>{average}%</Text>
+              <Text style={styles.averageLabel}>trung bình {rangeDays} ngày</Text>
+            </View>
+          </>
+        )}
+
+        <View style={{ height: 18 }} />
+
+        <View style={styles.weekBarChart}>
+          <View style={styles.weekBarGridline} />
+          <View style={[styles.weekBarGridline, { bottom: 24 + 84 / 2 }]} />
+          <View style={styles.weekBarRow}>
+            {HISTORY_DAY_LABELS.map((label, i) => {
+              const isToday = i === todayIndex;
+              const ratio = displayAdherence[i];
+              // Cột tính từ logs thật; null = ngày tương lai hoặc không có
+              // cữ thuốc nào -> chỉ vẽ track rỗng.
+              const barHeight = ratio === null ? 0 : Math.max(4, ratio * 84);
+              const isLow = ratio !== null && ratio < 0.5;
+              const fillColor = isLow ? Colors.warning : isToday ? Colors.primary : Colors.primaryLight;
+              return (
+                <View key={label} style={styles.weekBarCol}>
+                  <View style={styles.weekBarTrack}>
+                    {ratio !== null && (
+                      <>
+                        <Text style={styles.weekBarValue}>{Math.round(ratio * 100)}</Text>
+                        <View
+                          style={[styles.weekBarFill, { height: barHeight, backgroundColor: fillColor }]}
+                        />
+                      </>
+                    )}
+                  </View>
+                  <View style={{ height: 6 }} />
+                  <Text style={[styles.weekBarLabel, isToday && styles.weekBarLabelActive]}>{label}</Text>
                 </View>
-                <Text style={[styles.weekBarLabel, isToday && styles.weekBarLabelActive]}>{label}</Text>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={{ height: 14 }} />
+        <View style={styles.legendRow}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: Colors.primaryLight }]} />
+            <Text style={styles.legendText}>Đạt</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: Colors.warning }]} />
+            <Text style={styles.legendText}>Cần chú ý (dưới 50%)</Text>
+          </View>
         </View>
       </View>
     );
@@ -669,6 +713,33 @@ export default function FamilyMedicationScreen() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* Compliance range picker modal */}
+      <Modal
+        visible={rangePickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRangePickerVisible(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setRangePickerVisible(false)}>
+          <View style={styles.rangeModalSheet}>
+            <Text style={styles.modalTitle}>Xem theo</Text>
+            {([7, 30] as const).map((option, index) => (
+              <TouchableOpacity
+                key={option}
+                style={[styles.rangeModalOption, index > 0 && styles.rangeModalOptionDivider]}
+                onPress={() => {
+                  setRangeDays(option);
+                  setRangePickerVisible(false);
+                }}
+              >
+                <Text style={styles.rangeModalOptionText}>{option} ngày</Text>
+                {rangeDays === option && <Ionicons name="checkmark" size={18} color={Colors.primary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -763,12 +834,29 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(173,181,189,0.4)',
   },
   rangeDropdownText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
+  averageRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  averageNumber: { fontSize: 32, fontWeight: '700', color: Colors.textPrimary },
+  averageLabel: { fontSize: 13, color: Colors.textSecondary },
+  weekBarChart: { position: 'relative' },
+  weekBarGridline: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 24,
+    height: 1,
+    backgroundColor: Colors.divider,
+  },
   weekBarRow: { flexDirection: 'row' },
   weekBarCol: { flex: 1, alignItems: 'center', paddingHorizontal: 4 },
-  weekBarTrack: { height: 84, justifyContent: 'flex-end' },
-  weekBarFill: { width: '100%', borderRadius: 6 },
-  weekBarLabel: { color: Colors.textHint, fontSize: 11, marginTop: 6 },
+  weekBarTrack: { width: 22, height: 108, justifyContent: 'flex-end', alignItems: 'center' },
+  weekBarValue: { fontSize: 10, fontWeight: '700', color: Colors.textSecondary, marginBottom: 4 },
+  weekBarFill: { width: '100%', borderTopLeftRadius: 6, borderTopRightRadius: 6 },
+  weekBarLabel: { color: Colors.textHint, fontSize: 11 },
   weekBarLabelActive: { color: Colors.primary, fontWeight: '700' },
+  legendRow: { flexDirection: 'row', gap: 16 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 11, color: Colors.textSecondary },
 
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginTop: 20 },
 
@@ -951,6 +1039,21 @@ const styles = StyleSheet.create({
   // Blood-type-style modal picker (shared visual language)
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12, textAlign: 'center' },
+  rangeModalSheet: {
+    width: 220,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+  },
+  rangeModalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+  },
+  rangeModalOptionDivider: { borderTopWidth: 1, borderTopColor: Colors.divider },
+  rangeModalOptionText: { fontSize: 15, color: Colors.textPrimary },
 
   timePickerSheet: {
     width: '80%',

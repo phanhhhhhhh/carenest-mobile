@@ -34,8 +34,11 @@ interface AppointmentState {
   error: string | null;
   appointments: AppointmentItem[];
   isSaving: boolean;
+  /** Elderly whose appointments are currently loaded — remembered so create/update/delete
+   *  can reload the same list instead of falling back to the logged-in user's own id. */
+  currentElderlyId: string | null;
 
-  load: (signal?: AbortSignal) => Promise<void>;
+  load: (elderlyId?: string, signal?: AbortSignal) => Promise<void>;
   create: (params: {
     doctor: string;
     specialty: string;
@@ -64,11 +67,12 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
   error: null,
   appointments: [],
   isSaving: false,
+  currentElderlyId: null,
 
-  load: async (signal) => {
+  load: async (elderlyId, signal) => {
     set({ isLoading: true, error: null });
     try {
-      const userId = await storage.getUserId();
+      const userId = elderlyId ?? (await storage.getUserId());
       if (!userId) {
         set({ isLoading: false });
         return;
@@ -80,7 +84,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
         return;
       }
       const items = safeParseList(AppointmentSchema, resp.data, 'AppointmentList').map(toAppointmentItem);
-      set({ isLoading: false, appointments: items });
+      set({ isLoading: false, appointments: items, currentElderlyId: userId });
     } catch (e) {
       if (isCancelled(e)) return;
       set({ isLoading: false, error: `Lỗi khi tải lịch hẹn: ${getErrorMessage(e)}` });
@@ -90,7 +94,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
   create: async ({ doctor, specialty, location, appointmentDate, notes, elderlyId }) => {
     set({ isSaving: true, error: null });
     try {
-      const eId = elderlyId ?? (await storage.getUserId());
+      const eId = elderlyId ?? get().currentElderlyId ?? (await storage.getUserId());
       const data: Record<string, unknown> = {};
       if (eId != null) data.elderlyId = Number.parseInt(eId, 10);
       data.doctor = doctor;
@@ -100,7 +104,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       if (notes && notes.length > 0) data.notes = notes;
 
       await api.post('/appointments', data);
-      await get().load();
+      await get().load(get().currentElderlyId ?? undefined);
       set({ isSaving: false });
       return true;
     } catch (e) {
@@ -119,7 +123,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
       if (appointmentDate !== undefined) data.datetime = appointmentDate.toISOString();
       if (notes !== undefined) data.notes = notes;
       await api.patch(`/appointments/${appointmentId}`, data);
-      await get().load();
+      await get().load(get().currentElderlyId ?? undefined);
       set({ isSaving: false });
       return true;
     } catch (e) {
@@ -131,7 +135,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
   delete: async (appointmentId) => {
     try {
       await api.delete(`/appointments/${appointmentId}`);
-      await get().load();
+      await get().load(get().currentElderlyId ?? undefined);
       return true;
     } catch (e) {
       set({ error: `Lỗi khi xóa lịch hẹn: ${getErrorMessage(e)}` });
@@ -142,7 +146,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
   updateStatus: async (appointmentId, newStatus) => {
     try {
       await api.patch(`/appointments/${appointmentId}/status`, { status: newStatus });
-      await get().load();
+      await get().load(get().currentElderlyId ?? undefined);
       return true;
     } catch (e) {
       set({ error: `Lỗi khi cập nhật trạng thái: ${getErrorMessage(e)}` });
@@ -151,7 +155,7 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
   },
 
   refresh: () => {
-    get().load();
+    get().load(get().currentElderlyId ?? undefined);
   },
 
   upcoming: () =>

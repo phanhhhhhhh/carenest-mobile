@@ -74,12 +74,10 @@ public class AuthService {
         }
 
         // Phone-only accounts are auto-verified (primary registration method).
-        // Email accounts must click the verification link before first login.
-        String verificationToken = null;
+        // Email accounts are verified via a 6-digit OTP code (sent by the
+        // client's follow-up call to /auth/send-otp), not a clickable link --
+        // the app has no web frontend to land the link on.
         boolean needsVerification = !hasPhone;
-        if (hasEmail) {
-            verificationToken = generateSecureToken();
-        }
 
         User user = User.builder()
             .email(hasEmail ? request.getEmail().toLowerCase().trim() : null)
@@ -89,14 +87,8 @@ public class AuthService {
             .phone(hasPhone ? request.getPhone().trim() : null)
             .dob(request.getDob())
             .emailVerified(!needsVerification)
-            .emailVerificationToken(verificationToken)
-            .emailVerificationExpiry(hasEmail ? OffsetDateTime.now().plusHours(24) : null)
             .build();
         userRepository.save(user);
-
-        if (hasEmail) {
-            emailService.sendVerificationEmail(user.getEmail(), user.getName(), verificationToken);
-        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("userId", user.getId());

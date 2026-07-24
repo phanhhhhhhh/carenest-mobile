@@ -18,13 +18,11 @@ import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { getName, getUserId } from '../../../core/storage/secureStorage';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 import { useMedicationStore } from '../store/medicationStore';
-import { useHealthMetricStore } from '../store/healthMetricStore';
 import { useCameraStore } from '../../family/store/cameraStore';
-import { useAppointmentStore } from '../../family/store/appointmentStore';
 import { useEmergencyEventStore } from '../../family/store/emergencyEventStore';
 import { useNotificationStore, selectUnreadCount } from '../../notifications/store/notificationStore';
 import { showErrorToast } from '../../../shared/components/toastStore';
-import type { MedicationItem, AppointmentItem } from '../../../shared/types';
+import type { MedicationItem } from '../../../shared/types';
 
 
 
@@ -52,8 +50,6 @@ function formatTimeFromIso(iso?: string): string {
   return `${h}:${m}`;
 }
 
-const MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
-
 export default function ElderlyHomeScreen() {
   const navigation = useNavigation<Nav>();
 
@@ -71,16 +67,8 @@ export default function ElderlyHomeScreen() {
   const loadMedications = useMedicationStore((s) => s.load);
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
 
-  const healthStore = useHealthMetricStore(elderlyId ?? '');
-  const latestByType = healthStore((s) => s.latestByType);
-
   const cameraStatus = useCameraStore((s) => s.status);
   const loadCamera = useCameraStore((s) => s.load);
-
-  const appointments = useAppointmentStore((s) => s.appointments);
-  const appointmentsLoading = useAppointmentStore((s) => s.isLoading);
-  const loadAppointments = useAppointmentStore((s) => s.load);
-  const upcomingAppointments = useAppointmentStore((s) => s.upcoming);
 
   const createSosEvent = useEmergencyEventStore((s) => s.createSosEvent);
 
@@ -102,14 +90,12 @@ export default function ElderlyHomeScreen() {
     loadProfile(controller.signal);
     loadMedications(undefined, controller.signal);
     loadNotifications(controller.signal);
-    loadAppointments(controller.signal);
     return () => controller.abort();
   }, []);
 
   useEffect(() => {
     if (!elderlyId) return;
     const controller = new AbortController();
-    healthStore.getState().load(undefined, controller.signal);
     loadCamera(elderlyId, controller.signal);
     return () => controller.abort();
   }, [elderlyId]);
@@ -185,24 +171,13 @@ export default function ElderlyHomeScreen() {
 
   const isCameraOn = cameraStatus.hasCamera && cameraStatus.allOnline;
 
-  const bp = latestByType['BLOOD_PRESSURE'];
-  const bloodPressure = bp
-    ? `${bp.value}${bp.valueSecondary ? `/${bp.valueSecondary}` : ''}${bp.unit ? ` ${bp.unit}` : ''}`
-    : undefined;
-  const bs = latestByType['BLOOD_GLUCOSE'];
-  const bloodSugar = bs ? `${bs.value}${bs.unit ? ` ${bs.unit}` : ''}` : undefined;
-  const hr = latestByType['HEART_RATE'];
-  const heartRate = hr ? `${hr.value}${hr.unit ? ` ${hr.unit}` : ''}` : undefined;
-
-  const upcoming = upcomingAppointments().slice(0, 3);
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>{`${greeting()}, ${displayName}!`}</Text>
-            <Text style={styles.dateText}>{formatDateHeader()}</Text>
+            <Text style={styles.greeting}>{`${greeting()},`}</Text>
+            <Text style={styles.greetingName}>{displayName}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
             <View>
@@ -215,10 +190,11 @@ export default function ElderlyHomeScreen() {
             </View>
           </TouchableOpacity>
         </View>
+        <Text style={styles.dateText}>{formatDateHeader()}</Text>
 
-        <View style={{ height: 28 }} />
+        <View style={{ height: 24 }} />
 
-        <View style={styles.sosWrap}>
+        <View style={styles.emergencyWrap}>
           {sosCountdown ? (
             <>
               <Text style={styles.sosSendingText}>Đang gửi tín hiệu khẩn cấp...</Text>
@@ -234,17 +210,19 @@ export default function ElderlyHomeScreen() {
             </>
           ) : (
             <>
-              <TouchableOpacity onPress={onSosPressed} activeOpacity={0.85} style={styles.sosCircle}>
-                <Text style={styles.sosText}>SOS</Text>
-                <Text style={styles.sosSubText}>Cảnh báo khẩn cấp</Text>
+              <TouchableOpacity onPress={onSosPressed} activeOpacity={0.85} style={styles.emergencyButton}>
+                <View style={styles.emergencyIconBox}>
+                  <Ionicons name="alert" size={20} color="#FFFFFF" />
+                </View>
+                <Text style={styles.emergencyButtonText}>GỌI KHẨN CẤP</Text>
               </TouchableOpacity>
-              <View style={{ height: 14 }} />
-              <Text style={styles.sosHint}>Nhấn giữ 3 giây để gửi tín hiệu khẩn cấp</Text>
+              <View style={{ height: 10 }} />
+              <Text style={styles.sosHint}>Nhấn để gửi tín hiệu khẩn cấp trong 3 giây</Text>
             </>
           )}
         </View>
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 20 }} />
 
         {nextMed && (
           <NextMedicationCard
@@ -253,71 +231,31 @@ export default function ElderlyHomeScreen() {
           />
         )}
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 16 }} />
 
         {elderlyId && (
-          <View style={styles.cameraCard}>
-            <View style={[styles.cameraDot, { backgroundColor: isCameraOn ? Colors.success : Colors.textHint }]} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.cameraTitle}>{isCameraOn ? 'Camera đang bật' : 'Camera chưa bật'}</Text>
-              <Text style={styles.cameraSubtitle}>{isCameraOn ? 'Con đang xem được' : 'Chưa có ai theo dõi'}</Text>
+          <>
+            <View style={styles.cameraCard}>
+              <View style={[styles.cameraDot, { backgroundColor: isCameraOn ? Colors.success : Colors.textHint }]} />
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={styles.cameraTitle}>{isCameraOn ? 'Camera đang bật' : 'Camera chưa bật'}</Text>
+                <Text style={styles.cameraSubtitle}>{isCameraOn ? 'Con đang xem được' : 'Chưa có ai theo dõi'}</Text>
+              </View>
+              <Ionicons name="videocam-outline" size={24} color={Colors.textPrimary} />
             </View>
+
+            <View style={{ height: 12 }} />
+
             <TouchableOpacity
-              style={styles.callButton}
+              style={styles.callCard}
               onPress={() => navigation.navigate('ElderlyEmergencyContacts')}
+              activeOpacity={0.85}
             >
-              <Ionicons name="call" size={16} color={Colors.primary} />
-              <Text style={styles.callButtonText}>Gọi cho con</Text>
+              <Ionicons name="call-outline" size={20} color={Colors.textPrimary} />
+              <Text style={styles.callCardText}>Gọi cho con</Text>
             </TouchableOpacity>
-          </View>
+          </>
         )}
-
-        <View style={{ height: 20 }} />
-
-        <TouchableOpacity
-          style={styles.chatCard}
-          onPress={() => navigation.navigate('ElderlyChat')}
-          activeOpacity={0.85}
-        >
-          <View style={styles.chatIcon}>
-            <Ionicons name="chatbubble-ellipses" size={22} color={Colors.primary} />
-          </View>
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.cameraTitle}>Trò chuyện với AI</Text>
-            <Text style={styles.cameraSubtitle}>Hỏi đáp, nhắc nhở và trò chuyện hằng ngày</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textHint} />
-        </TouchableOpacity>
-
-        <View style={{ height: 28 }} />
-
-        <Text style={styles.sectionTitle}>Chỉ số hôm nay</Text>
-        <View style={{ height: 14 }} />
-        <View style={styles.healthRow}>
-          <HealthCard
-            icon="heart"
-            iconBgColor="#FFEBEE"
-            iconColor={Colors.error}
-            label="Nhịp tim"
-            value={heartRate ?? '--'}
-          />
-          <View style={{ width: 10 }} />
-          <HealthCard
-            icon="water"
-            iconBgColor="#E3F2FD"
-            iconColor="#1565C0"
-            label="Huyết áp"
-            value={bloodPressure ?? '--'}
-          />
-          <View style={{ width: 10 }} />
-          <HealthCard
-            icon="flask-outline"
-            iconBgColor="#FFF3E0"
-            iconColor={Colors.warning}
-            label="Đường huyết"
-            value={bloodSugar ?? '--'}
-          />
-        </View>
 
         <View style={{ height: 28 }} />
 
@@ -341,39 +279,6 @@ export default function ElderlyHomeScreen() {
           </View>
         ) : (
           medItems.slice(0, 3).map((med) => <MedicationTile key={med.id} medication={med} />)
-        )}
-
-        <View style={{ height: 28 }} />
-
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Lịch hẹn sắp tới</Text>
-          {upcoming.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate('ElderlyAppointments')}>
-              <Text style={styles.viewAll}>Xem tất cả</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-        <View style={{ height: 14 }} />
-        {appointmentsLoading && upcoming.length === 0 ? (
-          <View style={styles.centerPad}>
-            <ActivityIndicator size="small" color={Colors.primary} />
-          </View>
-        ) : upcoming.length === 0 ? (
-          <TouchableOpacity
-            style={styles.emptyCardBig}
-            onPress={() => navigation.navigate('ElderlyAppointments')}
-          >
-            <Ionicons name="calendar-outline" size={32} color={Colors.textHint} />
-            <Text style={styles.emptyTextSmall}>Chưa có lịch hẹn</Text>
-          </TouchableOpacity>
-        ) : (
-          upcoming.map((apt) => (
-            <AppointmentTile
-              key={apt.id}
-              appointment={apt}
-              onPress={() => navigation.navigate('ElderlyAppointments')}
-            />
-          ))
         )}
 
         <View style={{ height: 20 }} />
@@ -404,56 +309,35 @@ function NextMedicationCard({
         },
       ]}
     >
-      <View
-        style={[
-          styles.nextMedIcon,
-          { backgroundColor: medication.taken ? 'rgba(67, 160, 71, 0.1)' : 'rgba(255, 167, 38, 0.1)' },
-        ]}
-      >
-        <Ionicons name="medkit" size={26} color={medication.taken ? Colors.success : Colors.warning} />
+      <View style={styles.nextMedTopRow}>
+        <View
+          style={[
+            styles.nextMedIcon,
+            { backgroundColor: medication.taken ? 'rgba(67, 160, 71, 0.1)' : 'rgba(255, 167, 38, 0.1)' },
+          ]}
+        >
+          <Ionicons name="medkit" size={26} color={medication.taken ? Colors.success : Colors.warning} />
+        </View>
+        <View style={{ flex: 1, marginLeft: 14 }}>
+          <Text style={styles.nextMedLabel}>
+            {timeLabel ? `Thuốc tiếp theo · ${timeLabel}` : 'Thuốc tiếp theo'}
+          </Text>
+          <Text style={styles.nextMedName}>
+            {medication.name} {medication.dosage}
+          </Text>
+          {!!medication.instructions && (
+            <Text style={styles.nextMedInstructions}>{medication.instructions}</Text>
+          )}
+        </View>
       </View>
-      <View style={{ flex: 1, marginLeft: 14 }}>
-        <Text style={styles.nextMedLabel}>
-          {timeLabel ? `Thuốc tiếp theo · ${timeLabel}` : 'Thuốc tiếp theo'}
-        </Text>
-        <Text style={styles.nextMedName}>
-          {medication.name} {medication.dosage}
-        </Text>
-      </View>
+      <View style={{ height: 14 }} />
       <TouchableOpacity
         disabled={medication.taken}
         onPress={() => onToggleTaken(medication.id)}
-        style={[styles.takeBtn, { backgroundColor: medication.taken ? Colors.textHint : Colors.success }]}
+        style={[styles.takeBtnFull, { backgroundColor: medication.taken ? Colors.textHint : Colors.textPrimary }]}
       >
-        <Text style={styles.takeBtnText}>{medication.taken ? 'Đã uống ✓' : 'ĐÃ UỐNG'}</Text>
+        <Text style={styles.takeBtnFullText}>{medication.taken ? 'Đã uống ✓' : '✓ ĐÃ UỐNG'}</Text>
       </TouchableOpacity>
-    </View>
-  );
-}
-
-function HealthCard({
-  icon,
-  iconBgColor,
-  iconColor,
-  label,
-  value,
-}: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  iconBgColor: string;
-  iconColor: string;
-  label: string;
-  value: string;
-}) {
-  return (
-    <View style={styles.healthCard}>
-      <View style={[styles.healthIconWrap, { backgroundColor: iconBgColor }]}>
-        <Ionicons name={icon} size={22} color={iconColor} />
-      </View>
-      <View style={{ height: 10 }} />
-      <Text style={styles.healthValue} numberOfLines={1}>
-        {value}
-      </Text>
-      <Text style={styles.healthLabel}>{label}</Text>
     </View>
   );
 }
@@ -490,38 +374,13 @@ function MedicationTile({ medication }: { medication: MedicationItem }) {
   );
 }
 
-function AppointmentTile({
-  appointment,
-  onPress,
-}: {
-  appointment: AppointmentItem;
-  onPress: () => void;
-}) {
-  const date = new Date(appointment.appointmentDate);
-  const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  return (
-    <TouchableOpacity style={styles.aptTile} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.aptDateBox}>
-        <Text style={styles.aptDateDay}>{date.getDate()}</Text>
-        <Text style={styles.aptDateMonth}>{MONTHS[date.getMonth()]}</Text>
-      </View>
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={styles.aptDoctor}>{appointment.doctor}</Text>
-        <Text style={styles.aptDetail}>
-          {appointment.specialty} • {timeStr}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color={Colors.textHint} />
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: 20 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  greeting: { fontSize: Typography.h2.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  dateText: { marginTop: 4, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },
+  greeting: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary },
+  greetingName: { marginTop: 2, fontSize: Typography.h2.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  dateText: { marginTop: 6, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },
   badge: {
     position: 'absolute',
     right: -2,
@@ -535,7 +394,28 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#FFFFFF', fontSize: Typography.badge.fontSize, fontWeight: '700' },
 
-  sosWrap: { alignItems: 'center' },
+  emergencyWrap: { alignItems: 'center' },
+  emergencyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: 18,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.textPrimary,
+  },
+  emergencyIconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.6)',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  emergencyButtonText: { color: '#FFFFFF', fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 1 },
   sosSendingText: { fontSize: Typography.button.fontSize, fontWeight: '600', color: Colors.sosPrimary },
   sosRing: {
     width: 160,
@@ -550,36 +430,26 @@ const styles = StyleSheet.create({
   sosCountdownNumber: { fontSize: 48, fontWeight: '700', color: Colors.sosPrimary },
   cancelBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8 },
   cancelText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
-  sosCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: Colors.sosPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.sosPrimary,
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
-  },
-  sosText: { color: '#FFFFFF', fontSize: 32, fontWeight: '700', letterSpacing: 4 },
-  sosSubText: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
   sosHint: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize, textAlign: 'center' },
 
   nextMedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
   },
+  nextMedTopRow: { flexDirection: 'row', alignItems: 'center' },
   nextMedIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   nextMedLabel: { fontSize: 12, color: Colors.textSecondary },
   nextMedName: { marginTop: 2, fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  takeBtn: { paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, marginLeft: 8 },
-  takeBtnText: { color: '#FFFFFF', fontSize: Typography.bodySmall.fontSize, fontWeight: '700' },
+  nextMedInstructions: { marginTop: 2, fontSize: Typography.bodySmall.fontSize, color: Colors.textSecondary },
+  takeBtnFull: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+  },
+  takeBtnFullText: { color: '#FFFFFF', fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 0.5 },
 
   cameraCard: {
     flexDirection: 'row',
@@ -587,59 +457,29 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
   cameraDot: { width: 12, height: 12, borderRadius: 6 },
-  cameraTitle: { fontSize: Typography.buttonSmall.fontSize, fontWeight: '600', color: Colors.textPrimary },
+  cameraTitle: { fontSize: Typography.buttonSmall.fontSize, fontWeight: '700', color: Colors.textPrimary },
   cameraSubtitle: { fontSize: 12, color: Colors.textSecondary },
-  callButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(46, 125, 154, 0.4)',
-  },
-  callButtonText: { color: Colors.primary, fontSize: Typography.bodySmall.fontSize, fontWeight: '600' },
 
-  chatCard: {
+  callCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     padding: Spacing.lg,
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
-  chatIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(46, 125, 154, 0.1)',
-  },
+  callCardText: { color: Colors.textPrimary, fontSize: Typography.buttonSmall.fontSize, fontWeight: '700' },
 
   sectionTitle: { fontSize: Typography.sectionTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   viewAll: { color: Colors.primary, fontSize: Typography.buttonSmall.fontSize, fontWeight: '600' },
-
-  healthRow: { flexDirection: 'row' },
-  healthCard: {
-    flex: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 14,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  healthIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  healthValue: { fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
-  healthLabel: { marginTop: 2, fontSize: Typography.caption.fontSize, color: Colors.textSecondary, textAlign: 'center' },
 
   centerPad: { alignItems: 'center', paddingVertical: 16 },
   emptyCard: {
@@ -649,15 +489,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center',
   },
-  emptyCardBig: {
-    width: '100%',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-  },
   emptyText: { marginTop: 8, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },
-  emptyTextSmall: { marginTop: 8, color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
 
   medTile: {
     flexDirection: 'row',
@@ -695,30 +527,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  aptTile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-    padding: 14,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  aptDateBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aptDateDay: { fontWeight: '700', fontSize: Typography.cardTitle.fontSize, color: Colors.primary },
-  aptDateMonth: { fontSize: 10, color: Colors.primary },
-  aptDoctor: { fontWeight: '600', fontSize: Typography.buttonSmall.fontSize, color: Colors.textPrimary },
-  aptDetail: { marginTop: 2, fontSize: 12, color: Colors.textSecondary },
 });
