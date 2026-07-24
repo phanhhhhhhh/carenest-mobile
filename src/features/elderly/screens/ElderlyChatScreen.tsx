@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-
+  Image,
   Animated,
   Easing,
 } from 'react-native';
@@ -227,13 +227,22 @@ export default function ElderlyChatScreen() {
 
 function WelcomeBubble({ message }: { message: string }) {
   return (
-    <View style={styles.bubbleRow}>
-      <View style={styles.aiAvatarSmall}>
-        <Ionicons name="sparkles" size={20} color={Colors.primary} />
+    <View>
+      <View style={styles.mascotWelcomeWrap}>
+        <Image
+          source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
+          style={styles.mascotWelcomeImage}
+          resizeMode="contain"
+        />
       </View>
-      <View style={{ width: 8 }} />
-      <View style={styles.aiBubble}>
-        <Text style={styles.aiBubbleText}>{message}</Text>
+      <View style={styles.bubbleRow}>
+        <View style={styles.aiAvatarSmall}>
+          <Ionicons name="sparkles" size={20} color={Colors.primary} />
+        </View>
+        <View style={{ width: 8 }} />
+        <View style={styles.aiBubble}>
+          <Text style={styles.aiBubbleText}>{message}</Text>
+        </View>
       </View>
     </View>
   );
@@ -333,6 +342,8 @@ function ChatBubble({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  mascotWelcomeWrap: { alignItems: 'center', paddingTop: 16, paddingBottom: 4 },
+  mascotWelcomeImage: { width: 150, height: 150 },
   appBar: {
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,

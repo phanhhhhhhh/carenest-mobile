@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
@@ -229,7 +230,12 @@ export default function FamilyDashboardScreen() {
         }
       >
         <View style={styles.headerRow}>
-          <View>
+          <Image
+            source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
+            style={styles.greetingMascot}
+            resizeMode="contain"
+          />
+          <View style={{ flex: 1 }}>
             <Text style={styles.greetingSmall}>Xin chào,</Text>
             <Text style={styles.greeting}>{user?.name || 'bạn'}</Text>
           </View>
@@ -585,6 +591,7 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.xl },
 
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  greetingMascot: { width: 52, height: 52, marginRight: 10 },
   greetingSmall: { fontSize: 14, color: Colors.textSecondary, marginBottom: 2 },
   greeting: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, flexShrink: 1 },
   bellButton: { padding: 4 },

@@ -79,6 +79,3 @@ migrate_working_dir/
 # Docs — keep local only
 docs/
 backend/docs/database-schema.md
-
-# Design assets — keep local only, not pushed to remote
-assets/

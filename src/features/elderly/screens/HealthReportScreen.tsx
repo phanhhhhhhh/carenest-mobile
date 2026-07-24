@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,7 +76,11 @@ export default function HealthReportScreen() {
         </View>
       ) : error && metricReports.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="medkit-outline" size={56} color={Colors.textHint} />
+          <Image
+            source={require('../../../../assets/mascot/mascot_dashboard.jpg')}
+            style={styles.emptyMascot}
+            resizeMode="contain"
+          />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => load(elderlyId)}>
             <Ionicons name="refresh" size={18} color="#FFFFFF" />
@@ -299,6 +304,7 @@ function AiSummaryCard({ summary }: { summary: string }) {
 }
 
 const styles = StyleSheet.create({
+  emptyMascot: { width: 150, height: 150, marginBottom: 8 },
   container: { flex: 1, backgroundColor: Colors.background },
   appBar: {
     backgroundColor: Colors.surface,

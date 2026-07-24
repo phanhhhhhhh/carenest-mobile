@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-
+  Image,
   Linking,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
@@ -130,6 +130,13 @@ export default function PremiumPlansScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
+          <View style={styles.heroWrap}>
+            <Image
+              source={require('../../../../assets/mascot/mascot_thumbsup_stethoscope.jpg')}
+              style={styles.heroMascot}
+              resizeMode="contain"
+            />
+          </View>
           <CurrentPlanBanner
             isPremium={isPremium}
             currentPlanLabel={currentPlanLabel}
@@ -348,6 +355,8 @@ function MethodCard({
 }
 
 const styles = StyleSheet.create({
+  heroWrap: { alignItems: 'center', marginBottom: 4 },
+  heroMascot: { width: 160, height: 160 },
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   appBar: {
