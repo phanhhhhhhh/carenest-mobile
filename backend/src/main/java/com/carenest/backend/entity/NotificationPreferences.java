@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 @Getter
 @Setter
@@ -29,7 +30,9 @@ public class NotificationPreferences {
             return false;
         }
         try {
-            LocalTime now = LocalTime.now();
+            // Quiet hours are the user's local (Vietnam) time — never the server
+            // zone, which is UTC on most deployments.
+            LocalTime now = LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
             LocalTime start = LocalTime.parse(quietHoursStart);
             LocalTime end = LocalTime.parse(quietHoursEnd);
 

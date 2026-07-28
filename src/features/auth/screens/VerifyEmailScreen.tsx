@@ -15,7 +15,9 @@ type Route = RouteProp<RootStackParamList, 'VerifyEmail'>;
 export default function VerifyEmailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const token = route.params.token;
+  // Deep-linked from the verification email — the token may be absent if the
+  // URL was opened without its query string.
+  const token = route.params?.token ?? '';
   const [state, setState] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMsg, setErrorMsg] = useState('');
   const verifyEmail = useAuthStore((s) => s.verifyEmail);

@@ -17,6 +17,9 @@ interface MedicationListState {
   logsError: string | null;
   /** Logs of ALL medications — used for the compliance chart by day. */
   allLogs: MedicationLogEntry[];
+  /** Elderly whose medications are currently loaded — remembered so add/update/delete
+   *  can reload the same list instead of falling back to the logged-in user's own id. */
+  currentElderlyId: string | null;
 
   load: (elderlyId?: string, signal?: AbortSignal) => Promise<void>;
   addMedication: (params: {
@@ -82,11 +85,13 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
   allLogs: [],
   logs: [],
   logsError: null,
+  currentElderlyId: null,
 
   load: async (elderlyId, signal) => {
     set({ isLoading: true, error: null });
     try {
-      const userId = elderlyId ?? (await getUserId());
+      const ownId = await getUserId();
+      const userId = elderlyId ?? ownId;
       if (!userId) {
         set({ isLoading: false });
         return;
@@ -112,8 +117,10 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
         // today's logs unavailable — leave `taken` as false rather than guessing
       }
 
-      set({ isLoading: false, items });
-      scheduleFrom(items);
+      set({ isLoading: false, items, currentElderlyId: userId });
+      // Local daily reminders belong on the elderly's own device — don't
+      // schedule them on a family phone that views this list remotely.
+      if (userId === ownId) scheduleFrom(items);
     } catch (e) {
       if (isCancelled(e)) return;
       set({ isLoading: false, error: `Lỗi khi tải thuốc: ${getErrorMessage(e)}` });
@@ -122,7 +129,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
 
   addMedication: async ({ name, dosage, instructions, elderlyId, scheduleTimes, daysOfWeek }) => {
     try {
-      const userId = elderlyId ?? (await getUserId());
+      const userId = elderlyId ?? get().currentElderlyId ?? (await getUserId());
       if (!userId) return;
       const data: Record<string, unknown> = {
         elderlyId: Number.parseInt(userId, 10) || undefined,
@@ -137,7 +144,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
         };
       }
       await api.post('/medications', data);
-      await get().load();
+      await get().load(userId);
     } catch (e) {
       set({ error: `Lỗi khi thêm thuốc: ${getErrorMessage(e)}` });
     }
@@ -155,7 +162,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
         data.schedule = schedule;
       }
       await api.patch(`/medications/${medicationId}`, data);
-      await get().load();
+      await get().load(get().currentElderlyId ?? undefined);
     } catch (e) {
       set({ error: `Lỗi khi cập nhật thuốc: ${getErrorMessage(e)}` });
     }
@@ -164,7 +171,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
   deleteMedication: async (medicationId) => {
     try {
       await api.delete(`/medications/${medicationId}`);
-      await get().load();
+      await get().load(get().currentElderlyId ?? undefined);
       return true;
     } catch (e) {
       showErrorToast(`Không thể xóa thuốc: ${getErrorMessage(e)}`);

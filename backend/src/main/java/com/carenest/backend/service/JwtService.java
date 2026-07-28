@@ -68,6 +68,27 @@ public class JwtService {
         }
     }
 
+    /** True only for tokens minted by generateAccessToken — a password-reset
+     *  token must never authenticate an API request. */
+    public boolean isAccessToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            return claims.get("role") != null && claims.get("purpose") == null;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /** True only for tokens minted by generatePasswordResetToken — an ordinary
+     *  access token must never be accepted as a reset token. */
+    public boolean isPasswordResetToken(String token) {
+        try {
+            return "password_reset".equals(parseClaims(token).get("purpose", String.class));
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     public Long getUserIdFromToken(String token) {
         return Long.parseLong(parseClaims(token).getSubject());
     }

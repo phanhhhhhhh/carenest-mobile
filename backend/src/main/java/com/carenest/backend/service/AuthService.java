@@ -290,7 +290,9 @@ public class AuthService {
             throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
-        if (!jwtService.validateToken(token)) {
+        // The purpose claim distinguishes reset tokens from access tokens — both
+        // are signed with the same key, so signature+expiry alone is not enough.
+        if (!jwtService.validateToken(token) || !jwtService.isPasswordResetToken(token)) {
             throw new UnauthorizedException("Invalid or expired reset token");
         }
 
@@ -308,12 +310,12 @@ public class AuthService {
 
     @Transactional
     public void setupPin(Long userId, String pin, String confirmPin) {
-        if (!pin.equals(confirmPin)) {
-            throw new IllegalArgumentException("PIN and confirm PIN do not match");
-        }
-
         if (pin == null || !pin.matches("\\d{4,6}")) {
             throw new IllegalArgumentException("PIN must be 4-6 digits");
+        }
+
+        if (!pin.equals(confirmPin)) {
+            throw new IllegalArgumentException("PIN and confirm PIN do not match");
         }
 
         User user = userRepository.findById(userId)

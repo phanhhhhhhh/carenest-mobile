@@ -126,7 +126,10 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
     set({ isUpdating: true, error: null });
     try {
       const userId = await getUserId();
-      if (!userId) return;
+      if (!userId) {
+        set({ isUpdating: false, error: 'Chưa đăng nhập' });
+        return;
+      }
       const data: Record<string, unknown> = {};
       if (params.name !== undefined) data.name = params.name;
       if (params.healthConditions !== undefined) data.healthConditions = params.healthConditions;
@@ -136,6 +139,7 @@ export const useElderlyProfileStore = create<ElderlyProfileState>((set, get) => 
       if (params.allergies !== undefined) data.allergies = params.allergies;
       if (params.notes !== undefined) data.notes = params.notes;
       await api.put(`/elderly-profiles/${userId}`, data);
+      set({ isUpdating: false });
       await get().load();
     } catch (e) {
       set({ isUpdating: false, error: `Lỗi cập nhật: ${getErrorMessage(e)}` });

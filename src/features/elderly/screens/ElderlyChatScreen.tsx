@@ -160,7 +160,9 @@ export default function ElderlyChatScreen() {
           <FlatList
             ref={listRef}
             data={messages.length === 0 ? [] : messages}
-            keyExtractor={(item) => String(item.messageId)}
+            // messageId can collide (schema defaults missing ids to 0, optimistic
+            // messages use Date.now()) — include the index to keep keys unique.
+            keyExtractor={(item, index) => `${item.messageId}-${index}`}
             contentContainerStyle={styles.list}
             onContentSizeChange={scrollToBottom}
             ListHeaderComponent={messages.length === 0 ? <WelcomeBubble message={welcomeMessage} /> : null}

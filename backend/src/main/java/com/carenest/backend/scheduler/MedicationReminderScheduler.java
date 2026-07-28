@@ -6,6 +6,7 @@ import com.carenest.backend.entity.NotificationType;
 import com.carenest.backend.repository.MedicationRepository;
 import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.service.FcmService;
+import com.carenest.backend.service.MedicationScheduleCalculator;
 import com.carenest.backend.service.SchedulerStateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,6 +86,16 @@ public class MedicationReminderScheduler {
 
                 log.debug("Medication reminder: elderly={} medication={}",
                     med.getElderly().getId(), med.getName());
+            }
+
+            // Advance to the next scheduled slot now that this one has fired.
+            // Without this, a dose the elderly never logs leaves nextDoseTime in
+            // the past forever and no future reminder ever goes out — logging a
+            // dose was previously the only thing that recalculated it.
+            OffsetDateTime next = MedicationScheduleCalculator.nextDoseTime(med.getSchedule());
+            if (next != null) {
+                med.setNextDoseTime(next);
+                medicationRepository.save(med);
             }
         }
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { onSessionExpired } from '../../../core/auth/sessionEvents';
+import { jwtSecondsRemaining } from '../../../core/auth/jwt';
 import { getStatus, extractError, getResponseData, getErrorMessage } from '../../../core/api/errors';
 import type { AuthResponse, User } from '../../../shared/types';
 
@@ -53,15 +54,12 @@ type RegisterResult =
   | { type: 'error'; message: string };
 
 function isJwtExpired(token: string): boolean {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return true;
-    const payload = JSON.parse(atob(parts[1]));
-    if (!payload.exp) return true;
-    return payload.exp * 1000 <= Date.now();
-  } catch {
-    return true;
-  }
+  // JWT payloads are base64url — `atob` (which is also missing on some Hermes
+  // builds) chokes on `-`/`_`/missing padding, which used to make valid tokens
+  // look expired and log the user out on every app start.
+  const remaining = jwtSecondsRemaining(token);
+  if (remaining == null) return true;
+  return remaining <= 0;
 }
 
 async function persistAuth(data: AuthResponse) {

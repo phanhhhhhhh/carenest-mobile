@@ -12,7 +12,8 @@ function toEmergencyEvent(e: ReturnType<typeof EmergencyEventSchema.parse>): Eme
   return {
     id: e.id,
     type: e.type ?? 'SOS',
-    description: e.description ?? e.notes ?? '',
+    // `??` would keep the backend's empty-string description and hide the notes.
+    description: e.description || e.notes || '',
     status: e.status,
     createdAt: e.triggeredAt ?? e.createdAt ?? new Date().toISOString(),
   };
