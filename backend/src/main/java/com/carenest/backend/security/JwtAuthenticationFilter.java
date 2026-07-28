@@ -34,7 +34,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         String token = header.substring(7);
-        if (jwtService.validateToken(token)) {
+        // isAccessToken also rejects password-reset tokens, which carry no role
+        // claim and would otherwise NPE below.
+        if (jwtService.validateToken(token) && jwtService.isAccessToken(token)) {
             Long userId = jwtService.getUserIdFromToken(token);
             String role = jwtService.getRoleFromToken(token).name();
             var auth = new UsernamePasswordAuthenticationToken(

@@ -46,7 +46,6 @@ export default function FamilyProfileScreen() {
   const [addDialogVisible, setAddDialogVisible] = useState(false);
   const [phoneInput, setPhoneInput] = useState('');
   const linkIsLoading = useFamilyLinkStore((s) => s.isLoading);
-  const linkError = useFamilyLinkStore((s) => s.error);
   const sendLinkRequest = useFamilyLinkStore((s) => s.sendLinkRequest);
   const lookupUserByPhone = useFamilyLinkStore((s) => s.lookupUserByPhone);
 
@@ -88,7 +87,9 @@ export default function FamilyProfileScreen() {
 
     const ok = await sendLinkRequest(elderlyId);
     setAddDialogVisible(false);
-    Alert.alert('', ok ? 'Đã gửi yêu cầu kết nối!' : linkError || 'Không thể gửi yêu cầu');
+    // Read the error fresh — the `linkError` from this render predates the call.
+    const freshError = useFamilyLinkStore.getState().error;
+    Alert.alert('', ok ? 'Đã gửi yêu cầu kết nối!' : freshError || 'Không thể gửi yêu cầu');
     if (ok) {
       loadDashboard();
     }

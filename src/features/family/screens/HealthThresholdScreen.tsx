@@ -167,13 +167,18 @@ export default function HealthThresholdScreen() {
     if (!elderlyId || !pendingRecs) return;
     setRecommendDialogVisible(false);
     for (const r of pendingRecs) {
-      await create(elderlyId, {
-        metricType: r.metricType,
+      const params = {
         minValue: r.minValue,
         maxValue: r.maxValue,
         minValueSecondary: r.minValueSecondary,
         maxValueSecondary: r.maxValueSecondary,
-      });
+      };
+      const existing = findFor(r.metricType);
+      if (existing) {
+        await update(elderlyId, existing.id, params);
+      } else {
+        await create(elderlyId, { metricType: r.metricType, ...params });
+      }
     }
     clearRecommendations();
     setPendingRecs(null);

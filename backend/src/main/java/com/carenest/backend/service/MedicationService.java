@@ -12,10 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -105,34 +102,7 @@ public class MedicationService {
             .build();
     }
 
-    
     private OffsetDateTime calculateNextDoseTime(MedicationSchedule schedule) {
-        if (schedule == null || schedule.getTimes() == null || schedule.getTimes().isEmpty()) {
-            return null;
-        }
-
-        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
-        ZonedDateTime now = ZonedDateTime.now(zone);
-        List<String> times = schedule.getTimes();
-        List<Integer> daysOfWeek = schedule.getDaysOfWeek();
-
-        for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
-            ZonedDateTime candidateDay = now.plusDays(dayOffset);
-            int dayValue = candidateDay.getDayOfWeek().getValue();
-
-            if (daysOfWeek != null && !daysOfWeek.isEmpty() && !daysOfWeek.contains(dayValue)) {
-                continue;
-            }
-
-            for (String timeStr : times) {
-                LocalTime time = LocalTime.parse(timeStr);
-                ZonedDateTime candidate = candidateDay.with(time);
-                if (candidate.isAfter(now)) {
-                    return candidate.toOffsetDateTime();
-                }
-            }
-        }
-
-        return null;
+        return MedicationScheduleCalculator.nextDoseTime(schedule);
     }
 }

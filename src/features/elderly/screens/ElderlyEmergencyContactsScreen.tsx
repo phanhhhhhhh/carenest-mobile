@@ -102,9 +102,8 @@ export default function ElderlyEmergencyContactsScreen() {
   };
 
   const removeContact = async (index: number) => {
-    const contact = contacts[index];
     const remaining = contacts
-      .filter((c) => c.id !== contact.id || c.name !== contact.name)
+      .filter((_, i) => i !== index)
       .map((c) => ({
         ...(c.id != null ? { id: c.id } : {}),
         name: c.name,

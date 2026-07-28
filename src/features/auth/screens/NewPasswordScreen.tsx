@@ -15,7 +15,9 @@ type Route = RouteProp<RootStackParamList, 'NewPassword'>;
 export default function NewPasswordScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const token = route.params.token;
+  // Deep-linked from the reset email — the token may be absent if the URL was
+  // opened without its query string.
+  const token = route.params?.token ?? '';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);

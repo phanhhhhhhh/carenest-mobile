@@ -1,5 +1,9 @@
 import React from 'react';
-import { NavigationContainer, type NavigatorScreenParams } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  type LinkingOptions,
+  type NavigatorScreenParams,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { navigationRef } from './navigationRef';
@@ -77,12 +81,29 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// The backend's password-reset / email-verification emails link to
+// `<frontendUrl>/reset-password?token=…` and `<frontendUrl>/verify-email?token=…`
+// (see EmailService.java). This maps those URLs onto the corresponding screens
+// on web (query params become route params); `carenest://` covers native builds.
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['carenest://'],
+  config: {
+    initialRouteName: 'Welcome',
+    screens: {
+      NewPassword: 'reset-password',
+      VerifyEmail: 'verify-email',
+    },
+  },
+};
+
 export default function AppNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    // A notification tap on cold start can restore auth before the container is
+    // ready — flush the queued deep link from here as well (see App.tsx).
+    <NavigationContainer ref={navigationRef} linking={linking} onReady={flushPendingDeepLink}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
           <>
