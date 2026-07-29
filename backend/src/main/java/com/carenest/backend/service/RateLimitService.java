@@ -20,6 +20,10 @@ public class RateLimitService {
     private final ConcurrentHashMap<String, RateWindow> ipWindows = new ConcurrentHashMap<>();
 
     public void checkRateLimit(String ip, String endpoint) {
+        checkRateLimit(ip, endpoint, MAX_REQUESTS_PER_MINUTE);
+    }
+
+    public void checkRateLimit(String ip, String endpoint, int maxRequestsPerMinute) {
         String key = ip + ":" + endpoint;
         Instant now = Instant.now();
 
@@ -30,7 +34,7 @@ public class RateLimitService {
             return new RateWindow(existing.windowStart(), existing.count() + 1);
         });
 
-        if (window != null && window.count() > MAX_REQUESTS_PER_MINUTE) {
+        if (window != null && window.count() > maxRequestsPerMinute) {
             long resetSeconds = window.windowStart().plusSeconds(60).getEpochSecond() - now.getEpochSecond();
             long retryAfter = Math.max(resetSeconds, 1);
             log.warn("Rate limit exceeded for key={}, count={}", key, window.count());

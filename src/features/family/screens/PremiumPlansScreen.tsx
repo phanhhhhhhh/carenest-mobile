@@ -140,7 +140,7 @@ export default function PremiumPlansScreen() {
           <CurrentPlanBanner
             isPremium={isPremium}
             currentPlanLabel={currentPlanLabel}
-            endDate={subscription?.endDate}
+            endDate={subscription?.expiresAt}
           />
           <View style={{ height: 24 }} />
 
@@ -153,7 +153,7 @@ export default function PremiumPlansScreen() {
             <PlanCard
               key={plan.id}
               plan={plan}
-              isCurrent={subscription != null && subscription.planId === plan.id}
+              isCurrent={subscription != null && subscription.planType === plan.id}
             />
           ))}
 

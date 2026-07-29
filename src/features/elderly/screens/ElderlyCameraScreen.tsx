@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
@@ -42,8 +43,13 @@ export default function ElderlyCameraScreen() {
 
   const togglePrivacyForAll = async (turnOff: boolean) => {
     if (!elderlyId) return;
+    let anyFailed = false;
     for (const cam of cameras) {
-      await setPrivacyMode(elderlyId, cam.id, turnOff);
+      const ok = await setPrivacyMode(elderlyId, cam.id, turnOff);
+      if (!ok) anyFailed = true;
+    }
+    if (anyFailed) {
+      Alert.alert('', 'Không thể thay đổi chế độ riêng tư cho một số camera');
     }
   };
 

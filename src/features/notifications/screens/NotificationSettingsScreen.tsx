@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
+import { showErrorToast } from '../../../shared/components/toastStore';
 import { useNotificationSettingsStore } from '../store/notificationSettingsStore';
 
 const REMINDER_MINUTE_OPTIONS = [5, 10, 15, 30, 60];
@@ -229,6 +230,11 @@ export default function NotificationSettingsScreen() {
     return () => controller.abort();
   }, []);
 
+  const withSaveToast = <T,>(setter: (v: T) => Promise<boolean>) => async (v: T) => {
+    const ok = await setter(v);
+    if (!ok) showErrorToast('Không thể lưu cài đặt, vui lòng thử lại.');
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -266,10 +272,10 @@ export default function NotificationSettingsScreen() {
             title="Nhắc uống thuốc"
             subtitle="Nhận thông báo khi đến giờ uống thuốc"
             value={medicationReminder}
-            onChanged={setMedicationReminder}
+            onChanged={withSaveToast(setMedicationReminder)}
           />
           {medicationReminder && (
-            <ReminderMinutesTile value={reminderMinutesBefore} onChanged={setReminderMinutes} />
+            <ReminderMinutesTile value={reminderMinutesBefore} onChanged={withSaveToast(setReminderMinutes)} />
           )}
           <ToggleTile
             icon="medical-outline"
@@ -277,7 +283,7 @@ export default function NotificationSettingsScreen() {
             title="Cảnh báo sức khỏe"
             subtitle="Nhận thông báo khi chỉ số sức khỏe bất thường"
             value={healthAlert}
-            onChanged={setHealthAlert}
+            onChanged={withSaveToast(setHealthAlert)}
           />
           <ToggleTile
             icon="warning"
@@ -294,7 +300,7 @@ export default function NotificationSettingsScreen() {
             title="Cập nhật gia đình"
             subtitle="Nhận thông báo về yêu cầu kết nối gia đình và thay đổi trạng thái"
             value={familyUpdate}
-            onChanged={setFamilyUpdate}
+            onChanged={withSaveToast(setFamilyUpdate)}
           />
         </Section>
 
@@ -314,24 +320,21 @@ export default function NotificationSettingsScreen() {
                 : 'Tất cả thông báo được gửi bình thường'
             }
             value={quietHoursEnabled}
-            onChanged={(v) => {
-              if (v) {
-                setQuietHoursStart('22:00');
-                setQuietHoursEnd('07:00');
-              } else {
-                setQuietHoursStart('');
-                setQuietHoursEnd('');
-              }
+            onChanged={async (v) => {
+              const [ok1, ok2] = v
+                ? await Promise.all([setQuietHoursStart('22:00'), setQuietHoursEnd('07:00')])
+                : await Promise.all([setQuietHoursStart(''), setQuietHoursEnd('')]);
+              if (!ok1 || !ok2) showErrorToast('Không thể lưu cài đặt, vui lòng thử lại.');
             }}
           />
           {quietHoursEnabled && (
             <View style={styles.quietHoursRow}>
               <View style={{ flex: 1 }}>
-                <TimePickerTile label="Bắt đầu" time={quietHoursStart} onSet={setQuietHoursStart} />
+                <TimePickerTile label="Bắt đầu" time={quietHoursStart} onSet={withSaveToast(setQuietHoursStart)} />
               </View>
               <Text style={styles.toLabel}>đến</Text>
               <View style={{ flex: 1 }}>
-                <TimePickerTile label="Kết thúc" time={quietHoursEnd} onSet={setQuietHoursEnd} />
+                <TimePickerTile label="Kết thúc" time={quietHoursEnd} onSet={withSaveToast(setQuietHoursEnd)} />
               </View>
             </View>
           )}

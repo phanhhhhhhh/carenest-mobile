@@ -42,7 +42,7 @@ public class EmergencyEventController {
     }
 
     @PatchMapping("/emergency-events/{id}/acknowledge")
-    @PreAuthorize("hasRole('FAMILY')")
+    @PreAuthorize("hasRole('FAMILY') and @authz.canAccessEmergencyEvent(authentication.principal, #id)")
     public ResponseEntity<EmergencyEventResponse> acknowledge(
         @PathVariable Long id,
         @AuthenticationPrincipal Long familyUserId

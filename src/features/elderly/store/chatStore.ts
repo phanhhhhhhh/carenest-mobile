@@ -115,16 +115,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
       return aiMsg.content;
     } catch (e) {
-      const msgs = get().messages.slice(0, -1);
-
+      // Don't drop the user's own message from view here: ChatService persists
+      // it server-side before ever calling Gemini, so a client-side timeout
+      // (ECONNABORTED) doesn't mean it failed to send — the request may still
+      // be processing, or already succeeded, on the backend. Removing it would
+      // falsely tell the user their message vanished.
       let fallback: string;
       if (getStatus(e) === 404) {
-        set({ isSending: false, messages: msgs, aiAvailable: false });
+        set({ isSending: false, aiAvailable: false });
         fallback = 'Dịch vụ AI tạm thời không khả dụng.';
       } else {
         set({
           isSending: false,
-          messages: msgs,
           error: `Không thể gửi tin nhắn: ${getErrorMessage(e)}`,
         });
         fallback = 'Xin lỗi, hiện không thể kết nối. Vui lòng thử lại sau.';
@@ -134,6 +136,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messageId: Date.now() + 1,
         role: 'AI',
         content: fallback,
+        intent: 'ERROR',
         createdAt: new Date().toISOString(),
       };
       set({ messages: [...get().messages, errorMsg] });

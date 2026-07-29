@@ -1,5 +1,6 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.exception.GeminiApiException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -46,8 +47,8 @@ public class GeminiApiService {
     
     public String generateContent(String systemPrompt, String userMessage, double overrideTemp, int overrideMaxTokens) {
         if (apiKey == null || apiKey.isBlank()) {
-            log.warn("Gemini API key not configured — returning fallback response");
-            return "[AI service unavailable — GEMINI_API_KEY not configured]";
+            log.warn("Gemini API key not configured — cannot generate content");
+            throw new GeminiApiException("AI service unavailable — GEMINI_API_KEY not configured");
         }
 
         try {
@@ -79,9 +80,11 @@ public class GeminiApiService {
                     .body(String.class);
 
             return extractText(responseJson);
+        } catch (GeminiApiException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Failed to call Gemini API: {}", e.getMessage(), e);
-            return "[AI service temporarily unavailable — please try again later]";
+            throw new GeminiApiException("AI service temporarily unavailable — please try again later", e);
         }
     }
 
@@ -155,27 +158,33 @@ public class GeminiApiService {
     }
 
     private String extractText(String responseJson) {
+        JsonNode root;
         try {
-            JsonNode root = objectMapper.readTree(responseJson);
-            JsonNode candidates = root.path("candidates");
-            if (candidates.isArray() && candidates.size() > 0) {
-                JsonNode parts = candidates.get(0).path("content").path("parts");
-                if (parts.isArray() && parts.size() > 0) {
-                    String text = parts.get(0).path("text").asText();
-                    return text != null && !text.isBlank() ? text : "[Empty response from AI]";
-                }
-            }
-            JsonNode promptFeedback = root.path("promptFeedback");
-            if (promptFeedback.has("blockReason")) {
-                log.warn("Gemini response blocked: {}", promptFeedback.path("blockReason").asText());
-                return "[Response blocked by safety filter]";
-            }
-            log.warn("Unexpected Gemini response structure: {}",
-                    responseJson.substring(0, Math.min(300, responseJson.length())));
-            return "[Unexpected AI response format]";
+            root = objectMapper.readTree(responseJson);
         } catch (Exception e) {
             log.error("Failed to parse Gemini response: {}", e.getMessage());
-            return "[Failed to process AI response]";
+            throw new GeminiApiException("Failed to process AI response", e);
         }
+
+        JsonNode candidates = root.path("candidates");
+        if (candidates.isArray() && candidates.size() > 0) {
+            JsonNode parts = candidates.get(0).path("content").path("parts");
+            if (parts.isArray() && parts.size() > 0) {
+                String text = parts.get(0).path("text").asText();
+                if (text != null && !text.isBlank()) {
+                    return text;
+                }
+                log.warn("Gemini returned an empty response body");
+                throw new GeminiApiException("Empty response from AI");
+            }
+        }
+        JsonNode promptFeedback = root.path("promptFeedback");
+        if (promptFeedback.has("blockReason")) {
+            log.warn("Gemini response blocked: {}", promptFeedback.path("blockReason").asText());
+            throw new GeminiApiException("Response blocked by safety filter");
+        }
+        log.warn("Unexpected Gemini response structure: {}",
+                responseJson.substring(0, Math.min(300, responseJson.length())));
+        throw new GeminiApiException("Unexpected AI response format");
     }
 }

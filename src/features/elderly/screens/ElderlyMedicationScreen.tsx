@@ -9,6 +9,7 @@ import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { useMedicationStore } from '../store/medicationStore';
 import { snoozeOneOff, cancelSnooze } from '../../medication/services/medicationReminderService';
+import { showErrorToast } from '../../../shared/components/toastStore';
 import type { MedicationItem } from '../../../shared/types';
 
 
@@ -47,7 +48,7 @@ export default function ElderlyMedicationScreen() {
 
   const handleTakeNow = (med: MedicationItem) => {
     cancelSnooze(med);
-    toggleTaken(med.id);
+    toggleTaken(med.id, showErrorToast);
   };
 
   const handleSnooze = async (med: MedicationItem) => {

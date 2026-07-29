@@ -234,23 +234,13 @@ public class PaymentService {
 
         boolean isPremium = activeSub.isPresent() && activeSub.get().isPremium();
 
-        return Map.of(
-                "isPremium", isPremium,
-                "planType", activeSub.map(s -> s.getPlanType().name()).orElse("FREE"),
-                "expiresAt", activeSub.map(s -> s.getEndDate()).orElse(null));
+        Map<String, Object> status = new HashMap<>();
+        status.put("isPremium", isPremium);
+        status.put("planType", activeSub.map(s -> s.getPlanType().name()).orElse("FREE"));
+        status.put("expiresAt", activeSub.map(Subscription::getEndDate).orElse(null));
+        return status;
     }
 
-    
-    @Transactional(readOnly = true)
-    public boolean hasPremiumAccess(Long userId) {
-        return subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
-                userId,
-                Subscription.SubscriptionStatus.ACTIVE,
-                List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY))
-                .map(s -> s.isPremium()).orElse(false);
-    }
-
-    
     @Transactional
     public void cancelSubscription(Long userId) {
         subscriptionRepository.findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)

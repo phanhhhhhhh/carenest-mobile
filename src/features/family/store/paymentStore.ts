@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getStatus, getErrorMessage } from '../../../core/api/errors';
+import { SubscriptionStatusSchema, safeParseOne } from '../../../shared/schemas';
 
 
 
@@ -38,25 +39,23 @@ export function getPeriodLabel(p: PlanData): string | null {
 }
 
 export interface SubscriptionData {
-  planId: string;
-  status: string;
-  startDate?: string;
-  endDate?: string;
-  autoRenew: boolean;
+  planType: string;
+  isPremium: boolean;
+  expiresAt?: string;
 }
 
-function parseSubscriptionData(j: Record<string, unknown>): SubscriptionData {
+function parseSubscriptionData(raw: unknown): SubscriptionData | null {
+  const parsed = safeParseOne(SubscriptionStatusSchema, raw, 'SubscriptionStatus');
+  if (!parsed) return null;
   return {
-    planId: (j.planId as string) ?? 'FREE',
-    status: (j.status as string) ?? 'ACTIVE',
-    startDate: j.startDate != null ? String(j.startDate) : undefined,
-    endDate: j.endDate != null ? String(j.endDate) : undefined,
-    autoRenew: (j.autoRenew as boolean) ?? false,
+    planType: parsed.planType,
+    isPremium: parsed.isPremium,
+    expiresAt: parsed.expiresAt ?? undefined,
   };
 }
 
 export function isPremiumSubscription(s: SubscriptionData): boolean {
-  return s.planId.startsWith('PREMIUM') && s.status === 'ACTIVE';
+  return s.isPremium;
 }
 
 const DEFAULT_PLANS: PlanData[] = [
@@ -134,12 +133,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         : [];
       const plans = plansRaw.map((e) => parsePlanData(e as Record<string, unknown>));
 
-      let sub: SubscriptionData | null = null;
-      try {
-        sub = parseSubscriptionData(subResp.data as Record<string, unknown>);
-      } catch {
-        sub = null;
-      }
+      const sub = parseSubscriptionData(subResp.data);
 
       set({ isLoading: false, plans, subscription: sub });
     } catch (e) {
@@ -193,10 +187,10 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
   currentPlanLabel: () => {
     const sub = get().subscription;
-    if (!sub || sub.planId === 'FREE') return 'Gói Miễn phí';
-    if (sub.planId === 'PREMIUM_MONTHLY') return 'Premium Hàng tháng';
-    if (sub.planId === 'PREMIUM_YEARLY') return 'Premium Hàng năm';
-    return sub.planId
+    if (!sub || sub.planType === 'FREE') return 'Gói Miễn phí';
+    if (sub.planType === 'PREMIUM_MONTHLY') return 'Premium Hàng tháng';
+    if (sub.planType === 'PREMIUM_YEARLY') return 'Premium Hàng năm';
+    return sub.planType
       .replaceAll('_', ' ')
       .toLowerCase()
       .split(' ')

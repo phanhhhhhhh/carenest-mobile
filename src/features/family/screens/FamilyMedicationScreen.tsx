@@ -20,6 +20,9 @@ import { Colors } from '../../../core/theme/colors';
 import { useMedicationStore } from '../../elderly/store/medicationStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import type { MedicationItem } from '../../../shared/types';
+import { searchMedicationCatalog } from '../../medication/services/medicationCatalogApi';
+import { isCancelled } from '../../../core/api/errors';
+import type { MedicationCatalogParsed } from '../../../shared/schemas';
 
 /**
  * Port of Flutter's family_medication_screen.dart.
@@ -104,6 +107,8 @@ export default function FamilyMedicationScreen() {
   const [showNotesField, setShowNotesField] = useState(false);
   const [times, setTimes] = useState<TimeValue[]>([]);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [catalogSuggestions, setCatalogSuggestions] = useState<MedicationCatalogParsed[]>([]);
+  const [catalogPickedName, setCatalogPickedName] = useState<string | null>(null);
 
   const [rangeDays, setRangeDays] = useState<7 | 30>(7);
   const [rangePickerVisible, setRangePickerVisible] = useState(false);
@@ -125,6 +130,37 @@ export default function FamilyMedicationScreen() {
     loadMedications(currentElderlyId, controller.signal);
     return () => controller.abort();
   }, [currentElderlyId, loadMedications]);
+
+  // Debounced medication-name autocomplete against the curated reference
+  // catalog (see backend `medication_catalog`). Skipped right after a
+  // suggestion is picked so selecting doesn't immediately reopen its own dropdown.
+  useEffect(() => {
+    if (!formExpanded || name.trim() === catalogPickedName) {
+      setCatalogSuggestions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      searchMedicationCatalog(name, controller.signal)
+        .then(setCatalogSuggestions)
+        .catch((e) => {
+          if (!isCancelled(e)) setCatalogSuggestions([]);
+        });
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [name, formExpanded, catalogPickedName]);
+
+  const pickCatalogSuggestion = (item: MedicationCatalogParsed) => {
+    setName(item.name);
+    setCatalogPickedName(item.name);
+    setCatalogSuggestions([]);
+    if (!dosage.trim() && item.commonStrengths) {
+      setDosage(item.commonStrengths.split(',')[0].trim());
+    }
+  };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -227,6 +263,8 @@ export default function FamilyMedicationScreen() {
       }),
     );
     setSelectedDays([...(existing?.daysOfWeek ?? [])]);
+    setCatalogPickedName(existing?.name ?? null);
+    setCatalogSuggestions([]);
     setFormExpanded(true);
   };
 
@@ -513,8 +551,29 @@ export default function FamilyMedicationScreen() {
           placeholder="Tên thuốc"
           placeholderTextColor={Colors.textHint}
           value={name}
-          onChangeText={setName}
+          onChangeText={(v) => {
+            setName(v);
+            setCatalogPickedName(null);
+          }}
         />
+        {catalogSuggestions.length > 0 && (
+          <View style={styles.suggestionBox}>
+            {catalogSuggestions.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.suggestionRow}
+                onPress={() => pickCatalogSuggestion(item)}
+              >
+                <Text style={styles.suggestionName}>{item.name}</Text>
+                {!!item.brandNames && (
+                  <Text style={styles.suggestionMeta} numberOfLines={1}>
+                    {item.brandNames}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
           <TextInput
@@ -974,6 +1033,22 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginTop: 12,
   },
+  suggestionBox: {
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    overflow: 'hidden',
+  },
+  suggestionRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  suggestionName: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  suggestionMeta: { fontSize: 12, color: Colors.textHint, marginTop: 2 },
   timeFieldBtn: { flex: 1, marginTop: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   timeFieldValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '600' },
   timeFieldPlaceholder: { fontSize: 14, color: Colors.textHint },

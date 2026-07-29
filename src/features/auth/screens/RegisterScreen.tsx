@@ -261,7 +261,8 @@ export default function RegisterScreen() {
     }
     } catch (err: any) {
       setSubmitting(false);
-      Alert.alert('DEBUG LỖI', String(err?.message ?? err));
+      console.warn('handleRegister unexpected error:', err);
+      Alert.alert('Đăng ký thất bại', 'Vui lòng thử lại.');
     }
   };
 

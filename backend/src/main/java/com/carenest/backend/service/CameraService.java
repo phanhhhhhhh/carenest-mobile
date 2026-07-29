@@ -421,6 +421,7 @@ public class CameraService {
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Ho_Chi_Minh")
     public void cleanupOldSnapshots() {
         Instant cutoff = Instant.now().minus(30, ChronoUnit.DAYS);
-        log.debug("Snapshot cleanup: cutoff={}", cutoff);
+        long deleted = cameraSnapshotRepository.deleteByCreatedAtBefore(cutoff);
+        log.info("Snapshot cleanup: cutoff={}, deleted={}", cutoff, deleted);
     }
 }

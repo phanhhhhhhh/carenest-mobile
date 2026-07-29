@@ -64,12 +64,12 @@ interface NotificationSettingsState {
   quietHoursEnd: string;
 
   load: (signal?: AbortSignal) => Promise<void>;
-  setMedicationReminder: (v: boolean) => Promise<void>;
-  setReminderMinutes: (v: number) => Promise<void>;
-  setHealthAlert: (v: boolean) => Promise<void>;
-  setFamilyUpdate: (v: boolean) => Promise<void>;
-  setQuietHoursStart: (v: string) => Promise<void>;
-  setQuietHoursEnd: (v: string) => Promise<void>;
+  setMedicationReminder: (v: boolean) => Promise<boolean>;
+  setReminderMinutes: (v: number) => Promise<boolean>;
+  setHealthAlert: (v: boolean) => Promise<boolean>;
+  setFamilyUpdate: (v: boolean) => Promise<boolean>;
+  setQuietHoursStart: (v: string) => Promise<boolean>;
+  setQuietHoursEnd: (v: string) => Promise<boolean>;
   registerFcmToken: (token: string) => Promise<boolean>;
 }
 
@@ -137,20 +137,22 @@ async function save(
   set: (partial: Partial<NotificationSettingsState>) => void,
   get: () => NotificationSettingsState,
   patch: Partial<NotificationSettingsData>
-) {
+): Promise<boolean> {
   const userId = await storage.getUserId();
-  if (userId == null) return;
+  if (userId == null) return false;
   const updated = { ...get().data, ...patch };
   set({ data: updated, isSaving: true, ...deriveFrom(updated) });
   try {
     await api.put(`/users/${userId}/notification-preferences`, settingsToJson(updated));
     set({ isSaving: false });
+    return true;
   } catch (e) {
     if (getStatus(e) === 404) {
       set({ isSaving: false });
-      return;
+      return true;
     }
     set({ isSaving: false, error: extractError(e, 'Không thể lưu cài đặt') });
     await useNotificationSettingsStore.getState().load();
+    return false;
   }
 }

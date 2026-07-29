@@ -379,11 +379,9 @@ The `dev` Spring profile enables the `DataSeeder` which creates:
 | 2 | **Payment** — VNPay/MoMo flow works but needs sandbox credentials | Set `VNPAY_*` / `MOMO_*` env vars |
 | 3 | **Google Fit** — OAuth flow works but needs Google Cloud project credentials | Set `GOOGLE_FIT_*` env vars |
 | 4 | **Camera live view** — Imou integration is real but needs `IMOU_APP_ID`/`IMOU_APP_SECRET`; even configured, "live view" opens the stream via an external link/app, not an embedded in-app player. SOS/scheduled snapshots (still JPEGs) work without any Imou config. | Set `IMOU_*` env vars for the live-link demo beat; treat snapshots as the reliable path |
-| 4 | **Camera live view** — Imou integration requires real device SNs and API credentials | Set `IMOU_*` env vars |
 | 5 | **Email sending** — SMTP credentials needed for verification + password reset emails | Set `MAIL_*` env vars |
 | 6 | **Gemini AI** — Chat, health analysis, STT, weekly summaries need API key | Set `GEMINI_API_KEY` |
 | 7 | **iOS simulator** — Default base URL is `10.0.2.2` (Android-only) | Set `API_BASE_URL` in `.env` |
-| 8 | **Camera snapshot cleanup** — Scheduled daily but doesn't actually delete old snapshots | Implement in `CameraService.cleanupOldSnapshots()` |
 
 ---
 

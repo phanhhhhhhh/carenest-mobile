@@ -99,12 +99,9 @@ public class ChatReminderService {
                     + "\nGenerate a warm, caring reminder message.";
 
                 String generated = geminiApiService.generateConversational(systemPrompt, dataContext);
-                // GeminiApiService signals failure with a bracketed placeholder
-                // instead of throwing — fall through to the template then.
-                if (generated != null && !generated.startsWith("[")) {
+                if (generated != null) {
                     return generated;
                 }
-                log.warn("Gemini returned error placeholder for medication reminder, using template");
             } catch (Exception e) {
                 log.warn("Gemini chat reminder failed, using template: {}", e.getMessage());
             }
@@ -137,12 +134,9 @@ public class ChatReminderService {
                     + "\nGenerate a warm, caring appointment reminder.";
 
                 String generated = geminiApiService.generateConversational(systemPrompt, dataContext);
-                // GeminiApiService signals failure with a bracketed placeholder
-                // instead of throwing — fall through to the template then.
-                if (generated != null && !generated.startsWith("[")) {
+                if (generated != null) {
                     return generated;
                 }
-                log.warn("Gemini returned error placeholder for appointment reminder, using template");
             } catch (Exception e) {
                 log.warn("Gemini appointment reminder failed, using template: {}", e.getMessage());
             }

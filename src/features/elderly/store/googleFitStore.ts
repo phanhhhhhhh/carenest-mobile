@@ -2,6 +2,7 @@ import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import api from '../../../core/api/client';
 import { getStatus, getResponseData, getErrorMessage, isCancelled } from '../../../core/api/errors';
 import { GoogleFitStatusSchema, safeParseOne } from '../../../shared/schemas';
+import { showErrorToast } from '../../../shared/components/toastStore';
 
 
 
@@ -49,14 +50,18 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
       } catch (e) {
         if (isCancelled(e)) return;
         if (getStatus(e) === 503) {
+          const message = 'Google Fit chưa được cấu hình trên máy chủ này';
           set({
             isLoading: false,
             isConfigured: false,
-            error: 'Google Fit chưa được cấu hình trên máy chủ này',
+            error: message,
           });
+          showErrorToast(message);
           return;
         }
-        set({ isLoading: false, error: `Không thể kiểm tra trạng thái: ${getErrorMessage(e)}` });
+        const message = `Không thể kiểm tra trạng thái: ${getErrorMessage(e)}`;
+        set({ isLoading: false, error: message });
+        showErrorToast(message);
       }
     },
 
@@ -70,10 +75,14 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
         return url;
       } catch (e) {
         if (getStatus(e) === 503) {
-          set({ isLoading: false, error: 'Google Fit chưa được cấu hình. Vui lòng liên hệ quản trị viên.' });
+          const message = 'Google Fit chưa được cấu hình. Vui lòng liên hệ quản trị viên.';
+          set({ isLoading: false, error: message });
+          showErrorToast(message);
           return null;
         }
-        set({ isLoading: false, error: `Không thể kết nối: ${getErrorMessage(e)}` });
+        const message = `Không thể kết nối: ${getErrorMessage(e)}`;
+        set({ isLoading: false, error: message });
+        showErrorToast(message);
         return null;
       }
     },
@@ -89,6 +98,7 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
         const respData = getResponseData(e) as Record<string, unknown> | undefined;
         const msg = respData && typeof respData.message === 'string' ? respData.message : 'Đồng bộ thất bại';
         set({ isSyncing: false, error: msg });
+        showErrorToast(msg);
         return null;
       }
     },
@@ -100,7 +110,9 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
         set({ isLoading: false, isConnected: false });
         return true;
       } catch (e) {
-        set({ isLoading: false, error: `Không thể ngắt kết nối: ${getErrorMessage(e)}` });
+        const message = `Không thể ngắt kết nối: ${getErrorMessage(e)}`;
+        set({ isLoading: false, error: message });
+        showErrorToast(message);
         return false;
       }
     },
