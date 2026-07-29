@@ -74,9 +74,39 @@ public class SmsService {
     }
 
     private String toLocalFormat(String phone) {
-        if (phone != null && phone.startsWith("+84")) {
-            return "0" + phone.substring(3);
+        String canonical = canonicalizePhone(phone);
+        if (canonical == null) {
+            return phone;
         }
-        return phone;
+        return "0" + canonical.substring(3);
+    }
+
+    /**
+     * Canonicalizes a Vietnamese phone number to a single E.164-style form
+     * ("+84...") regardless of whether it was entered as "+84...", "84...",
+     * or "0...". Returns null if the input isn't phone-like, so callers can
+     * fall back to treating it as-is (e.g. an email address).
+     *
+     * Package-private and static so other services (e.g. OtpService) can
+     * reuse this exact canonicalization instead of re-implementing a
+     * subtly-different version — all format variants of the same number
+     * must collapse to the same key wherever they're used (rate limiting,
+     * OTP storage/lookup, actual SMS delivery).
+     */
+    static String canonicalizePhone(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        String p = phone.trim();
+        if (p.startsWith("+84")) {
+            return p;
+        }
+        if (p.startsWith("84") && p.length() > 2) {
+            return "+" + p;
+        }
+        if (p.startsWith("0") && p.length() > 1) {
+            return "+84" + p.substring(1);
+        }
+        return null;
     }
 }

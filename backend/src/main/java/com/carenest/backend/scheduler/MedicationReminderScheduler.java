@@ -3,6 +3,7 @@ package com.carenest.backend.scheduler;
 import com.carenest.backend.entity.Medication;
 import com.carenest.backend.entity.Notification;
 import com.carenest.backend.entity.NotificationType;
+import com.carenest.backend.entity.User;
 import com.carenest.backend.repository.MedicationRepository;
 import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.service.FcmService;
@@ -56,36 +57,38 @@ public class MedicationReminderScheduler {
                 .existsLogForMedicationInWindow(med.getId(), from, now);
 
             if (!alreadyLogged) {
-                Notification notification = Notification.builder()
-                    .user(med.getElderly())
-                    .type(NotificationType.MEDICATION_REMINDER)
-                    .title("Medication Reminder: " + med.getName())
-                    .body("Time to take " + med.getName() + " - " + med.getDosage()
-                        + ". " + (med.getInstructions() != null ? med.getInstructions() : ""))
-                    .data(Map.of(
-                        "medicationId", med.getId().toString(),
-                        "elderlyId", med.getElderly().getId().toString(),
-                        "name", med.getName()
-                    ))
-                    .build();
-                notificationRepository.save(notification);
+                if (isMedicationReminderEnabled(med.getElderly())) {
+                    Notification notification = Notification.builder()
+                        .user(med.getElderly())
+                        .type(NotificationType.MEDICATION_REMINDER)
+                        .title("Medication Reminder: " + med.getName())
+                        .body("Time to take " + med.getName() + " - " + med.getDosage()
+                            + ". " + (med.getInstructions() != null ? med.getInstructions() : ""))
+                        .data(Map.of(
+                            "medicationId", med.getId().toString(),
+                            "elderlyId", med.getElderly().getId().toString(),
+                            "name", med.getName()
+                        ))
+                        .build();
+                    notificationRepository.save(notification);
 
-                fcmService.sendToUser(med.getElderly().getId(),
-                    "Medication Reminder: " + med.getName(),
-                    med.getName() + " - " + med.getDosage(),
-                    Map.of(
-                        "type", "MEDICATION_REMINDER",
-                        "medicationId", med.getId().toString()
-                    ));
+                    fcmService.sendToUser(med.getElderly().getId(),
+                        "Medication Reminder: " + med.getName(),
+                        med.getName() + " - " + med.getDosage(),
+                        Map.of(
+                            "type", "MEDICATION_REMINDER",
+                            "medicationId", med.getId().toString()
+                        ));
 
-                try {
-                    chatReminderService.sendMedicationChatReminder(med.getElderly(), med);
-                } catch (Exception e) {
-                    log.warn("Failed to send chat reminder for medication {}: {}", med.getId(), e.getMessage());
+                    try {
+                        chatReminderService.sendMedicationChatReminder(med.getElderly(), med);
+                    } catch (Exception e) {
+                        log.warn("Failed to send chat reminder for medication {}: {}", med.getId(), e.getMessage());
+                    }
+
+                    log.debug("Medication reminder: elderly={} medication={}",
+                        med.getElderly().getId(), med.getName());
                 }
-
-                log.debug("Medication reminder: elderly={} medication={}",
-                    med.getElderly().getId(), med.getName());
             }
 
             // Advance to the next scheduled slot now that this one has fired.
@@ -102,5 +105,11 @@ public class MedicationReminderScheduler {
         if (!dueMedications.isEmpty()) {
             log.info("Medication check: {} due medications checked", dueMedications.size());
         }
+    }
+
+    // Fail open: a user who never touched their notification settings (or whose
+    // preferences record is null/missing) should still receive reminders.
+    private boolean isMedicationReminderEnabled(User user) {
+        return user.getNotificationPreferences() == null || user.getNotificationPreferences().isMedicationReminder();
     }
 }

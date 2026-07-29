@@ -105,34 +105,38 @@ public class HealthMetricThresholdService {
                     if (breached || secondaryBreached) {
                         String body = buildAlertBody(metric, threshold, breached, secondaryBreached);
 
-                        Notification notification = Notification.builder()
-                                .user(metric.getElderly())
-                                .type(NotificationType.HEALTH_ALERT)
-                                .title("Health Alert: " + metric.getType())
-                                .body(body)
-                                .data(Map.of(
-                                        "metricId", metric.getId(),
-                                        "elderlyId", metric.getElderly().getId(),
-                                        "metricType", metric.getType().name(),
-                                        "value", metric.getValue(),
-                                        "thresholdId", threshold.getId()))
-                                .build();
-                        notificationRepository.save(notification);
+                        if (isHealthAlertEnabled(metric.getElderly())) {
+                            Notification notification = Notification.builder()
+                                    .user(metric.getElderly())
+                                    .type(NotificationType.HEALTH_ALERT)
+                                    .title("Health Alert: " + metric.getType())
+                                    .body(body)
+                                    .data(Map.of(
+                                            "metricId", metric.getId(),
+                                            "elderlyId", metric.getElderly().getId(),
+                                            "metricType", metric.getType().name(),
+                                            "value", metric.getValue(),
+                                            "thresholdId", threshold.getId()))
+                                    .build();
+                            notificationRepository.save(notification);
 
-                        fcmService.sendToUser(metric.getElderly().getId(),
-                                "Health Alert: " + metric.getType(),
-                                body,
-                                Map.of(
-                                        "type", "HEALTH_ALERT",
-                                        "metricId", metric.getId().toString(),
-                                        "elderlyId", metric.getElderly().getId().toString()));
+                            fcmService.sendToUser(metric.getElderly().getId(),
+                                    "Health Alert: " + metric.getType(),
+                                    body,
+                                    Map.of(
+                                            "type", "HEALTH_ALERT",
+                                            "metricId", metric.getId().toString(),
+                                            "elderlyId", metric.getElderly().getId().toString()));
+                        }
 
                         if (Boolean.TRUE.equals(threshold.getAlertFamily())) {
                             List<Long> familyUserIds = familyLinkRepository
                                     .findAllFamilyByElderlyIdAndStatus(
                                             metric.getElderly().getId(), FamilyLinkStatus.ACTIVE)
                                     .stream()
-                                    .map(fl -> fl.getFamily().getId())
+                                    .map(fl -> fl.getFamily())
+                                    .filter(this::isHealthAlertEnabled)
+                                    .map(User::getId)
                                     .collect(Collectors.toList());
 
                             if (!familyUserIds.isEmpty()) {
@@ -158,6 +162,12 @@ public class HealthMetricThresholdService {
                                 metric.getElderly().getId(), metric.getType(), metric.getValue());
                     }
                 });
+    }
+
+    // Fail open: a user who never touched their notification settings (or whose
+    // preferences record is null/missing) should still receive alerts.
+    private boolean isHealthAlertEnabled(User user) {
+        return user.getNotificationPreferences() == null || user.getNotificationPreferences().isHealthAlert();
     }
 
     private boolean isValueOutOfRange(BigDecimal value, BigDecimal min, BigDecimal max) {

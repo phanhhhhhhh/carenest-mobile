@@ -179,32 +179,37 @@ public class AnomalyDetectionService {
             body.append("\n\n🤖 AI Analysis: ").append(aiInsight);
         }
 
-        Notification notification = Notification.builder()
-            .user(elderly)
-            .type(NotificationType.HEALTH_ALERT)
-            .title(title)
-            .body(body.toString())
-            .data(Map.of(
-                "metricId", metric.getId().toString(),
-                "elderlyId", elderly.getId().toString(),
-                "type", metric.getType().name(),
-                "value", metric.getValue().toString(),
-                "anomaly", "true",
-                "aiAnalysis", aiInsight != null ? aiInsight : ""
-            ))
-            .build();
-        notificationRepository.save(notification);
-
         Map<String, String> pushData = Map.of(
             "type", "HEALTH_ALERT",
             "metricId", metric.getId().toString(),
             "elderlyId", elderly.getId().toString()
         );
-        fcmService.sendToUser(elderly.getId(), title, body.toString(), pushData);
+
+        if (isHealthAlertEnabled(elderly)) {
+            Notification notification = Notification.builder()
+                .user(elderly)
+                .type(NotificationType.HEALTH_ALERT)
+                .title(title)
+                .body(body.toString())
+                .data(Map.of(
+                    "metricId", metric.getId().toString(),
+                    "elderlyId", elderly.getId().toString(),
+                    "type", metric.getType().name(),
+                    "value", metric.getValue().toString(),
+                    "anomaly", "true",
+                    "aiAnalysis", aiInsight != null ? aiInsight : ""
+                ))
+                .build();
+            notificationRepository.save(notification);
+
+            fcmService.sendToUser(elderly.getId(), title, body.toString(), pushData);
+        }
 
         List<Long> familyIds = familyLinkRepository
             .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
-            .stream().map(fl -> fl.getFamily().getId()).collect(Collectors.toList());
+            .stream().map(fl -> fl.getFamily())
+            .filter(this::isHealthAlertEnabled)
+            .map(User::getId).collect(Collectors.toList());
         if (!familyIds.isEmpty()) {
             fcmService.sendToUsers(familyIds, title, body.toString(), pushData);
             notificationService.createForUsers(familyIds, NotificationType.HEALTH_ALERT, title, body.toString(),
@@ -223,22 +228,27 @@ public class AnomalyDetectionService {
     private void appendAiInsight(HealthMetric metric, String aiInsight) {
         User elderly = metric.getElderly();
         String title = "🤖 AI Insight: " + formatType(metric.getType());
-        Notification insightNote = Notification.builder()
-            .user(elderly)
-            .type(NotificationType.HEALTH_ALERT)
-            .title(title)
-            .body(aiInsight)
-            .data(Map.of(
-                "metricId", metric.getId().toString(),
-                "type", "AI_INSIGHT",
-                "aiAnalysis", aiInsight
-            ))
-            .build();
-        notificationRepository.save(insightNote);
+
+        if (isHealthAlertEnabled(elderly)) {
+            Notification insightNote = Notification.builder()
+                .user(elderly)
+                .type(NotificationType.HEALTH_ALERT)
+                .title(title)
+                .body(aiInsight)
+                .data(Map.of(
+                    "metricId", metric.getId().toString(),
+                    "type", "AI_INSIGHT",
+                    "aiAnalysis", aiInsight
+                ))
+                .build();
+            notificationRepository.save(insightNote);
+        }
 
         List<Long> familyIds = familyLinkRepository
             .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
-            .stream().map(fl -> fl.getFamily().getId()).collect(Collectors.toList());
+            .stream().map(fl -> fl.getFamily())
+            .filter(this::isHealthAlertEnabled)
+            .map(User::getId).collect(Collectors.toList());
         if (!familyIds.isEmpty()) {
             fcmService.sendToUsers(familyIds, title, aiInsight,
                 Map.of("type", "AI_INSIGHT", "elderlyId", elderly.getId().toString()));
@@ -247,6 +257,12 @@ public class AnomalyDetectionService {
         }
     }
 
+
+    // Fail open: a user who never touched their notification settings (or whose
+    // preferences record is null/missing) should still receive alerts.
+    private boolean isHealthAlertEnabled(User user) {
+        return user.getNotificationPreferences() == null || user.getNotificationPreferences().isHealthAlert();
+    }
 
     private String buildAiSystemPrompt(HealthMetric metric) {
         User elderly = metric.getElderly();

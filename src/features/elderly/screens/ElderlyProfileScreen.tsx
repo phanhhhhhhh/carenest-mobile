@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -96,7 +97,11 @@ export default function ElderlyProfileScreen() {
       label: 'Trợ giúp & Hỗ trợ',
       color: Colors.textSecondary,
       bg: 'rgba(173, 181, 189, 0.08)',
-      onPress: () => {},
+      onPress: () =>
+        Alert.alert(
+          'Sắp ra mắt',
+          'Tính năng Trợ giúp & Hỗ trợ đang được phát triển.',
+        ),
     },
   ];
 

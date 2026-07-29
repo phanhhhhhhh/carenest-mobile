@@ -31,6 +31,17 @@ export const MedicationSchema = z.object({
 });
 export type MedicationParsed = z.infer<typeof MedicationSchema>;
 
+export const MedicationCatalogSchema = z.object({
+  id: z.coerce.number(),
+  name: z.string(),
+  brandNames: z.string().optional().nullable(),
+  dosageForm: z.string().optional().nullable(),
+  commonStrengths: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  usageNote: z.string().optional().nullable(),
+});
+export type MedicationCatalogParsed = z.infer<typeof MedicationCatalogSchema>;
+
 export const MedicationLogSchema = z.object({
   id: z.coerce.string(),
   medicationId: z.coerce.string().optional(),
@@ -210,6 +221,13 @@ export const GoogleFitStatusSchema = z.object({
   configured: z.boolean(),
 });
 export type GoogleFitStatusParsed = z.infer<typeof GoogleFitStatusSchema>;
+
+export const SubscriptionStatusSchema = z.object({
+  isPremium: z.boolean(),
+  planType: z.enum(['FREE', 'PREMIUM_MONTHLY', 'PREMIUM_YEARLY']),
+  expiresAt: z.string().nullable().optional(),
+});
+export type SubscriptionStatusParsed = z.infer<typeof SubscriptionStatusSchema>;
 
 const DashboardLatestMetricSchema = z.object({
   value: z.union([z.string(), z.number()]),

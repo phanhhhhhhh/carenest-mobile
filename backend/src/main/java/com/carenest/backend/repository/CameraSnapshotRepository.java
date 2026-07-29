@@ -19,4 +19,6 @@ public interface CameraSnapshotRepository extends JpaRepository<CameraSnapshot, 
     List<CameraSnapshot> findByEmergencyEventId(Long emergencyEventId);
 
     long countByElderlyIdAndCreatedAtAfter(Long elderlyId, Instant after);
+
+    long deleteByCreatedAtBefore(Instant cutoff);
 }

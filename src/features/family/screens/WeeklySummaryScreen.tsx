@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
+import { showErrorToast } from '../../../shared/components/toastStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useWeeklySummaryStore, getWeekLabel, type WeeklySummaryData } from '../store/weeklySummaryStore';
 
@@ -50,9 +51,12 @@ export default function WeeklySummaryScreen() {
     setRefreshing(false);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!elderlyId) return;
-    generateNow(elderlyId);
+    const result = await generateNow(elderlyId);
+    if (!result) {
+      showErrorToast(useWeeklySummaryStore.getState().error ?? 'Không thể tạo báo cáo hàng tuần');
+    }
   };
 
   const renderAppBar = () => (

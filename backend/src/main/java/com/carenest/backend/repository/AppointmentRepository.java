@@ -22,8 +22,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByElderlyIdAndStatusAndDeletedAtIsNullOrderByDatetimeAsc(
         Long elderlyId, AppointmentStatus status);
 
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.elderly WHERE a.status = :status AND a.datetime BETWEEN :from AND :to AND a.deletedAt IS NULL")
     List<Appointment> findByStatusAndDatetimeBetweenAndDeletedAtIsNull(
-        AppointmentStatus status, OffsetDateTime from, OffsetDateTime to);
+        @Param("status") AppointmentStatus status, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 
     @Query("""
         SELECT a FROM Appointment a

@@ -142,7 +142,7 @@ public class CameraController {
     }
 
     @PostMapping("/cameras/{deviceId}/privacy")
-    @PreAuthorize("hasRole('ELDERLY') or hasRole('ADMIN')")
+    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> togglePrivacy(
             @PathVariable Long deviceId,
             @RequestBody Map<String, Boolean> body) {

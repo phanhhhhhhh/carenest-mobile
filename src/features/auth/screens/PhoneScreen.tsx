@@ -141,7 +141,8 @@ export default function PhoneScreen() {
       Alert.alert('Đăng nhập thất bại', friendly);
     }
     } catch (err: any) {
-      Alert.alert('DEBUG LỖI', String(err?.message ?? err));
+      console.warn('handleLogin unexpected error:', err);
+      Alert.alert('Đăng nhập thất bại', 'Vui lòng thử lại.');
     }
   };
 

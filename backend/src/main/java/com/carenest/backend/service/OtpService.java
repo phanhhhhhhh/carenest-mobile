@@ -56,10 +56,11 @@ public class OtpService {
 
 
     public String generateAndPersist(String target) {
-        checkAndRecord(sendWindows, target, "send");
+        String normalizedTarget = normalizeTarget(target);
+        checkAndRecord(sendWindows, normalizedTarget, "send");
         String code = generateOtp();
         OtpVerification otp = OtpVerification.builder()
-            .phone(target)
+            .phone(normalizedTarget)
             .otpCode(code)
             .expiresAt(OffsetDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES))
             .attempts((short) 0)
@@ -67,6 +68,25 @@ public class OtpService {
             .build();
         otpRepository.save(otp);
         return code;
+    }
+
+    /**
+     * Collapses every valid representation of the same target (email or
+     * phone) to one canonical form, so the rate-limit bucket and the OTP
+     * storage/lookup key can't be bypassed by resubmitting the same target
+     * in a different format (e.g. "+84901234567" vs "84901234567" vs
+     * "0901234567", or "User@X.com" vs "user@x.com").
+     */
+    private String normalizeTarget(String target) {
+        if (target == null) {
+            return null;
+        }
+        String trimmed = target.trim();
+        if (trimmed.contains("@")) {
+            return trimmed.toLowerCase();
+        }
+        String canonicalPhone = SmsService.canonicalizePhone(trimmed);
+        return canonicalPhone != null ? canonicalPhone : trimmed;
     }
 
     
@@ -87,18 +107,19 @@ public class OtpService {
 
     
     public boolean verifyOtp(String target, String code) {
-        checkAndRecord(verifyWindows, target, "verify");
+        String normalizedTarget = normalizeTarget(target);
+        checkAndRecord(verifyWindows, normalizedTarget, "verify");
         OtpVerification otp = otpRepository
-            .findTopByPhoneAndVerifiedAtIsNullOrderByCreatedAtDesc(target)
+            .findTopByPhoneAndVerifiedAtIsNullOrderByCreatedAtDesc(normalizedTarget)
             .orElse(null);
 
         if (otp == null) {
-            log.warn("No OTP found for {}", target);
+            log.warn("No OTP found for {}", normalizedTarget);
             return false;
         }
 
         if (otp.getAttempts() >= MAX_ATTEMPTS) {
-            log.warn("OTP max attempts exceeded for {}", target);
+            log.warn("OTP max attempts exceeded for {}", normalizedTarget);
             return false;
         }
 
@@ -106,12 +127,12 @@ public class OtpService {
         otpRepository.save(otp);
 
         if (otp.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            log.warn("OTP expired for {}", target);
+            log.warn("OTP expired for {}", normalizedTarget);
             return false;
         }
 
         if (!otp.getOtpCode().equals(code)) {
-            log.warn("OTP mismatch for {}", target);
+            log.warn("OTP mismatch for {}", normalizedTarget);
             return false;
         }
 

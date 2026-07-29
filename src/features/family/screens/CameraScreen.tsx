@@ -99,7 +99,10 @@ export default function CameraScreen() {
     const sn = snValue.trim();
     if (!sn) return;
     setBindVisible(false);
-    await bindCamera(elderlyId, sn, labelValue.trim().length > 0 ? labelValue.trim() : 'Camera');
+    const ok = await bindCamera(elderlyId, sn, labelValue.trim().length > 0 ? labelValue.trim() : 'Camera');
+    if (!ok) {
+      Alert.alert('', 'Không thể liên kết camera. Vui lòng kiểm tra lại số seri.');
+    }
   };
 
   const confirmUnbindDialog = (deviceId: number) => setUnbindTarget(deviceId);
@@ -108,7 +111,10 @@ export default function CameraScreen() {
     if (!elderlyId || unbindTarget == null) return;
     const id = unbindTarget;
     setUnbindTarget(null);
-    await unbindCamera(elderlyId, id);
+    const ok = await unbindCamera(elderlyId, id);
+    if (!ok) {
+      Alert.alert('', 'Không thể xóa camera lúc này');
+    }
   };
 
 

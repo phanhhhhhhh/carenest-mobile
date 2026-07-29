@@ -13,6 +13,7 @@ import {
   Image,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
+import { showErrorToast } from '../../../shared/components/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -138,18 +139,24 @@ export default function HealthThresholdScreen() {
       maxValueSecondary: parseNum(maxValueSecondary),
       alertFamily,
     };
-    if (sheetExisting) {
-      await update(elderlyId, sheetExisting.id, params);
+    const ok = sheetExisting
+      ? await update(elderlyId, sheetExisting.id, params)
+      : await create(elderlyId, { metricType: sheetMetricType, ...params });
+    if (ok) {
+      setSheetVisible(false);
     } else {
-      await create(elderlyId, { metricType: sheetMetricType, ...params });
+      showErrorToast(useHealthThresholdStore.getState().error ?? 'Không thể lưu ngưỡng cảnh báo');
     }
-    setSheetVisible(false);
   };
 
   const handleDeleteSheet = async () => {
     if (!elderlyId || !sheetExisting) return;
-    setSheetVisible(false);
-    await remove(elderlyId, sheetExisting.id);
+    const ok = await remove(elderlyId, sheetExisting.id);
+    if (ok) {
+      setSheetVisible(false);
+    } else {
+      showErrorToast(useHealthThresholdStore.getState().error ?? 'Không thể xóa ngưỡng cảnh báo');
+    }
   };
 
   const handleRecommend = async () => {
@@ -158,6 +165,8 @@ export default function HealthThresholdScreen() {
     if (recs != null && recs.length > 0) {
       setPendingRecs(recs);
       setRecommendDialogVisible(true);
+    } else if (recs == null) {
+      showErrorToast(useHealthThresholdStore.getState().error ?? 'Không thể lấy đề xuất');
     } else {
       Alert.alert('', 'Không có đề xuất nào');
     }

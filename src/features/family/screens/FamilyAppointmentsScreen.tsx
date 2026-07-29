@@ -19,6 +19,7 @@ import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
+import { showErrorToast } from '../../../shared/components/toastStore';
 import { useAppointmentStore } from '../store/appointmentStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import type { AppointmentItem } from '../../../shared/types';
@@ -122,10 +123,16 @@ export default function FamilyAppointmentsScreen() {
   const upcomingList = upcoming();
   const pastList = past();
 
+  const canSubmit = doctor.trim().length > 0 && specialty.trim().length > 0;
+
   const onRefresh = async () => {
     setRefreshing(true);
     await load(currentElderlyId ?? undefined);
     setRefreshing(false);
+    const state = useAppointmentStore.getState();
+    if (state.error && state.appointments.length > 0) {
+      showErrorToast(state.error);
+    }
   };
 
   const openAddSheet = () => {
@@ -191,7 +198,11 @@ export default function FamilyAppointmentsScreen() {
         elderlyId: currentElderlyId ?? undefined,
       });
     }
-    if (ok) closeSheet();
+    if (ok) {
+      closeSheet();
+    } else {
+      showErrorToast(useAppointmentStore.getState().error ?? 'Không thể lưu lịch hẹn');
+    }
   };
 
   const confirmDelete = (item: AppointmentItem) => {
@@ -203,7 +214,12 @@ export default function FamilyAppointmentsScreen() {
         {
           text: 'Xóa',
           style: 'destructive',
-          onPress: () => remove(item.id),
+          onPress: async () => {
+            const ok = await remove(item.id);
+            if (!ok) {
+              showErrorToast(useAppointmentStore.getState().error ?? 'Không thể xóa lịch hẹn');
+            }
+          },
         },
       ],
     );
@@ -240,8 +256,18 @@ export default function FamilyAppointmentsScreen() {
             showActions={showActions}
             onEdit={() => openEditSheet(item)}
             onDelete={() => confirmDelete(item)}
-            onComplete={() => updateStatus(item.id, 'COMPLETED')}
-            onCancel={() => updateStatus(item.id, 'CANCELLED')}
+            onComplete={async () => {
+              const ok = await updateStatus(item.id, 'COMPLETED');
+              if (!ok) {
+                showErrorToast(useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn');
+              }
+            }}
+            onCancel={async () => {
+              const ok = await updateStatus(item.id, 'CANCELLED');
+              if (!ok) {
+                showErrorToast(useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn');
+              }
+            }}
           />
         )}
         refreshControl={
@@ -350,9 +376,9 @@ export default function FamilyAppointmentsScreen() {
               <View style={{ height: 20 }} />
 
               <TouchableOpacity
-                style={styles.submitBtn}
+                style={[styles.submitBtn, (!canSubmit || isSaving) && styles.submitBtnDisabled]}
                 onPress={submitSheet}
-                disabled={isSaving}
+                disabled={isSaving || !canSubmit}
               >
                 {isSaving ? (
                   <ActivityIndicator color="#FFFFFF" />
@@ -817,6 +843,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  submitBtnDisabled: { opacity: 0.5 },
   submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   modalOverlay: {
     flex: 1,

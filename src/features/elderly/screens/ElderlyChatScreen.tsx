@@ -312,18 +312,24 @@ function ChatBubble({
   time: string;
   intent?: string;
 }) {
+  const isError = isAi && intent === 'ERROR';
+
   return (
     <View style={[styles.bubbleRow, !isAi && styles.bubbleRowUser]}>
       {isAi && (
         <>
-          <View style={styles.aiAvatarTiny}>
-            <Ionicons name="sparkles" size={16} color={Colors.primary} />
+          <View style={[styles.aiAvatarTiny, isError && styles.errorAvatarTiny]}>
+            <Ionicons
+              name={isError ? 'alert-circle' : 'sparkles'}
+              size={16}
+              color={isError ? Colors.error : Colors.primary}
+            />
           </View>
           <View style={{ width: 8 }} />
         </>
       )}
       <View style={{ flexShrink: 1, alignItems: isAi ? 'flex-start' : 'flex-end' }}>
-        {!!intent && (
+        {!!intent && !isError && (
           <View style={styles.intentBadge}>
             <Text style={styles.intentText}>{intent}</Text>
           </View>
@@ -332,9 +338,17 @@ function ChatBubble({
           style={[
             styles.messageBubble,
             isAi ? styles.aiMessageBubble : styles.userMessageBubble,
+            isError && styles.errorMessageBubble,
           ]}
         >
-          <Text style={isAi ? styles.aiBubbleText : styles.userBubbleText}>{text}</Text>
+          <Text
+            style={[
+              isAi ? styles.aiBubbleText : styles.userBubbleText,
+              isError && styles.errorBubbleText,
+            ]}
+          >
+            {text}
+          </Text>
         </View>
         <Text style={styles.timeText}>{time}</Text>
       </View>
@@ -434,6 +448,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderBottomRightRadius: 4,
   },
+  errorMessageBubble: {
+    backgroundColor: Colors.sosLight,
+    borderWidth: 1,
+    borderColor: Colors.error,
+  },
+  errorAvatarTiny: {
+    backgroundColor: Colors.sosLight,
+  },
+  errorBubbleText: { color: Colors.error },
   userBubbleText: { color: '#FFFFFF', fontSize: 14, lineHeight: 20 },
   timeText: { color: Colors.textHint, fontSize: 11, marginTop: 3 },
 

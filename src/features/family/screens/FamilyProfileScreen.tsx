@@ -112,10 +112,20 @@ export default function FamilyProfileScreen() {
         <View style={{ height: 20 }} />
 
         <Settings
-          onEditProfile={() => {}}
+          onEditProfile={() =>
+            Alert.alert(
+              'Sắp ra mắt',
+              'Tính năng chỉnh sửa hồ sơ đang được phát triển.',
+            )
+          }
           onNotificationSettings={() => navigation.navigate('NotificationSettings')}
           onUpgradePremium={() => navigation.navigate('PremiumPlans')}
-          onHelpSupport={() => {}}
+          onHelpSupport={() =>
+            Alert.alert(
+              'Sắp ra mắt',
+              'Tính năng trợ giúp & hỗ trợ đang được phát triển.',
+            )
+          }
           onLogout={logout}
         />
         <View style={styles.brandFooter}>

@@ -3,6 +3,7 @@ package com.carenest.backend.service;
 import com.carenest.backend.dto.chat.ChatHistoryResponse;
 import com.carenest.backend.dto.chat.ChatRequest;
 import com.carenest.backend.dto.chat.ChatResponse;
+import com.carenest.backend.exception.GeminiApiException;
 import com.carenest.backend.entity.*;
 import com.carenest.backend.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -57,9 +58,20 @@ public class ChatService {
         String conversationHistory = buildConversationContext(userId);
 
         String fullPrompt = conversationHistory + "\nElderly: " + request.getMessage();
-        String aiResponse = geminiApiService.generateConversational(systemPrompt, fullPrompt);
 
-        String intent = classifyIntent(aiResponse);
+        String aiResponse;
+        String intent;
+        try {
+            aiResponse = geminiApiService.generateConversational(systemPrompt, fullPrompt);
+            intent = classifyIntent(aiResponse);
+        } catch (GeminiApiException e) {
+            // Gemini failed (missing/invalid key, timeout, safety block, malformed response).
+            // Persist and return a clearly-flagged error turn instead of silently treating
+            // GeminiApiService's failure as a genuine AI reply.
+            log.warn("Gemini API call failed for elderly chat (userId={}): {}", userId, e.getMessage());
+            aiResponse = "Không thể kết nối với trợ lý AI lúc này, vui lòng thử lại.";
+            intent = "ERROR";
+        }
 
         Map<String, Object> contextData = buildContextData(user);
 

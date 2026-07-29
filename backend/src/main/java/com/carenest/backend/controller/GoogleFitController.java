@@ -4,11 +4,15 @@ import com.carenest.backend.dto.googlefit.GoogleFitStatusResponse;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.UserRepository;
+import com.carenest.backend.security.AuthorizationService;
 import com.carenest.backend.service.GoogleFitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -22,6 +26,7 @@ public class GoogleFitController {
 
     private final GoogleFitService googleFitService;
     private final UserRepository userRepository;
+    private final AuthorizationService authorizationService;
 
     
     @GetMapping("/connect/{userId}")
@@ -56,6 +61,19 @@ public class GoogleFitController {
                 "status", "ERROR",
                 "message", "Invalid state parameter"
             ));
+        }
+
+        // The OAuth "state" only carries the userId the flow was started for — it is never
+        // itself validated against the authenticated caller. Without this check, any logged-in
+        // user could swap userId in state and bind their own Google consent to a victim's account.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long principalId = (authentication != null && authentication.getPrincipal() instanceof Long)
+            ? (Long) authentication.getPrincipal()
+            : null;
+        if (!authorizationService.isOwnerOrLinkedFamily(principalId, userId)) {
+            log.warn("Google Fit callback rejected: principal={} is not owner/linked family of userId={}",
+                principalId, userId);
+            throw new AccessDeniedException("Not authorized to connect Google Fit for this user");
         }
 
         try {
