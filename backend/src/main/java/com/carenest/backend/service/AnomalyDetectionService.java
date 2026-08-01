@@ -209,7 +209,7 @@ public class AnomalyDetectionService {
             .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
             .stream().map(fl -> fl.getFamily())
             .filter(this::isHealthAlertEnabled)
-            .map(User::getId).collect(Collectors.toList());
+            .map(u -> u.getId()).collect(Collectors.toList());
         if (!familyIds.isEmpty()) {
             fcmService.sendToUsers(familyIds, title, body.toString(), pushData);
             notificationService.createForUsers(familyIds, NotificationType.HEALTH_ALERT, title, body.toString(),
@@ -248,7 +248,7 @@ public class AnomalyDetectionService {
             .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
             .stream().map(fl -> fl.getFamily())
             .filter(this::isHealthAlertEnabled)
-            .map(User::getId).collect(Collectors.toList());
+            .map(u -> u.getId()).collect(Collectors.toList());
         if (!familyIds.isEmpty()) {
             fcmService.sendToUsers(familyIds, title, aiInsight,
                 Map.of("type", "AI_INSIGHT", "elderlyId", elderly.getId().toString()));

@@ -237,7 +237,7 @@ public class PaymentService {
         Map<String, Object> status = new HashMap<>();
         status.put("isPremium", isPremium);
         status.put("planType", activeSub.map(s -> s.getPlanType().name()).orElse("FREE"));
-        status.put("expiresAt", activeSub.map(Subscription::getEndDate).orElse(null));
+        status.put("expiresAt", activeSub.map(s -> s.getEndDate()).orElse(null));
         return status;
     }
 
