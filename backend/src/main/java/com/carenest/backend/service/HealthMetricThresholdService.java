@@ -136,7 +136,7 @@ public class HealthMetricThresholdService {
                                     .stream()
                                     .map(fl -> fl.getFamily())
                                     .filter(this::isHealthAlertEnabled)
-                                    .map(User::getId)
+                                    .map(u -> u.getId())
                                     .collect(Collectors.toList());
 
                             if (!familyUserIds.isEmpty()) {
