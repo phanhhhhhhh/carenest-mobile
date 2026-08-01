@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
   },
   currentPlanOverlay: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     opacity: 0.35,
   },
   currentPlanRow: { flexDirection: 'row', alignItems: 'center' },
