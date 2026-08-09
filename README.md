@@ -4,7 +4,7 @@
 
 **CareNest** is a learning project built with React Native (Expo) and Spring Boot for EXE101 @ FPT University.
 
-**Tech:** React Native (Expo SDK 57) · TypeScript · Zustand · Spring Boot 3.2 · Java 21 · PostgreSQL
+**Tech:** React Native (Expo SDK 54) · TypeScript · Zustand · Spring Boot 3.2 · Java 21 · PostgreSQL
 
 ---
 
@@ -81,8 +81,8 @@ CareNest is a mobile platform connecting elderly users with their families throu
 
 | Technology | Purpose |
 |------------|---------|
-| **React Native** 0.86 + **Expo** SDK 57 | Cross-platform framework |
-| **TypeScript** 6.0 | Type-safe development |
+| **React Native** 0.81 + **Expo** SDK 54 | Cross-platform framework |
+| **TypeScript** 5.9 | Type-safe development |
 | **Zustand** 5.0 | Lightweight state management |
 | **React Navigation** 7 | Stack + bottom-tab routing, auth guards, role-based redirect |
 | **Axios** 1.7 | HTTP client + JWT interceptor + proactive token refresh |
@@ -99,7 +99,7 @@ CareNest is a mobile platform connecting elderly users with their families throu
 | **Java** 21 (virtual threads enabled) | Programming language |
 | **Spring Data JPA** + Hibernate | ORM & data access |
 | **PostgreSQL** 16 (Docker) | Database |
-| **Flyway** | Database migrations (V1–V27) |
+| **Flyway** | Database migrations (V1–V35) |
 | **JJWT** 0.12.5 | JWT authentication (HMAC-SHA256) |
 | **Firebase Admin SDK** 9.2.0 | FCM push notifications |
 | **Spring Security** | Role-based access control |
@@ -120,7 +120,7 @@ CareNest is a mobile platform connecting elderly users with their families throu
 │  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘ │
 │         │                 │                  │        │
 │  ┌──────┴─────────────────┴──────────────────┴──────┐ │
-│  │              Zustand Stores (18 stores)           │ │
+│  │              Zustand Stores (16 stores)           │ │
 │  │   (auth, elderly, health, meds, family, alerts,   │ │
 │  │    appointments, camera, chat, payment, etc.)      │ │
 │  └──────────────────────┬───────────────────────────┘ │
@@ -139,11 +139,11 @@ CareNest is a mobile platform connecting elderly users with their families throu
 │  └──────┬──────────────────────────────────┬────────┘ │
 │         │                                  │           │
 │  ┌──────┴──────┐  ┌──────────────────┐  ┌──┴────────┐ │
-│  │ 11 Controllers│ │  25 Services     │  │ Security  │ │
+│  │ 19 Controllers│ │  36 Services     │  │ Security  │ │
 │  └──────┬──────┘  └────────┬─────────┘  └───────────┘ │
 │         │                  │                            │
 │  ┌──────┴──────────────────┴──────────┐                │
-│  │   16 JPA Repositories + 14 Entities │                │
+│  │   20 JPA Repositories + 31 Entities │                │
 │  └──────────────────┬─────────────────┘                │
 └─────────────────────┼──────────────────────────────────┘
                       │
@@ -177,7 +177,7 @@ carenest_mobile/
 │   │   ├── storage/secureStorage.ts        # expo-secure-store wrapper
 │   │   └── theme/                          # Colors, spacing, typography
 │   ├── features/                           # Feature modules
-│   │   ├── auth/                           # 13 screens + authStore
+│   │   ├── auth/                           # 15 screens + authStore
 │   │   ├── elderly/                        # 11 screens + 6 stores + components
 │   │   ├── family/                         # 10 screens + 7 stores
 │   │   ├── medication/                     # Medication reminder service
@@ -187,15 +187,15 @@ carenest_mobile/
 │   ├── pom.xml                             # Maven, Java 21, Spring Boot 3.2.5
 │   └── src/main/java/com/carenest/backend/
 │       ├── config/                         # SecurityConfig, FirebaseConfig
-│       ├── controller/                     # 11 REST controllers
-│       ├── dto/                            # 38 DTOs (request + response)
-│       ├── entity/                         # 14 JPA entities
+│       ├── controller/                     # 19 REST controllers
+│       ├── dto/                            # 58 DTOs (request + response)
+│       ├── entity/                         # 31 JPA entities
 │       ├── exception/                      # GlobalExceptionHandler + custom exceptions
-│       ├── repository/                     # 16 JPA repositories
-│       ├── scheduler/                      # 4 scheduled tasks
+│       ├── repository/                     # 20 JPA repositories
+│       ├── scheduler/                      # 5 scheduled tasks
 │       ├── seeder/                         # DataSeeder (demo data)
 │       ├── security/                       # JwtAuthFilter, AuthzService, RateLimitFilter
-│       └── service/                        # 25 business logic services
+│       └── service/                        # 36 business logic services
 ├── assets/                                 # Mascot images, brand logo, app icons
 ├── .env.example                            # Environment variables template
 └── README.md
@@ -232,7 +232,7 @@ docker-compose up -d
 
 # 5. Run backend (separate terminal)
 cd backend
-cp src/main/resources/application-local.example.properties src/main/resources/application-local.properties
+cp src/main/resources/application-local.properties.example src/main/resources/application-local.properties
 # Edit application-local.properties with your DB credentials
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
@@ -311,7 +311,8 @@ Tokens stored in **expo-secure-store**. The Axios interceptor proactively refres
 | POST/GET | `/elderly/{id}/health-metrics` | ✅ |
 | GET | `/elderly/{id}/health-report` | ✅ |
 | POST | `/elderly/{id}/sync-health-data` | ✅ |
-| GET/POST | `/elderly/{id}/weekly-summary` | ✅ |
+| GET | `/elderly/{id}/weekly-summary` | ✅ |
+| POST | `/elderly/{id}/weekly-summary/generate` | ✅ |
 | POST/GET | `/elderly/{id}/emergency-events` | ✅ |
 | PATCH | `/emergency-events/{id}/acknowledge` | ✅ |
 
