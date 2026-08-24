@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final Environment environment;
 
-    @Value("${cors.allowed-origins:http://localhost:8082}")
+    @Value("${cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8080,http://localhost:3000,http://localhost:19006,http://localhost:*,http://127.0.0.1:*}")
     private String corsAllowedOrigins;
 
     @Bean

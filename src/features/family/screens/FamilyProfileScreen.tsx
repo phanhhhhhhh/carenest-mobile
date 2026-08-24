@@ -109,6 +109,8 @@ export default function FamilyProfileScreen() {
         )}
 
         <AddFamilyCard onPress={openAddFamilyDialog} />
+        <View style={{ height: 12 }} />
+        <ScanQRCard onPress={() => navigation.navigate('FamilyScanQR')} />
         <View style={{ height: 20 }} />
 
         <Settings
@@ -262,10 +264,25 @@ function AddFamilyCard({ onPress }: { onPress: () => void }) {
         <Ionicons name="person-add" size={22} color={Colors.primary} />
       </View>
       <View style={styles.addFamilyText}>
-        <Text style={styles.addFamilyTitle}>Thêm thành viên gia đình</Text>
-        <Text style={styles.addFamilySubtitle}>Kết nối với tài khoản người cao tuổi để theo dõi sức khỏe</Text>
+        <Text style={styles.addFamilyTitle}>Thêm bằng số điện thoại</Text>
+        <Text style={styles.addFamilySubtitle}>Tìm tài khoản người cao tuổi qua SĐT</Text>
       </View>
       <Ionicons name="chevron-forward" size={22} color={Colors.primary} />
+    </TouchableOpacity>
+  );
+}
+
+function ScanQRCard({ onPress }: { onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.scanQRCard} onPress={onPress}>
+      <View style={styles.scanQRIconWrap}>
+        <Ionicons name="qr-code-outline" size={22} color={Colors.secondary} />
+      </View>
+      <View style={styles.addFamilyText}>
+        <Text style={styles.scanQRTitle}>Quét mã QR</Text>
+        <Text style={styles.addFamilySubtitle}>Quét mã QR do người cao tuổi cung cấp</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={22} color={Colors.secondary} />
     </TouchableOpacity>
   );
 }
@@ -426,6 +443,24 @@ const styles = StyleSheet.create({
   addFamilyText: { flex: 1, marginLeft: 14 },
   addFamilyTitle: { color: Colors.primary, fontSize: 15, fontWeight: '600' },
   addFamilySubtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
+  scanQRCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: `${Colors.secondary}33`,
+    padding: 18,
+  },
+  scanQRIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: `${Colors.secondary}14`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanQRTitle: { color: Colors.secondary, fontSize: 15, fontWeight: '600' },
   settingsCard: {
     backgroundColor: Colors.surface,
     borderRadius: 18,
