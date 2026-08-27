@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-
   KeyboardAvoidingView,
   Platform,
   Image,
@@ -119,9 +118,7 @@ function PasswordChecklist({ value }: { value: string }) {
               size={18}
               color={ok ? Teal : HintGray}
             />
-            <Text style={[styles.checklistLabel, ok && styles.checklistLabelOk]}>
-              {rule.label}
-            </Text>
+            <Text style={[styles.checklistLabel, ok && styles.checklistLabelOk]}>{rule.label}</Text>
           </View>
         );
       })}
@@ -149,9 +146,7 @@ function PillField({ label, error, touched, children }: PillFieldProps) {
   return (
     <View style={styles.fieldBlock}>
       <Text style={[styles.label, showError && styles.labelError]}>{label}</Text>
-      <View style={[styles.inputPill, showError && styles.inputPillError]}>
-        {children}
-      </View>
+      <View style={[styles.inputPill, showError && styles.inputPillError]}>{children}</View>
       {showError && <Text style={styles.fieldError}>{error}</Text>}
     </View>
   );
@@ -228,38 +223,38 @@ export default function RegisterScreen() {
 
     try {
       const result = await register({
-      name: name.trim(),
-      ...(method === 'phone' ? { phone: target } : { email: target }),
-      password,
-      confirmPassword,
-      role,
-    });
-
-    if (result.type === 'needsVerification') {
-      await sendOtp(target, otpMethod);
-      setSubmitting(false);
-      navigation.navigate('OtpVerify', {
-        target,
-        method: otpMethod,
-        userName: name.trim(),
+        name: name.trim(),
+        ...(method === 'phone' ? { phone: target } : { email: target }),
+        password,
+        confirmPassword,
+        role,
       });
-    } else if (result.type === 'success') {
-      // Đăng ký xong không cần xác thực (trường hợp backend cũ) -> đi đăng nhập
-      setSubmitting(false);
-      Alert.alert('Đăng ký thành công', 'Vui lòng đăng nhập để tiếp tục.', [
-        { text: 'Đăng nhập', onPress: () => navigation.navigate('Phone') },
-      ]);
-    } else {
-      setSubmitting(false);
-      const raw = result.message || '';
-      const friendly = /already registered/i.test(raw)
-        ? method === 'phone'
-          ? 'Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.'
-          : 'Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.'
-        : raw || 'Đăng ký thất bại. Vui lòng thử lại.';
-      Alert.alert('Đăng ký thất bại', friendly);
-    }
-    } catch (err: any) {
+
+      if (result.type === 'needsVerification') {
+        await sendOtp(target, otpMethod);
+        setSubmitting(false);
+        navigation.navigate('OtpVerify', {
+          target,
+          method: otpMethod,
+          userName: name.trim(),
+        });
+      } else if (result.type === 'success') {
+        // Đăng ký xong không cần xác thực (trường hợp backend cũ) -> đi đăng nhập
+        setSubmitting(false);
+        Alert.alert('Đăng ký thành công', 'Vui lòng đăng nhập để tiếp tục.', [
+          { text: 'Đăng nhập', onPress: () => navigation.navigate('Phone') },
+        ]);
+      } else {
+        setSubmitting(false);
+        const raw = result.message || '';
+        const friendly = /already registered/i.test(raw)
+          ? method === 'phone'
+            ? 'Số điện thoại này đã được đăng ký. Vui lòng đăng nhập hoặc dùng số khác.'
+            : 'Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.'
+          : raw || 'Đăng ký thất bại. Vui lòng thử lại.';
+        Alert.alert('Đăng ký thất bại', friendly);
+      }
+    } catch (err: unknown) {
       setSubmitting(false);
       console.warn('handleRegister unexpected error:', err);
       Alert.alert('Đăng ký thất bại', 'Vui lòng thử lại.');
@@ -342,7 +337,12 @@ export default function RegisterScreen() {
 
           {method === 'phone' ? (
             <PillField label="Số điện thoại" error={errors.phone} touched={touched.phone}>
-              <Ionicons name="phone-portrait-outline" size={18} color={HintGray} style={styles.leftIcon} />
+              <Ionicons
+                name="phone-portrait-outline"
+                size={18}
+                color={HintGray}
+                style={styles.leftIcon}
+              />
               <Text style={styles.phonePrefix}>+84</Text>
               <View style={styles.prefixDivider} />
               <TextInput
@@ -395,7 +395,12 @@ export default function RegisterScreen() {
           )}
 
           <PillField label="Mật khẩu" error={errors.password} touched={touched.password}>
-            <Ionicons name="lock-closed-outline" size={18} color={HintGray} style={styles.leftIcon} />
+            <Ionicons
+              name="lock-closed-outline"
+              size={18}
+              color={HintGray}
+              style={styles.leftIcon}
+            />
             <TextInput
               ref={passwordRef}
               style={styles.input}
@@ -441,7 +446,12 @@ export default function RegisterScreen() {
             error={errors.confirmPassword}
             touched={touched.confirmPassword}
           >
-            <Ionicons name="lock-closed-outline" size={18} color={HintGray} style={styles.leftIcon} />
+            <Ionicons
+              name="lock-closed-outline"
+              size={18}
+              color={HintGray}
+              style={styles.leftIcon}
+            />
             <TextInput
               ref={confirmRef}
               style={styles.input}
@@ -531,9 +541,7 @@ export default function RegisterScreen() {
             disabled={busy}
             activeOpacity={0.85}
           >
-            <Text style={styles.registerBtnText}>
-              {busy ? 'Đang xử lý...' : 'Đăng Ký'}
-            </Text>
+            <Text style={styles.registerBtnText}>{busy ? 'Đang xử lý...' : 'Đăng Ký'}</Text>
           </TouchableOpacity>
 
           <View style={styles.loginRow}>

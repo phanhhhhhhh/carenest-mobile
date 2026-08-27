@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+} from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -11,8 +19,6 @@ import { useAuthStore } from '../../auth/store/authStore';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 import { useLinkedFamilyStore } from '../../family/store/familyStore';
 import { getName, getPhone, getRole } from '../../../core/storage/secureStorage';
-
-
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -50,13 +56,13 @@ export default function ElderlyProfileScreen() {
     logout();
   };
 
-  const menuItems: Array<{
+  const menuItems: {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
     color: string;
     bg: string;
     onPress: () => void;
-  }> = [
+  }[] = [
     {
       icon: 'create-outline',
       label: 'Chỉnh sửa hồ sơ',
@@ -97,11 +103,7 @@ export default function ElderlyProfileScreen() {
       label: 'Trợ giúp & Hỗ trợ',
       color: Colors.textSecondary,
       bg: 'rgba(173, 181, 189, 0.08)',
-      onPress: () =>
-        Alert.alert(
-          'Sắp ra mắt',
-          'Tính năng Trợ giúp & Hỗ trợ đang được phát triển.',
-        ),
+      onPress: () => Alert.alert('Sắp ra mắt', 'Tính năng Trợ giúp & Hỗ trợ đang được phát triển.'),
     },
   ];
 
@@ -133,10 +135,19 @@ export default function ElderlyProfileScreen() {
           <View
             style={[
               styles.roleBadge,
-              { backgroundColor: isElderlyRole ? 'rgba(46, 125, 154, 0.1)' : 'rgba(76, 175, 130, 0.1)' },
+              {
+                backgroundColor: isElderlyRole
+                  ? 'rgba(46, 125, 154, 0.1)'
+                  : 'rgba(76, 175, 130, 0.1)',
+              },
             ]}
           >
-            <Text style={[styles.roleBadgeText, { color: isElderlyRole ? Colors.primary : Colors.secondary }]}>
+            <Text
+              style={[
+                styles.roleBadgeText,
+                { color: isElderlyRole ? Colors.primary : Colors.secondary },
+              ]}
+            >
               {isElderlyRole ? 'Người cao tuổi' : 'Gia đình'}
             </Text>
           </View>
@@ -285,14 +296,15 @@ function ConditionTags({ conditions }: { conditions: string[] }) {
       {conditions.map((c) => {
         const lower = c.toLowerCase();
         const color =
-          lower === 'diabetes' ? Colors.warning : lower === 'hypertension' ? Colors.error : Colors.primary;
+          lower === 'diabetes'
+            ? Colors.warning
+            : lower === 'hypertension'
+              ? Colors.error
+              : Colors.primary;
         return (
           <View
             key={c}
-            style={[
-              styles.tag,
-              { backgroundColor: `${color}1A`, borderColor: `${color}4D` },
-            ]}
+            style={[styles.tag, { backgroundColor: `${color}1A`, borderColor: `${color}4D` }]}
           >
             <Text style={[styles.tagText, { color }]}>{c}</Text>
           </View>

@@ -9,7 +9,6 @@ import {
   Modal,
   TextInput,
   FlatList,
-
   RefreshControl,
   Image,
 } from 'react-native';
@@ -79,7 +78,6 @@ export default function FamilyMedicationScreen() {
   const fetchLogs = useMedicationStore((s) => s.fetchLogs);
   const allLogs = useMedicationStore((s) => s.allLogs);
   const fetchAllLogs = useMedicationStore((s) => s.fetchAllLogs);
-  const toggleTaken = useMedicationStore((s) => s.toggleTaken);
 
   // Family dashboard store — provides the currently-selected linked elderly
   const dashData = useFamilyDashboardStore((s) => s.data);
@@ -164,7 +162,10 @@ export default function FamilyMedicationScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([dashLoad(), currentElderlyId ? loadMedications(currentElderlyId) : Promise.resolve()]);
+    await Promise.all([
+      dashLoad(),
+      currentElderlyId ? loadMedications(currentElderlyId) : Promise.resolve(),
+    ]);
     setRefreshing(false);
   }, [dashLoad, loadMedications, currentElderlyId]);
 
@@ -173,9 +174,6 @@ export default function FamilyMedicationScreen() {
   useEffect(() => {
     fetchAllLogs();
   }, [items, fetchAllLogs]);
-
-  const taken = items.filter((m) => m.taken).length;
-  const total = items.length;
 
   /**
    * Tỉ lệ tuân thủ theo ngày, tính từ logs thật:
@@ -309,24 +307,16 @@ export default function FamilyMedicationScreen() {
   };
 
   const confirmDelete = (item: MedicationItem) => {
-    Alert.alert(
-      'Xóa thuốc',
-      `Bạn có chắc chắn muốn xóa "${item.name}"?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: () => {
-            deleteMedication(item.id);
-          },
+    Alert.alert('Xóa thuốc', `Bạn có chắc chắn muốn xóa "${item.name}"?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          deleteMedication(item.id);
         },
-      ],
-    );
-  };
-
-  const handleToggle = (item: MedicationItem) => {
-    toggleTaken(item.id, (error) => Alert.alert('Lỗi', error));
+      },
+    ]);
   };
 
   const handleSelectHistoryMed = (id: string) => {
@@ -373,7 +363,10 @@ export default function FamilyMedicationScreen() {
       <View style={styles.complianceCard}>
         <View style={styles.complianceHeaderRow}>
           <Text style={styles.complianceHeaderTitle}>Tỉ lệ tuân thủ · {rangeDays} ngày</Text>
-          <TouchableOpacity style={styles.rangeDropdown} onPress={() => setRangePickerVisible(true)}>
+          <TouchableOpacity
+            style={styles.rangeDropdown}
+            onPress={() => setRangePickerVisible(true)}
+          >
             <Text style={styles.rangeDropdownText}>{rangeDays} ngày</Text>
             <Ionicons name="chevron-down" size={14} color={Colors.textSecondary} />
           </TouchableOpacity>
@@ -402,7 +395,11 @@ export default function FamilyMedicationScreen() {
               // cữ thuốc nào -> chỉ vẽ track rỗng.
               const barHeight = ratio === null ? 0 : Math.max(4, ratio * 84);
               const isLow = ratio !== null && ratio < 0.5;
-              const fillColor = isLow ? Colors.warning : isToday ? Colors.primary : Colors.primaryLight;
+              const fillColor = isLow
+                ? Colors.warning
+                : isToday
+                  ? Colors.primary
+                  : Colors.primaryLight;
               return (
                 <View key={label} style={styles.weekBarCol}>
                   <View style={styles.weekBarTrack}>
@@ -410,13 +407,18 @@ export default function FamilyMedicationScreen() {
                       <>
                         <Text style={styles.weekBarValue}>{Math.round(ratio * 100)}</Text>
                         <View
-                          style={[styles.weekBarFill, { height: barHeight, backgroundColor: fillColor }]}
+                          style={[
+                            styles.weekBarFill,
+                            { height: barHeight, backgroundColor: fillColor },
+                          ]}
                         />
                       </>
                     )}
                   </View>
                   <View style={{ height: 6 }} />
-                  <Text style={[styles.weekBarLabel, isToday && styles.weekBarLabelActive]}>{label}</Text>
+                  <Text style={[styles.weekBarLabel, isToday && styles.weekBarLabelActive]}>
+                    {label}
+                  </Text>
                 </View>
               );
             })}
@@ -441,7 +443,9 @@ export default function FamilyMedicationScreen() {
   const renderTodayTab = () => (
     <ScrollView
       contentContainerStyle={styles.tabContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+      }
     >
       {renderComplianceCard()}
       <Text style={styles.sectionTitle}>Lịch thuốc hôm nay</Text>
@@ -455,7 +459,9 @@ export default function FamilyMedicationScreen() {
   const renderListTab = () => (
     <ScrollView
       contentContainerStyle={styles.tabContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+      }
     >
       {renderMedList('Chưa có thuốc nào được thêm')}
       <View style={{ height: 14 }} />
@@ -474,7 +480,9 @@ export default function FamilyMedicationScreen() {
     return (
       <ScrollView
         contentContainerStyle={styles.tabContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+        }
       >
         <View style={styles.chipsWrap}>
           {items.map((m) => {
@@ -485,7 +493,11 @@ export default function FamilyMedicationScreen() {
                 style={[styles.historyChip, isSelected && styles.historyChipSelected]}
                 onPress={() => handleSelectHistoryMed(m.id)}
               >
-                <Text style={[styles.historyChipText, isSelected && styles.historyChipTextSelected]}>{m.name}</Text>
+                <Text
+                  style={[styles.historyChipText, isSelected && styles.historyChipTextSelected]}
+                >
+                  {m.name}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -493,7 +505,9 @@ export default function FamilyMedicationScreen() {
         <View style={{ height: 20 }} />
         {selectedHistoryMedId === null ? (
           <View style={styles.historyHintBox}>
-            <Text style={styles.historyHintText}>Chọn 1 loại thuốc phía trên để xem lịch sử 30 ngày</Text>
+            <Text style={styles.historyHintText}>
+              Chọn 1 loại thuốc phía trên để xem lịch sử 30 ngày
+            </Text>
           </View>
         ) : logsError !== null ? (
           <View style={styles.center}>
@@ -513,7 +527,12 @@ export default function FamilyMedicationScreen() {
               />
               <Text style={styles.logDate}>{formatLogDate(log.takenAt)}</Text>
               <View style={{ flex: 1 }} />
-              <Text style={[styles.logStatus, { color: log.status === 'TAKEN' ? Colors.success : Colors.error }]}>
+              <Text
+                style={[
+                  styles.logStatus,
+                  { color: log.status === 'TAKEN' ? Colors.success : Colors.error },
+                ]}
+              >
                 {log.status === 'TAKEN' ? 'Đã uống' : 'Bỏ lỡ'}
               </Text>
             </View>
@@ -655,7 +674,10 @@ export default function FamilyMedicationScreen() {
             <Ionicons name="camera-outline" size={16} color={Colors.textSecondary} />
             <Text style={styles.secondaryActionText}>Ảnh đơn</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryActionBtn} onPress={() => setShowNotesField((v) => !v)}>
+          <TouchableOpacity
+            style={styles.secondaryActionBtn}
+            onPress={() => setShowNotesField((v) => !v)}
+          >
             <Ionicons name="document-text-outline" size={16} color={Colors.textSecondary} />
             <Text style={styles.secondaryActionText}>Ghi chú</Text>
           </TouchableOpacity>
@@ -677,9 +699,14 @@ export default function FamilyMedicationScreen() {
           onPress={handleSubmit}
           disabled={!canSubmit}
         >
-          <Text style={styles.saveBlackBtnText}>{editing ? 'Cập nhật & Bật nhắc nhở' : 'Lưu & Bật nhắc nhở'}</Text>
+          <Text style={styles.saveBlackBtnText}>
+            {editing ? 'Cập nhật & Bật nhắc nhở' : 'Lưu & Bật nhắc nhở'}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={{ alignItems: 'center', marginTop: 10 }} onPress={() => setFormExpanded(false)}>
+        <TouchableOpacity
+          style={{ alignItems: 'center', marginTop: 10 }}
+          onPress={() => setFormExpanded(false)}
+        >
           <Text style={{ color: Colors.textHint, fontSize: 13 }}>Hủy</Text>
         </TouchableOpacity>
       </View>
@@ -704,9 +731,17 @@ export default function FamilyMedicationScreen() {
 
       <View style={styles.tabBar}>
         {TABS.map((tab) => (
-          <TouchableOpacity key={tab.key} style={styles.tabItem} onPress={() => setActiveTab(tab.key)}>
-            <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>{tab.label}</Text>
-            <View style={[styles.tabIndicator, activeTab === tab.key && styles.tabIndicatorActive]} />
+          <TouchableOpacity
+            key={tab.key}
+            style={styles.tabItem}
+            onPress={() => setActiveTab(tab.key)}
+          >
+            <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>
+              {tab.label}
+            </Text>
+            <View
+              style={[styles.tabIndicator, activeTab === tab.key && styles.tabIndicatorActive]}
+            />
           </TouchableOpacity>
         ))}
       </View>
@@ -730,7 +765,11 @@ export default function FamilyMedicationScreen() {
         animationType="fade"
         onRequestClose={() => setTimePickerVisible(false)}
       >
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setTimePickerVisible(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setTimePickerVisible(false)}
+        >
           <TouchableOpacity activeOpacity={1} style={styles.timePickerSheet}>
             <Text style={styles.modalTitle}>Chọn giờ</Text>
             <View style={styles.timePickerColumns}>
@@ -740,10 +779,18 @@ export default function FamilyMedicationScreen() {
                 style={styles.timePickerList}
                 renderItem={({ item: h }) => (
                   <TouchableOpacity
-                    style={[styles.timePickerOption, pickerHour === h && styles.timePickerOptionSelected]}
+                    style={[
+                      styles.timePickerOption,
+                      pickerHour === h && styles.timePickerOptionSelected,
+                    ]}
                     onPress={() => setPickerHour(h)}
                   >
-                    <Text style={[styles.timePickerOptionText, pickerHour === h && styles.timePickerOptionTextSelected]}>
+                    <Text
+                      style={[
+                        styles.timePickerOptionText,
+                        pickerHour === h && styles.timePickerOptionTextSelected,
+                      ]}
+                    >
                       {pad2(h)}
                     </Text>
                   </TouchableOpacity>
@@ -756,10 +803,18 @@ export default function FamilyMedicationScreen() {
                 style={styles.timePickerList}
                 renderItem={({ item: m }) => (
                   <TouchableOpacity
-                    style={[styles.timePickerOption, pickerMinute === m && styles.timePickerOptionSelected]}
+                    style={[
+                      styles.timePickerOption,
+                      pickerMinute === m && styles.timePickerOptionSelected,
+                    ]}
                     onPress={() => setPickerMinute(m)}
                   >
-                    <Text style={[styles.timePickerOptionText, pickerMinute === m && styles.timePickerOptionTextSelected]}>
+                    <Text
+                      style={[
+                        styles.timePickerOptionText,
+                        pickerMinute === m && styles.timePickerOptionTextSelected,
+                      ]}
+                    >
                       {pad2(m)}
                     </Text>
                   </TouchableOpacity>
@@ -780,7 +835,11 @@ export default function FamilyMedicationScreen() {
         animationType="fade"
         onRequestClose={() => setRangePickerVisible(false)}
       >
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setRangePickerVisible(false)}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setRangePickerVisible(false)}
+        >
           <View style={styles.rangeModalSheet}>
             <Text style={styles.modalTitle}>Xem theo</Text>
             {([7, 30] as const).map((option, index) => (
@@ -793,7 +852,9 @@ export default function FamilyMedicationScreen() {
                 }}
               >
                 <Text style={styles.rangeModalOptionText}>{option} ngày</Text>
-                {rangeDays === option && <Ionicons name="checkmark" size={18} color={Colors.primary} />}
+                {rangeDays === option && (
+                  <Ionicons name="checkmark" size={18} color={Colors.primary} />
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -805,7 +866,10 @@ export default function FamilyMedicationScreen() {
 
 function dayPatternLabel(daysOfWeek: number[]): string {
   if (daysOfWeek.length === 0 || daysOfWeek.length === 7) return 'Hàng ngày';
-  return [...daysOfWeek].sort((a, b) => a - b).map((d) => HISTORY_DAY_LABELS[d]).join(',');
+  return [...daysOfWeek]
+    .sort((a, b) => a - b)
+    .map((d) => HISTORY_DAY_LABELS[d])
+    .join(',');
 }
 
 function MedCard({
@@ -818,11 +882,15 @@ function MedCard({
   onDelete: () => void;
 }) {
   const now = Date.now();
-  const isMissed = !item.taken && !!item.nextDoseTime && new Date(item.nextDoseTime).getTime() < now;
+  const isMissed =
+    !item.taken && !!item.nextDoseTime && new Date(item.nextDoseTime).getTime() < now;
   const statusLabel = item.taken ? 'Đã uống' : isMissed ? 'Bỏ lỡ' : 'Sắp tới';
   const statusColor = item.taken ? Colors.success : isMissed ? Colors.error : Colors.warning;
-  const firstTime = item.scheduleTimes[0] ?? (item.nextDoseTime ? formatIsoTime(item.nextDoseTime) : '');
-  const subtitleParts = [firstTime, item.instructions, dayPatternLabel(item.daysOfWeek)].filter(Boolean);
+  const firstTime =
+    item.scheduleTimes[0] ?? (item.nextDoseTime ? formatIsoTime(item.nextDoseTime) : '');
+  const subtitleParts = [firstTime, item.instructions, dayPatternLabel(item.daysOfWeek)].filter(
+    Boolean,
+  );
 
   return (
     <View style={styles.medCard}>
@@ -830,10 +898,14 @@ function MedCard({
         <Ionicons name="medkit-outline" size={22} color={Colors.error} />
       </View>
       <View style={styles.medInfo}>
-        <Text style={styles.medName}>{item.name} {item.dosage}</Text>
+        <Text style={styles.medName}>
+          {item.name} {item.dosage}
+        </Text>
         <Text style={styles.medSubRow}>{subtitleParts.join(' · ')}</Text>
         <View style={styles.medStatusRow}>
-          <Text style={[styles.medStatusMark, { color: statusColor }]}>{item.taken ? '✓' : '✗'}</Text>
+          <Text style={[styles.medStatusMark, { color: statusColor }]}>
+            {item.taken ? '✓' : '✗'}
+          </Text>
           <Text style={[styles.medStatusText, { color: statusColor }]}>{statusLabel}</Text>
         </View>
       </View>
@@ -862,13 +934,30 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 6 },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
   addBtnText: { color: Colors.primary, fontWeight: '600', fontSize: 14 },
-  tabBar: { flexDirection: 'row', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
   tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   tabLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   tabLabelActive: { color: Colors.primary },
-  tabIndicator: { height: 2, width: '60%', marginTop: 8, backgroundColor: 'transparent', borderRadius: 1 },
+  tabIndicator: {
+    height: 2,
+    width: '60%',
+    marginTop: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 1,
+  },
   tabIndicatorActive: { backgroundColor: Colors.primary },
 
   tabContent: { padding: 16 },
@@ -880,7 +969,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(173,181,189,0.2)',
   },
-  complianceHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  complianceHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   complianceHeaderTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   rangeDropdown: {
     flexDirection: 'row',
@@ -1049,7 +1142,13 @@ const styles = StyleSheet.create({
   },
   suggestionName: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
   suggestionMeta: { fontSize: 12, color: Colors.textHint, marginTop: 2 },
-  timeFieldBtn: { flex: 1, marginTop: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  timeFieldBtn: {
+    flex: 1,
+    marginTop: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   timeFieldValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '600' },
   timeFieldPlaceholder: { fontSize: 14, color: Colors.textHint },
   secondaryActionBtn: {
@@ -1074,7 +1173,6 @@ const styles = StyleSheet.create({
   saveBlackBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   addTimeBtnText: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
 
-
   timeChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1085,7 +1183,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(46,125,154,0.08)',
   },
   timeChipText: { fontSize: 13, color: Colors.primary },
-  daysLabel: { fontWeight: '600', color: Colors.textPrimary, fontSize: 14, marginTop: 14, marginBottom: 8 },
+  daysLabel: {
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    fontSize: 14,
+    marginTop: 14,
+    marginBottom: 8,
+  },
   daysRow: { flexDirection: 'row', marginTop: 14 },
   dayBox: {
     flex: 1,
@@ -1112,8 +1216,19 @@ const styles = StyleSheet.create({
   submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 
   // Blood-type-style modal picker (shared visual language)
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12, textAlign: 'center' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   rangeModalSheet: {
     width: 220,
     backgroundColor: Colors.surface,
@@ -1138,7 +1253,13 @@ const styles = StyleSheet.create({
   },
   timePickerColumns: { flexDirection: 'row', height: 200, justifyContent: 'center' },
   timePickerList: { width: 70 },
-  timePickerColon: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary, alignSelf: 'center', marginHorizontal: 8 },
+  timePickerColon: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    alignSelf: 'center',
+    marginHorizontal: 8,
+  },
   timePickerOption: { paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
   timePickerOptionSelected: { backgroundColor: 'rgba(46,125,154,0.1)' },
   timePickerOptionText: { fontSize: 15, color: Colors.textSecondary },

@@ -6,8 +6,6 @@ import { getUserId } from '../storage/secureStorage';
 import { navigateToTab, navigationRef } from '../navigation/navigationRef';
 import { useAuthStore } from '../../features/auth/store/authStore';
 
-
-
 const CHANNEL_ID = 'carenest_default';
 
 let initialized = false;
@@ -24,51 +22,63 @@ Notifications.setNotificationHandler({
 
 export async function initializePushNotifications(): Promise<void> {
   if (initialized) return;
-  initialized = true;
 
-  if (Platform.OS === 'web') return;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: 'CareNest Notifications',
-      description: 'Medication reminders, health alerts, SOS alerts',
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
-      enableVibrate: true,
-    });
+  if (Platform.OS === 'web') {
+    initialized = true;
+    return;
   }
 
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  let status = existing;
-  if (existing !== 'granted') {
-    const req = await Notifications.requestPermissionsAsync();
-    status = req.status;
-  }
+  try {
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+        name: 'CareNest Notifications',
+        description: 'Medication reminders, health alerts, SOS alerts',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: 'default',
+        enableVibrate: true,
+      });
+    }
 
-  if (Device.isDevice && status === 'granted') {
-    try {
-      const { data: token } = await Notifications.getDevicePushTokenAsync();
-      await registerTokenWithBackend(token);
-    } catch {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    let status = existing;
+    if (existing !== 'granted') {
+      const req = await Notifications.requestPermissionsAsync();
+      status = req.status;
+    }
+
+    if (Device.isDevice && status === 'granted') {
+      try {
+        const { data: token } = await Notifications.getDevicePushTokenAsync();
+        await registerTokenWithBackend(token);
+      } catch {}
+
+      subscriptions.push(
+        Notifications.addPushTokenListener(({ data }) => {
+          registerTokenWithBackend(data);
+        }),
+      );
     }
 
     subscriptions.push(
-      Notifications.addPushTokenListener(({ data }) => {
-        registerTokenWithBackend(data);
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data as Record<string, unknown>;
+        navigateFromPayload(data);
       }),
     );
-  }
 
-  subscriptions.push(
-    Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as Record<string, unknown>;
-      navigateFromPayload(data);
-    }),
-  );
+    const last = await Notifications.getLastNotificationResponseAsync();
+    if (last) {
+      navigateFromPayload(last.notification.request.content.data as Record<string, unknown>);
+    }
 
-  const last = await Notifications.getLastNotificationResponseAsync();
-  if (last) {
-    navigateFromPayload(last.notification.request.content.data as Record<string, unknown>);
+    initialized = true;
+  } catch (e) {
+    // Setup failed (e.g. transient native error on cold start) — leave `initialized`
+    // false so the next call can retry. Drop any listeners already registered so the
+    // retry doesn't double-subscribe.
+    console.warn('initializePushNotifications failed, will retry:', e);
+    subscriptions.forEach((s) => s.remove());
+    subscriptions.length = 0;
   }
 }
 
@@ -77,8 +87,7 @@ async function registerTokenWithBackend(token: string): Promise<void> {
     const userId = await getUserId();
     if (!userId) return;
     await api.put(`/users/${userId}/fcm-token`, { fcmToken: token });
-  } catch {
-  }
+  } catch {}
 }
 
 // Cold start (app launched by tapping a notification) races NavigationContainer's

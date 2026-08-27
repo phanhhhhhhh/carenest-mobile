@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-
   Modal,
   Switch,
   Image,
@@ -26,12 +25,9 @@ import {
   getDisplayType,
   getUnit,
   getRangeDisplay,
-  isBloodPressure,
   type ThresholdItem,
   type RecommendData,
 } from '../store/healthThresholdStore';
-
-
 
 const METRIC_TYPES = ['BLOOD_PRESSURE', 'BLOOD_GLUCOSE', 'HEART_RATE', 'WEIGHT'] as const;
 
@@ -115,8 +111,12 @@ export default function HealthThresholdScreen() {
     setSheetExisting(existing);
     setMinValue(existing?.minValue != null ? String(existing.minValue) : '');
     setMaxValue(existing?.maxValue != null ? String(existing.maxValue) : '');
-    setMinValueSecondary(existing?.minValueSecondary != null ? String(existing.minValueSecondary) : '');
-    setMaxValueSecondary(existing?.maxValueSecondary != null ? String(existing.maxValueSecondary) : '');
+    setMinValueSecondary(
+      existing?.minValueSecondary != null ? String(existing.minValueSecondary) : '',
+    );
+    setMaxValueSecondary(
+      existing?.maxValueSecondary != null ? String(existing.maxValueSecondary) : '',
+    );
     setAlertFamily(existing?.alertFamily ?? true);
     setSheetVisible(true);
   };
@@ -238,8 +238,7 @@ export default function HealthThresholdScreen() {
               <Ionicons name="sparkles" size={20} color={Colors.success} />
             </View>
             <Text style={styles.recommendText}>
-              AI có thể phân tích hồ sơ sức khỏe và đề xuất ngưỡng cảnh báo phù hợp cho từng
-              chỉ số.
+              AI có thể phân tích hồ sơ sức khỏe và đề xuất ngưỡng cảnh báo phù hợp cho từng chỉ số.
             </Text>
             <TouchableOpacity
               style={styles.recommendBtn}
@@ -276,19 +275,18 @@ export default function HealthThresholdScreen() {
         </ScrollView>
       )}
 
-      <Modal
-        visible={sheetVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeSheet}
-      >
+      <Modal visible={sheetVisible} transparent animationType="slide" onRequestClose={closeSheet}>
         <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={closeSheet}>
           <TouchableOpacity activeOpacity={1} style={styles.sheet}>
             <ScrollView keyboardShouldPersistTaps="handled">
               <View style={styles.sheetHandle} />
               <View style={{ height: 16 }} />
               <View style={styles.sheetTitleRow}>
-                <Ionicons name={iconFor(sheetMetricType)} size={24} color={colorFor(sheetMetricType)} />
+                <Ionicons
+                  name={iconFor(sheetMetricType)}
+                  size={24}
+                  color={colorFor(sheetMetricType)}
+                />
                 <View style={{ width: 10 }} />
                 <Text style={styles.sheetTitle}>
                   {sheetExisting
@@ -334,7 +332,11 @@ export default function HealthThresholdScreen() {
                 </>
               ) : (
                 <View style={styles.fieldRow}>
-                  <NumberField label="Giá trị Tối thiểu" value={minValue} onChangeText={setMinValue} />
+                  <NumberField
+                    label="Giá trị Tối thiểu"
+                    value={minValue}
+                    onChangeText={setMinValue}
+                  />
                   <View style={{ width: 12 }} />
                   <NumberField label="Giá trị Tối đa" value={maxValue} onChangeText={setMaxValue} />
                 </View>
@@ -352,9 +354,7 @@ export default function HealthThresholdScreen() {
 
               <View style={{ height: 20 }} />
               <TouchableOpacity style={styles.saveBtn} onPress={handleSaveSheet}>
-                <Text style={styles.saveBtnText}>
-                  {sheetExisting ? 'Cập nhật' : 'Lưu ngưỡng'}
-                </Text>
+                <Text style={styles.saveBtnText}>{sheetExisting ? 'Cập nhật' : 'Lưu ngưỡng'}</Text>
               </TouchableOpacity>
 
               {sheetExisting && (
@@ -386,8 +386,7 @@ export default function HealthThresholdScreen() {
             </View>
             <View style={{ height: 12 }} />
             <Text style={styles.dialogBody}>
-              Gemini AI đã phân tích hồ sơ sức khỏe và đề xuất các ngưỡng sau. Áp dụng
-              chúng?
+              Gemini AI đã phân tích hồ sơ sức khỏe và đề xuất các ngưỡng sau. Áp dụng chúng?
             </Text>
             <View style={{ height: 20 }} />
             <View style={styles.dialogActions}>
@@ -462,7 +461,9 @@ function ThresholdCard({
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{displayType}</Text>
         <View style={{ height: 3 }} />
-        <Text style={[styles.cardSubtitle, { color: isSet ? Colors.textSecondary : Colors.textHint }]}>
+        <Text
+          style={[styles.cardSubtitle, { color: isSet ? Colors.textSecondary : Colors.textHint }]}
+        >
           {isSet ? `${getRangeDisplay(existing)} ${unit}` : 'Chạm để đặt phạm vi'}
         </Text>
       </View>
@@ -493,7 +494,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  appBarTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
+  appBarTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
   emptyText: { color: Colors.textSecondary, fontSize: 15 },
   scroll: { padding: 16 },
 

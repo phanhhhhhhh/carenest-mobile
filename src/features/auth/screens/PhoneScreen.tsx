@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -114,33 +113,33 @@ export default function PhoneScreen() {
     }
 
     try {
-    const result =
-      method === 'phone'
-        ? await login({ phone: normalizePhone(phone), password })
-        : await login({ email: email.trim(), password });
+      const result =
+        method === 'phone'
+          ? await login({ phone: normalizePhone(phone), password })
+          : await login({ email: email.trim(), password });
 
-    if (result.type === 'success') {
-      navigation.navigate('WelcomeBack', {});
-    } else if (result.type === 'needsVerification') {
-      if (result.method === 'SMS') {
-        // Tài khoản SĐT chưa xác thực -> gửi OTP rồi đưa sang màn xác thực
-        await sendOtp(result.target, 'SMS');
-        navigation.navigate('OtpVerify', {
-          target: result.target,
-          method: 'SMS',
-          userName: '',
-        });
+      if (result.type === 'success') {
+        navigation.navigate('WelcomeBack', {});
+      } else if (result.type === 'needsVerification') {
+        if (result.method === 'SMS') {
+          // Tài khoản SĐT chưa xác thực -> gửi OTP rồi đưa sang màn xác thực
+          await sendOtp(result.target, 'SMS');
+          navigation.navigate('OtpVerify', {
+            target: result.target,
+            method: 'SMS',
+            userName: '',
+          });
+        } else {
+          navigation.navigate('VerifyEmailPrompt', { email: result.target });
+        }
       } else {
-        navigation.navigate('VerifyEmailPrompt', { email: result.target });
+        const raw = result.message || '';
+        const friendly = /invalid (phone|email) or password/i.test(raw)
+          ? 'Số điện thoại hoặc mật khẩu không đúng.'
+          : raw || 'Thông tin đăng nhập không đúng. Vui lòng thử lại.';
+        Alert.alert('Đăng nhập thất bại', friendly);
       }
-    } else {
-      const raw = result.message || '';
-      const friendly = /invalid (phone|email) or password/i.test(raw)
-        ? 'Số điện thoại hoặc mật khẩu không đúng.'
-        : raw || 'Thông tin đăng nhập không đúng. Vui lòng thử lại.';
-      Alert.alert('Đăng nhập thất bại', friendly);
-    }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn('handleLogin unexpected error:', err);
       Alert.alert('Đăng nhập thất bại', 'Vui lòng thử lại.');
     }
@@ -205,9 +204,7 @@ export default function PhoneScreen() {
 
           {method === 'phone' ? (
             <View style={styles.fieldBlock}>
-              <Text style={[styles.label, phoneError && styles.labelError]}>
-                Số điện thoại
-              </Text>
+              <Text style={[styles.label, phoneError && styles.labelError]}>Số điện thoại</Text>
               <View style={[styles.inputPill, phoneError && styles.inputPillError]}>
                 <Ionicons
                   name="phone-portrait-outline"
@@ -244,12 +241,7 @@ export default function PhoneScreen() {
             <View style={styles.fieldBlock}>
               <Text style={[styles.label, emailError && styles.labelError]}>Email</Text>
               <View style={[styles.inputPill, emailError && styles.inputPillError]}>
-                <Ionicons
-                  name="mail-outline"
-                  size={18}
-                  color={HintGray}
-                  style={styles.leftIcon}
-                />
+                <Ionicons name="mail-outline" size={18} color={HintGray} style={styles.leftIcon} />
                 <TextInput
                   style={styles.input}
                   value={email}
@@ -277,9 +269,7 @@ export default function PhoneScreen() {
 
           {/* Mật khẩu */}
           <View style={styles.fieldBlock}>
-            <Text style={[styles.label, passwordError && styles.labelError]}>
-              Mật khẩu
-            </Text>
+            <Text style={[styles.label, passwordError && styles.labelError]}>Mật khẩu</Text>
             <View style={[styles.inputPill, passwordError && styles.inputPillError]}>
               <Ionicons
                 name="lock-closed-outline"
@@ -336,9 +326,7 @@ export default function PhoneScreen() {
             disabled={isLoading}
             activeOpacity={0.85}
           >
-            <Text style={styles.loginBtnText}>
-              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-            </Text>
+            <Text style={styles.loginBtnText}>{isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}</Text>
           </TouchableOpacity>
 
           <View style={styles.dividerRow}>
@@ -373,10 +361,7 @@ export default function PhoneScreen() {
 
           <View style={styles.registerRow}>
             <Text style={styles.registerHint}>Chưa có tài khoản? </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Register')}
-              disabled={isLoading}
-            >
+            <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={isLoading}>
               <Text style={styles.registerLink}>Đăng ký tài khoản ngay</Text>
             </TouchableOpacity>
           </View>

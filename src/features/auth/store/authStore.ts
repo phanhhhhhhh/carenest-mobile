@@ -3,7 +3,12 @@ import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { onSessionExpired } from '../../../core/auth/sessionEvents';
 import { jwtSecondsRemaining } from '../../../core/auth/jwt';
-import { getStatus, extractError, getResponseData, getErrorMessage } from '../../../core/api/errors';
+import {
+  getStatus,
+  extractError,
+  getResponseData,
+  getErrorMessage,
+} from '../../../core/api/errors';
 import type { AuthResponse, User } from '../../../shared/types';
 
 interface AuthState {
@@ -86,7 +91,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (!token) return;
 
     if (isJwtExpired(token)) {
-      console.log('[authStore.loadSession] Token expired, clearing session');
       await storage.clearAll();
       return;
     }
@@ -263,7 +267,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const valid = res.data?.valid === true;
       set({ isLoading: false, error: valid ? null : 'Mã PIN không hợp lệ' });
       return { valid };
-    } catch (e) {
+    } catch {
       set({ isLoading: false, error: 'Không thể xác minh mã PIN' });
       return { valid: false };
     }
