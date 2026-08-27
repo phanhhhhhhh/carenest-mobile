@@ -1,0 +1,97 @@
+import { Dimensions, StyleSheet } from 'react-native';
+import { DOT_SIZE, DotInactive, SkipGray, SubtitleGray, Teal, TealDark, White } from './slides';
+
+const { width } = Dimensions.get('window');
+
+export const styles = StyleSheet.create({
+  splashContainer: { flex: 1, backgroundColor: White },
+  splashSafeArea: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  splashMascotWrapper: { marginBottom: 4 },
+  splashMascotImage: { width: width * 0.62, height: width * 0.62 },
+  splashLogo: { width: width * 0.55, height: width * 0.16, marginBottom: 4 },
+  splashTagline: {
+    fontSize: 17,
+    color: Teal,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  container: { flex: 1, backgroundColor: White },
+  flatListWrapper: { flex: 1 },
+  skipButton: {
+    position: 'absolute',
+    top: 14,
+    right: 20,
+    zIndex: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  skipButtonText: { fontSize: 15, color: SkipGray, fontStyle: 'italic', fontWeight: '400' },
+  slide: { width, flex: 1 },
+  slideInner: { flex: 1, alignItems: 'center', paddingHorizontal: 32, paddingTop: 84 },
+  slideTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Teal,
+    textAlign: 'center',
+    lineHeight: 33,
+    marginBottom: 12,
+  },
+  slideSubtitle: { fontSize: 15.5, color: SubtitleGray, textAlign: 'center', lineHeight: 23 },
+  imageWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 20,
+  },
+  footer: { alignItems: 'center', paddingBottom: 28 },
+  dotContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    marginBottom: 20,
+  },
+  dot: { height: DOT_SIZE, width: DOT_SIZE, borderRadius: DOT_SIZE / 2 },
+  dotInactive: { backgroundColor: DotInactive },
+  // Fixed height keeps the dots from jumping between slides; width 100% so
+  // the buttons can stretch edge-to-edge.
+  buttonSlot: {
+    width: '100%',
+    height: 128,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 24,
+  },
+  buttonGroup: { width: '100%' },
+  primaryButton: {
+    width: '100%',
+    backgroundColor: Teal,
+    paddingVertical: 16,
+    borderRadius: 9999,
+    alignItems: 'center',
+    shadowColor: TealDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  primaryButtonLabel: { fontSize: 17, fontWeight: '700', color: White },
+  secondaryButton: {
+    width: '100%',
+    backgroundColor: White,
+    paddingVertical: 16,
+    borderRadius: 9999,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Teal,
+    marginTop: 14,
+  },
+  secondaryButtonLabel: { fontSize: 17, fontWeight: '600', color: Teal },
+});
