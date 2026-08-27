@@ -1,13 +1,9 @@
-
-
-
 export function getStatus(e: unknown): number | undefined {
   if (e && typeof e === 'object' && 'response' in e) {
     return (e as { response?: { status?: number } }).response?.status;
   }
   return undefined;
 }
-
 
 export function getErrorMessage(e: unknown): string {
   if (!e) return 'unknown error';
@@ -30,13 +26,11 @@ export function getErrorMessage(e: unknown): string {
   return 'unknown error';
 }
 
-
 export function extractError(e: unknown, fallback: string): string {
   const message = getErrorMessage(e);
   if (message === 'unknown error') return fallback;
   return `${fallback}: ${message}`;
 }
-
 
 export function getResponseData(e: unknown): unknown {
   if (e && typeof e === 'object' && 'response' in e) {
@@ -45,16 +39,12 @@ export function getResponseData(e: unknown): unknown {
   return undefined;
 }
 
-
 export function asListOfMaps(data: unknown): Record<string, unknown>[] {
   if (Array.isArray(data)) {
-    return data.map((e) =>
-      e && typeof e === 'object' ? (e as Record<string, unknown>) : {},
-    );
+    return data.map((e) => (e && typeof e === 'object' ? (e as Record<string, unknown>) : {}));
   }
   return [];
 }
-
 
 /** True when `e` is an axios/DOM cancellation from an aborted request — not a real failure. */
 export function isCancelled(e: unknown): boolean {
@@ -63,11 +53,12 @@ export function isCancelled(e: unknown): boolean {
   return err.code === 'ERR_CANCELED' || err.name === 'CanceledError' || err.name === 'AbortError';
 }
 
-
 /** True when the request never reached the server (backend unreachable, no signal) — distinct from a 4xx/5xx. */
 export function isNetworkError(e: unknown): boolean {
   if (!e || typeof e !== 'object') return false;
   const err = e as Record<string, unknown>;
   if ('response' in err && err.response) return false;
-  return err.code === 'ERR_NETWORK' || err.message === 'Network Error' || err.code === 'ECONNABORTED';
+  return (
+    err.code === 'ERR_NETWORK' || err.message === 'Network Error' || err.code === 'ECONNABORTED'
+  );
 }

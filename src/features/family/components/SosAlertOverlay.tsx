@@ -78,9 +78,15 @@ export default function SosAlertOverlay() {
           </View>
           <Text style={styles.title}>Cảnh báo khẩn cấp!</Text>
           <Text style={styles.subtitle}>
-            {(alert.elderlyName || 'Người thân') + ' vừa nhấn nút SOS.\nHãy liên hệ hoặc kiểm tra ngay!'}
+            {(alert.elderlyName || 'Người thân') +
+              ' vừa nhấn nút SOS.\nHãy liên hệ hoặc kiểm tra ngay!'}
           </Text>
-          <TouchableOpacity style={styles.ackBtn} onPress={handleAcknowledge} disabled={acking} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.ackBtn}
+            onPress={handleAcknowledge}
+            disabled={acking}
+            activeOpacity={0.85}
+          >
             {acking ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
@@ -120,7 +126,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: { fontSize: 20, fontWeight: '700', color: '#E53935', marginBottom: 8 },
-  subtitle: { fontSize: 14.5, color: '#37404A', textAlign: 'center', lineHeight: 21, marginBottom: 22 },
+  subtitle: {
+    fontSize: 14.5,
+    color: '#37404A',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginBottom: 22,
+  },
   ackBtn: {
     backgroundColor: '#12A79C',
     borderRadius: 9999,

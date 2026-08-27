@@ -22,7 +22,6 @@ import {
   type MedicationAdherenceData,
 } from '../store/healthReportStore';
 
-
 export default function HealthReportScreen() {
   const navigation = useNavigation();
   const [elderlyId, setElderlyId] = useState('');
@@ -214,7 +213,7 @@ function AdherenceCard({ m }: { m: MedicationAdherenceData }) {
       <View style={{ flex: 1 }}>
         <Text style={styles.adherenceName}>{m.medicationName}</Text>
         <Text style={styles.adherenceDetail}>
-          Đã uống: {m.taken}  •  Bỏ lỡ: {m.missed}
+          Đã uống: {m.taken} • Bỏ lỡ: {m.missed}
         </Text>
       </View>
       <View style={[styles.adherenceBadge, { backgroundColor: `${color}1A` }]}>
@@ -274,8 +273,14 @@ function MetricCard({ report }: { report: MetricReportData }) {
           label="TB"
           value={`${report.avgValue !== undefined ? report.avgValue.toFixed(1) : '--'} ${report.unit}`}
         />
-        <MetricStat label="Thấp nhất" value={`${report.minValue !== undefined ? report.minValue.toFixed(1) : '--'}`} />
-        <MetricStat label="Cao nhất" value={`${report.maxValue !== undefined ? report.maxValue.toFixed(1) : '--'}`} />
+        <MetricStat
+          label="Thấp nhất"
+          value={`${report.minValue !== undefined ? report.minValue.toFixed(1) : '--'}`}
+        />
+        <MetricStat
+          label="Cao nhất"
+          value={`${report.maxValue !== undefined ? report.maxValue.toFixed(1) : '--'}`}
+        />
         <View style={{ flex: 1 }} />
         <MetricStat label="Lượt đo" value={`${report.count}`} />
       </View>

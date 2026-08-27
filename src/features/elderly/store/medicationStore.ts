@@ -7,8 +7,6 @@ import { scheduleFrom } from '../../medication/services/medicationReminderServic
 import { MedicationSchema, MedicationLogSchema, safeParseList } from '../../../shared/schemas';
 import { showErrorToast } from '../../../shared/components/toastStore';
 
-
-
 interface MedicationListState {
   isLoading: boolean;
   error: string | null;
@@ -41,10 +39,7 @@ interface MedicationListState {
   deleteMedication: (medicationId: string) => Promise<boolean>;
   fetchLogs: (medicationId: string) => Promise<void>;
   fetchAllLogs: () => Promise<void>;
-  toggleTaken: (
-    medicationId: string,
-    onError?: (error: string) => void,
-  ) => Promise<boolean>;
+  toggleTaken: (medicationId: string, onError?: (error: string) => void) => Promise<boolean>;
 }
 
 function toMedicationItem(m: ReturnType<typeof MedicationSchema.parse>): MedicationItem {
@@ -102,11 +97,16 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
         set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
-      let items = safeParseList(MedicationSchema, resp.data, 'MedicationList').map(toMedicationItem);
+      let items = safeParseList(MedicationSchema, resp.data, 'MedicationList').map(
+        toMedicationItem,
+      );
 
       try {
         const { from, to } = startAndEndOfToday();
-        const logResp = await api.get(`/elderly/${userId}/medication-logs`, { params: { from, to }, signal });
+        const logResp = await api.get(`/elderly/${userId}/medication-logs`, {
+          params: { from, to },
+          signal,
+        });
         const takenIds = new Set(
           safeParseList(MedicationLogSchema, logResp.data, 'MedicationLog')
             .filter((l) => l.status === 'TAKEN')
@@ -150,7 +150,14 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
     }
   },
 
-  updateMedication: async ({ medicationId, name, dosage, instructions, scheduleTimes, daysOfWeek }) => {
+  updateMedication: async ({
+    medicationId,
+    name,
+    dosage,
+    instructions,
+    scheduleTimes,
+    daysOfWeek,
+  }) => {
     try {
       const data: Record<string, unknown> = {};
       if (name !== undefined) data.name = name;

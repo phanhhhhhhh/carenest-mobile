@@ -89,10 +89,7 @@ export default function ElderlyMedicationHistoryScreen() {
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" color={Colors.textHint} size={48} />
           <Text style={styles.errorText}>{logsError}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => fetchLogs(medicationId)}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchLogs(medicationId)}>
             <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
@@ -132,9 +129,7 @@ export default function ElderlyMedicationHistoryScreen() {
               </View>
               <View style={styles.statPill}>
                 <Ionicons name="close-circle" size={16} color={Colors.error} />
-                <Text style={[styles.statPillText, { color: Colors.error }]}>
-                  {missed} bỏ lỡ
-                </Text>
+                <Text style={[styles.statPillText, { color: Colors.error }]}>{missed} bỏ lỡ</Text>
               </View>
             </View>
           </View>
@@ -182,9 +177,7 @@ function LogEntryTile({ log }: { log: MedicationLogEntry }) {
           color={isTaken ? Colors.success : Colors.error}
         />
       </View>
-      <Text
-        style={[styles.logStatusText, { color: isTaken ? Colors.success : Colors.error }]}
-      >
+      <Text style={[styles.logStatusText, { color: isTaken ? Colors.success : Colors.error }]}>
         {isTaken ? 'Đã uống' : 'Bỏ lỡ'}
       </Text>
       <View style={styles.logTimePill}>

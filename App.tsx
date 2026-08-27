@@ -4,7 +4,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/core/navigation/AppNavigator';
 import ToastHost from './src/shared/components/ToastHost';
 import { useAuthStore } from './src/features/auth/store/authStore';
-import { initializePushNotifications, flushPendingDeepLink } from './src/core/services/pushNotificationService';
+import {
+  initializePushNotifications,
+  flushPendingDeepLink,
+} from './src/core/services/pushNotificationService';
 
 export default function App() {
   const loadSession = useAuthStore((s) => s.loadSession);

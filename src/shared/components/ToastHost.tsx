@@ -24,9 +24,13 @@ function ToastItem({ toast, onDismiss }: { toast: ToastEntry; onDismiss: (id: nu
   }, [toast.id]);
 
   return (
-    <Animated.View style={[styles.toast, { backgroundColor: VARIANT_COLORS[toast.variant], opacity }]}>
+    <Animated.View
+      style={[styles.toast, { backgroundColor: VARIANT_COLORS[toast.variant], opacity }]}
+    >
       <Pressable style={styles.toastContent} onPress={() => onDismiss(toast.id)}>
-        <Text style={styles.toastText} numberOfLines={3}>{toast.message}</Text>
+        <Text style={styles.toastText} numberOfLines={3}>
+          {toast.message}
+        </Text>
         <Text style={styles.dismissHint}>✕</Text>
       </Pressable>
     </Animated.View>

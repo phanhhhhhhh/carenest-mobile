@@ -77,10 +77,7 @@ export default function WelcomeScreen() {
   const flatListRef = useRef<FlatList<SlideData>>(null);
 
   const updateIndex = useCallback((offsetX: number) => {
-    const idx = Math.max(
-      0,
-      Math.min(slides.length - 1, Math.round(offsetX / width))
-    );
+    const idx = Math.max(0, Math.min(slides.length - 1, Math.round(offsetX / width)));
     if (idx !== currentIndexRef.current) {
       currentIndexRef.current = idx;
       setCurrentIndex(idx);
@@ -109,7 +106,7 @@ export default function WelcomeScreen() {
           useNativeDriver: true,
         }),
       ]),
-      { iterations: 2 }
+      { iterations: 2 },
     ).start();
 
     const timer = setTimeout(() => {
@@ -137,24 +134,21 @@ export default function WelcomeScreen() {
     return () => clearTimeout(timer);
   }, [splashOpacity, splashScale, mascotBounce, contentOpacity]);
 
-  const onScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-    {
-      useNativeDriver: false,
-      // onMomentumScrollEnd never fires on react-native-web, so the
-      // current index is derived here -- onScroll works everywhere.
-      listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-        updateIndex(e.nativeEvent.contentOffset.x);
-      },
-    }
-  );
+  const onScroll = Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+    useNativeDriver: false,
+    // onMomentumScrollEnd never fires on react-native-web, so the
+    // current index is derived here -- onScroll works everywhere.
+    listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      updateIndex(e.nativeEvent.contentOffset.x);
+    },
+  });
 
   // Kept as a native fallback; harmless duplicate of the onScroll listener.
   const onMomentumScrollEnd = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       updateIndex(e.nativeEvent.contentOffset.x);
     },
-    [updateIndex]
+    [updateIndex],
   );
 
   const handleSkip = useCallback(() => {
@@ -191,10 +185,7 @@ export default function WelcomeScreen() {
       return (
         <View style={styles.slide}>
           <Animated.View
-            style={[
-              styles.slideInner,
-              { opacity: slideOpacity, transform: [{ translateX }] },
-            ]}
+            style={[styles.slideInner, { opacity: slideOpacity, transform: [{ translateX }] }]}
           >
             <Text style={styles.slideTitle}>{item.title}</Text>
             <Text style={styles.slideSubtitle}>{item.subtitle}</Text>
@@ -210,7 +201,7 @@ export default function WelcomeScreen() {
         </View>
       );
     },
-    [scrollX]
+    [scrollX],
   );
 
   // Dots: the active "pill" glides between positions 1 -> 3 -> 5 as you swipe
@@ -262,10 +253,7 @@ export default function WelcomeScreen() {
       >
         <SafeAreaView style={styles.splashSafeArea}>
           <Animated.View
-            style={[
-              styles.splashMascotWrapper,
-              { transform: [{ translateY: bounceInterpolate }] },
-            ]}
+            style={[styles.splashMascotWrapper, { transform: [{ translateY: bounceInterpolate }] }]}
           >
             <Image
               source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
@@ -313,9 +301,7 @@ export default function WelcomeScreen() {
         </TouchableOpacity>
       )}
 
-      <Animated.View
-        style={[styles.flatListWrapper, { opacity: contentOpacity }]}
-      >
+      <Animated.View style={[styles.flatListWrapper, { opacity: contentOpacity }]}>
         <FlatList
           ref={flatListRef}
           data={slides}
@@ -342,10 +328,7 @@ export default function WelcomeScreen() {
       <View style={styles.footer}>
         {renderDots()}
 
-        <View
-          style={styles.buttonSlot}
-          pointerEvents={isLastSlide ? 'auto' : 'none'}
-        >
+        <View style={styles.buttonSlot} pointerEvents={isLastSlide ? 'auto' : 'none'}>
           <Animated.View
             style={[
               styles.buttonGroup,
@@ -360,7 +343,7 @@ export default function WelcomeScreen() {
               onPress={() => navigation.navigate('Register')}
               activeOpacity={0.85}
             >
-              <Text style={styles.primaryButtonLabel}>Bắt đầu ngay  →</Text>
+              <Text style={styles.primaryButtonLabel}>Bắt đầu ngay →</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

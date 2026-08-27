@@ -73,7 +73,12 @@ function ToggleTile({
         <Ionicons name={icon} color={enabled ? iconColor : Colors.textHint} size={20} />
       </View>
       <View style={styles.toggleTextWrap}>
-        <Text style={[styles.toggleTitle, { color: enabled ? Colors.textPrimary : Colors.textSecondary }]}>
+        <Text
+          style={[
+            styles.toggleTitle,
+            { color: enabled ? Colors.textPrimary : Colors.textSecondary },
+          ]}
+        >
           {title}
         </Text>
         <Text style={styles.toggleSubtitle}>{subtitle}</Text>
@@ -178,8 +183,14 @@ function TimePickerTile({
             <View style={styles.timePickerColumns}>
               <ScrollView style={styles.timePickerColumn}>
                 {hours.map((h) => (
-                  <TouchableOpacity key={h} style={styles.timePickerOption} onPress={() => setHour(h)}>
-                    <Text style={[styles.timePickerOptionText, h === hour && styles.optionTextActive]}>
+                  <TouchableOpacity
+                    key={h}
+                    style={styles.timePickerOption}
+                    onPress={() => setHour(h)}
+                  >
+                    <Text
+                      style={[styles.timePickerOptionText, h === hour && styles.optionTextActive]}
+                    >
                       {String(h).padStart(2, '0')}
                     </Text>
                   </TouchableOpacity>
@@ -188,8 +199,14 @@ function TimePickerTile({
               <Text style={styles.timePickerColon}>:</Text>
               <ScrollView style={styles.timePickerColumn}>
                 {minutes.map((m) => (
-                  <TouchableOpacity key={m} style={styles.timePickerOption} onPress={() => setMinute(m)}>
-                    <Text style={[styles.timePickerOptionText, m === minute && styles.optionTextActive]}>
+                  <TouchableOpacity
+                    key={m}
+                    style={styles.timePickerOption}
+                    onPress={() => setMinute(m)}
+                  >
+                    <Text
+                      style={[styles.timePickerOptionText, m === minute && styles.optionTextActive]}
+                    >
                       {String(m).padStart(2, '0')}
                     </Text>
                   </TouchableOpacity>
@@ -230,10 +247,12 @@ export default function NotificationSettingsScreen() {
     return () => controller.abort();
   }, []);
 
-  const withSaveToast = <T,>(setter: (v: T) => Promise<boolean>) => async (v: T) => {
-    const ok = await setter(v);
-    if (!ok) showErrorToast('Không thể lưu cài đặt, vui lòng thử lại.');
-  };
+  const withSaveToast =
+    <T,>(setter: (v: T) => Promise<boolean>) =>
+    async (v: T) => {
+      const ok = await setter(v);
+      if (!ok) showErrorToast('Không thể lưu cài đặt, vui lòng thử lại.');
+    };
 
   if (isLoading) {
     return (
@@ -275,7 +294,10 @@ export default function NotificationSettingsScreen() {
             onChanged={withSaveToast(setMedicationReminder)}
           />
           {medicationReminder && (
-            <ReminderMinutesTile value={reminderMinutesBefore} onChanged={withSaveToast(setReminderMinutes)} />
+            <ReminderMinutesTile
+              value={reminderMinutesBefore}
+              onChanged={withSaveToast(setReminderMinutes)}
+            />
           )}
           <ToggleTile
             icon="medical-outline"
@@ -306,10 +328,7 @@ export default function NotificationSettingsScreen() {
 
         <View style={{ height: 20 }} />
 
-        <Section
-          title="Giờ yên tĩnh"
-          subtitle="Trong giờ yên tĩnh, chỉ cảnh báo SOS sẽ được gửi"
-        >
+        <Section title="Giờ yên tĩnh" subtitle="Trong giờ yên tĩnh, chỉ cảnh báo SOS sẽ được gửi">
           <ToggleTile
             icon="moon"
             iconColor="#7B1FA2"
@@ -330,11 +349,19 @@ export default function NotificationSettingsScreen() {
           {quietHoursEnabled && (
             <View style={styles.quietHoursRow}>
               <View style={{ flex: 1 }}>
-                <TimePickerTile label="Bắt đầu" time={quietHoursStart} onSet={withSaveToast(setQuietHoursStart)} />
+                <TimePickerTile
+                  label="Bắt đầu"
+                  time={quietHoursStart}
+                  onSet={withSaveToast(setQuietHoursStart)}
+                />
               </View>
               <Text style={styles.toLabel}>đến</Text>
               <View style={{ flex: 1 }}>
-                <TimePickerTile label="Kết thúc" time={quietHoursEnd} onSet={withSaveToast(setQuietHoursEnd)} />
+                <TimePickerTile
+                  label="Kết thúc"
+                  time={quietHoursEnd}
+                  onSet={withSaveToast(setQuietHoursEnd)}
+                />
               </View>
             </View>
           )}
@@ -483,7 +510,12 @@ const styles = StyleSheet.create({
   },
   timePickerColumns: { flexDirection: 'row', height: 180, alignItems: 'center' },
   timePickerColumn: { flex: 1 },
-  timePickerColon: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginHorizontal: 8 },
+  timePickerColon: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginHorizontal: 8,
+  },
   timePickerOption: { paddingVertical: 8, alignItems: 'center' },
   timePickerOptionText: { fontSize: 16, color: Colors.textPrimary },
   timePickerConfirm: {

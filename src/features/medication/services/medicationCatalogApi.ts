@@ -1,5 +1,9 @@
 import api from '../../../core/api/client';
-import { MedicationCatalogSchema, safeParseList, type MedicationCatalogParsed } from '../../../shared/schemas';
+import {
+  MedicationCatalogSchema,
+  safeParseList,
+  type MedicationCatalogParsed,
+} from '../../../shared/schemas';
 
 /** Autocomplete lookup against the curated medication reference catalog (see backend `medication_catalog`). */
 export async function searchMedicationCatalog(

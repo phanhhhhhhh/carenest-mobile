@@ -43,5 +43,4 @@ export const getUserId = () => store.getItemAsync(KEYS.USER_ID);
 export const saveEmail = (v: string) => store.setItemAsync(KEYS.EMAIL, v);
 export const getEmail = () => store.getItemAsync(KEYS.EMAIL);
 
-export const clearAll = () =>
-  Promise.all(Object.values(KEYS).map((k) => store.deleteItemAsync(k)));
+export const clearAll = () => Promise.all(Object.values(KEYS).map((k) => store.deleteItemAsync(k)));

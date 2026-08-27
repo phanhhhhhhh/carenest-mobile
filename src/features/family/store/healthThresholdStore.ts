@@ -7,9 +7,6 @@ import {
   safeParseList,
 } from '../../../shared/schemas';
 
-
-
-
 export interface ThresholdItem {
   id: number;
   metricType: string;
@@ -84,7 +81,9 @@ export interface RecommendData {
   maxValueSecondary?: number;
 }
 
-function toRecommendData(r: ReturnType<typeof HealthThresholdRecommendationSchema.parse>): RecommendData {
+function toRecommendData(
+  r: ReturnType<typeof HealthThresholdRecommendationSchema.parse>,
+): RecommendData {
   return {
     metricType: r.metricType,
     minValue: r.minValue ?? undefined,
@@ -93,7 +92,6 @@ function toRecommendData(r: ReturnType<typeof HealthThresholdRecommendationSchem
     maxValueSecondary: r.maxValueSecondary ?? undefined,
   };
 }
-
 
 interface ThresholdState {
   isLoading: boolean;
@@ -142,7 +140,9 @@ export const useHealthThresholdStore = create<ThresholdState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const resp = await api.get(`/users/${elderlyId}/health-thresholds`, { signal });
-      const thresholds = safeParseList(HealthThresholdSchema, resp.data, 'HealthThresholdList').map(toThresholdItem);
+      const thresholds = safeParseList(HealthThresholdSchema, resp.data, 'HealthThresholdList').map(
+        toThresholdItem,
+      );
       set({ isLoading: false, thresholds });
     } catch (e) {
       if (isCancelled(e)) return;

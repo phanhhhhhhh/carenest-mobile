@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Dimensions,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,7 +38,7 @@ export default function GetStartedScreen() {
           onPress={() => navigation.navigate('Register')}
           activeOpacity={0.85}
         >
-          <Text style={styles.primaryButtonLabel}>Bắt đầu ngay  →</Text>
+          <Text style={styles.primaryButtonLabel}>Bắt đầu ngay →</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

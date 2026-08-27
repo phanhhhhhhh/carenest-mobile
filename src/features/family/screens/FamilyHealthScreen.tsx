@@ -20,8 +20,6 @@ import { useHealthThresholdStore } from '../store/healthThresholdStore';
 import { useHealthMetricStore } from '../../elderly/store/healthMetricStore';
 import type { HealthMetric } from '../../../shared/types';
 
-
-
 const METRIC_ORDER = ['BLOOD_PRESSURE', 'BLOOD_GLUCOSE', 'HEART_RATE', 'WEIGHT'] as const;
 
 interface MetricDef {
@@ -52,7 +50,7 @@ function formatTime(iso: string): string {
   const diffDays = Math.floor(
     (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
       new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()) /
-    86400000,
+      86400000,
   );
 
   if (diffMin < 1) return 'Vừa xong';
@@ -225,9 +223,17 @@ function HealthBody({
       }
     >
       <View style={styles.periodRow}>
-        <PeriodChip label="7 ngày" selected={period === 'week'} onTap={() => onSelectPeriod('week')} />
+        <PeriodChip
+          label="7 ngày"
+          selected={period === 'week'}
+          onTap={() => onSelectPeriod('week')}
+        />
         <View style={{ width: 8 }} />
-        <PeriodChip label="30 ngày" selected={period === 'month'} onTap={() => onSelectPeriod('month')} />
+        <PeriodChip
+          label="30 ngày"
+          selected={period === 'month'}
+          onTap={() => onSelectPeriod('month')}
+        />
       </View>
       <View style={{ height: 16 }} />
 
@@ -237,7 +243,12 @@ function HealthBody({
         const all = healthMetrics.filter((m) => m.type === type);
         return (
           <View key={type}>
-            <MetricSection type={type} latest={latest} all={all} status={deriveStatus(type, latest)} />
+            <MetricSection
+              type={type}
+              latest={latest}
+              all={all}
+              status={deriveStatus(type, latest)}
+            />
             <View style={{ height: 12 }} />
           </View>
         );

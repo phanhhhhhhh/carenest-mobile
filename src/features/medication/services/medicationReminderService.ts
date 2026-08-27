@@ -2,8 +2,6 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import type { MedicationItem } from '../../../shared/types';
 
-
-
 const CHANNEL_ID = 'carenest_medication';
 const SNOOZE_CHANNEL_ID = 'carenest_medication_snooze';
 
@@ -43,7 +41,6 @@ function snoozeId(med: MedicationItem): string {
   return `med-snooze-${med.id}`;
 }
 
-
 export async function scheduleFrom(medications: MedicationItem[]): Promise<void> {
   if (Platform.OS === 'web') return;
 
@@ -80,10 +77,8 @@ async function scheduleOne(med: MedicationItem, slot: number): Promise<void> {
         minute,
       },
     });
-  } catch {
-  }
+  } catch {}
 }
-
 
 export async function cancelForMedication(medicationId: string): Promise<void> {
   if (Platform.OS === 'web') return;
@@ -91,7 +86,6 @@ export async function cancelForMedication(medicationId: string): Promise<void> {
     await Notifications.cancelScheduledNotificationAsync(`med-${medicationId}-${slot}`);
   }
 }
-
 
 export async function snoozeOneOff(med: MedicationItem, minutes = 10): Promise<boolean> {
   if (Platform.OS === 'web') return false;
@@ -117,7 +111,6 @@ export async function snoozeOneOff(med: MedicationItem, minutes = 10): Promise<b
     return false;
   }
 }
-
 
 export async function cancelSnooze(med: MedicationItem): Promise<void> {
   if (Platform.OS === 'web') return;

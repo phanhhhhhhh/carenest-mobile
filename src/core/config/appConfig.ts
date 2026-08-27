@@ -1,7 +1,5 @@
 import { Platform } from 'react-native';
 
-
-
 // Dev-only fallback, used only when EXPO_PUBLIC_API_BASE_URL is not set.
 // Matches the local backend port documented in .env.example / the setup guide.
 function defaultBaseUrl(): string {

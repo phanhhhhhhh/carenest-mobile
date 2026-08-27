@@ -5,8 +5,6 @@ import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import type { AppointmentItem } from '../../../shared/types';
 import { AppointmentSchema, safeParseList } from '../../../shared/schemas';
 
-
-
 function toAppointmentItem(a: ReturnType<typeof AppointmentSchema.parse>): AppointmentItem {
   return {
     id: a.id,
@@ -27,7 +25,6 @@ function isUpcoming(a: AppointmentItem): boolean {
 function isPast(a: AppointmentItem): boolean {
   return a.status === 'COMPLETED' || a.status === 'CANCELLED';
 }
-
 
 interface AppointmentState {
   isLoading: boolean;
@@ -83,7 +80,9 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
         set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
-      const items = safeParseList(AppointmentSchema, resp.data, 'AppointmentList').map(toAppointmentItem);
+      const items = safeParseList(AppointmentSchema, resp.data, 'AppointmentList').map(
+        toAppointmentItem,
+      );
       set({ isLoading: false, appointments: items, currentElderlyId: userId });
     } catch (e) {
       if (isCancelled(e)) return;
@@ -162,11 +161,15 @@ export const useAppointmentStore = create<AppointmentState>((set, get) => ({
     get()
       .appointments.filter(isUpcoming)
       .slice()
-      .sort((a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime()),
+      .sort(
+        (a, b) => new Date(a.appointmentDate).getTime() - new Date(b.appointmentDate).getTime(),
+      ),
 
   past: () =>
     get()
       .appointments.filter(isPast)
       .slice()
-      .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime()),
+      .sort(
+        (a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime(),
+      ),
 }));

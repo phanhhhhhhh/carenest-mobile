@@ -181,7 +181,9 @@ export const HealthThresholdRecommendationSchema = z.object({
   minValueSecondary: z.number().optional().nullable(),
   maxValueSecondary: z.number().optional().nullable(),
 });
-export type HealthThresholdRecommendationParsed = z.infer<typeof HealthThresholdRecommendationSchema>;
+export type HealthThresholdRecommendationParsed = z.infer<
+  typeof HealthThresholdRecommendationSchema
+>;
 
 export const NotificationPreferencesSchema = z.object({
   medicationReminder: z.boolean().optional(),
@@ -200,7 +202,10 @@ export const ElderlyProfileSchema = z.object({
   bloodType: z.string().optional().nullable(),
   weightKg: z.number().optional().nullable(),
   heightCm: z.number().optional().nullable(),
-  allergies: z.union([z.array(z.string()), z.string()]).optional().nullable(),
+  allergies: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .nullable(),
   notes: z.string().optional().nullable(),
   emergencyContacts: z
     .array(
@@ -273,7 +278,10 @@ export function safeParseOne<T>(schema: z.ZodType<T>, raw: unknown, context: str
   if (result.success) return result.data;
 
   const fields = result.error.issues.map((i) => i.path.join('.') || '(root)').join(', ');
-  console.warn(`[schema] ${context}: invalid response — offending field(s): ${fields}`, result.error.issues);
+  console.warn(
+    `[schema] ${context}: invalid response — offending field(s): ${fields}`,
+    result.error.issues,
+  );
   return null;
 }
 

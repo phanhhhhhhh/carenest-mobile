@@ -4,8 +4,6 @@ import { getStatus, getResponseData, getErrorMessage, isCancelled } from '../../
 import { GoogleFitStatusSchema, safeParseOne } from '../../../shared/schemas';
 import { showErrorToast } from '../../../shared/components/toastStore';
 
-
-
 interface GoogleFitState {
   isLoading: boolean;
   error: string | null;
@@ -96,7 +94,8 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
         return data;
       } catch (e) {
         const respData = getResponseData(e) as Record<string, unknown> | undefined;
-        const msg = respData && typeof respData.message === 'string' ? respData.message : 'Đồng bộ thất bại';
+        const msg =
+          respData && typeof respData.message === 'string' ? respData.message : 'Đồng bộ thất bại';
         set({ isSyncing: false, error: msg });
         showErrorToast(msg);
         return null;
@@ -123,7 +122,6 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
     },
   }));
 }
-
 
 export function useGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
   let hook = stores.get(elderlyId);

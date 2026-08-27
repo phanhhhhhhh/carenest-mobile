@@ -3,8 +3,6 @@ import api from '../../../core/api/client';
 import { getUserId } from '../../../core/storage/secureStorage';
 import { getStatus, getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 
-
-
 export interface DataPoint {
   recordedAt: string;
   value?: number;
@@ -84,10 +82,7 @@ function parseDataPoint(m: Record<string, unknown>): DataPoint {
 }
 
 function parseMetricReport(j: Record<string, unknown>): MetricReportData {
-  const stats = (j.stats && typeof j.stats === 'object' ? j.stats : {}) as Record<
-    string,
-    unknown
-  >;
+  const stats = (j.stats && typeof j.stats === 'object' ? j.stats : {}) as Record<string, unknown>;
   const points = Array.isArray(j.dataPoints)
     ? (j.dataPoints as unknown[]).map((e) => parseDataPoint(e as Record<string, unknown>))
     : [];
@@ -161,19 +156,16 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
               missed,
               adherenceRate: total > 0 ? taken / total : 0,
             });
-          } catch {
-          }
+          } catch {}
         }
-      } catch {
-      }
+      } catch {}
 
       let totalAppointments = 0;
       try {
         const userId = await getUserId();
         const apptResp = await api.get(`/users/${userId}/appointments`);
         totalAppointments = asListOfMaps(apptResp.data).length;
-      } catch {
-      }
+      } catch {}
 
       let aiSummary: string | undefined;
       try {
@@ -183,8 +175,7 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
           const s = summaryData as Record<string, unknown>;
           aiSummary = (s.content as string) ?? (s.title as string) ?? undefined;
         }
-      } catch {
-      }
+      } catch {}
 
       set({
         isLoading: false,

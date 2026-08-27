@@ -5,8 +5,6 @@ import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/error
 import type { ElderlyProfile } from '../../../shared/types';
 import { ElderlyProfileSchema, safeParseOne } from '../../../shared/schemas';
 
-
-
 export interface EmergencyContact {
   id?: string;
   name: string;

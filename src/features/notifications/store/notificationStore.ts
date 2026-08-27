@@ -57,7 +57,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
-      const items = safeParseList(NotificationSchema, resp.data, 'NotificationList').map(toNotificationData);
+      const items = safeParseList(NotificationSchema, resp.data, 'NotificationList').map(
+        toNotificationData,
+      );
       set({ isLoading: false, items });
     } catch (e) {
       if (isCancelled(e)) return;
@@ -71,9 +73,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   markAsRead: async (notificationId) => {
     try {
       await api.patch(`/notifications/${notificationId}/read`);
-      const updated = get().items.map((n) =>
-        n.id === notificationId ? { ...n, read: true } : n
-      );
+      const updated = get().items.map((n) => (n.id === notificationId ? { ...n, read: true } : n));
       set({ items: updated });
     } catch (e) {
       showErrorToast(`Không thể đánh dấu đã đọc: ${getErrorMessage(e)}`);

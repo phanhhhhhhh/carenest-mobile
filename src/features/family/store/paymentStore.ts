@@ -3,9 +3,6 @@ import api from '../../../core/api/client';
 import { getStatus, getErrorMessage } from '../../../core/api/errors';
 import { SubscriptionStatusSchema, safeParseOne } from '../../../shared/schemas';
 
-
-
-
 export interface PlanData {
   id: string;
   name: string;
@@ -92,7 +89,6 @@ const DEFAULT_PLANS: PlanData[] = [
   },
 ];
 
-
 interface PaymentState {
   isLoading: boolean;
   isProcessing: boolean;
@@ -160,7 +156,8 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
       set({
         isProcessing: false,
-        paymentSuccess: 'Đã khởi tạo thanh toán. Vui lòng hoàn tất trong ứng dụng ngân hàng của bạn.',
+        paymentSuccess:
+          'Đã khởi tạo thanh toán. Vui lòng hoàn tất trong ứng dụng ngân hàng của bạn.',
       });
       return null;
     } catch (e) {

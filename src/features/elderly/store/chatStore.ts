@@ -5,8 +5,6 @@ import type { ChatMessage } from '../../../shared/types';
 import { ChatMessageSchema, safeParseOne, safeParseList } from '../../../shared/schemas';
 import { showErrorToast } from '../../../shared/components/toastStore';
 
-
-
 interface ChatState {
   isLoading: boolean;
   isSending: boolean;
@@ -67,7 +65,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
 
       const data = (resp.data ?? {}) as Record<string, unknown>;
-      const messages = safeParseList(ChatMessageSchema, data.messages, 'ChatHistory').map(toChatMessage);
+      const messages = safeParseList(ChatMessageSchema, data.messages, 'ChatHistory').map(
+        toChatMessage,
+      );
 
       const reversed = [...messages].reverse();
       const displayMessages = refresh ? reversed : [...get().messages, ...reversed];

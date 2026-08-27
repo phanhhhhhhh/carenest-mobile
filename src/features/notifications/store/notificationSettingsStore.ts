@@ -22,7 +22,9 @@ const DEFAULT_SETTINGS_DATA: NotificationSettingsData = {
   quietHoursEnd: '07:00',
 };
 
-function settingsFromParsed(p: ReturnType<typeof NotificationPreferencesSchema.parse>): NotificationSettingsData {
+function settingsFromParsed(
+  p: ReturnType<typeof NotificationPreferencesSchema.parse>,
+): NotificationSettingsData {
   return {
     medicationReminder: p.medicationReminder ?? true,
     reminderMinutesBefore: p.reminderMinutesBefore ?? 15,
@@ -99,7 +101,11 @@ export const useNotificationSettingsStore = create<NotificationSettingsState>((s
     set({ isLoading: true, error: null });
     try {
       const resp = await api.get(`/users/${userId}/notification-preferences`, { signal });
-      const parsed = safeParseOne(NotificationPreferencesSchema, resp.data ?? {}, 'NotificationPreferences');
+      const parsed = safeParseOne(
+        NotificationPreferencesSchema,
+        resp.data ?? {},
+        'NotificationPreferences',
+      );
       const data = settingsFromParsed(parsed ?? {});
       set({ isLoading: false, data, ...deriveFrom(data) });
     } catch (e) {
@@ -136,7 +142,7 @@ export const useNotificationSettingsStore = create<NotificationSettingsState>((s
 async function save(
   set: (partial: Partial<NotificationSettingsState>) => void,
   get: () => NotificationSettingsState,
-  patch: Partial<NotificationSettingsData>
+  patch: Partial<NotificationSettingsData>,
 ): Promise<boolean> {
   const userId = await storage.getUserId();
   if (userId == null) return false;
