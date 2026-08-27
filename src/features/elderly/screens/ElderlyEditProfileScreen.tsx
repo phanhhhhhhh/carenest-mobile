@@ -2,14 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Modal,
-  FlatList,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,8 +17,9 @@ import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 import { getName, saveName } from '../../../core/storage/secureStorage';
-
-const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+import { styles } from './elderlyEditProfile/styles';
+import { Card } from './elderlyEditProfile/Card';
+import { BloodTypePicker } from './elderlyEditProfile/BloodTypePicker';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -329,195 +327,15 @@ export default function ElderlyEditProfileScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      <Modal
+      <BloodTypePicker
         visible={bloodTypePickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setBloodTypePickerVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setBloodTypePickerVisible(false)}
-        >
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Chọn nhóm máu</Text>
-            <FlatList
-              data={BLOOD_TYPES}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.modalOption}
-                  onPress={() => {
-                    setBloodType(item);
-                    setBloodTypePickerVisible(false);
-                  }}
-                >
-                  <Text style={styles.modalOptionText}>{item}</Text>
-                  {bloodType === item && (
-                    <Ionicons name="checkmark" size={18} color={Colors.primary} />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        selected={bloodType}
+        onSelect={(t) => {
+          setBloodType(t);
+          setBloodTypePickerVisible(false);
+        }}
+        onClose={() => setBloodTypePickerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <View style={{ height: 16 }} />
-      {children}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  avatarMascot: { width: '100%', height: '100%', borderRadius: 999 },
-  container: { flex: 1, backgroundColor: Colors.background },
-  appBar: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  appBarTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  saveBtn: { minWidth: 44, alignItems: 'flex-end' },
-  saveBtnText: { fontSize: 15, fontWeight: '600', color: Colors.primary },
-  scroll: { padding: 20 },
-  avatarWrap: { alignSelf: 'center' },
-  avatarCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: 'rgba(46, 125, 154, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  avatarBadge: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.primary,
-    borderWidth: 3,
-    borderColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  card: {
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.4)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  inputDisabled: { backgroundColor: '#F5F5F5' },
-  inputIcon: { marginRight: 8 },
-  input: { flex: 1, fontSize: 15, color: Colors.textPrimary, height: '100%' },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  bloodTypeRow: { flexDirection: 'row', alignItems: 'center' },
-  bloodTypeLabel: { marginLeft: 8, fontWeight: '500', color: Colors.textPrimary, fontSize: 14 },
-  bloodTypeSelect: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.3)',
-    borderRadius: 10,
-  },
-  bloodTypeValue: { fontSize: 13, color: Colors.textPrimary },
-  bloodTypePlaceholder: { fontSize: 13, color: Colors.textHint },
-  addBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
-    justifyContent: 'center',
-  },
-  addBtnError: {
-    backgroundColor: Colors.error,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderRadius: 12,
-    justifyContent: 'center',
-  },
-  addBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-  },
-  chipError: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(229, 57, 53, 0.08)',
-  },
-  chipText: { fontSize: 13, color: Colors.textPrimary },
-  notesInput: {
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.4)',
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 15,
-    color: Colors.textPrimary,
-    minHeight: 100,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  modalSheet: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    maxHeight: 400,
-  },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-  modalOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
-  },
-  modalOptionText: { fontSize: 15, color: Colors.textPrimary },
-});
