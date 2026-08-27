@@ -4,11 +4,9 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  StyleSheet,
   Animated,
   Dimensions,
   Image,
-  ImageSourcePropType,
   ListRenderItemInfo,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -18,56 +16,20 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { AppStrings } from '../../../core/constants/strings';
+import {
+  DOT_ACTIVE_WIDTH,
+  DOT_SIZE,
+  DotInactive,
+  TOTAL_DOTS,
+  Teal,
+  slides,
+  type SlideData,
+} from './welcome/slides';
+import { styles } from './welcome/styles';
 
 const { width } = Dimensions.get('window');
 
-// Teal palette matching the Welcome Flow mockup
-const Teal = '#12A79C';
-const TealDark = '#0E8A81';
-const SubtitleGray = '#8E8E8E';
-const SkipGray = '#5C5C5C';
-const DotInactive = '#D7DBDE';
-const White = '#FFFFFF';
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-interface SlideData {
-  id: string;
-  title: string;
-  subtitle: string;
-  image: ImageSourcePropType;
-  imageSize: number;
-}
-
-const slides: SlideData[] = [
-  {
-    id: '1',
-    title: `Chăm sóc sức khỏe từ xa\nmọi lúc, mọi nơi`,
-    subtitle: `Kết nối với bác sĩ, theo dõi sức khỏe\nvà cập nhập tình trạng nhanh chóng`,
-    image: require('../../../../assets/mascot/mascot_dashboard.jpg'),
-    imageSize: Math.round(width * 0.88),
-  },
-  {
-    id: '2',
-    title: `Đa tiện ích\nchăm sóc sức khỏe`,
-    subtitle: `Theo dõi, quản lý và cải thiện\nsức khỏe mỗi ngày`,
-    image: require('../../../../assets/icons/health_icon_grid.jpg'),
-    imageSize: Math.round(width * 0.8),
-  },
-  {
-    id: '3',
-    title: `Chủ động theo dõi\nsức khỏe mỗi ngày`,
-    subtitle: `Nhắc nhở thông minh, kết nối bác sĩ\nvà người thân luôn bên cạnh`,
-    image: require('../../../../assets/mascot/mascot_bigphone.jpg'),
-    imageSize: Math.round(width * 0.92),
-  },
-];
-
-// The mockup shows 5 dots while there are 3 slides:
-// active positions are the 1st, 3rd and 5th dot.
-const TOTAL_DOTS = 5;
-const DOT_SIZE = 9;
-const DOT_ACTIVE_WIDTH = 26;
 
 export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -95,32 +57,16 @@ export default function WelcomeScreen() {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(mascotBounce, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-        Animated.timing(mascotBounce, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        }),
+        Animated.timing(mascotBounce, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(mascotBounce, { toValue: 0, duration: 600, useNativeDriver: true }),
       ]),
       { iterations: 2 },
     ).start();
 
     const timer = setTimeout(() => {
       Animated.parallel([
-        Animated.timing(splashOpacity, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(splashScale, {
-          toValue: 0.95,
-          duration: 400,
-          useNativeDriver: true,
-        }),
+        Animated.timing(splashOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+        Animated.timing(splashScale, { toValue: 0.95, duration: 400, useNativeDriver: true }),
       ]).start(() => {
         setShowSplash(false);
         Animated.timing(contentOpacity, {
@@ -136,8 +82,8 @@ export default function WelcomeScreen() {
 
   const onScroll = Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
     useNativeDriver: false,
-    // onMomentumScrollEnd never fires on react-native-web, so the
-    // current index is derived here -- onScroll works everywhere.
+    // onMomentumScrollEnd never fires on react-native-web, so the current
+    // index is derived here -- onScroll works everywhere.
     listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       updateIndex(e.nativeEvent.contentOffset.x);
     },
@@ -156,10 +102,7 @@ export default function WelcomeScreen() {
     // scroll events on every platform before the animation settles.
     currentIndexRef.current = slides.length - 1;
     setCurrentIndex(slides.length - 1);
-    flatListRef.current?.scrollToIndex({
-      index: slides.length - 1,
-      animated: true,
-    });
+    flatListRef.current?.scrollToIndex({ index: slides.length - 1, animated: true });
   }, []);
 
   const bounceInterpolate = mascotBounce.interpolate({
@@ -205,43 +148,41 @@ export default function WelcomeScreen() {
   );
 
   // Dots: the active "pill" glides between positions 1 -> 3 -> 5 as you swipe
-  const renderDots = () => {
-    return (
-      <View style={styles.dotContainer}>
-        {Array.from({ length: TOTAL_DOTS }).map((_, dotIndex) => {
-          // Which slide (if any) activates this dot: dot 0 -> slide 0, dot 2 -> slide 1, dot 4 -> slide 2
-          const owningSlide = dotIndex % 2 === 0 ? dotIndex / 2 : -1;
+  const renderDots = () => (
+    <View style={styles.dotContainer}>
+      {Array.from({ length: TOTAL_DOTS }).map((_, dotIndex) => {
+        // Which slide (if any) activates this dot: dot 0 -> slide 0, dot 2 -> slide 1, dot 4 -> slide 2
+        const owningSlide = dotIndex % 2 === 0 ? dotIndex / 2 : -1;
 
-          if (owningSlide === -1) {
-            return <View key={dotIndex} style={[styles.dot, styles.dotInactive]} />;
-          }
+        if (owningSlide === -1) {
+          return <View key={dotIndex} style={[styles.dot, styles.dotInactive]} />;
+        }
 
-          const inputRange = [
-            (owningSlide - 1) * width,
-            owningSlide * width,
-            (owningSlide + 1) * width,
-          ];
-          const dotWidth = scrollX.interpolate({
-            inputRange,
-            outputRange: [DOT_SIZE, DOT_ACTIVE_WIDTH, DOT_SIZE],
-            extrapolate: 'clamp',
-          });
-          const dotColor = scrollX.interpolate({
-            inputRange,
-            outputRange: [DotInactive, Teal, DotInactive],
-            extrapolate: 'clamp',
-          });
+        const inputRange = [
+          (owningSlide - 1) * width,
+          owningSlide * width,
+          (owningSlide + 1) * width,
+        ];
+        const dotWidth = scrollX.interpolate({
+          inputRange,
+          outputRange: [DOT_SIZE, DOT_ACTIVE_WIDTH, DOT_SIZE],
+          extrapolate: 'clamp',
+        });
+        const dotColor = scrollX.interpolate({
+          inputRange,
+          outputRange: [DotInactive, Teal, DotInactive],
+          extrapolate: 'clamp',
+        });
 
-          return (
-            <Animated.View
-              key={dotIndex}
-              style={[styles.dot, { width: dotWidth, backgroundColor: dotColor }]}
-            />
-          );
-        })}
-      </View>
-    );
-  };
+        return (
+          <Animated.View
+            key={dotIndex}
+            style={[styles.dot, { width: dotWidth, backgroundColor: dotColor }]}
+          />
+        );
+      })}
+    </View>
+  );
 
   if (showSplash) {
     return (
@@ -317,11 +258,7 @@ export default function WelcomeScreen() {
           scrollEventThrottle={16}
           onMomentumScrollEnd={onMomentumScrollEnd}
           initialScrollIndex={0}
-          getItemLayout={(_, index) => ({
-            length: width,
-            offset: width * index,
-            index,
-          })}
+          getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
         />
       </Animated.View>
 
@@ -359,150 +296,3 @@ export default function WelcomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  splashContainer: {
-    flex: 1,
-    backgroundColor: White,
-  },
-  splashSafeArea: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  splashMascotWrapper: {
-    marginBottom: 4,
-  },
-  splashMascotImage: {
-    width: width * 0.62,
-    height: width * 0.62,
-  },
-  splashLogo: {
-    width: width * 0.55,
-    height: width * 0.16,
-    marginBottom: 4,
-  },
-  splashTagline: {
-    fontSize: 17,
-    color: Teal,
-    fontWeight: '500',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: White,
-  },
-  flatListWrapper: {
-    flex: 1,
-  },
-  skipButton: {
-    position: 'absolute',
-    top: 14,
-    right: 20,
-    zIndex: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  skipButtonText: {
-    fontSize: 15,
-    color: SkipGray,
-    fontStyle: 'italic',
-    fontWeight: '400',
-  },
-  slide: {
-    width,
-    flex: 1,
-  },
-  slideInner: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingTop: 84,
-  },
-  slideTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Teal,
-    textAlign: 'center',
-    lineHeight: 33,
-    marginBottom: 12,
-  },
-  slideSubtitle: {
-    fontSize: 15.5,
-    color: SubtitleGray,
-    textAlign: 'center',
-    lineHeight: 23,
-  },
-  imageWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 20,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingBottom: 28,
-  },
-  dotContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 16,
-    marginBottom: 20,
-  },
-  dot: {
-    height: DOT_SIZE,
-    width: DOT_SIZE,
-    borderRadius: DOT_SIZE / 2,
-  },
-  dotInactive: {
-    backgroundColor: DotInactive,
-  },
-  // Fixed height keeps the dots from jumping between slides;
-  // width 100% so the buttons can stretch edge-to-edge.
-  buttonSlot: {
-    width: '100%',
-    height: 128,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 24,
-  },
-  buttonGroup: {
-    width: '100%',
-  },
-  primaryButton: {
-    width: '100%',
-    backgroundColor: Teal,
-    paddingVertical: 16,
-    borderRadius: 9999,
-    alignItems: 'center',
-    shadowColor: TealDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  primaryButtonLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: White,
-  },
-  secondaryButton: {
-    width: '100%',
-    backgroundColor: White,
-    paddingVertical: 16,
-    borderRadius: 9999,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Teal,
-    marginTop: 14,
-  },
-  secondaryButtonLabel: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Teal,
-  },
-});
