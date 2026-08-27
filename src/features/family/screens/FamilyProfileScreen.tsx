@@ -9,7 +9,13 @@ import * as storage from '../../../core/storage/secureStorage';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore, useFamilyLinkStore } from '../store/familyStore';
 import { styles } from './familyProfile/styles';
-import { AddFamilyCard, Avatar, ConnectedElderly, Settings } from './familyProfile/sections';
+import {
+  AddFamilyCard,
+  Avatar,
+  ConnectedElderly,
+  ScanQRCard,
+  Settings,
+} from './familyProfile/sections';
 import { AddFamilyDialog } from './familyProfile/AddFamilyDialog';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -105,6 +111,8 @@ export default function FamilyProfileScreen() {
         )}
 
         <AddFamilyCard onPress={openAddFamilyDialog} />
+        <View style={{ height: 12 }} />
+        <ScanQRCard onPress={() => navigation.navigate('FamilyScanQR')} />
         <View style={{ height: 20 }} />
 
         <Settings

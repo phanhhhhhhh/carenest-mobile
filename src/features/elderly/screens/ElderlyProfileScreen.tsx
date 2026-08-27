@@ -94,6 +94,13 @@ export default function ElderlyProfileScreen() {
       onPress: () => navigation.navigate('PremiumPlans'),
     },
     {
+      icon: 'qr-code-outline',
+      label: 'Tạo mã QR kết nối',
+      color: Colors.secondary,
+      bg: 'rgba(76, 175, 130, 0.08)',
+      onPress: () => navigation.navigate('ElderlyQRInvite'),
+    },
+    {
       icon: 'lock-closed-outline',
       label: 'Đặt mã PIN',
       color: Colors.primary,

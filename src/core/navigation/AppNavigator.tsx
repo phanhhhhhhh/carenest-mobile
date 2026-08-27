@@ -43,6 +43,8 @@ import PremiumPlansScreen from '../../features/family/screens/PremiumPlansScreen
 import NotificationsScreen from '../../features/notifications/screens/NotificationsScreen';
 import NotificationSettingsScreen from '../../features/notifications/screens/NotificationSettingsScreen';
 import WeeklySummaryScreen from '../../features/family/screens/WeeklySummaryScreen';
+import ElderlyQRInviteScreen from '../../features/elderly/screens/ElderlyQRInviteScreen';
+import FamilyScanQRScreen from '../../features/family/screens/FamilyScanQRScreen';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -77,6 +79,8 @@ export type RootStackParamList = {
   Notifications: undefined;
   NotificationSettings: undefined;
   PremiumPlans: undefined;
+  ElderlyQRInvite: undefined;
+  FamilyScanQR: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -151,6 +155,8 @@ export default function AppNavigator() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
             <Stack.Screen name="PremiumPlans" component={PremiumPlansScreen} />
+            <Stack.Screen name="ElderlyQRInvite" component={ElderlyQRInviteScreen} />
+            <Stack.Screen name="FamilyScanQR" component={FamilyScanQRScreen} />
             <Stack.Screen name="PinSetup" component={PinSetupScreen} />
           </>
         )}
