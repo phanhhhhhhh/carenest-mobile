@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -25,40 +25,17 @@ import {
   selectUnreadCount,
 } from '../../notifications/store/notificationStore';
 import { showErrorToast } from '../../../shared/components/toastStore';
-import type { MedicationItem } from '../../../shared/types';
+import { formatDateHeader, greeting } from './elderlyHome/utils';
+import { MedicationTile, NextMedicationCard } from './elderlyHome/MedicationCards';
+import { SosPanel, useSosCountdown } from './elderlyHome/SosPanel';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-function formatDateHeader(): string {
-  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-  const now = new Date();
-  return `${days[now.getDay()]}, ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
-}
-
-function greeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Chào buổi sáng';
-  if (hour < 18) return 'Chào buổi chiều';
-  return 'Chào buổi tối';
-}
-
-function formatTimeFromIso(iso?: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const h = String(d.getHours()).padStart(2, '0');
-  const m = String(d.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-}
 
 export default function ElderlyHomeScreen() {
   const navigation = useNavigation<Nav>();
 
   const [name, setName] = useState('you');
   const [elderlyId, setElderlyId] = useState<string | null>(null);
-  const [sosCountdown, setSosCountdown] = useState(false);
-  const [countdown, setCountdown] = useState(3);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const profile = useElderlyProfileStore((s) => s.profile);
   const loadProfile = useElderlyProfileStore((s) => s.load);
@@ -101,35 +78,7 @@ export default function ElderlyHomeScreen() {
     return () => controller.abort();
   }, [elderlyId]);
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
   const displayName = profile?.name && profile.name.length > 0 ? profile.name : name;
-
-  const onSosPressed = () => {
-    setSosCountdown(true);
-    setCountdown(3);
-    let remaining = 3;
-    intervalRef.current = setInterval(() => {
-      remaining -= 1;
-      if (remaining <= 0) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        setSosCountdown(false);
-        setCountdown(0);
-        sendSos();
-      } else {
-        setCountdown(remaining);
-      }
-    }, 1000);
-  };
-
-  const cancelSos = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setSosCountdown(false);
-  };
 
   const sendSos = async () => {
     if (!elderlyId) {
@@ -157,6 +106,8 @@ export default function ElderlyHomeScreen() {
     }
   };
 
+  const sos = useSosCountdown(sendSos);
+
   const sortedMeds = useMemo(() => {
     const items = [...medItems];
     items.sort((a, b) => {
@@ -169,7 +120,6 @@ export default function ElderlyHomeScreen() {
   }, [medItems]);
 
   const nextMed = sortedMeds.length > 0 ? sortedMeds[0] : null;
-
   const isCameraOn = cameraStatus.hasCamera && cameraStatus.allOnline;
 
   return (
@@ -200,37 +150,12 @@ export default function ElderlyHomeScreen() {
 
         <View style={{ height: 24 }} />
 
-        <View style={styles.emergencyWrap}>
-          {sosCountdown ? (
-            <>
-              <Text style={styles.sosSendingText}>Đang gửi tín hiệu khẩn cấp...</Text>
-              <View style={{ height: 16 }} />
-              <View style={styles.sosRing}>
-                <Text style={styles.sosCountdownNumber}>{countdown}</Text>
-              </View>
-              <View style={{ height: 16 }} />
-              <TouchableOpacity onPress={cancelSos} style={styles.cancelBtn}>
-                <Ionicons name="close" size={18} color={Colors.textSecondary} />
-                <Text style={styles.cancelText}>Hủy</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <TouchableOpacity
-                onPress={onSosPressed}
-                activeOpacity={0.85}
-                style={styles.emergencyButton}
-              >
-                <View style={styles.emergencyIconBox}>
-                  <Ionicons name="alert" size={20} color="#FFFFFF" />
-                </View>
-                <Text style={styles.emergencyButtonText}>GỌI KHẨN CẤP</Text>
-              </TouchableOpacity>
-              <View style={{ height: 10 }} />
-              <Text style={styles.sosHint}>Nhấn để gửi tín hiệu khẩn cấp trong 3 giây</Text>
-            </>
-          )}
-        </View>
+        <SosPanel
+          countingDown={sos.active}
+          count={sos.count}
+          onPress={sos.start}
+          onCancel={sos.cancel}
+        />
 
         <View style={{ height: 20 }} />
 
@@ -308,104 +233,6 @@ export default function ElderlyHomeScreen() {
   );
 }
 
-function NextMedicationCard({
-  medication,
-  onToggleTaken,
-}: {
-  medication: MedicationItem;
-  onToggleTaken: (id: string) => void;
-}) {
-  const timeLabel = medication.nextDoseTime
-    ? formatTimeFromIso(medication.nextDoseTime)
-    : medication.scheduleTimes.length > 0
-      ? medication.scheduleTimes[0]
-      : '';
-
-  return (
-    <View
-      style={[
-        styles.nextMedCard,
-        {
-          borderColor: medication.taken ? 'rgba(67, 160, 71, 0.3)' : 'rgba(255, 167, 38, 0.4)',
-        },
-      ]}
-    >
-      <View style={styles.nextMedTopRow}>
-        <View
-          style={[
-            styles.nextMedIcon,
-            {
-              backgroundColor: medication.taken
-                ? 'rgba(67, 160, 71, 0.1)'
-                : 'rgba(255, 167, 38, 0.1)',
-            },
-          ]}
-        >
-          <Ionicons
-            name="medkit"
-            size={26}
-            color={medication.taken ? Colors.success : Colors.warning}
-          />
-        </View>
-        <View style={{ flex: 1, marginLeft: 14 }}>
-          <Text style={styles.nextMedLabel}>
-            {timeLabel ? `Thuốc tiếp theo · ${timeLabel}` : 'Thuốc tiếp theo'}
-          </Text>
-          <Text style={styles.nextMedName}>
-            {medication.name} {medication.dosage}
-          </Text>
-          {!!medication.instructions && (
-            <Text style={styles.nextMedInstructions}>{medication.instructions}</Text>
-          )}
-        </View>
-      </View>
-      <View style={{ height: 14 }} />
-      <TouchableOpacity
-        disabled={medication.taken}
-        onPress={() => onToggleTaken(medication.id)}
-        style={[
-          styles.takeBtnFull,
-          { backgroundColor: medication.taken ? Colors.textHint : Colors.textPrimary },
-        ]}
-      >
-        <Text style={styles.takeBtnFullText}>{medication.taken ? 'Đã uống ✓' : '✓ ĐÃ UỐNG'}</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function MedicationTile({ medication }: { medication: MedicationItem }) {
-  const timeLabel = formatTimeFromIso(medication.nextDoseTime);
-  return (
-    <View style={styles.medTile}>
-      <View style={styles.medTileIcon}>
-        <Ionicons name="medkit" size={24} color={Colors.primary} />
-      </View>
-      <View style={{ flex: 1, marginLeft: 14 }}>
-        <Text style={styles.medTileName}>{medication.name}</Text>
-        <Text style={styles.medTileDosage}>{medication.dosage}</Text>
-      </View>
-      {!!timeLabel && (
-        <View style={styles.medTileTimeBadge}>
-          <Text style={styles.medTileTimeText}>{timeLabel}</Text>
-        </View>
-      )}
-      <View style={{ width: 10 }} />
-      <View
-        style={[
-          styles.medTileCheck,
-          {
-            borderColor: medication.taken ? Colors.success : 'rgba(173, 181, 189, 0.5)',
-            backgroundColor: medication.taken ? 'rgba(67, 160, 71, 0.1)' : 'transparent',
-          },
-        ]}
-      >
-        {medication.taken && <Ionicons name="checkmark" size={14} color={Colors.success} />}
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: 20 },
@@ -435,96 +262,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: { color: '#FFFFFF', fontSize: Typography.badge.fontSize, fontWeight: '700' },
-
-  emergencyWrap: { alignItems: 'center' },
-  emergencyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    paddingVertical: 18,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.textPrimary,
-  },
-  emergencyIconBox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.6)',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  emergencyButtonText: {
-    color: '#FFFFFF',
-    fontSize: Typography.button.fontSize,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  sosSendingText: {
-    fontSize: Typography.button.fontSize,
-    fontWeight: '600',
-    color: Colors.sosPrimary,
-  },
-  sosRing: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 6,
-    borderColor: Colors.sosLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surface,
-  },
-  sosCountdownNumber: { fontSize: 48, fontWeight: '700', color: Colors.sosPrimary },
-  cancelBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8 },
-  cancelText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
-  sosHint: {
-    color: Colors.textSecondary,
-    fontSize: Typography.bodySmall.fontSize,
-    textAlign: 'center',
-  },
-
-  nextMedCard: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-  },
-  nextMedTopRow: { flexDirection: 'row', alignItems: 'center' },
-  nextMedIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextMedLabel: { fontSize: 12, color: Colors.textSecondary },
-  nextMedName: {
-    marginTop: 2,
-    fontSize: Typography.cardTitle.fontSize,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  nextMedInstructions: {
-    marginTop: 2,
-    fontSize: Typography.bodySmall.fontSize,
-    color: Colors.textSecondary,
-  },
-  takeBtnFull: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-  },
-  takeBtnFullText: {
-    color: '#FFFFFF',
-    fontSize: Typography.button.fontSize,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
 
   cameraCard: {
     flexDirection: 'row',
@@ -580,50 +317,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: Colors.textSecondary,
     fontSize: Typography.buttonSmall.fontSize,
-  },
-
-  medTile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 14,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.2)',
-  },
-  medTileIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  medTileName: { fontWeight: '600', color: Colors.textPrimary, fontSize: Typography.body.fontSize },
-  medTileDosage: {
-    marginTop: 2,
-    color: Colors.textSecondary,
-    fontSize: Typography.bodySmall.fontSize,
-  },
-  medTileTimeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-  },
-  medTileTimeText: {
-    color: Colors.primary,
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
-  },
-  medTileCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
