@@ -90,6 +90,21 @@ export function AddFamilyCard({ onPress }: { onPress: () => void }) {
   );
 }
 
+export function ScanQRCard({ onPress }: { onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.scanQRCard} onPress={onPress}>
+      <View style={styles.scanQRIconWrap}>
+        <Ionicons name="qr-code-outline" size={22} color={Colors.secondary} />
+      </View>
+      <View style={styles.addFamilyText}>
+        <Text style={styles.scanQRTitle}>Quét mã QR</Text>
+        <Text style={styles.addFamilySubtitle}>Quét mã QR do người cao tuổi cung cấp</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={22} color={Colors.secondary} />
+    </TouchableOpacity>
+  );
+}
+
 export function Settings({
   onEditProfile,
   onNotificationSettings,
