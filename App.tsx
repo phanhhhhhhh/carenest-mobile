@@ -16,6 +16,8 @@ export default function App() {
   useEffect(() => {
     loadSession();
     initializePushNotifications();
+    // Run once on mount; loadSession is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Retry any deep link that arrived before the navigator/auth state was ready

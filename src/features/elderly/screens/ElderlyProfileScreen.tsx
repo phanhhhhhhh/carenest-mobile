@@ -48,6 +48,8 @@ export default function ElderlyProfileScreen() {
     })();
     loadProfile();
     loadFamily();
+    // Load once on mount; the loaders are stable store actions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isElderlyRole = role === 'ELDERLY';

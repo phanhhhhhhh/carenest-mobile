@@ -31,6 +31,8 @@ export default function ElderlyCameraScreen() {
       setElderlyId(id);
       if (id) load(id);
     })();
+    // Resolve the user id and load once on mount; `load` is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onRefresh = async () => {

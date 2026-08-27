@@ -40,6 +40,8 @@ export default function NotificationSettingsScreen() {
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
+    // Load once on mount; `load` is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const withSaveToast =

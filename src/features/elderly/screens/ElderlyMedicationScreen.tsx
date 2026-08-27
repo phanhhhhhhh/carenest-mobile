@@ -43,6 +43,8 @@ export default function ElderlyMedicationScreen() {
     const controller = new AbortController();
     load(undefined, controller.signal);
     return () => controller.abort();
+    // Load once on mount; `load` is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Ticks the "còn X phút" countdown and the upcoming→due transition live,

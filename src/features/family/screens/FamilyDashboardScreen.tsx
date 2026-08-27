@@ -75,6 +75,8 @@ export default function FamilyDashboardScreen() {
     loadDashboard(controller.signal);
     loadNotifications(controller.signal);
     return () => controller.abort();
+    // Load once on mount; the loaders are stable store actions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -84,6 +86,8 @@ export default function FamilyDashboardScreen() {
     loadCameras(elderlyId, controller.signal);
     loadAlerts(elderlyId, controller.signal);
     return () => controller.abort();
+    // Re-run when the selected elderly changes; the loaders are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const handleRefresh = async () => {

@@ -21,7 +21,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastEntry; onDismiss: (id: nu
     Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
     const timer = setTimeout(() => onDismiss(toast.id), AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
-  }, [toast.id]);
+  }, [toast.id, opacity, onDismiss]);
 
   return (
     <Animated.View

@@ -51,6 +51,8 @@ export default function FamilyProfileScreen() {
     if (!dashboardData) {
       loadDashboard();
     }
+    // Load the dashboard once on mount if it isn't already populated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openAddFamilyDialog = () => {
