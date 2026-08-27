@@ -10,7 +10,6 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,59 +24,15 @@ import {
   useNotificationStore,
   selectUnreadCount,
 } from '../../notifications/store/notificationStore';
-import type { AppointmentItem, MedicationItem } from '../../../shared/types';
+import { formatRelative, hexToRgba } from './familyDashboard/utils';
+import { useDashboardActivity } from './familyDashboard/useDashboardActivity';
+import { ElderlyCard } from './familyDashboard/ElderlyCard';
+import { TodayMedsCard } from './familyDashboard/TodayMedsCard';
+import { DashboardCameraCard } from './familyDashboard/DashboardCameraCard';
+import { ActivityCard } from './familyDashboard/ActivityCard';
+import { AppointmentPreviewCard } from './familyDashboard/widgets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-function formatRelative(iso: string): string {
-  const dt = new Date(iso);
-  const diffMs = Date.now() - dt.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diffDays = Math.floor(
-    (startOfDay(new Date()).getTime() - startOfDay(dt).getTime()) / (24 * 60 * 60 * 1000),
-  );
-  if (diffMinutes < 1) return 'Vừa xong';
-  if (diffHours < 1) return `${diffMinutes} phút trước`;
-  if (diffDays === 0) return 'Hôm nay';
-  if (diffDays === 1) return 'Hôm qua';
-  return `${diffDays} ngày trước`;
-}
-
-function formatDoseTime(med: MedicationItem): string {
-  if (med.nextDoseTime) {
-    const d = new Date(med.nextDoseTime);
-    if (!Number.isNaN(d.getTime())) {
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    }
-  }
-  return med.scheduleTimes.length > 0 ? med.scheduleTimes[0] : '';
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const clean = hex.replace('#', '');
-  const bigint = parseInt(clean, 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-const MONTHS = [
-  'Th1',
-  'Th2',
-  'Th3',
-  'Th4',
-  'Th5',
-  'Th6',
-  'Th7',
-  'Th8',
-  'Th9',
-  'Th10',
-  'Th11',
-  'Th12',
-];
 
 export default function FamilyDashboardScreen() {
   const navigation = useNavigation<Nav>();
@@ -158,8 +113,6 @@ export default function FamilyDashboardScreen() {
   const glucoseValue = glucose ? Number.parseFloat(glucose.value) || 0 : 0;
   const isGlucoseWarning = glucose ? glucoseValue < 3.9 || glucoseValue > 7.8 : false;
 
-  const takenMeds = medItems.filter((m) => m.taken).length;
-
   const allMetricTimestamps = Object.values(latestByType).map((m) =>
     new Date(m.recordedAt).getTime(),
   );
@@ -169,74 +122,20 @@ export default function FamilyDashboardScreen() {
     : null;
   const isRecentlyActive = lastMetricTime ? Date.now() - lastMetricTime < 30 * 60 * 1000 : false;
 
-  const hasCamera = cameras.length > 0;
-  const cam = hasCamera ? cameras[0] : null;
-  const camOnline = cam?.status === 'ONLINE';
+  const cam = cameras.length > 0 ? cameras[0] : null;
 
-  type ActivityItem = {
-    icon: keyof typeof Ionicons.glyphMap;
-    color: string;
-    title: string;
-    subtitle: string;
-    time: string;
-  };
-  const activityItems: ActivityItem[] = [];
-  if (elderlyId) {
-    if (!alertLoading && alertEvents.length > 0) {
-      const active = alertEvents.filter((e) => e.status === 'ACTIVE').slice(0, 2);
-      for (const event of active) {
-        activityItems.push({
-          icon: 'warning',
-          color: Colors.error,
-          title: event.type === 'SOS' ? 'Cảnh báo khẩn cấp (SOS)' : 'Cảnh báo',
-          subtitle: event.description,
-          time: formatRelative(event.createdAt),
-        });
-      }
-    }
-    if (!medLoading && medItems.length > 0 && activityItems.length < 3) {
-      const takenRecently = medItems.filter((m) => m.taken).slice(0, 3 - activityItems.length);
-      for (const med of takenRecently) {
-        activityItems.push({
-          icon: 'medical',
-          color: Colors.success,
-          title: `Đã uống ${med.name}`,
-          subtitle: med.dosage,
-          time: formatDoseTime(med) ? `Lúc ${formatDoseTime(med)}` : '',
-        });
-      }
-    }
-    if (!healthIsLoading && Object.keys(latestByType).length > 0 && activityItems.length < 3) {
-      const entries = Object.entries(latestByType).slice(0, 3 - activityItems.length);
-      for (const [type, data] of entries) {
-        const typeLabel =
-          type === 'BLOOD_PRESSURE'
-            ? 'Huyết áp'
-            : type === 'BLOOD_GLUCOSE'
-              ? 'Đường huyết'
-              : type === 'HEART_RATE'
-                ? 'Nhịp tim'
-                : type;
-        const valueStr = data.valueSecondary ? `${data.value}/${data.valueSecondary}` : data.value;
-        activityItems.push({
-          icon: 'pulse',
-          color: Colors.primary,
-          title: `Đo ${typeLabel}`,
-          subtitle: `${valueStr} ${data.unit ?? ''}`.trim(),
-          time: formatRelative(data.recordedAt),
-        });
-      }
-    }
-  }
-  if (activityItems.length === 0) {
-    activityItems.push({
-      icon: 'checkmark-circle-outline',
-      color: Colors.textHint,
-      title: 'Chưa có cảnh báo nào',
-      subtitle: 'Mọi thứ đang ổn',
-      time: '',
-    });
-  }
+  const activityItems = useDashboardActivity({
+    elderlyId,
+    alertEvents,
+    alertLoading,
+    medItems,
+    medLoading,
+    latestByType,
+    healthLoading: healthIsLoading,
+  });
+
+  const openCamera = () => elderlyId && navigation.navigate('CameraScreen', { elderlyId });
+  const openHealth = () => navigation.navigate('FamilyHealth');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -298,121 +197,29 @@ export default function FamilyDashboardScreen() {
           </ScrollView>
         )}
 
-        <View style={styles.elderlyCard}>
-          <View style={styles.elderlyCardTopRow}>
-            <View style={styles.elderlyAvatar}>
-              <Ionicons name="body" color={Colors.primary} size={26} />
-            </View>
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text style={styles.elderlyCardName}>
-                <Text style={styles.elderlyCardLabelInline}>Người thân: </Text>
-                {hasElderly ? elderlyName : 'Chưa liên kết'}
-              </Text>
-              {hasElderly && (
-                <Text style={styles.elderlyCardUpdated}>
-                  {lastUpdatedLabel ? `Cập nhật: ${lastUpdatedLabel}` : 'Chưa có dữ liệu mới'}
-                </Text>
-              )}
-            </View>
-            {hasElderly && (
-              <View style={styles.onlinePill}>
-                <View
-                  style={[
-                    styles.onlineDot,
-                    { backgroundColor: isRecentlyActive ? Colors.success : Colors.textHint },
-                  ]}
-                />
-                <Text style={styles.onlinePillText}>
-                  {isRecentlyActive ? 'Trực tuyến' : 'Ngoại tuyến'}
-                </Text>
-              </View>
-            )}
-          </View>
-          {hasElderly && healthConditions.length > 0 && (
-            <View style={styles.conditionsWrap}>
-              {healthConditions.map((c, idx) => (
-                <View key={`${c}-${idx}`} style={styles.conditionChip}>
-                  <Text style={styles.conditionChipText}>{c}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-          {elderlyId && (
-            <View style={styles.vitalsRow}>
-              <VitalMiniCard
-                label="Nhịp tim"
-                value={hr ? hr.value : '--'}
-                isWarning={isHrWarning}
-                onPress={() => navigation.navigate('FamilyHealth')}
-              />
-              <View style={{ width: 10 }} />
-              <VitalMiniCard
-                label="Huyết áp"
-                value={
-                  bp ? (bp.valueSecondary ? `${bp.value}/${bp.valueSecondary}` : bp.value) : '--'
-                }
-                isWarning={isBpWarning}
-                onPress={() => navigation.navigate('FamilyHealth')}
-              />
-              <View style={{ width: 10 }} />
-              <VitalMiniCard
-                label="Đường"
-                value={glucose ? glucose.value : '--'}
-                isWarning={isGlucoseWarning}
-                onPress={() => navigation.navigate('FamilyHealth')}
-              />
-            </View>
-          )}
-        </View>
+        <ElderlyCard
+          hasElderly={hasElderly}
+          elderlyName={elderlyName}
+          lastUpdatedLabel={lastUpdatedLabel}
+          isRecentlyActive={isRecentlyActive}
+          healthConditions={healthConditions}
+          showVitals={!!elderlyId}
+          hrText={hr ? hr.value : '--'}
+          bpText={bp ? (bp.valueSecondary ? `${bp.value}/${bp.valueSecondary}` : bp.value) : '--'}
+          glucoseText={glucose ? glucose.value : '--'}
+          isHrWarning={isHrWarning}
+          isBpWarning={isBpWarning}
+          isGlucoseWarning={isGlucoseWarning}
+          onVitalPress={openHealth}
+        />
 
         <View style={{ height: 24 }} />
 
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('FamilyShell', { screen: 'FamilyMeds' })}
-            >
-              <Text style={styles.viewAllText}>Xem tất cả →</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{ height: 10 }} />
-          {medLoading && medItems.length === 0 ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator size="small" color={Colors.primary} />
-            </View>
-          ) : medItems.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyBoxText}>Chưa có thuốc nào</Text>
-            </View>
-          ) : (
-            <View style={styles.medCardRow}>
-              <MedProgressRing taken={takenMeds} total={medItems.length} />
-              <View style={{ width: 14 }} />
-              <View style={{ flex: 1 }}>
-                {medItems.slice(0, 4).map((med) => (
-                  <View key={med.id} style={styles.medListRow}>
-                    <Text
-                      style={[
-                        styles.medCheckMark,
-                        { color: med.taken ? Colors.success : Colors.error },
-                      ]}
-                    >
-                      {med.taken ? '✓' : '✗'}
-                    </Text>
-                    <Text style={styles.medListName} numberOfLines={1}>
-                      {med.name} {med.dosage}
-                    </Text>
-                    <Text style={[styles.medListTime, !med.taken && { color: Colors.warning }]}>
-                      {formatDoseTime(med)}
-                      {!med.taken ? ' (sắp tới)' : ''}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
+        <TodayMedsCard
+          medItems={medItems}
+          isLoading={medLoading}
+          onViewAll={() => navigation.navigate('FamilyShell', { screen: 'FamilyMeds' })}
+        />
 
         <View style={{ height: 24 }} />
 
@@ -436,61 +243,7 @@ export default function FamilyDashboardScreen() {
 
         {elderlyId && (
           <>
-            <View style={styles.sectionCard}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>{cam ? `Camera — ${cam.label}` : 'Camera'}</Text>
-                {hasCamera && camOnline && (
-                  <View style={styles.liveRow}>
-                    <View style={styles.liveDot} />
-                    <Text style={styles.liveBadgeText}>Trực tiếp</Text>
-                  </View>
-                )}
-              </View>
-              <View style={{ height: 10 }} />
-              {!hasCamera ? (
-                <View style={styles.emptyBox}>
-                  <Ionicons name="videocam-off" color={Colors.textHint} size={32} />
-                  <Text style={[styles.emptyBoxText, { marginTop: 8 }]}>
-                    Chưa liên kết camera nào
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('CameraScreen', { elderlyId })}
-                  >
-                    <Text style={[styles.viewAllText, { marginTop: 8 }]}>+ Thêm camera</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.cameraCard}>
-                  <View style={styles.cameraPreviewBox}>
-                    <Ionicons
-                      name={camOnline ? 'play-circle' : 'videocam-off'}
-                      color="rgba(255,255,255,0.54)"
-                      size={40}
-                    />
-                  </View>
-                  <View style={{ height: 12 }} />
-                  <View style={styles.cameraActionsRow}>
-                    <CameraActionButton
-                      icon="play"
-                      label="Xem"
-                      onPress={() => navigation.navigate('CameraScreen', { elderlyId })}
-                    />
-                    <View style={{ width: 8 }} />
-                    <CameraActionButton
-                      icon="mic"
-                      label="Gọi"
-                      onPress={() => navigation.navigate('CameraScreen', { elderlyId })}
-                    />
-                    <View style={{ width: 8 }} />
-                    <CameraActionButton
-                      icon="calendar"
-                      label="Kiểm tra"
-                      onPress={() => navigation.navigate('CameraScreen', { elderlyId })}
-                    />
-                  </View>
-                </View>
-              )}
-            </View>
+            <DashboardCameraCard cam={cam} onOpenCamera={openCamera} />
             <View style={{ height: 24 }} />
           </>
         )}
@@ -502,25 +255,7 @@ export default function FamilyDashboardScreen() {
           </TouchableOpacity>
         </View>
         <View style={{ height: 14 }} />
-        <View style={styles.activityCard}>
-          {activityItems.map((item, idx) => (
-            <View key={idx}>
-              <View style={styles.activityRow}>
-                <View
-                  style={[styles.activityIconBox, { backgroundColor: hexToRgba(item.color, 0.08) }]}
-                >
-                  <Ionicons name={item.icon} color={item.color} size={20} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.activityTitle}>{item.title}</Text>
-                  <Text style={styles.activitySubtitle}>{item.subtitle}</Text>
-                </View>
-                <Text style={styles.activityTime}>{item.time}</Text>
-              </View>
-              {idx < activityItems.length - 1 && <View style={styles.divider} />}
-            </View>
-          ))}
-        </View>
+        <ActivityCard items={activityItems} />
 
         <View style={{ height: 24 }} />
 
@@ -558,114 +293,6 @@ export default function FamilyDashboardScreen() {
   );
 }
 
-function MedProgressRing({ taken, total }: { taken: number; total: number }) {
-  const size = 60;
-  const strokeWidth = 6;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = total > 0 ? taken / total : 0;
-  const dashOffset = circumference * (1 - progress);
-  const ringColor = progress >= 1 ? Colors.success : Colors.primary;
-
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} style={{ position: 'absolute' }}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={hexToRgba(Colors.textHint, 0.2)}
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={ringColor}
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={dashOffset}
-          strokeLinecap="round"
-          fill="none"
-          rotation={-90}
-          origin={`${size / 2}, ${size / 2}`}
-        />
-      </Svg>
-      <Text style={styles.ringText}>
-        {taken}/{total}
-      </Text>
-    </View>
-  );
-}
-
-function VitalMiniCard({
-  label,
-  value,
-  isWarning,
-  onPress,
-}: {
-  label: string;
-  value: string;
-  isWarning: boolean;
-  onPress: () => void;
-}) {
-  const statusColor = isWarning ? Colors.error : Colors.success;
-  return (
-    <TouchableOpacity style={styles.vitalCard} onPress={onPress}>
-      <Text style={styles.vitalLabel}>{label.toUpperCase()}</Text>
-      <View style={{ height: 4 }} />
-      <Text style={styles.vitalValue}>{value}</Text>
-      <View style={{ height: 4 }} />
-      <View style={styles.vitalStatusRow}>
-        <View style={[styles.vitalDot, { borderColor: statusColor }]} />
-        <Text style={[styles.vitalStatusText, { color: statusColor }]}>
-          {isWarning ? 'Cảnh báo' : 'OK'}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-function CameraActionButton({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity style={styles.cameraActionButton} onPress={onPress}>
-      <Ionicons name={icon} size={16} color={Colors.primary} />
-      <Text style={styles.cameraActionLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function AppointmentPreviewCard({ apt, onPress }: { apt: AppointmentItem; onPress: () => void }) {
-  const date = new Date(apt.appointmentDate);
-  const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  const day = date.getDate();
-  const monthStr = MONTHS[date.getMonth()];
-  return (
-    <TouchableOpacity style={styles.aptCard} onPress={onPress}>
-      <View style={styles.aptDateBox}>
-        <Text style={styles.aptDay}>{day}</Text>
-        <Text style={styles.aptMonth}>{monthStr}</Text>
-      </View>
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={styles.aptDoctor}>{apt.doctor}</Text>
-        <Text style={styles.aptDetail}>
-          {apt.specialty} • {timeStr}
-        </Text>
-      </View>
-      <Ionicons name="chevron-forward" color={Colors.textHint} size={20} />
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: Spacing.xl },
@@ -686,18 +313,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.background,
   },
-  badge: {
-    position: 'absolute',
-    right: 2,
-    top: 2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: { color: 'white', fontSize: Typography.badge.fontSize, fontWeight: '700' },
 
   selector: { marginBottom: 16 },
   elderlyChip: {
@@ -720,94 +335,6 @@ const styles = StyleSheet.create({
   },
   elderlyChipTextActive: { color: 'white' },
 
-  elderlyCard: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.25),
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  elderlyCardTopRow: { flexDirection: 'row', alignItems: 'center' },
-  elderlyAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: hexToRgba(Colors.primary, 0.12),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  elderlyCardLabel: { color: 'rgba(255,255,255,0.7)', fontSize: Typography.bodySmall.fontSize },
-  elderlyCardLabelInline: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
-  elderlyCardName: { color: Colors.textPrimary, fontSize: 18, fontWeight: '700', marginTop: 2 },
-  elderlyCardUpdated: { color: Colors.textSecondary, fontSize: 12, marginTop: 3 },
-  onlinePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.35),
-    backgroundColor: Colors.surface,
-  },
-  onlineDot: { width: 7, height: 7, borderRadius: 3.5 },
-  onlinePillText: { color: Colors.textPrimary, fontSize: 11, fontWeight: '600' },
-  statusDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  conditionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  conditionChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: hexToRgba(Colors.primary, 0.1),
-  },
-  conditionChipText: { color: Colors.primary, fontSize: 12, fontWeight: '600' },
-
-  vitalsRow: { flexDirection: 'row', marginTop: 16 },
-  vitalCard: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.25),
-  },
-  vitalLabel: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.4 },
-  vitalValue: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  vitalStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  vitalDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    backgroundColor: 'transparent',
-  },
-  vitalStatusText: { fontSize: 9 },
-
-  sectionCard: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.25),
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
   weeklyReportCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -830,33 +357,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  medCardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: Spacing.md,
-  },
-  ringText: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
-  medListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  medCheckMark: { fontSize: 15, fontWeight: '700', width: 18 },
-  medListName: {
-    flex: 1,
-    fontSize: Typography.buttonSmall.fontSize,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  medListTime: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
 
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionTitle: {
     fontSize: Typography.sectionTitle.fontSize,
     fontWeight: '700',
     color: Colors.textPrimary,
-  },
-  medFraction: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
-    color: Colors.textSecondary,
   },
   viewAllText: {
     fontSize: Typography.bodySmall.fontSize,
@@ -873,121 +379,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyBoxText: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
-
-  medCard: {
-    paddingVertical: 4,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  medRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  medRowDivider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: hexToRgba(Colors.textHint, 0.2),
-  },
-  medName: {
-    fontSize: Typography.buttonSmall.fontSize,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-  medTime: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  medStatus: { fontSize: Typography.caption.fontSize, fontWeight: '600' },
-
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.error },
-  liveBadgeText: { fontSize: Typography.caption.fontSize, fontWeight: '700', color: Colors.error },
-  cameraCard: {
-    paddingTop: Spacing.md,
-  },
-  cameraPreviewBox: {
-    aspectRatio: 16 / 9,
-    borderRadius: 12,
-    backgroundColor: '#1A1A2E',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cameraActionsRow: { flexDirection: 'row' },
-  cameraActionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.primary, 0.4),
-  },
-  cameraActionLabel: { fontSize: 12, color: Colors.primary },
-
-  activityCard: {
-    width: '100%',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  activityRow: { flexDirection: 'row', alignItems: 'center' },
-  activityIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activityTitle: {
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    fontSize: Typography.buttonSmall.fontSize,
-  },
-  activitySubtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
-  activityTime: { color: Colors.textHint, fontSize: 12 },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: hexToRgba(Colors.textHint, 0.25),
-    marginVertical: 10,
-  },
-
-  aptCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-    padding: 14,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  aptDateBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: hexToRgba(Colors.primary, 0.08),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  aptDay: { fontWeight: '700', fontSize: Typography.cardTitle.fontSize, color: Colors.primary },
-  aptMonth: { fontSize: 10, color: Colors.primary },
-  aptDoctor: {
-    fontWeight: '600',
-    fontSize: Typography.buttonSmall.fontSize,
-    color: Colors.textPrimary,
-  },
-  aptDetail: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 });
