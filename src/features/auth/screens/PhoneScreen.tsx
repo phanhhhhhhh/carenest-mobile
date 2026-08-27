@@ -2,14 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Image,
-  Dimensions,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,52 +16,17 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
-
-const { width } = Dimensions.get('window');
+import { HintGray, White } from './register/theme';
+import {
+  normalizePhone,
+  validateEmail,
+  validateLoginPassword,
+  validatePhone,
+  type FieldErrors,
+} from './phone/validators';
+import { styles } from './phone/styles';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-const Teal = '#12A79C';
-const TealDark = '#0E8A81';
-const LabelGray = '#6B7280';
-const HintGray = '#B4BAC0';
-const BorderGray = '#C9CED4';
-const ErrorRed = '#E53935';
-const White = '#FFFFFF';
-const TextDark = '#37404A';
-
-interface FieldErrors {
-  phone?: string;
-  email?: string;
-  password?: string;
-}
-
-function validatePhone(v: string): string | undefined {
-  if (!v.trim()) return 'Vui lòng nhập số điện thoại';
-  const digits = v.replace(/\D/g, '').replace(/^0+/, '');
-  if (digits.length !== 9 || !/^[35789]/.test(digits)) {
-    return 'Số điện thoại không đúng định dạng (VD: 0768554948)';
-  }
-  return undefined;
-}
-
-function normalizePhone(v: string): string {
-  return '+84' + v.replace(/\D/g, '').replace(/^0+/, '');
-}
-
-function validateEmail(v: string): string | undefined {
-  if (!v.trim()) return 'Vui lòng nhập email';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())) {
-    return 'Email không đúng định dạng (VD: ten@gmail.com)';
-  }
-  return undefined;
-}
-
-function validateLoginPassword(v: string): string | undefined {
-  if (!v) return 'Vui lòng nhập mật khẩu';
-  if (v.length < 8) return 'Mật khẩu phải có ít nhất 8 ký tự';
-  return undefined;
-}
 
 export default function PhoneScreen() {
   const navigation = useNavigation<Nav>();
@@ -370,189 +333,3 @@ export default function PhoneScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  container: {
-    flex: 1,
-    backgroundColor: White,
-  },
-  scroll: {
-    paddingHorizontal: 28,
-    paddingTop: 8,
-    paddingBottom: 40,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Teal,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  mascotWrapper: {
-    alignItems: 'center',
-    marginBottom: 22,
-  },
-  mascot: {
-    width: width * 0.55,
-    height: width * 0.55,
-  },
-
-  roleRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  roleBtn: {
-    flex: 1,
-    borderWidth: 1.2,
-    borderColor: BorderGray,
-    borderRadius: 9999,
-    paddingVertical: 13,
-    alignItems: 'center',
-    backgroundColor: White,
-  },
-  roleBtnActive: {
-    borderColor: Teal,
-    backgroundColor: '#E8F7F5',
-  },
-  roleText: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: LabelGray,
-  },
-  roleTextActive: {
-    color: Teal,
-  },
-
-  fieldBlock: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: LabelGray,
-    marginBottom: 7,
-  },
-  labelError: {
-    color: ErrorRed,
-  },
-  inputPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1.2,
-    borderColor: BorderGray,
-    borderRadius: 9999,
-    paddingHorizontal: 18,
-    height: 54,
-    backgroundColor: White,
-  },
-  inputPillError: {
-    borderColor: ErrorRed,
-  },
-  leftIcon: {
-    marginRight: 8,
-  },
-  phonePrefix: {
-    fontSize: 15.5,
-    fontWeight: '600',
-    color: TextDark,
-  },
-  prefixDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: BorderGray,
-    marginHorizontal: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15.5,
-    color: TextDark,
-    paddingVertical: 0,
-  },
-  fieldError: {
-    fontSize: 13,
-    color: ErrorRed,
-    marginTop: 5,
-    marginLeft: 16,
-  },
-
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginBottom: 18,
-  },
-  forgotText: {
-    fontSize: 14,
-    color: TextDark,
-  },
-
-  loginBtn: {
-    backgroundColor: Teal,
-    borderRadius: 9999,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: TealDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  loginBtnDisabled: {
-    opacity: 0.6,
-  },
-  loginBtnText: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: White,
-  },
-
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 22,
-    marginBottom: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E3E6E9',
-  },
-  dividerText: {
-    fontSize: 13.5,
-    color: LabelGray,
-    marginHorizontal: 10,
-  },
-
-  socialRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 28,
-    marginBottom: 22,
-  },
-  socialBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: '#E3E6E9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: White,
-  },
-
-  registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  registerHint: {
-    fontSize: 14,
-    color: TextDark,
-  },
-  registerLink: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: TextDark,
-  },
-});
