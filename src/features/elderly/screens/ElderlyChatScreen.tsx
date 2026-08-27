@@ -47,6 +47,8 @@ export default function ElderlyChatScreen() {
       if (name) setUserName(name);
     })();
     return () => controller.abort();
+    // Load history once on mount; `loadHistory` is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const welcomeMessage =

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../core/api/client';
@@ -25,7 +25,8 @@ export default function SosAlertOverlay() {
   const [alert, setAlert] = useState<ActiveAlert | null>(null);
   const [acking, setAcking] = useState(false);
   const shownAlertId = useRef<string | null>(null);
-  const linkedElderly = dashData?.linkedElderly ?? [];
+  // Memoized so `poll` (and its interval effect) don't re-create every render.
+  const linkedElderly = useMemo(() => dashData?.linkedElderly ?? [], [dashData]);
 
   // FamilyDashboardScreen normally populates this store, but this overlay
   // can mount before that screen does (or alongside a different first tab).

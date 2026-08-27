@@ -62,12 +62,16 @@ export default function CameraScreen() {
     if (!dashboardData) {
       loadDashboard();
     }
+    // Load the dashboard once on mount if it isn't already populated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (elderlyId) {
       load(elderlyId);
     }
+    // Re-run when the selected elderly changes; `load` is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const showBindDialog = () => {

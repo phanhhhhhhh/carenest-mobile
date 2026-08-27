@@ -76,6 +76,8 @@ export default function FamilyHealthScreen() {
     const controller = new AbortController();
     loadDashboard(controller.signal);
     return () => controller.abort();
+    // Load the dashboard once on mount if it isn't already populated.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -135,6 +137,8 @@ function HealthBody({
     healthStore.getState().load(undefined, controller.signal);
     loadThresholds(elderlyId, controller.signal);
     return () => controller.abort();
+    // Re-run only when elderlyId changes; the store is keyed by it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const deriveStatus = (type: string, metric: HealthMetric): Status => {

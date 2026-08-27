@@ -121,10 +121,14 @@ export default function FamilyAlertsScreen() {
 
   useEffect(() => {
     loadDashboard();
+    // Load the dashboard once on mount; `loadDashboard` is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (elderlyId) load(elderlyId);
+    // Re-run when the selected elderly changes; `load` is a stable store action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const activeCount = events.filter((e) => e.status === 'ACTIVE').length;

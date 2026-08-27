@@ -69,6 +69,8 @@ export default function ElderlyHomeScreen() {
     loadMedications(undefined, controller.signal);
     loadNotifications(controller.signal);
     return () => controller.abort();
+    // Load once on mount; these are all stable store actions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -76,6 +78,8 @@ export default function ElderlyHomeScreen() {
     const controller = new AbortController();
     loadCamera(elderlyId, controller.signal);
     return () => controller.abort();
+    // Re-run when the resolved elderlyId changes; `loadCamera` is stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elderlyId]);
 
   const displayName = profile?.name && profile.name.length > 0 ? profile.name : name;
