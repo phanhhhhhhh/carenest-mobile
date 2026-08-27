@@ -9,9 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
-  Animated,
-  Easing,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,20 +19,10 @@ import { useChatStore } from '../store/chatStore';
 import { getName } from '../../../core/storage/secureStorage';
 import ProactiveReminderCard from '../components/ProactiveReminderCard';
 import type { ChatMessage } from '../../../shared/types';
-
-const QUICK_REPLIES = ['Huyết áp hôm nay?', 'Lịch uống thuốc?', 'Tôi bị đau đầu'];
-
-function greeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Chào buổi sáng';
-  if (hour < 18) return 'Chào buổi chiều';
-  return 'Chào buổi tối';
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-}
+import { QUICK_REPLIES, formatTime, greeting } from './elderlyChat/utils';
+import { ChatBubble } from './elderlyChat/ChatBubble';
+import { TypingIndicator } from './elderlyChat/TypingIndicator';
+import { WelcomeBubble } from './elderlyChat/WelcomeBubble';
 
 export default function ElderlyChatScreen() {
   const navigation = useNavigation();
@@ -95,11 +82,7 @@ export default function ElderlyChatScreen() {
       'Thao tác này sẽ xóa toàn bộ tin nhắn trong cuộc trò chuyện này.',
       [
         { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: () => clearHistory(),
-        },
+        { text: 'Xóa', style: 'destructive', onPress: () => clearHistory() },
       ],
     );
   };
@@ -227,139 +210,8 @@ export default function ElderlyChatScreen() {
   );
 }
 
-function WelcomeBubble({ message }: { message: string }) {
-  return (
-    <View>
-      <View style={styles.mascotWelcomeWrap}>
-        <Image
-          source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
-          style={styles.mascotWelcomeImage}
-          resizeMode="contain"
-        />
-      </View>
-      <View style={styles.bubbleRow}>
-        <View style={styles.aiAvatarSmall}>
-          <Ionicons name="sparkles" size={20} color={Colors.primary} />
-        </View>
-        <View style={{ width: 8 }} />
-        <View style={styles.aiBubble}>
-          <Text style={styles.aiBubbleText}>{message}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function TypingIndicator() {
-  return (
-    <View style={styles.bubbleRow}>
-      <View style={styles.aiAvatarTiny}>
-        <Ionicons name="sparkles" size={16} color={Colors.primary} />
-      </View>
-      <View style={{ width: 8 }} />
-      <View style={styles.typingBubble}>
-        <Dot delay={0} />
-        <View style={{ width: 4 }} />
-        <Dot delay={200} />
-        <View style={{ width: 4 }} />
-        <Dot delay={400} />
-      </View>
-    </View>
-  );
-}
-
-function Dot({ delay }: { delay: number }) {
-  const anim = useRef(new Animated.Value(0.4)).current;
-
-  useEffect(() => {
-    let loop: Animated.CompositeAnimation | undefined;
-    const timeout = setTimeout(() => {
-      loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 300,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0.4,
-            duration: 300,
-            easing: Easing.linear,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      loop.start();
-    }, delay);
-    return () => {
-      clearTimeout(timeout);
-      loop?.stop();
-    };
-  }, [anim, delay]);
-
-  return <Animated.View style={[styles.dot, { opacity: anim }]} />;
-}
-
-function ChatBubble({
-  text,
-  isAi,
-  time,
-  intent,
-}: {
-  text: string;
-  isAi: boolean;
-  time: string;
-  intent?: string;
-}) {
-  const isError = isAi && intent === 'ERROR';
-
-  return (
-    <View style={[styles.bubbleRow, !isAi && styles.bubbleRowUser]}>
-      {isAi && (
-        <>
-          <View style={[styles.aiAvatarTiny, isError && styles.errorAvatarTiny]}>
-            <Ionicons
-              name={isError ? 'alert-circle' : 'sparkles'}
-              size={16}
-              color={isError ? Colors.error : Colors.primary}
-            />
-          </View>
-          <View style={{ width: 8 }} />
-        </>
-      )}
-      <View style={{ flexShrink: 1, alignItems: isAi ? 'flex-start' : 'flex-end' }}>
-        {!!intent && !isError && (
-          <View style={styles.intentBadge}>
-            <Text style={styles.intentText}>{intent}</Text>
-          </View>
-        )}
-        <View
-          style={[
-            styles.messageBubble,
-            isAi ? styles.aiMessageBubble : styles.userMessageBubble,
-            isError && styles.errorMessageBubble,
-          ]}
-        >
-          <Text
-            style={[
-              isAi ? styles.aiBubbleText : styles.userBubbleText,
-              isError && styles.errorBubbleText,
-            ]}
-          >
-            {text}
-          </Text>
-        </View>
-        <Text style={styles.timeText}>{time}</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  mascotWelcomeWrap: { alignItems: 'center', paddingTop: 16, paddingBottom: 4 },
-  mascotWelcomeImage: { width: 150, height: 150 },
   appBar: {
     backgroundColor: Colors.surface,
     paddingHorizontal: 16,
@@ -395,90 +247,6 @@ const styles = StyleSheet.create({
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: 16, flexGrow: 1 },
-
-  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12 },
-  bubbleRowUser: { justifyContent: 'flex-end' },
-  aiAvatarSmall: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(46, 125, 154, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aiAvatarTiny: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(46, 125, 154, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aiBubble: {
-    flexShrink: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
-    borderBottomLeftRadius: 4,
-    backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  aiBubbleText: { color: Colors.textPrimary, fontSize: 14, lineHeight: 22 },
-
-  messageBubble: {
-    maxWidth: 280,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  aiMessageBubble: {
-    backgroundColor: Colors.surface,
-    borderBottomLeftRadius: 4,
-  },
-  userMessageBubble: {
-    backgroundColor: Colors.primary,
-    borderBottomRightRadius: 4,
-  },
-  errorMessageBubble: {
-    backgroundColor: Colors.sosLight,
-    borderWidth: 1,
-    borderColor: Colors.error,
-  },
-  errorAvatarTiny: {
-    backgroundColor: Colors.sosLight,
-  },
-  errorBubbleText: { color: Colors.error },
-  userBubbleText: { color: '#FFFFFF', fontSize: 14, lineHeight: 20 },
-  timeText: { color: Colors.textHint, fontSize: 11, marginTop: 3 },
-
-  intentBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
-    marginBottom: 4,
-  },
-  intentText: { color: Colors.primary, fontSize: 10, fontWeight: '600' },
-
-  typingBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderBottomLeftRadius: 4,
-    backgroundColor: Colors.surface,
-  },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.textHint },
 
   quickRepliesRow: { paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
   quickReplyChip: {
