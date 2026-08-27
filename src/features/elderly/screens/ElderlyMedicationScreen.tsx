@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+} from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,8 +19,6 @@ import { useMedicationStore } from '../store/medicationStore';
 import { snoozeOneOff, cancelSnooze } from '../../medication/services/medicationReminderService';
 import { showErrorToast } from '../../../shared/components/toastStore';
 import type { MedicationItem } from '../../../shared/types';
-
-
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -83,8 +89,13 @@ export default function ElderlyMedicationScreen() {
   // within the 15-minute window — "upcoming" (countdown) before the dose
   // time, "due" once it has arrived — and hide it entirely if it's still far off.
   const msUntilDue = dueNow?.nextDoseTime ? new Date(dueNow.nextDoseTime).getTime() - now : null;
-  const reminderPhase: 'none' | 'upcoming' | 'due' =
-    !dueNow ? 'none' : msUntilDue === null || msUntilDue <= 0 ? 'due' : msUntilDue <= UPCOMING_WINDOW_MS ? 'upcoming' : 'none';
+  const reminderPhase: 'none' | 'upcoming' | 'due' = !dueNow
+    ? 'none'
+    : msUntilDue === null || msUntilDue <= 0
+      ? 'due'
+      : msUntilDue <= UPCOMING_WINDOW_MS
+        ? 'upcoming'
+        : 'none';
   const minutesUntilDue = msUntilDue !== null ? Math.max(1, Math.ceil(msUntilDue / 60_000)) : null;
 
   const sortedItems = [...items].sort((a, b) => {
@@ -121,20 +132,36 @@ export default function ElderlyMedicationScreen() {
                   size={18}
                   color={reminderPhase === 'upcoming' ? Colors.primary : Colors.warning}
                 />
-                <Text style={[styles.dueHeaderText, reminderPhase === 'upcoming' && styles.upcomingHeaderText]}>
+                <Text
+                  style={[
+                    styles.dueHeaderText,
+                    reminderPhase === 'upcoming' && styles.upcomingHeaderText,
+                  ]}
+                >
                   {reminderPhase === 'upcoming' ? 'SẮP ĐẾN GIỜ UỐNG THUỐC' : 'ĐẾN GIỜ UỐNG THUỐC'}
                 </Text>
               </View>
               <View style={{ height: 14 }} />
               <View style={styles.dueRow}>
-                <View style={[styles.dueIconWrap, reminderPhase === 'upcoming' && styles.upcomingIconWrap]}>
-                  <Ionicons name="medkit" size={26} color={reminderPhase === 'upcoming' ? Colors.primary : Colors.warning} />
+                <View
+                  style={[
+                    styles.dueIconWrap,
+                    reminderPhase === 'upcoming' && styles.upcomingIconWrap,
+                  ]}
+                >
+                  <Ionicons
+                    name="medkit"
+                    size={26}
+                    color={reminderPhase === 'upcoming' ? Colors.primary : Colors.warning}
+                  />
                 </View>
                 <View style={{ flex: 1, marginLeft: 14 }}>
                   <Text style={styles.dueMedName}>
                     {dueNow.name} {dueNow.dosage}
                   </Text>
-                  {!!dueNow.instructions && <Text style={styles.dueInstructions}>{dueNow.instructions}</Text>}
+                  {!!dueNow.instructions && (
+                    <Text style={styles.dueInstructions}>{dueNow.instructions}</Text>
+                  )}
                   <Text style={styles.dueTimeLabel}>
                     {reminderPhase === 'upcoming'
                       ? `Còn khoảng ${minutesUntilDue} phút nữa${dueTimeLabel ? ` · ${dueTimeLabel}` : ''}`
@@ -152,7 +179,10 @@ export default function ElderlyMedicationScreen() {
               {reminderPhase === 'due' && (
                 <>
                   <View style={{ height: 10 }} />
-                  <TouchableOpacity style={styles.dueSnoozeBtn} onPress={() => handleSnooze(dueNow)}>
+                  <TouchableOpacity
+                    style={styles.dueSnoozeBtn}
+                    onPress={() => handleSnooze(dueNow)}
+                  >
                     <Text style={styles.dueSnoozeBtnText}>Hoãn 10 phút</Text>
                   </TouchableOpacity>
                 </>
@@ -219,7 +249,12 @@ function MedRow({ item, onPress }: { item: MedicationItem; onPress: () => void }
             size={14}
             color={item.taken ? Colors.success : Colors.warning}
           />
-          <Text style={[styles.medRowStatusText, { color: item.taken ? Colors.success : Colors.warning }]}>
+          <Text
+            style={[
+              styles.medRowStatusText,
+              { color: item.taken ? Colors.success : Colors.warning },
+            ]}
+          >
             {item.taken ? ' Đã uống' : ' Sắp tới'}
           </Text>
         </View>
@@ -272,8 +307,16 @@ const styles = StyleSheet.create({
   upcomingBanner: { borderColor: Colors.primary },
   upcomingIconWrap: { borderColor: 'rgba(46, 125, 154, 0.4)' },
   upcomingTakeBtn: { backgroundColor: Colors.primary },
-  dueMedName: { fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  dueInstructions: { fontSize: Typography.bodySmall.fontSize, color: Colors.textSecondary, marginTop: 2 },
+  dueMedName: {
+    fontSize: Typography.cardTitle.fontSize,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  dueInstructions: {
+    fontSize: Typography.bodySmall.fontSize,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
   dueTimeLabel: { fontSize: 12, color: Colors.textHint, marginTop: 2 },
   dueTakeBtn: {
     width: '100%',
@@ -282,7 +325,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.textPrimary,
     alignItems: 'center',
   },
-  dueTakeBtnText: { color: '#FFFFFF', fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 0.5 },
+  dueTakeBtnText: {
+    color: '#FFFFFF',
+    fontSize: Typography.button.fontSize,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
   dueSnoozeBtn: {
     width: '100%',
     paddingVertical: 16,
@@ -291,9 +339,17 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     alignItems: 'center',
   },
-  dueSnoozeBtnText: { color: Colors.textPrimary, fontSize: Typography.button.fontSize, fontWeight: '600' },
+  dueSnoozeBtnText: {
+    color: Colors.textPrimary,
+    fontSize: Typography.button.fontSize,
+    fontWeight: '600',
+  },
 
-  sectionTitle: { fontSize: Typography.sectionTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  sectionTitle: {
+    fontSize: Typography.sectionTitle.fontSize,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
 
   emptyCard: {
     paddingVertical: 40,
@@ -314,7 +370,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.border,
   },
-  medRowTime: { fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  medRowTime: {
+    fontSize: Typography.cardTitle.fontSize,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
   medRowName: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
   medRowStatusRow: { flexDirection: 'row', alignItems: 'center' },
   medRowStatusText: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600' },

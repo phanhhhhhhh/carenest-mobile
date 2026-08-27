@@ -91,7 +91,11 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
       let payload: FamilyDashboardResponseParsed;
       try {
         const dashResp = await api.get(`/dashboard/family/${userId}`, { signal });
-        const parsed = safeParseOne(FamilyDashboardResponseSchema, dashResp.data, 'FamilyDashboard');
+        const parsed = safeParseOne(
+          FamilyDashboardResponseSchema,
+          dashResp.data,
+          'FamilyDashboard',
+        );
         if (!parsed) {
           set({ isLoading: false, error: 'Định dạng phản hồi dashboard không hợp lệ' });
           return;
@@ -178,7 +182,6 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
   },
 }));
 
-
 interface FamilyLinkState {
   isLoading: boolean;
   error: string | null;
@@ -231,7 +234,6 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
   },
 }));
 
-
 export interface LinkedFamilyMember {
   id: string;
   name: string;
@@ -268,7 +270,9 @@ export const useLinkedFamilyStore = create<LinkedFamilyState>((set) => ({
         return;
       }
       const resp = await api.get(`/elderly/${userId}/family`);
-      const members = safeParseList(FamilyLinkSchema, resp.data, 'LinkedFamilyList').map(toLinkedFamilyMember);
+      const members = safeParseList(FamilyLinkSchema, resp.data, 'LinkedFamilyList').map(
+        toLinkedFamilyMember,
+      );
       set({ isLoading: false, members });
     } catch (e) {
       set({ isLoading: false, error: `Lỗi khi tải danh sách: ${getErrorMessage(e)}` });

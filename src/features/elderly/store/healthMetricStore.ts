@@ -5,8 +5,6 @@ import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 import { HealthMetricSchema, safeParseList } from '../../../shared/schemas';
 import { showErrorToast } from '../../../shared/components/toastStore';
 
-
-
 interface HealthMetricState {
   isLoading: boolean;
   error: string | null;
@@ -60,7 +58,9 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
           set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
           return;
         }
-        const list = safeParseList(HealthMetricSchema, resp.data, 'HealthMetricList').map(toHealthMetric);
+        const list = safeParseList(HealthMetricSchema, resp.data, 'HealthMetricList').map(
+          toHealthMetric,
+        );
         const latest: Record<string, HealthMetric> = {};
         for (const m of list) {
           const existing = latest[m.type];
@@ -102,7 +102,6 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
     },
   }));
 }
-
 
 export function useHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
   let hook = stores.get(elderlyId);

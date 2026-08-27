@@ -21,8 +21,6 @@ import { Colors } from '../../../core/theme/colors';
 import { useElderlyProfileStore } from '../store/elderlyStore';
 import { getName, saveName } from '../../../core/storage/secureStorage';
 
-
-
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -204,12 +202,7 @@ export default function ElderlyEditProfileScreen() {
 
           <View style={styles.row}>
             <View style={[styles.inputWrap, { flex: 1 }]}>
-              <Ionicons
-                name="fitness"
-                size={18}
-                color={Colors.warning}
-                style={styles.inputIcon}
-              />
+              <Ionicons name="fitness" size={18} color={Colors.warning} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Cân nặng (kg)"
@@ -221,12 +214,7 @@ export default function ElderlyEditProfileScreen() {
             </View>
             <View style={{ width: 12 }} />
             <View style={[styles.inputWrap, { flex: 1 }]}>
-              <Ionicons
-                name="resize"
-                size={18}
-                color={Colors.secondary}
-                style={styles.inputIcon}
-              />
+              <Ionicons name="resize" size={18} color={Colors.secondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Chiều cao (cm)"

@@ -131,8 +131,14 @@ export default function AppNavigator() {
               <Stack.Screen name="FamilyShell" component={FamilyShell} />
             )}
             <Stack.Screen name="ElderlyEditProfile" component={ElderlyEditProfileScreen} />
-            <Stack.Screen name="ElderlyEmergencyContacts" component={ElderlyEmergencyContactsScreen} />
-            <Stack.Screen name="ElderlyMedicationHistory" component={ElderlyMedicationHistoryScreen} />
+            <Stack.Screen
+              name="ElderlyEmergencyContacts"
+              component={ElderlyEmergencyContactsScreen}
+            />
+            <Stack.Screen
+              name="ElderlyMedicationHistory"
+              component={ElderlyMedicationHistoryScreen}
+            />
             <Stack.Screen name="ElderlyAppointments" component={ElderlyAppointmentsScreen} />
             <Stack.Screen name="HealthReport" component={HealthReportScreen} />
             <Stack.Screen name="ElderlyChat" component={ElderlyChatScreen} />

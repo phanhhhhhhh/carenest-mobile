@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-
   Keyboard,
   Modal,
   Image,
@@ -78,7 +77,7 @@ export default function OtpVerifyScreen() {
         inputs.current[0]?.focus();
       }
     },
-    [target, verifyOtpAction]
+    [target, verifyOtpAction],
   );
 
   // Popup "Xác thực thành công" hiển thị ngắn rồi tự chuyển màn tiếp theo
@@ -126,7 +125,7 @@ export default function OtpVerifyScreen() {
         verifyOtp(newCode.join(''));
       }
     },
-    [code, verifyOtp]
+    [code, verifyOtp],
   );
 
   const handleKeyPress = useCallback(
@@ -140,7 +139,7 @@ export default function OtpVerifyScreen() {
         inputs.current[index - 1]?.focus();
       }
     },
-    [code]
+    [code],
   );
 
   const handleResend = useCallback(async () => {
@@ -199,9 +198,7 @@ export default function OtpVerifyScreen() {
           disabled={loading || countdown > 0}
         >
           {countdown > 0 ? (
-            <Text style={styles.resendCountdown}>
-              Gửi lại mã sau {formatCountdown(countdown)}
-            </Text>
+            <Text style={styles.resendCountdown}>Gửi lại mã sau {formatCountdown(countdown)}</Text>
           ) : (
             <Text style={styles.resendActive}>Gửi lại mã</Text>
           )}
@@ -216,9 +213,7 @@ export default function OtpVerifyScreen() {
               <Ionicons name="checkmark" size={38} color={White} />
             </View>
             <Text style={styles.popupTitle}>Xác thực thành công!</Text>
-            <Text style={styles.popupSubtitle}>
-              Bạn đã xác thực số điện thoại{'\n'}thành công.
-            </Text>
+            <Text style={styles.popupSubtitle}>Bạn đã xác thực số điện thoại{'\n'}thành công.</Text>
             <Image
               source={require('../../../../assets/brand/logo_wordmark.jpg')}
               style={styles.popupLogo}

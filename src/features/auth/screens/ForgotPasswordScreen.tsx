@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -49,10 +48,7 @@ export default function ForgotPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backText}>← Quay lại</Text>
           </TouchableOpacity>
@@ -69,8 +65,8 @@ export default function ForgotPasswordScreen() {
             <>
               <Text style={styles.title}>Quên mật khẩu</Text>
               <Text style={styles.subtitle}>
-                Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một liên kết để
-                đặt lại mật khẩu.
+                Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một liên kết để đặt lại mật
+                khẩu.
               </Text>
 
               <View style={styles.inputWrap}>
@@ -110,10 +106,25 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.xxl, flexGrow: 1 },
   backBtn: { marginBottom: Spacing.xxl },
   backText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
-  title: { fontSize: Typography.h1.fontSize, fontWeight: '800', color: Colors.textPrimary, marginBottom: Spacing.sm },
-  subtitle: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, marginBottom: Spacing.xxl, lineHeight: 20 },
+  title: {
+    fontSize: Typography.h1.fontSize,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    fontSize: Typography.buttonSmall.fontSize,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xxl,
+    lineHeight: 20,
+  },
   inputWrap: { marginBottom: Spacing.xxl },
-  label: { fontSize: Typography.bodySmall.fontSize, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
+  label: {
+    fontSize: Typography.bodySmall.fontSize,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    marginBottom: 6,
+  },
   input: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.md,
@@ -123,11 +134,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  btn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, padding: Spacing.lg, alignItems: 'center' },
+  btn: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    alignItems: 'center',
+  },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: 'white', fontSize: Typography.button.fontSize, fontWeight: '700' },
   successWrap: { alignItems: 'center', marginTop: 60 },
   successIcon: { fontSize: 56, marginBottom: 20 },
   successTitle: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center' },
-  successSub: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  successSub: {
+    fontSize: Typography.buttonSmall.fontSize,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
 });

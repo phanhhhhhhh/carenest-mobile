@@ -16,8 +16,6 @@ import { Colors } from '../../../core/theme/colors';
 import { useAppointmentStore } from '../../family/store/appointmentStore';
 import type { AppointmentItem } from '../../../shared/types';
 
-
-
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Sắp tới',
   COMPLETED: 'Đã hoàn thành',
@@ -32,7 +30,20 @@ const STATUS_COLORS: Record<string, string> = {
   RESCHEDULED: '#F9A825',
 };
 
-const MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
+const MONTHS = [
+  'Th1',
+  'Th2',
+  'Th3',
+  'Th4',
+  'Th5',
+  'Th6',
+  'Th7',
+  'Th8',
+  'Th9',
+  'Th10',
+  'Th11',
+  'Th12',
+];
 const WEEK_DAYS = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 
 function formatDate(iso: string): string {
@@ -47,7 +58,9 @@ function formatTime(iso: string): string {
 }
 
 function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  const a = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
   return `${hex}${a}`;
 }
 
@@ -65,12 +78,7 @@ function AppointmentCard({ item }: { item: AppointmentItem }) {
   const label = STATUS_LABELS[item.status] ?? item.status;
 
   return (
-    <View
-      style={[
-        styles.card,
-        { borderColor: withAlpha(color, 0.2) },
-      ]}
-    >
+    <View style={[styles.card, { borderColor: withAlpha(color, 0.2) }]}>
       <View style={styles.cardHeaderRow}>
         <View style={[styles.iconWrap, { backgroundColor: withAlpha(color, 0.1) }]}>
           <Ionicons name="calendar-outline" color={color} size={22} />
@@ -261,7 +269,13 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  iconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   cardHeaderText: { flex: 1, marginLeft: 12 },
   doctorName: { fontWeight: '700', fontSize: 16, color: Colors.textPrimary },
   specialty: { color: Colors.textSecondary, fontSize: 13, marginTop: 2 },

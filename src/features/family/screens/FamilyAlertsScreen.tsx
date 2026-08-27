@@ -18,7 +18,6 @@ import { useFamilyDashboardStore } from '../store/familyStore';
 import { useEmergencyEventStore } from '../store/emergencyEventStore';
 import type { EmergencyEvent } from '../../../shared/types';
 
-
 function eventTitle(type: string): string {
   switch (type) {
     case 'SOS':
@@ -117,7 +116,7 @@ export default function FamilyAlertsScreen() {
 
   const elderlyId =
     dashboardData && dashboardData.linkedElderly.length > 0
-      ? dashboardData.linkedElderly[dashboardData.selectedIndex]?.elderlyId ?? null
+      ? (dashboardData.linkedElderly[dashboardData.selectedIndex]?.elderlyId ?? null)
       : null;
 
   useEffect(() => {
@@ -154,7 +153,7 @@ export default function FamilyAlertsScreen() {
   if (!elderlyId) {
     return (
       <SafeAreaView style={styles.container}>
-        {renderHeader(0, false, () => { })}
+        {renderHeader(0, false, () => {})}
         <View style={styles.center}>
           <Image
             source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
@@ -193,11 +192,7 @@ export default function FamilyAlertsScreen() {
           )}
         </View>
         {count > 0 && (
-          <TouchableOpacity
-            onPress={onMarkAllRead}
-            disabled={marking}
-            style={styles.markAllButton}
-          >
+          <TouchableOpacity onPress={onMarkAllRead} disabled={marking} style={styles.markAllButton}>
             {marking ? (
               <ActivityIndicator size="small" color={Colors.primary} />
             ) : (
@@ -251,7 +246,14 @@ export default function FamilyAlertsScreen() {
     return (
       <ScrollView
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[Colors.primary]} tintColor={Colors.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
       >
         {active.length > 0 && (
           <>
@@ -297,7 +299,12 @@ export default function FamilyAlertsScreen() {
         </View>
         <View style={styles.cardContent}>
           <View style={styles.cardTitleRow}>
-            <Text style={[styles.cardTitle, { color: isActive ? Colors.textPrimary : Colors.textSecondary }]}>
+            <Text
+              style={[
+                styles.cardTitle,
+                { color: isActive ? Colors.textPrimary : Colors.textSecondary },
+              ]}
+            >
               {title}
             </Text>
             {isActive ? (
@@ -313,10 +320,19 @@ export default function FamilyAlertsScreen() {
             <View
               style={[
                 styles.statusBadge,
-                { backgroundColor: isActive ? hexToRgba(Colors.error, 0.08) : hexToRgba(Colors.success, 0.08) },
+                {
+                  backgroundColor: isActive
+                    ? hexToRgba(Colors.error, 0.08)
+                    : hexToRgba(Colors.success, 0.08),
+                },
               ]}
             >
-              <Text style={[styles.statusBadgeText, { color: isActive ? Colors.error : Colors.success }]}>
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  { color: isActive ? Colors.error : Colors.success },
+                ]}
+              >
                 {isActive ? 'ĐANG HOẠT ĐỘNG' : 'ĐÃ XỬ LÝ'}
               </Text>
             </View>
@@ -357,7 +373,12 @@ const styles = StyleSheet.create({
   backButton: { marginRight: 12 },
   headerTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  badge: { backgroundColor: Colors.error, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 },
+  badge: {
+    backgroundColor: Colors.error,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   markAllButton: { paddingHorizontal: 8, paddingVertical: 4, minWidth: 16, alignItems: 'center' },
   markAllText: { color: Colors.primary, fontSize: 13, fontWeight: '500' },
@@ -391,7 +412,12 @@ const styles = StyleSheet.create({
 
   list: { padding: 16 },
   sectionTitleActive: { fontSize: 14, fontWeight: '600', color: Colors.error, marginBottom: 10 },
-  sectionTitleResolved: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary, marginBottom: 10 },
+  sectionTitleResolved: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    marginBottom: 10,
+  },
   cardWrapper: { marginBottom: 10 },
   card: {
     borderRadius: 14,
@@ -404,16 +430,35 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
   },
-  iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
   cardContent: { flex: 1 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   cardTitle: { fontWeight: '600', fontSize: 15, flexShrink: 1 },
   activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.error },
   cardDesc: { color: Colors.textSecondary, fontSize: 13, lineHeight: 18, marginTop: 4 },
-  cardFooterRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, flexWrap: 'wrap' },
+  cardFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    flexWrap: 'wrap',
+  },
   cardTime: { color: Colors.textHint, fontSize: 12, marginRight: 8 },
   statusBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
   statusBadgeText: { fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
-  ackButton: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 'auto', paddingHorizontal: 8 },
+  ackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: 'auto',
+    paddingHorizontal: 8,
+  },
   ackText: { color: Colors.success, fontSize: 12, fontWeight: '500' },
 });

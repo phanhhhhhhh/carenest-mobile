@@ -6,8 +6,6 @@ import type { EmergencyEvent } from '../../../shared/types';
 import { EmergencyEventSchema, safeParseList } from '../../../shared/schemas';
 import { showErrorToast } from '../../../shared/components/toastStore';
 
-
-
 function toEmergencyEvent(e: ReturnType<typeof EmergencyEventSchema.parse>): EmergencyEvent {
   return {
     id: e.id,
@@ -18,7 +16,6 @@ function toEmergencyEvent(e: ReturnType<typeof EmergencyEventSchema.parse>): Eme
     createdAt: e.triggeredAt ?? e.createdAt ?? new Date().toISOString(),
   };
 }
-
 
 interface EmergencyEventState {
   isLoading: boolean;
@@ -47,7 +44,9 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
         set({ isLoading: false, error: 'Phản hồi không hợp lệ từ máy chủ' });
         return;
       }
-      const list = safeParseList(EmergencyEventSchema, resp.data, 'EmergencyEventList').map(toEmergencyEvent);
+      const list = safeParseList(EmergencyEventSchema, resp.data, 'EmergencyEventList').map(
+        toEmergencyEvent,
+      );
       set({ isLoading: false, events: list });
     } catch (e) {
       if (isCancelled(e)) return;

@@ -10,7 +10,6 @@ import {
   Modal,
   TextInput,
   ScrollView,
-
   KeyboardAvoidingView,
   Image,
   Platform,
@@ -23,8 +22,6 @@ import { showErrorToast } from '../../../shared/components/toastStore';
 import { useAppointmentStore } from '../store/appointmentStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import type { AppointmentItem } from '../../../shared/types';
-
-
 
 const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Sắp tới',
@@ -40,7 +37,20 @@ const STATUS_COLORS: Record<string, string> = {
   RESCHEDULED: Colors.warning,
 };
 
-const MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
+const MONTHS = [
+  'Th1',
+  'Th2',
+  'Th3',
+  'Th4',
+  'Th5',
+  'Th6',
+  'Th7',
+  'Th8',
+  'Th9',
+  'Th10',
+  'Th11',
+  'Th12',
+];
 const WEEK_DAYS = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
 
 function statusColor(status: string): string {
@@ -61,7 +71,9 @@ function formatTime(dt: Date): string {
 }
 
 function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  const a = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
   return `${hex}${a}`;
 }
 
@@ -206,23 +218,19 @@ export default function FamilyAppointmentsScreen() {
   };
 
   const confirmDelete = (item: AppointmentItem) => {
-    Alert.alert(
-      'Xóa lịch hẹn',
-      `Bạn có chắc chắn muốn xóa lịch hẹn với "${item.doctor}"?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
-            const ok = await remove(item.id);
-            if (!ok) {
-              showErrorToast(useAppointmentStore.getState().error ?? 'Không thể xóa lịch hẹn');
-            }
-          },
+    Alert.alert('Xóa lịch hẹn', `Bạn có chắc chắn muốn xóa lịch hẹn với "${item.doctor}"?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: async () => {
+          const ok = await remove(item.id);
+          if (!ok) {
+            showErrorToast(useAppointmentStore.getState().error ?? 'Không thể xóa lịch hẹn');
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const renderList = (items: AppointmentItem[], showActions: boolean) => {
@@ -231,7 +239,11 @@ export default function FamilyAppointmentsScreen() {
         <ScrollView
           contentContainerStyle={styles.emptyState}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary]}
+            />
           }
         >
           <Image
@@ -259,13 +271,17 @@ export default function FamilyAppointmentsScreen() {
             onComplete={async () => {
               const ok = await updateStatus(item.id, 'COMPLETED');
               if (!ok) {
-                showErrorToast(useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn');
+                showErrorToast(
+                  useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn',
+                );
               }
             }}
             onCancel={async () => {
               const ok = await updateStatus(item.id, 'CANCELLED');
               if (!ok) {
-                showErrorToast(useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn');
+                showErrorToast(
+                  useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn',
+                );
               }
             }}
           />
@@ -320,19 +336,17 @@ export default function FamilyAppointmentsScreen() {
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <Modal
-        visible={sheetVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={closeSheet}
-      >
+      <Modal visible={sheetVisible} transparent animationType="slide" onRequestClose={closeSheet}>
         <KeyboardAvoidingView
           style={styles.sheetOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <TouchableOpacity style={styles.sheetBackdrop} activeOpacity={1} onPress={closeSheet} />
           <View style={styles.sheet}>
-            <ScrollView contentContainerStyle={styles.sheetContent} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              contentContainerStyle={styles.sheetContent}
+              keyboardShouldPersistTaps="handled"
+            >
               <View style={styles.sheetHandle} />
               <View style={{ height: 16 }} />
               <Text style={styles.sheetTitle}>
@@ -340,11 +354,29 @@ export default function FamilyAppointmentsScreen() {
               </Text>
               <View style={{ height: 20 }} />
 
-              <FormField icon="person" placeholder="Tên bác sĩ" hint="VD: BS. Smith" value={doctor} onChangeText={setDoctor} />
+              <FormField
+                icon="person"
+                placeholder="Tên bác sĩ"
+                hint="VD: BS. Smith"
+                value={doctor}
+                onChangeText={setDoctor}
+              />
               <View style={{ height: 14 }} />
-              <FormField icon="medical" placeholder="Chuyên khoa" hint="VD: Tim mạch" value={specialty} onChangeText={setSpecialty} />
+              <FormField
+                icon="medical"
+                placeholder="Chuyên khoa"
+                hint="VD: Tim mạch"
+                value={specialty}
+                onChangeText={setSpecialty}
+              />
               <View style={{ height: 14 }} />
-              <FormField icon="location" placeholder="Địa điểm (tùy chọn)" hint="VD: Bệnh viện Thành phố" value={location} onChangeText={setLocation} />
+              <FormField
+                icon="location"
+                placeholder="Địa điểm (tùy chọn)"
+                hint="VD: Bệnh viện Thành phố"
+                value={location}
+                onChangeText={setLocation}
+              />
               <View style={{ height: 14 }} />
 
               <TouchableOpacity style={styles.pickerRow} onPress={() => setDatePickerVisible(true)}>
@@ -416,7 +448,6 @@ export default function FamilyAppointmentsScreen() {
   );
 }
 
-
 function FormField({
   icon,
   placeholder,
@@ -450,7 +481,6 @@ function FormField({
     </View>
   );
 }
-
 
 function AppointmentCard({
   item,
@@ -512,14 +542,34 @@ function AppointmentCard({
           <View style={{ height: 10 }} />
           <View style={styles.actionsRow}>
             <View style={styles.actionsGroup}>
-              <ActionChip icon="create-outline" label="Sửa" color={Colors.primary} onPress={onEdit} />
+              <ActionChip
+                icon="create-outline"
+                label="Sửa"
+                color={Colors.primary}
+                onPress={onEdit}
+              />
               <View style={{ width: 8 }} />
-              <ActionChip icon="trash-outline" label="Xóa" color={Colors.error} onPress={onDelete} />
+              <ActionChip
+                icon="trash-outline"
+                label="Xóa"
+                color={Colors.error}
+                onPress={onDelete}
+              />
             </View>
             <View style={styles.actionsGroup}>
-              <ActionChip icon="checkmark-circle-outline" label="Hoàn thành" color={Colors.success} onPress={onComplete} />
+              <ActionChip
+                icon="checkmark-circle-outline"
+                label="Hoàn thành"
+                color={Colors.success}
+                onPress={onComplete}
+              />
               <View style={{ width: 8 }} />
-              <ActionChip icon="close-circle-outline" label="Hủy" color={Colors.warning} onPress={onCancel} />
+              <ActionChip
+                icon="close-circle-outline"
+                label="Hủy"
+                color={Colors.warning}
+                onPress={onCancel}
+              />
             </View>
           </View>
         </>
@@ -550,7 +600,10 @@ function ActionChip({
 }) {
   return (
     <TouchableOpacity
-      style={[styles.actionChip, { backgroundColor: withAlpha(color, 0.06), borderColor: withAlpha(color, 0.2) }]}
+      style={[
+        styles.actionChip,
+        { backgroundColor: withAlpha(color, 0.06), borderColor: withAlpha(color, 0.2) },
+      ]}
       onPress={onPress}
     >
       <Ionicons name={icon} size={14} color={color} />
@@ -558,7 +611,6 @@ function ActionChip({
     </TouchableOpacity>
   );
 }
-
 
 function DatePickerModal({
   visible,
@@ -627,7 +679,6 @@ function DatePickerModal({
   );
 }
 
-
 function TimePickerModal({
   visible,
   hour,
@@ -660,8 +711,18 @@ function TimePickerModal({
         <TouchableOpacity activeOpacity={1} style={styles.pickerModalSheet}>
           <Text style={styles.modalTitle}>Chọn giờ</Text>
           <View style={styles.pickerColumns}>
-            <PickerColumn data={hours} selected={h} onSelect={setH} renderLabel={(v) => String(v).padStart(2, '0')} />
-            <PickerColumn data={minutes} selected={m} onSelect={setM} renderLabel={(v) => String(v).padStart(2, '0')} />
+            <PickerColumn
+              data={hours}
+              selected={h}
+              onSelect={setH}
+              renderLabel={(v) => String(v).padStart(2, '0')}
+            />
+            <PickerColumn
+              data={minutes}
+              selected={m}
+              onSelect={setM}
+              renderLabel={(v) => String(v).padStart(2, '0')}
+            />
           </View>
           <View style={{ height: 12 }} />
           <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => onConfirm(h, m)}>
@@ -757,7 +818,13 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  iconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   cardHeaderText: { flex: 1, marginLeft: 12 },
   doctorName: { fontWeight: '700', fontSize: 16, color: Colors.textPrimary },
   specialty: { color: Colors.textSecondary, fontSize: 13, marginTop: 2 },

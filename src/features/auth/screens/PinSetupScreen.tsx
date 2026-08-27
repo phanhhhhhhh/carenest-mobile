@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -85,7 +84,13 @@ export default function PinSetupScreen() {
     } else {
       if (finalPin !== firstPin) {
         Alert.alert('Lỗi', 'Mã PIN không khớp. Vui lòng thử lại.', [
-          { text: 'OK', onPress: () => { clearPin(); setStep('setup'); } },
+          {
+            text: 'OK',
+            onPress: () => {
+              clearPin();
+              setStep('setup');
+            },
+          },
         ]);
         return;
       }
@@ -136,7 +141,9 @@ export default function PinSetupScreen() {
             {pin.map((digit, i) => (
               <TextInput
                 key={i}
-                ref={(el) => { inputRefs.current[i] = el; }}
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
                 style={[styles.pinBox, digit ? styles.pinBoxFilled : null]}
                 value={digit}
                 onChangeText={(t) => handleChange(t, i)}
@@ -158,11 +165,7 @@ export default function PinSetupScreen() {
             activeOpacity={0.8}
           >
             <Text style={styles.btnText}>
-              {loading
-                ? 'Đang thiết lập...'
-                : step === 'setup'
-                  ? 'Tiếp tục'
-                  : 'Xác nhận mã PIN'}
+              {loading ? 'Đang thiết lập...' : step === 'setup' ? 'Tiếp tục' : 'Xác nhận mã PIN'}
             </Text>
           </TouchableOpacity>
 
@@ -207,7 +210,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 
-  
   stepRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -233,7 +235,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
 
-  
   title: {
     fontSize: 26,
     fontWeight: '800',
@@ -248,7 +249,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  
   pinRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -272,7 +272,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F7FA',
   },
 
-  
   btn: {
     backgroundColor: Colors.primary,
     borderRadius: 14,
@@ -288,7 +287,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  
   resetBtn: {
     marginTop: 18,
     alignItems: 'center',

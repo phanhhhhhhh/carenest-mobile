@@ -22,18 +22,28 @@ import {
   type PlanData,
 } from '../store/paymentStore';
 
-
-
 function formatDate(dt: Date): string {
   const months = [
-    'Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6',
-    'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12',
+    'Th1',
+    'Th2',
+    'Th3',
+    'Th4',
+    'Th5',
+    'Th6',
+    'Th7',
+    'Th8',
+    'Th9',
+    'Th10',
+    'Th11',
+    'Th12',
   ];
   return `${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
 }
 
 function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  const a = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
   return `${hex}${a}`;
 }
 
@@ -221,7 +231,6 @@ export default function PremiumPlansScreen() {
   );
 }
 
-
 function CurrentPlanBanner({
   isPremium,
   currentPlanLabel,
@@ -245,11 +254,7 @@ function CurrentPlanBanner({
       {}
       <View style={[styles.currentPlanOverlay, { backgroundColor: colors[1] }]} />
       <View style={styles.currentPlanRow}>
-        <Ionicons
-          name={isPremium ? 'ribbon' : 'shield-checkmark'}
-          color="#FFFFFF"
-          size={28}
-        />
+        <Ionicons name={isPremium ? 'ribbon' : 'shield-checkmark'} color="#FFFFFF" size={28} />
         <View style={{ width: 12 }} />
         <View>
           <Text style={styles.currentPlanLabel}>Gói hiện tại</Text>
@@ -269,7 +274,6 @@ function CurrentPlanBanner({
   );
 }
 
-
 function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boolean }) {
   const isRecommended = plan.id === 'PREMIUM_YEARLY';
   const priceLabel = getPriceLabel(plan);
@@ -282,14 +286,23 @@ function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boolean }) {
         isCurrent
           ? { borderWidth: 2, borderColor: Colors.primary }
           : isRecommended
-          ? { borderWidth: 1.5, borderColor: Colors.warning }
-          : null,
+            ? { borderWidth: 1.5, borderColor: Colors.warning }
+            : null,
       ]}
     >
       <View style={styles.planCardHeaderRow}>
         <Text style={styles.planName}>{plan.name}</Text>
         {isRecommended && (
-          <View style={[styles.badge, { backgroundColor: withAlpha(Colors.warning, 0.1), borderWidth: 1, borderColor: withAlpha(Colors.warning, 0.3) }]}>
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: withAlpha(Colors.warning, 0.1),
+                borderWidth: 1,
+                borderColor: withAlpha(Colors.warning, 0.3),
+              },
+            ]}
+          >
             <Text style={[styles.badgeText, { color: Colors.warning }]}>Đáng giá nhất</Text>
           </View>
         )}
@@ -321,7 +334,6 @@ function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boolean }) {
   );
 }
 
-
 function MethodCard({
   icon,
   label,
@@ -339,7 +351,10 @@ function MethodCard({
     <TouchableOpacity
       style={[
         styles.methodCard,
-        { borderColor: selected ? Colors.primary : withAlpha(Colors.textHint, 0.2), borderWidth: selected ? 2 : 1 },
+        {
+          borderColor: selected ? Colors.primary : withAlpha(Colors.textHint, 0.2),
+          borderWidth: selected ? 2 : 1,
+        },
       ]}
       onPress={onPress}
     >
@@ -370,7 +385,12 @@ const styles = StyleSheet.create({
   appBarTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
 
   errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
-  retryBtn: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
   retryBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
 
   scroll: { padding: 16 },

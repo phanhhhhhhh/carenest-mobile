@@ -9,9 +9,6 @@ import {
   safeParseList,
 } from '../../../shared/schemas';
 
-
-
-
 export interface CameraDeviceData {
   id: number;
   label: string;
@@ -72,7 +69,9 @@ export interface CameraSnapshotData {
   createdAt: string;
 }
 
-function toCameraSnapshotData(s: ReturnType<typeof CameraSnapshotSchema.parse>): CameraSnapshotData {
+function toCameraSnapshotData(
+  s: ReturnType<typeof CameraSnapshotSchema.parse>,
+): CameraSnapshotData {
   return {
     id: s.id,
     imageUrl: s.imageUrl ?? '',
@@ -81,7 +80,6 @@ function toCameraSnapshotData(s: ReturnType<typeof CameraSnapshotSchema.parse>):
     createdAt: s.createdAt ?? new Date().toISOString(),
   };
 }
-
 
 interface CameraState {
   isLoading: boolean;
@@ -101,7 +99,11 @@ interface CameraState {
   startVoiceCall: (deviceId: number) => Promise<boolean>;
   stopVoiceCall: (deviceId: number) => Promise<boolean>;
   setPrivacyMode: (elderlyId: string, deviceId: number, enabled: boolean) => Promise<boolean>;
-  toggleMotionDetection: (elderlyId: string, deviceId: number, enabled: boolean) => Promise<boolean>;
+  toggleMotionDetection: (
+    elderlyId: string,
+    deviceId: number,
+    enabled: boolean,
+  ) => Promise<boolean>;
   controlPtz: (deviceId: number, direction: string) => Promise<boolean>;
   clearLiveStream: () => void;
   refresh: (elderlyId: string) => void;
@@ -180,7 +182,8 @@ export const useCameraStore = create<CameraState>((set, get) => ({
     try {
       const resp = await api.get(`/cameras/${deviceId}/live`);
       const data = resp.data as Record<string, unknown>;
-      const url = (data.streamUrl as string) || (data.rtspUrl as string) || (data.hlsUrl as string) || '';
+      const url =
+        (data.streamUrl as string) || (data.rtspUrl as string) || (data.hlsUrl as string) || '';
       set({ isProcessing: false, liveStreamUrl: url });
       return url.length > 0 ? url : null;
     } catch (e) {
@@ -254,7 +257,10 @@ export const useCameraStore = create<CameraState>((set, get) => ({
   controlPtz: async (deviceId, direction) => {
     try {
       const resp = await api.post(`/cameras/${deviceId}/ptz`, { direction });
-      const status = resp.data && typeof resp.data === 'object' ? (resp.data as Record<string, unknown>).status : null;
+      const status =
+        resp.data && typeof resp.data === 'object'
+          ? (resp.data as Record<string, unknown>).status
+          : null;
       return status === 'OK';
     } catch (e) {
       console.warn('[cameraStore.controlPtz]', e);

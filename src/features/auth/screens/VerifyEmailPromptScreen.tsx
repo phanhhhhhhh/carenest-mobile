@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -40,8 +40,14 @@ export default function VerifyEmailPromptScreen() {
         <Text style={styles.title}>Xác minh Email của bạn</Text>
         <Text style={styles.subtitle}>Một liên kết xác minh đã được gửi đến</Text>
         <Text style={styles.email}>{email}</Text>
-        <Text style={styles.hint}>Nhấn vào liên kết trong email để kích hoạt tài khoản của bạn</Text>
-        <TouchableOpacity style={[styles.btn, resending && styles.btnDisabled]} onPress={handleResend} disabled={resending}>
+        <Text style={styles.hint}>
+          Nhấn vào liên kết trong email để kích hoạt tài khoản của bạn
+        </Text>
+        <TouchableOpacity
+          style={[styles.btn, resending && styles.btnDisabled]}
+          onPress={handleResend}
+          disabled={resending}
+        >
           <Text style={styles.btnText}>{resending ? 'Đang gửi...' : 'Gửi lại Email'}</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Phone')}>
@@ -55,12 +61,32 @@ export default function VerifyEmailPromptScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  iconWrap: { width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.primary + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
+  iconWrap: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
   title: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
   subtitle: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 8 },
   email: { fontSize: 16, fontWeight: '700', color: Colors.primary, marginTop: 8 },
-  hint: { fontSize: 13, color: Colors.textHint, textAlign: 'center', marginTop: 12, marginBottom: 32 },
-  btn: { backgroundColor: Colors.primary, borderRadius: 14, padding: 16, width: '100%', alignItems: 'center' },
+  hint: {
+    fontSize: 13,
+    color: Colors.textHint,
+    textAlign: 'center',
+    marginTop: 12,
+    marginBottom: 32,
+  },
+  btn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 14,
+    padding: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: 'white', fontSize: 16, fontWeight: '700' },
   backLink: { fontSize: 14, color: Colors.textSecondary, marginTop: 20 },

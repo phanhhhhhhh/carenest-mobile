@@ -16,7 +16,6 @@ import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { getUserId } from '../../../core/storage/secureStorage';
 import { useCameraStore, type CameraDeviceData } from '../../family/store/cameraStore';
 
-
 export default function ElderlyCameraScreen() {
   const [elderlyId, setElderlyId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,7 +96,11 @@ export default function ElderlyCameraScreen() {
         <ScrollView
           contentContainerStyle={styles.scroll}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary]}
+            />
           }
         >
           <View style={styles.statusCard}>
@@ -114,17 +117,22 @@ export default function ElderlyCameraScreen() {
               {anyActive ? 'Camera đang bật' : 'Camera đang tắt'}
             </Text>
             <Text style={styles.statusSubtitle}>
-              {anyActive
-                ? 'Con của bố/mẹ đang có thể nhìn thấy'
-                : 'Không ai có thể xem lúc này'}
+              {anyActive ? 'Con của bố/mẹ đang có thể nhìn thấy' : 'Không ai có thể xem lúc này'}
             </Text>
           </View>
 
           <View style={{ height: 16 }} />
 
-          <TouchableOpacity style={styles.mainToggleButton} onPress={() => togglePrivacyForAll(!allPrivate)}>
+          <TouchableOpacity
+            style={styles.mainToggleButton}
+            onPress={() => togglePrivacyForAll(!allPrivate)}
+          >
             <View style={styles.mainToggleIconBox}>
-              <Ionicons name={allPrivate ? 'videocam' : 'power'} size={18} color={Colors.textPrimary} />
+              <Ionicons
+                name={allPrivate ? 'videocam' : 'power'}
+                size={18}
+                color={Colors.textPrimary}
+              />
             </View>
             <Text style={styles.mainToggleText}>
               {allPrivate ? 'BẬT LẠI CAMERA' : 'TẮT CAMERA TẠM THỜI'}
@@ -189,7 +197,12 @@ const styles = StyleSheet.create({
   },
   statusIconDot: { width: 14, height: 14, borderRadius: 7 },
   statusTitle: { fontSize: Typography.h2.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  statusSubtitle: { marginTop: 4, fontSize: Typography.bodySmall.fontSize, color: Colors.textSecondary, textAlign: 'center' },
+  statusSubtitle: {
+    marginTop: 4,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
   mainToggleButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -211,8 +224,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-  mainToggleText: { color: Colors.textPrimary, fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 0.5 },
-  hintText: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize, textAlign: 'center' },
+  mainToggleText: {
+    color: Colors.textPrimary,
+    fontSize: Typography.button.fontSize,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  hintText: {
+    color: Colors.textSecondary,
+    fontSize: Typography.bodySmall.fontSize,
+    textAlign: 'center',
+  },
   roomListCard: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,

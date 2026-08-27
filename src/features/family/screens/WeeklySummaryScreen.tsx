@@ -15,9 +15,11 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { showErrorToast } from '../../../shared/components/toastStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
-import { useWeeklySummaryStore, getWeekLabel, type WeeklySummaryData } from '../store/weeklySummaryStore';
-
-
+import {
+  useWeeklySummaryStore,
+  getWeekLabel,
+  type WeeklySummaryData,
+} from '../store/weeklySummaryStore';
 
 export default function WeeklySummaryScreen() {
   const navigation = useNavigation();
@@ -163,16 +165,17 @@ function renderEmpty(onGenerate: () => void) {
   );
 }
 
-function renderList(
-  summaries: WeeklySummaryData[],
-  refreshing: boolean,
-  onRefresh: () => void,
-) {
+function renderList(summaries: WeeklySummaryData[], refreshing: boolean, onRefresh: () => void) {
   return (
     <ScrollView
       contentContainerStyle={styles.list}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} tintColor={Colors.primary} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[Colors.primary]}
+          tintColor={Colors.primary}
+        />
       }
     >
       {summaries.map((s, i) => (
@@ -262,7 +265,9 @@ function StatMini({
 }
 
 function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255).toString(16).padStart(2, '0');
+  const a = Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0');
   return `${hex}${a}`;
 }
 

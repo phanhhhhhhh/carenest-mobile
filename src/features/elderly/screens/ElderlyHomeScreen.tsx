@@ -20,11 +20,12 @@ import { useElderlyProfileStore } from '../store/elderlyStore';
 import { useMedicationStore } from '../store/medicationStore';
 import { useCameraStore } from '../../family/store/cameraStore';
 import { useEmergencyEventStore } from '../../family/store/emergencyEventStore';
-import { useNotificationStore, selectUnreadCount } from '../../notifications/store/notificationStore';
+import {
+  useNotificationStore,
+  selectUnreadCount,
+} from '../../notifications/store/notificationStore';
 import { showErrorToast } from '../../../shared/components/toastStore';
 import type { MedicationItem } from '../../../shared/types';
-
-
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -215,7 +216,11 @@ export default function ElderlyHomeScreen() {
             </>
           ) : (
             <>
-              <TouchableOpacity onPress={onSosPressed} activeOpacity={0.85} style={styles.emergencyButton}>
+              <TouchableOpacity
+                onPress={onSosPressed}
+                activeOpacity={0.85}
+                style={styles.emergencyButton}
+              >
                 <View style={styles.emergencyIconBox}>
                   <Ionicons name="alert" size={20} color="#FFFFFF" />
                 </View>
@@ -241,10 +246,19 @@ export default function ElderlyHomeScreen() {
         {elderlyId && (
           <>
             <View style={styles.cameraCard}>
-              <View style={[styles.cameraDot, { backgroundColor: isCameraOn ? Colors.success : Colors.textHint }]} />
+              <View
+                style={[
+                  styles.cameraDot,
+                  { backgroundColor: isCameraOn ? Colors.success : Colors.textHint },
+                ]}
+              />
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.cameraTitle}>{isCameraOn ? 'Camera đang bật' : 'Camera chưa bật'}</Text>
-                <Text style={styles.cameraSubtitle}>{isCameraOn ? 'Con đang xem được' : 'Chưa có ai theo dõi'}</Text>
+                <Text style={styles.cameraTitle}>
+                  {isCameraOn ? 'Camera đang bật' : 'Camera chưa bật'}
+                </Text>
+                <Text style={styles.cameraSubtitle}>
+                  {isCameraOn ? 'Con đang xem được' : 'Chưa có ai theo dõi'}
+                </Text>
               </View>
               <Ionicons name="videocam-outline" size={24} color={Colors.textPrimary} />
             </View>
@@ -267,7 +281,9 @@ export default function ElderlyHomeScreen() {
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
           {medItems.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' })}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' })}
+            >
               <Text style={styles.viewAll}>Xem tất cả</Text>
             </TouchableOpacity>
           )}
@@ -318,10 +334,18 @@ function NextMedicationCard({
         <View
           style={[
             styles.nextMedIcon,
-            { backgroundColor: medication.taken ? 'rgba(67, 160, 71, 0.1)' : 'rgba(255, 167, 38, 0.1)' },
+            {
+              backgroundColor: medication.taken
+                ? 'rgba(67, 160, 71, 0.1)'
+                : 'rgba(255, 167, 38, 0.1)',
+            },
           ]}
         >
-          <Ionicons name="medkit" size={26} color={medication.taken ? Colors.success : Colors.warning} />
+          <Ionicons
+            name="medkit"
+            size={26}
+            color={medication.taken ? Colors.success : Colors.warning}
+          />
         </View>
         <View style={{ flex: 1, marginLeft: 14 }}>
           <Text style={styles.nextMedLabel}>
@@ -339,7 +363,10 @@ function NextMedicationCard({
       <TouchableOpacity
         disabled={medication.taken}
         onPress={() => onToggleTaken(medication.id)}
-        style={[styles.takeBtnFull, { backgroundColor: medication.taken ? Colors.textHint : Colors.textPrimary }]}
+        style={[
+          styles.takeBtnFull,
+          { backgroundColor: medication.taken ? Colors.textHint : Colors.textPrimary },
+        ]}
       >
         <Text style={styles.takeBtnFullText}>{medication.taken ? 'Đã uống ✓' : '✓ ĐÃ UỐNG'}</Text>
       </TouchableOpacity>
@@ -385,8 +412,17 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
   greetingMascot: { width: 56, height: 56, marginRight: 10 },
   greeting: { fontSize: Typography.buttonSmall.fontSize, color: Colors.textSecondary },
-  greetingName: { marginTop: 2, fontSize: Typography.h2.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  dateText: { marginTop: 6, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },
+  greetingName: {
+    marginTop: 2,
+    fontSize: Typography.h2.fontSize,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  dateText: {
+    marginTop: 6,
+    color: Colors.textSecondary,
+    fontSize: Typography.buttonSmall.fontSize,
+  },
   badge: {
     position: 'absolute',
     right: -2,
@@ -421,8 +457,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-  emergencyButtonText: { color: '#FFFFFF', fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 1 },
-  sosSendingText: { fontSize: Typography.button.fontSize, fontWeight: '600', color: Colors.sosPrimary },
+  emergencyButtonText: {
+    color: '#FFFFFF',
+    fontSize: Typography.button.fontSize,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  sosSendingText: {
+    fontSize: Typography.button.fontSize,
+    fontWeight: '600',
+    color: Colors.sosPrimary,
+  },
   sosRing: {
     width: 160,
     height: 160,
@@ -436,7 +481,11 @@ const styles = StyleSheet.create({
   sosCountdownNumber: { fontSize: 48, fontWeight: '700', color: Colors.sosPrimary },
   cancelBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8 },
   cancelText: { fontSize: Typography.button.fontSize, color: Colors.textSecondary },
-  sosHint: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize, textAlign: 'center' },
+  sosHint: {
+    color: Colors.textSecondary,
+    fontSize: Typography.bodySmall.fontSize,
+    textAlign: 'center',
+  },
 
   nextMedCard: {
     padding: Spacing.lg,
@@ -445,17 +494,37 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   nextMedTopRow: { flexDirection: 'row', alignItems: 'center' },
-  nextMedIcon: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  nextMedIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   nextMedLabel: { fontSize: 12, color: Colors.textSecondary },
-  nextMedName: { marginTop: 2, fontSize: Typography.cardTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  nextMedInstructions: { marginTop: 2, fontSize: Typography.bodySmall.fontSize, color: Colors.textSecondary },
+  nextMedName: {
+    marginTop: 2,
+    fontSize: Typography.cardTitle.fontSize,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  nextMedInstructions: {
+    marginTop: 2,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Colors.textSecondary,
+  },
   takeBtnFull: {
     width: '100%',
     paddingVertical: 16,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
   },
-  takeBtnFullText: { color: '#FFFFFF', fontSize: Typography.button.fontSize, fontWeight: '700', letterSpacing: 0.5 },
+  takeBtnFullText: {
+    color: '#FFFFFF',
+    fontSize: Typography.button.fontSize,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
 
   cameraCard: {
     flexDirection: 'row',
@@ -467,7 +536,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   cameraDot: { width: 12, height: 12, borderRadius: 6 },
-  cameraTitle: { fontSize: Typography.buttonSmall.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  cameraTitle: {
+    fontSize: Typography.buttonSmall.fontSize,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
   cameraSubtitle: { fontSize: 12, color: Colors.textSecondary },
 
   callCard: {
@@ -481,9 +554,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.border,
   },
-  callCardText: { color: Colors.textPrimary, fontSize: Typography.buttonSmall.fontSize, fontWeight: '700' },
+  callCardText: {
+    color: Colors.textPrimary,
+    fontSize: Typography.buttonSmall.fontSize,
+    fontWeight: '700',
+  },
 
-  sectionTitle: { fontSize: Typography.sectionTitle.fontSize, fontWeight: '700', color: Colors.textPrimary },
+  sectionTitle: {
+    fontSize: Typography.sectionTitle.fontSize,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   viewAll: { color: Colors.primary, fontSize: Typography.buttonSmall.fontSize, fontWeight: '600' },
 
@@ -495,7 +576,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center',
   },
-  emptyText: { marginTop: 8, color: Colors.textSecondary, fontSize: Typography.buttonSmall.fontSize },
+  emptyText: {
+    marginTop: 8,
+    color: Colors.textSecondary,
+    fontSize: Typography.buttonSmall.fontSize,
+  },
 
   medTile: {
     flexDirection: 'row',
@@ -517,14 +602,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   medTileName: { fontWeight: '600', color: Colors.textPrimary, fontSize: Typography.body.fontSize },
-  medTileDosage: { marginTop: 2, color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
+  medTileDosage: {
+    marginTop: 2,
+    color: Colors.textSecondary,
+    fontSize: Typography.bodySmall.fontSize,
+  },
   medTileTimeBadge: {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: 'rgba(46, 125, 154, 0.08)',
   },
-  medTileTimeText: { color: Colors.primary, fontSize: Typography.bodySmall.fontSize, fontWeight: '600' },
+  medTileTimeText: {
+    color: Colors.primary,
+    fontSize: Typography.bodySmall.fontSize,
+    fontWeight: '600',
+  },
   medTileCheck: {
     width: 24,
     height: 24,

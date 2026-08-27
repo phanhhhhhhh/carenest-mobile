@@ -3,9 +3,7 @@ import type { RootStackParamList } from './AppNavigator';
 import type { ElderlyTabParamList } from './ElderlyShell';
 import type { FamilyTabParamList } from './FamilyShell';
 
-
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
-
 
 export function navigateToTab(shell: 'ElderlyShell', tab: keyof ElderlyTabParamList): void;
 export function navigateToTab(shell: 'FamilyShell', tab: keyof FamilyTabParamList): void;

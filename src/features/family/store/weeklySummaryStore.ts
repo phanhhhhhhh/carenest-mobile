@@ -3,9 +3,6 @@ import api from '../../../core/api/client';
 import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
 import { WeeklySummarySchema, safeParseOne } from '../../../shared/schemas';
 
-
-
-
 export interface WeeklySummaryData {
   id: string;
   title: string;
@@ -49,7 +46,6 @@ export function getWeekLabel(s: WeeklySummaryData): string {
   const end = new Date(s.weekEnd);
   return `${start.getDate()}/${start.getMonth() + 1} – ${end.getDate()}/${end.getMonth() + 1}`;
 }
-
 
 interface WeeklySummaryState {
   isLoading: boolean;

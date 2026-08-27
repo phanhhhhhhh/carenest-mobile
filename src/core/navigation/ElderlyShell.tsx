@@ -49,10 +49,26 @@ export default function ElderlyShell() {
         },
       })}
     >
-      <Tab.Screen name="ElderlyHome" component={ElderlyHomeScreen} options={{ tabBarLabel: 'Trang chủ' }} />
-      <Tab.Screen name="ElderlyMeds" component={ElderlyMedicationScreen} options={{ tabBarLabel: 'Thuốc' }} />
-      <Tab.Screen name="ElderlyCamera" component={ElderlyCameraScreen} options={{ tabBarLabel: 'Camera' }} />
-      <Tab.Screen name="ElderlyProfile" component={ElderlyProfileScreen} options={{ tabBarLabel: 'Hồ sơ' }} />
+      <Tab.Screen
+        name="ElderlyHome"
+        component={ElderlyHomeScreen}
+        options={{ tabBarLabel: 'Trang chủ' }}
+      />
+      <Tab.Screen
+        name="ElderlyMeds"
+        component={ElderlyMedicationScreen}
+        options={{ tabBarLabel: 'Thuốc' }}
+      />
+      <Tab.Screen
+        name="ElderlyCamera"
+        component={ElderlyCameraScreen}
+        options={{ tabBarLabel: 'Camera' }}
+      />
+      <Tab.Screen
+        name="ElderlyProfile"
+        component={ElderlyProfileScreen}
+        options={{ tabBarLabel: 'Hồ sơ' }}
+      />
     </Tab.Navigator>
   );
 }

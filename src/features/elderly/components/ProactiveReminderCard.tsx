@@ -5,7 +5,6 @@ import { Colors } from '../../../core/theme/colors';
 import { useMedicationStore } from '../store/medicationStore';
 import { showErrorToast } from '../../../shared/components/toastStore';
 
-
 export default function ProactiveReminderCard() {
   const items = useMedicationStore((s) => s.items);
   const toggleTaken = useMedicationStore((s) => s.toggleTaken);
@@ -30,9 +29,7 @@ export default function ProactiveReminderCard() {
           <Text style={styles.medName}>
             {next.name} — {next.dosage}
           </Text>
-          {!!next.instructions && (
-            <Text style={styles.instructions}>{next.instructions}</Text>
-          )}
+          {!!next.instructions && <Text style={styles.instructions}>{next.instructions}</Text>}
         </View>
         <TouchableOpacity
           style={styles.takeButton}

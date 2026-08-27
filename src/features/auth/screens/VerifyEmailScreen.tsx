@@ -59,7 +59,10 @@ export default function VerifyEmailScreen() {
               <Ionicons name="close-circle" size={50} color={Colors.error} />
             </View>
             <Text style={styles.errorText}>{errorMsg}</Text>
-            <TouchableOpacity style={[styles.btn, { backgroundColor: Colors.success }]} onPress={() => navigation.navigate('Phone')}>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: Colors.success }]}
+              onPress={() => navigation.navigate('Phone')}
+            >
               <Text style={styles.btnText}>Đến trang đăng nhập</Text>
             </TouchableOpacity>
           </>
@@ -73,11 +76,33 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   loadingText: { fontSize: 16, color: Colors.textSecondary, marginTop: 20 },
-  iconSuccess: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.success + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  iconError: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.error + '20', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  iconSuccess: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.success + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  iconError: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.error + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   title: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
   subtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 8, marginBottom: 32 },
   errorText: { fontSize: 14, color: Colors.error, textAlign: 'center', marginBottom: 32 },
-  btn: { backgroundColor: Colors.success, borderRadius: 14, padding: 16, width: '100%', alignItems: 'center' },
+  btn: {
+    backgroundColor: Colors.success,
+    borderRadius: 14,
+    padding: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
   btnText: { color: 'white', fontSize: 16, fontWeight: '700' },
 });

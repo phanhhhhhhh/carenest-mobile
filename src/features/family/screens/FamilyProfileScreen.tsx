@@ -20,8 +20,6 @@ import * as storage from '../../../core/storage/secureStorage';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore, useFamilyLinkStore } from '../store/familyStore';
 
-
-
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FamilyProfileScreen() {
@@ -34,11 +32,15 @@ export default function FamilyProfileScreen() {
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
   const elderlyName =
-    dashboardData && dashboardData.linkedElderly.length > 0 && dashboardData.selectedIndex < dashboardData.linkedElderly.length
+    dashboardData &&
+    dashboardData.linkedElderly.length > 0 &&
+    dashboardData.selectedIndex < dashboardData.linkedElderly.length
       ? dashboardData.linkedElderly[dashboardData.selectedIndex].elderlyName
       : null;
   const healthConditions =
-    dashboardData && dashboardData.linkedElderly.length > 0 && dashboardData.selectedIndex < dashboardData.linkedElderly.length
+    dashboardData &&
+    dashboardData.linkedElderly.length > 0 &&
+    dashboardData.selectedIndex < dashboardData.linkedElderly.length
       ? dashboardData.linkedElderly[dashboardData.selectedIndex].healthConditions
       : [];
   const totalMeds = dashboardData?.totalMedications ?? 0;
@@ -103,7 +105,11 @@ export default function FamilyProfileScreen() {
 
         {elderlyName != null && (
           <>
-            <ConnectedElderly name={elderlyName} conditions={healthConditions} totalMeds={totalMeds} />
+            <ConnectedElderly
+              name={elderlyName}
+              conditions={healthConditions}
+              totalMeds={totalMeds}
+            />
             <View style={{ height: 20 }} />
           </>
         )}
@@ -113,18 +119,12 @@ export default function FamilyProfileScreen() {
 
         <Settings
           onEditProfile={() =>
-            Alert.alert(
-              'Sắp ra mắt',
-              'Tính năng chỉnh sửa hồ sơ đang được phát triển.',
-            )
+            Alert.alert('Sắp ra mắt', 'Tính năng chỉnh sửa hồ sơ đang được phát triển.')
           }
           onNotificationSettings={() => navigation.navigate('NotificationSettings')}
           onUpgradePremium={() => navigation.navigate('PremiumPlans')}
           onHelpSupport={() =>
-            Alert.alert(
-              'Sắp ra mắt',
-              'Tính năng trợ giúp & hỗ trợ đang được phát triển.',
-            )
+            Alert.alert('Sắp ra mắt', 'Tính năng trợ giúp & hỗ trợ đang được phát triển.')
           }
           onLogout={logout}
         />
@@ -176,7 +176,9 @@ export default function FamilyProfileScreen() {
                 onPress={handleSendRequest}
                 disabled={linkIsLoading}
               >
-                <Text style={styles.dialogSendText}>{linkIsLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}</Text>
+                <Text style={styles.dialogSendText}>
+                  {linkIsLoading ? 'Đang gửi...' : 'Gửi yêu cầu'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -263,7 +265,9 @@ function AddFamilyCard({ onPress }: { onPress: () => void }) {
       </View>
       <View style={styles.addFamilyText}>
         <Text style={styles.addFamilyTitle}>Thêm thành viên gia đình</Text>
-        <Text style={styles.addFamilySubtitle}>Kết nối với tài khoản người cao tuổi để theo dõi sức khỏe</Text>
+        <Text style={styles.addFamilySubtitle}>
+          Kết nối với tài khoản người cao tuổi để theo dõi sức khỏe
+        </Text>
       </View>
       <Ionicons name="chevron-forward" size={22} color={Colors.primary} />
     </TouchableOpacity>
@@ -290,7 +294,13 @@ function Settings({
     bg: string;
     onPress: () => void;
   }[] = [
-    { icon: 'create-outline', label: 'Chỉnh sửa hồ sơ', color: Colors.primary, bg: `${Colors.primary}14`, onPress: onEditProfile },
+    {
+      icon: 'create-outline',
+      label: 'Chỉnh sửa hồ sơ',
+      color: Colors.primary,
+      bg: `${Colors.primary}14`,
+      onPress: onEditProfile,
+    },
     {
       icon: 'notifications-outline',
       label: 'Cài đặt thông báo',
@@ -449,7 +459,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  settingLabel: { flex: 1, marginLeft: 14, fontSize: 15, fontWeight: '500', color: Colors.textPrimary },
+  settingLabel: {
+    flex: 1,
+    marginLeft: 14,
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.textPrimary,
+  },
   settingDivider: { height: 1, backgroundColor: Colors.divider, marginLeft: 72 },
   modalOverlay: {
     flex: 1,

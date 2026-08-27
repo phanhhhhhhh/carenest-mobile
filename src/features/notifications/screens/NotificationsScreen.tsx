@@ -134,10 +134,7 @@ function NotificationCard({
       <View style={styles.cardContent}>
         <View style={styles.cardTitleRow}>
           <Text
-            style={[
-              styles.notifTitle,
-              { fontWeight: notification.read ? '500' : '700' },
-            ]}
+            style={[styles.notifTitle, { fontWeight: notification.read ? '500' : '700' }]}
             numberOfLines={1}
           >
             {notification.title}
@@ -176,7 +173,9 @@ export default function NotificationsScreen() {
   const handleFamilyLinkRequest = (notification: NotificationData) => {
     const linkId = Number(notification.data?.linkId);
     const familyName = String(notification.data?.familyName ?? 'Người thân');
-    const relationship = notification.data?.relationship ? String(notification.data.relationship) : null;
+    const relationship = notification.data?.relationship
+      ? String(notification.data.relationship)
+      : null;
     if (!linkId || Number.isNaN(linkId)) return;
 
     Alert.alert(
@@ -262,7 +261,11 @@ export default function NotificationsScreen() {
           <NotificationCard notification={item} onPress={() => handleCardPress(item)} />
         )}
         refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={() => load()} tintColor={Colors.primary} />
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => load()}
+            tintColor={Colors.primary}
+          />
         }
       />
     );
@@ -287,7 +290,11 @@ export default function NotificationsScreen() {
           )}
         </View>
         {unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll} style={styles.markAllButton}>
+          <TouchableOpacity
+            onPress={handleMarkAllRead}
+            disabled={markingAll}
+            style={styles.markAllButton}
+          >
             {markingAll ? (
               <ActivityIndicator size="small" color={Colors.primary} />
             ) : (

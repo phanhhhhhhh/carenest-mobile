@@ -7,7 +7,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-
   Modal,
   Image,
 } from 'react-native';
@@ -17,8 +16,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { useElderlyProfileStore } from '../store/elderlyStore';
-
-
 
 interface Contact {
   id?: string;

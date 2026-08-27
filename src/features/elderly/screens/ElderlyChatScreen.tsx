@@ -23,8 +23,6 @@ import { getName } from '../../../core/storage/secureStorage';
 import ProactiveReminderCard from '../components/ProactiveReminderCard';
 import type { ChatMessage } from '../../../shared/types';
 
-
-
 const QUICK_REPLIES = ['Huyết áp hôm nay?', 'Lịch uống thuốc?', 'Tôi bị đau đầu'];
 
 function greeting(): string {
@@ -165,7 +163,9 @@ export default function ElderlyChatScreen() {
             keyExtractor={(item, index) => `${item.messageId}-${index}`}
             contentContainerStyle={styles.list}
             onContentSizeChange={scrollToBottom}
-            ListHeaderComponent={messages.length === 0 ? <WelcomeBubble message={welcomeMessage} /> : null}
+            ListHeaderComponent={
+              messages.length === 0 ? <WelcomeBubble message={welcomeMessage} /> : null
+            }
             ListFooterComponent={isSending ? <TypingIndicator /> : null}
             renderItem={({ item }) => (
               <ChatBubble
