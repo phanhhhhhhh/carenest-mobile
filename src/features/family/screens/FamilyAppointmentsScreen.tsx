@@ -7,12 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Modal,
-  TextInput,
   ScrollView,
-  KeyboardAvoidingView,
   Image,
-  Platform,
 } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,75 +18,16 @@ import { showErrorToast } from '../../../shared/components/toastStore';
 import { useAppointmentStore } from '../store/appointmentStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import type { AppointmentItem } from '../../../shared/types';
-
-const STATUS_LABELS: Record<string, string> = {
-  SCHEDULED: 'Sắp tới',
-  COMPLETED: 'Đã hoàn thành',
-  CANCELLED: 'Đã hủy',
-  RESCHEDULED: 'Đã dời lịch',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: Colors.primary,
-  COMPLETED: Colors.success,
-  CANCELLED: Colors.error,
-  RESCHEDULED: Colors.warning,
-};
-
-const MONTHS = [
-  'Th1',
-  'Th2',
-  'Th3',
-  'Th4',
-  'Th5',
-  'Th6',
-  'Th7',
-  'Th8',
-  'Th9',
-  'Th10',
-  'Th11',
-  'Th12',
-];
-const WEEK_DAYS = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
-
-function statusColor(status: string): string {
-  return STATUS_COLORS[status] ?? Colors.textHint;
-}
-
-function statusLabel(status: string): string {
-  return STATUS_LABELS[status] ?? status;
-}
-
-function formatDate(dt: Date): string {
-  const weekdayIdx = (dt.getDay() + 6) % 7;
-  return `${WEEK_DAYS[weekdayIdx]}, ${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
-}
-
-function formatTime(dt: Date): string {
-  return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-}
-
-function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `${hex}${a}`;
-}
-
-function daysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
-}
+import { AppointmentCard } from './familyAppointments/AppointmentCard';
+import { AppointmentFormSheet } from './familyAppointments/AppointmentFormSheet';
 
 export default function FamilyAppointmentsScreen() {
   const isLoading = useAppointmentStore((s) => s.isLoading);
   const error = useAppointmentStore((s) => s.error);
   const appointments = useAppointmentStore((s) => s.appointments);
-  const isSaving = useAppointmentStore((s) => s.isSaving);
   const load = useAppointmentStore((s) => s.load);
   const upcoming = useAppointmentStore((s) => s.upcoming);
   const past = useAppointmentStore((s) => s.past);
-  const create = useAppointmentStore((s) => s.create);
-  const update = useAppointmentStore((s) => s.update);
   const remove = useAppointmentStore((s) => s.delete);
   const updateStatus = useAppointmentStore((s) => s.updateStatus);
 
@@ -108,16 +45,8 @@ export default function FamilyAppointmentsScreen() {
 
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editing, setEditing] = useState<AppointmentItem | null>(null);
-  const [doctor, setDoctor] = useState('');
-  const [specialty, setSpecialty] = useState('');
-  const [location, setLocation] = useState('');
-  const [notes, setNotes] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedHour, setSelectedHour] = useState(0);
-  const [selectedMinute, setSelectedMinute] = useState(0);
-
-  const [datePickerVisible, setDatePickerVisible] = useState(false);
-  const [timePickerVisible, setTimePickerVisible] = useState(false);
+  // Bumped on every open so AppointmentFormSheet remounts with fresh state.
+  const [sheetNonce, setSheetNonce] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -135,8 +64,6 @@ export default function FamilyAppointmentsScreen() {
   const upcomingList = upcoming();
   const pastList = past();
 
-  const canSubmit = doctor.trim().length > 0 && specialty.trim().length > 0;
-
   const onRefresh = async () => {
     setRefreshing(true);
     await load(currentElderlyId ?? undefined);
@@ -148,73 +75,15 @@ export default function FamilyAppointmentsScreen() {
   };
 
   const openAddSheet = () => {
-    const defaultDate = new Date();
-    defaultDate.setDate(defaultDate.getDate() + 1);
     setEditing(null);
-    setDoctor('');
-    setSpecialty('');
-    setLocation('');
-    setNotes('');
-    setSelectedDate(defaultDate);
-    setSelectedHour(defaultDate.getHours());
-    setSelectedMinute(defaultDate.getMinutes());
+    setSheetNonce((n) => n + 1);
     setSheetVisible(true);
   };
 
   const openEditSheet = (item: AppointmentItem) => {
-    const dt = new Date(item.appointmentDate);
     setEditing(item);
-    setDoctor(item.doctor);
-    setSpecialty(item.specialty);
-    setLocation(item.location ?? '');
-    setNotes(item.notes ?? '');
-    setSelectedDate(dt);
-    setSelectedHour(dt.getHours());
-    setSelectedMinute(dt.getMinutes());
+    setSheetNonce((n) => n + 1);
     setSheetVisible(true);
-  };
-
-  const closeSheet = () => setSheetVisible(false);
-
-  const submitSheet = async () => {
-    if (doctor.trim().length === 0 || specialty.trim().length === 0) {
-      return;
-    }
-    const combined = new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth(),
-      selectedDate.getDate(),
-      selectedHour,
-      selectedMinute,
-    );
-    const trimmedLocation = location.trim();
-    const trimmedNotes = notes.trim();
-
-    let ok: boolean;
-    if (editing) {
-      ok = await update({
-        appointmentId: editing.id,
-        doctor: doctor.trim(),
-        specialty: specialty.trim(),
-        location: trimmedLocation.length > 0 ? trimmedLocation : undefined,
-        appointmentDate: combined,
-        notes: trimmedNotes.length > 0 ? trimmedNotes : undefined,
-      });
-    } else {
-      ok = await create({
-        doctor: doctor.trim(),
-        specialty: specialty.trim(),
-        location: trimmedLocation.length > 0 ? trimmedLocation : undefined,
-        appointmentDate: combined,
-        notes: trimmedNotes.length > 0 ? trimmedNotes : undefined,
-        elderlyId: currentElderlyId ?? undefined,
-      });
-    }
-    if (ok) {
-      closeSheet();
-    } else {
-      showErrorToast(useAppointmentStore.getState().error ?? 'Không thể lưu lịch hẹn');
-    }
   };
 
   const confirmDelete = (item: AppointmentItem) => {
@@ -231,6 +100,15 @@ export default function FamilyAppointmentsScreen() {
         },
       },
     ]);
+  };
+
+  const handleStatus = async (id: string, status: string) => {
+    const ok = await updateStatus(id, status);
+    if (!ok) {
+      showErrorToast(
+        useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn',
+      );
+    }
   };
 
   const renderList = (items: AppointmentItem[], showActions: boolean) => {
@@ -268,22 +146,8 @@ export default function FamilyAppointmentsScreen() {
             showActions={showActions}
             onEdit={() => openEditSheet(item)}
             onDelete={() => confirmDelete(item)}
-            onComplete={async () => {
-              const ok = await updateStatus(item.id, 'COMPLETED');
-              if (!ok) {
-                showErrorToast(
-                  useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn',
-                );
-              }
-            }}
-            onCancel={async () => {
-              const ok = await updateStatus(item.id, 'CANCELLED');
-              if (!ok) {
-                showErrorToast(
-                  useAppointmentStore.getState().error ?? 'Không thể cập nhật trạng thái lịch hẹn',
-                );
-              }
-            }}
+            onComplete={() => handleStatus(item.id, 'COMPLETED')}
+            onCancel={() => handleStatus(item.id, 'CANCELLED')}
           />
         )}
         refreshControl={
@@ -336,432 +200,14 @@ export default function FamilyAppointmentsScreen() {
         <Ionicons name="add" size={28} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <Modal visible={sheetVisible} transparent animationType="slide" onRequestClose={closeSheet}>
-        <KeyboardAvoidingView
-          style={styles.sheetOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <TouchableOpacity style={styles.sheetBackdrop} activeOpacity={1} onPress={closeSheet} />
-          <View style={styles.sheet}>
-            <ScrollView
-              contentContainerStyle={styles.sheetContent}
-              keyboardShouldPersistTaps="handled"
-            >
-              <View style={styles.sheetHandle} />
-              <View style={{ height: 16 }} />
-              <Text style={styles.sheetTitle}>
-                {editing ? 'Chỉnh sửa lịch hẹn' : 'Thêm lịch hẹn mới'}
-              </Text>
-              <View style={{ height: 20 }} />
-
-              <FormField
-                icon="person"
-                placeholder="Tên bác sĩ"
-                hint="VD: BS. Smith"
-                value={doctor}
-                onChangeText={setDoctor}
-              />
-              <View style={{ height: 14 }} />
-              <FormField
-                icon="medical"
-                placeholder="Chuyên khoa"
-                hint="VD: Tim mạch"
-                value={specialty}
-                onChangeText={setSpecialty}
-              />
-              <View style={{ height: 14 }} />
-              <FormField
-                icon="location"
-                placeholder="Địa điểm (tùy chọn)"
-                hint="VD: Bệnh viện Thành phố"
-                value={location}
-                onChangeText={setLocation}
-              />
-              <View style={{ height: 14 }} />
-
-              <TouchableOpacity style={styles.pickerRow} onPress={() => setDatePickerVisible(true)}>
-                <Ionicons name="calendar" size={20} color={Colors.primary} />
-                <Text style={styles.pickerRowText}>{formatDate(selectedDate)}</Text>
-                <View style={{ flex: 1 }} />
-                <Ionicons name="chevron-forward" size={18} color={Colors.textHint} />
-              </TouchableOpacity>
-              <View style={{ height: 14 }} />
-
-              <TouchableOpacity style={styles.pickerRow} onPress={() => setTimePickerVisible(true)}>
-                <Ionicons name="time" size={20} color={Colors.primary} />
-                <Text style={styles.pickerRowText}>
-                  {formatTime(new Date(2024, 0, 1, selectedHour, selectedMinute))}
-                </Text>
-                <View style={{ flex: 1 }} />
-                <Ionicons name="chevron-forward" size={18} color={Colors.textHint} />
-              </TouchableOpacity>
-              <View style={{ height: 14 }} />
-
-              <FormField
-                icon="document-text"
-                placeholder="Ghi chú (tùy chọn)"
-                hint="VD: Nhịn ăn trước khi xét nghiệm"
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-              />
-              <View style={{ height: 20 }} />
-
-              <TouchableOpacity
-                style={[styles.submitBtn, (!canSubmit || isSaving) && styles.submitBtnDisabled]}
-                onPress={submitSheet}
-                disabled={isSaving || !canSubmit}
-              >
-                {isSaving ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitBtnText}>{editing ? 'Cập nhật' : 'Thêm lịch hẹn'}</Text>
-                )}
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      <DatePickerModal
-        visible={datePickerVisible}
-        value={selectedDate}
-        onClose={() => setDatePickerVisible(false)}
-        onConfirm={(d) => {
-          setSelectedDate(d);
-          setDatePickerVisible(false);
-        }}
-      />
-
-      <TimePickerModal
-        visible={timePickerVisible}
-        hour={selectedHour}
-        minute={selectedMinute}
-        onClose={() => setTimePickerVisible(false)}
-        onConfirm={(h, m) => {
-          setSelectedHour(h);
-          setSelectedMinute(m);
-          setTimePickerVisible(false);
-        }}
+      <AppointmentFormSheet
+        key={sheetNonce}
+        visible={sheetVisible}
+        editing={editing}
+        currentElderlyId={currentElderlyId}
+        onClose={() => setSheetVisible(false)}
       />
     </SafeAreaView>
-  );
-}
-
-function FormField({
-  icon,
-  placeholder,
-  hint,
-  value,
-  onChangeText,
-  multiline,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  placeholder: string;
-  hint: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  multiline?: boolean;
-}) {
-  return (
-    <View style={[styles.fieldWrap, multiline && styles.fieldWrapMultiline]}>
-      <Ionicons name={icon} size={18} color={Colors.primary} style={styles.fieldIcon} />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.fieldLabel}>{placeholder}</Text>
-        <TextInput
-          style={styles.fieldInput}
-          placeholder={hint}
-          placeholderTextColor={Colors.textHint}
-          value={value}
-          onChangeText={onChangeText}
-          multiline={multiline}
-          numberOfLines={multiline ? 2 : 1}
-        />
-      </View>
-    </View>
-  );
-}
-
-function AppointmentCard({
-  item,
-  showActions,
-  onEdit,
-  onDelete,
-  onComplete,
-  onCancel,
-}: {
-  item: AppointmentItem;
-  showActions: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  onComplete: () => void;
-  onCancel: () => void;
-}) {
-  const color = statusColor(item.status);
-  const label = statusLabel(item.status);
-  const dt = new Date(item.appointmentDate);
-
-  return (
-    <View style={[styles.card, { borderColor: withAlpha(color, 0.2) }]}>
-      <View style={styles.cardHeaderRow}>
-        <View style={[styles.iconWrap, { backgroundColor: withAlpha(color, 0.1) }]}>
-          <Ionicons name="calendar" color={color} size={22} />
-        </View>
-        <View style={styles.cardHeaderText}>
-          <Text style={styles.doctorName}>{item.doctor}</Text>
-          {!!item.specialty && <Text style={styles.specialty}>{item.specialty}</Text>}
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: withAlpha(color, 0.1) }]}>
-          <Text style={[styles.statusBadgeText, { color }]}>{label}</Text>
-        </View>
-      </View>
-
-      <View style={{ height: 14 }} />
-      <InfoRow icon="calendar-outline" text={formatDate(dt)} />
-      <View style={{ height: 6 }} />
-      <InfoRow icon="time-outline" text={formatTime(dt)} />
-      {!!item.location && (
-        <>
-          <View style={{ height: 6 }} />
-          <InfoRow icon="location-outline" text={item.location} />
-        </>
-      )}
-      {!!item.notes && (
-        <>
-          <View style={{ height: 10 }} />
-          <View style={styles.notesBox}>
-            <Text style={styles.notesText}>{item.notes}</Text>
-          </View>
-        </>
-      )}
-
-      {showActions && (
-        <>
-          <View style={{ height: 14 }} />
-          <View style={styles.divider} />
-          <View style={{ height: 10 }} />
-          <View style={styles.actionsRow}>
-            <View style={styles.actionsGroup}>
-              <ActionChip
-                icon="create-outline"
-                label="Sửa"
-                color={Colors.primary}
-                onPress={onEdit}
-              />
-              <View style={{ width: 8 }} />
-              <ActionChip
-                icon="trash-outline"
-                label="Xóa"
-                color={Colors.error}
-                onPress={onDelete}
-              />
-            </View>
-            <View style={styles.actionsGroup}>
-              <ActionChip
-                icon="checkmark-circle-outline"
-                label="Hoàn thành"
-                color={Colors.success}
-                onPress={onComplete}
-              />
-              <View style={{ width: 8 }} />
-              <ActionChip
-                icon="close-circle-outline"
-                label="Hủy"
-                color={Colors.warning}
-                onPress={onCancel}
-              />
-            </View>
-          </View>
-        </>
-      )}
-    </View>
-  );
-}
-
-function InfoRow({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <Ionicons name={icon} color={Colors.textHint} size={15} />
-      <Text style={styles.infoRowText}>{text}</Text>
-    </View>
-  );
-}
-
-function ActionChip({
-  icon,
-  label,
-  color,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  color: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.actionChip,
-        { backgroundColor: withAlpha(color, 0.06), borderColor: withAlpha(color, 0.2) },
-      ]}
-      onPress={onPress}
-    >
-      <Ionicons name={icon} size={14} color={color} />
-      <Text style={[styles.actionChipText, { color }]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function DatePickerModal({
-  visible,
-  value,
-  onClose,
-  onConfirm,
-}: {
-  visible: boolean;
-  value: Date;
-  onClose: () => void;
-  onConfirm: (d: Date) => void;
-}) {
-  const today = new Date();
-  const [year, setYear] = useState(value.getFullYear());
-  const [month, setMonth] = useState(value.getMonth());
-  const [day, setDay] = useState(value.getDate());
-
-  useEffect(() => {
-    if (visible) {
-      setYear(value.getFullYear());
-      setMonth(value.getMonth());
-      setDay(value.getDate());
-    }
-  }, [visible]);
-
-  const years = Array.from({ length: 2 }, (_, i) => today.getFullYear() + i);
-  const months = MONTHS.map((m, i) => ({ label: m, value: i }));
-  const dayCount = daysInMonth(year, month);
-  const days = Array.from({ length: dayCount }, (_, i) => i + 1);
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity activeOpacity={1} style={styles.pickerModalSheet}>
-          <Text style={styles.modalTitle}>Chọn ngày</Text>
-          <View style={styles.pickerColumns}>
-            <PickerColumn
-              data={days}
-              selected={day}
-              onSelect={(d) => setDay(Math.min(d, dayCount))}
-              renderLabel={(d) => String(d)}
-            />
-            <PickerColumn
-              data={months.map((m) => m.value)}
-              selected={month}
-              onSelect={setMonth}
-              renderLabel={(m) => MONTHS[m]}
-            />
-            <PickerColumn
-              data={years}
-              selected={year}
-              onSelect={setYear}
-              renderLabel={(y) => String(y)}
-            />
-          </View>
-          <View style={{ height: 12 }} />
-          <TouchableOpacity
-            style={styles.pickerConfirmBtn}
-            onPress={() => onConfirm(new Date(year, month, Math.min(day, dayCount)))}
-          >
-            <Text style={styles.pickerConfirmBtnText}>Xong</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
-  );
-}
-
-function TimePickerModal({
-  visible,
-  hour,
-  minute,
-  onClose,
-  onConfirm,
-}: {
-  visible: boolean;
-  hour: number;
-  minute: number;
-  onClose: () => void;
-  onConfirm: (h: number, m: number) => void;
-}) {
-  const [h, setH] = useState(hour);
-  const [m, setM] = useState(minute);
-
-  useEffect(() => {
-    if (visible) {
-      setH(hour);
-      setM(minute);
-    }
-  }, [visible]);
-
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-  const minutes = Array.from({ length: 60 }, (_, i) => i);
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity activeOpacity={1} style={styles.pickerModalSheet}>
-          <Text style={styles.modalTitle}>Chọn giờ</Text>
-          <View style={styles.pickerColumns}>
-            <PickerColumn
-              data={hours}
-              selected={h}
-              onSelect={setH}
-              renderLabel={(v) => String(v).padStart(2, '0')}
-            />
-            <PickerColumn
-              data={minutes}
-              selected={m}
-              onSelect={setM}
-              renderLabel={(v) => String(v).padStart(2, '0')}
-            />
-          </View>
-          <View style={{ height: 12 }} />
-          <TouchableOpacity style={styles.pickerConfirmBtn} onPress={() => onConfirm(h, m)}>
-            <Text style={styles.pickerConfirmBtnText}>Xong</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
-  );
-}
-
-function PickerColumn({
-  data,
-  selected,
-  onSelect,
-  renderLabel,
-}: {
-  data: number[];
-  selected: number;
-  onSelect: (v: number) => void;
-  renderLabel: (v: number) => string;
-}) {
-  return (
-    <FlatList
-      style={styles.pickerColumn}
-      data={data}
-      keyExtractor={(v) => String(v)}
-      showsVerticalScrollIndicator={false}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={[styles.pickerItem, item === selected && styles.pickerItemActive]}
-          onPress={() => onSelect(item)}
-        >
-          <Text style={[styles.pickerItemText, item === selected && styles.pickerItemTextActive]}>
-            {renderLabel(item)}
-          </Text>
-        </TouchableOpacity>
-      )}
-    />
   );
 }
 
@@ -805,48 +251,6 @@ const styles = StyleSheet.create({
   emptyState: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   emptyText: { color: Colors.textSecondary, fontSize: 15, marginTop: 12 },
   emptySubtext: { color: Colors.textHint, fontSize: 13, marginTop: 4 },
-  card: {
-    marginBottom: 12,
-    padding: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardHeaderText: { flex: 1, marginLeft: 12 },
-  doctorName: { fontWeight: '700', fontSize: 16, color: Colors.textPrimary },
-  specialty: { color: Colors.textSecondary, fontSize: 13, marginTop: 2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusBadgeText: { fontSize: 12, fontWeight: '600' },
-  infoRow: { flexDirection: 'row', alignItems: 'center' },
-  infoRowText: { color: Colors.textSecondary, fontSize: 13, marginLeft: 8 },
-  notesBox: { width: '100%', padding: 10, backgroundColor: Colors.background, borderRadius: 10 },
-  notesText: { color: Colors.textSecondary, fontSize: 13, fontStyle: 'italic' },
-  divider: { height: 1, backgroundColor: Colors.divider },
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  actionsGroup: { flexDirection: 'row' },
-  actionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  actionChipText: { fontSize: 12, fontWeight: '600' },
   fab: {
     position: 'absolute',
     right: 20,
@@ -863,79 +267,4 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
   },
-  sheetOverlay: { flex: 1, justifyContent: 'flex-end' },
-  sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '88%',
-  },
-  sheetContent: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 32 },
-  sheetHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: Colors.textHint,
-  },
-  sheetTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  fieldWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.4)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  fieldWrapMultiline: { alignItems: 'flex-start', paddingTop: 10 },
-  fieldIcon: { marginRight: 10, marginTop: 2 },
-  fieldLabel: { fontSize: 11, color: Colors.textHint, marginBottom: 2 },
-  fieldInput: { fontSize: 14, color: Colors.textPrimary, padding: 0 },
-  pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.4)',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-  },
-  pickerRowText: { marginLeft: 12, fontSize: 14, fontWeight: '500', color: Colors.textPrimary },
-  submitBtn: {
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitBtnDisabled: { opacity: 0.5 },
-  submitBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  modalTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-  pickerModalSheet: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-  },
-  pickerColumns: { flexDirection: 'row', height: 220 },
-  pickerColumn: { flex: 1 },
-  pickerItem: { paddingVertical: 10, alignItems: 'center' },
-  pickerItemActive: { backgroundColor: withAlpha(Colors.primary, 0.1), borderRadius: 8 },
-  pickerItemText: { fontSize: 15, color: Colors.textSecondary },
-  pickerItemTextActive: { color: Colors.primary, fontWeight: '700' },
-  pickerConfirmBtn: {
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pickerConfirmBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
 });
