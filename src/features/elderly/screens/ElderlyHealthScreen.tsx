@@ -7,9 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  FlatList,
   ActivityIndicator,
-
   Linking,
   Image,
 } from 'react-native';
@@ -21,13 +19,11 @@ import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
 import { getUserId } from '../../../core/storage/secureStorage';
-import { GeminiService } from '../../../core/services/geminiService';
+import { ChatService } from '../../../core/services/chatService';
 import { useHealthMetricStore } from '../store/healthMetricStore';
 import { useGoogleFitStore } from '../store/googleFitStore';
 import { useHealthThresholdStore } from '../../family/store/healthThresholdStore';
 import type { HealthMetric } from '../../../shared/types';
-
-
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -111,9 +107,11 @@ export default function ElderlyHealthScreen() {
   const [aiError, setAiError] = useState<string | null>(null);
 
   const [addSheetVisible, setAddSheetVisible] = useState(false);
-  const [valueDialog, setValueDialog] = useState<{ type: string; label: string; unit: string } | null>(
-    null,
-  );
+  const [valueDialog, setValueDialog] = useState<{
+    type: string;
+    label: string;
+    unit: string;
+  } | null>(null);
   const [valueInput, setValueInput] = useState('');
   const [fitSheetVisible, setFitSheetVisible] = useState(false);
 
@@ -190,7 +188,9 @@ export default function ElderlyHealthScreen() {
         lines.push(`- ${config.label}: ${display} ${config.unit} (lúc ${timeStr})`);
       }
     }
-    lines.push('Đánh giá từng chỉ số, cảnh báo nếu có bất thường, và đưa ra một lời khuyên ngắn gọn.');
+    lines.push(
+      'Đánh giá từng chỉ số, cảnh báo nếu có bất thường, và đưa ra một lời khuyên ngắn gọn.',
+    );
     return lines.join('\n');
   };
 
@@ -198,7 +198,7 @@ export default function ElderlyHealthScreen() {
     if (Object.keys(latestByTypeStore).length === 0) {
       setAiInsight(
         'Hãy bắt đầu theo dõi sức khỏe bằng cách thêm chỉ số đầu tiên. ' +
-        'Tôi sẽ giúp bạn phân tích xu hướng và đưa ra lời khuyên phù hợp!',
+          'Tôi sẽ giúp bạn phân tích xu hướng và đưa ra lời khuyên phù hợp!',
       );
       setAiLoading(false);
       setAiError(null);
@@ -211,8 +211,8 @@ export default function ElderlyHealthScreen() {
 
     try {
       const prompt = buildHealthPrompt();
-      const gemini = new GeminiService();
-      const reply = await gemini.sendMessage(prompt);
+      const chat = new ChatService();
+      const reply = await chat.sendMessage(prompt);
       setAiInsight(reply);
       setAiLoading(false);
     } catch {
@@ -271,7 +271,9 @@ export default function ElderlyHealthScreen() {
     if (!valueDialog) return;
     const trimmed = valueInput.trim();
     if (trimmed.length === 0) return;
-    const ok = await healthStore.getState().addMetric({ type: valueDialog.type, value: trimmed, unit: valueDialog.unit });
+    const ok = await healthStore
+      .getState()
+      .addMetric({ type: valueDialog.type, value: trimmed, unit: valueDialog.unit });
     if (ok) setValueDialog(null);
   };
 
@@ -304,16 +306,27 @@ export default function ElderlyHealthScreen() {
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color={Colors.textHint} />
           <Text style={styles.errorText}>{healthError}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => healthStore.getState().load()}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => healthStore.getState().load()}
+          >
             <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.periodRow}>
-            <PeriodChip label="7 ngày" selected={period === 'week'} onPress={() => handlePeriodChange('week')} />
+            <PeriodChip
+              label="7 ngày"
+              selected={period === 'week'}
+              onPress={() => handlePeriodChange('week')}
+            />
             <View style={{ width: 8 }} />
-            <PeriodChip label="30 ngày" selected={period === 'month'} onPress={() => handlePeriodChange('month')} />
+            <PeriodChip
+              label="30 ngày"
+              selected={period === 'month'}
+              onPress={() => handlePeriodChange('month')}
+            />
           </View>
 
           <View style={{ height: 16 }} />
@@ -323,7 +336,11 @@ export default function ElderlyHealthScreen() {
               <View
                 style={[
                   styles.aiIconWrap,
-                  { backgroundColor: aiLoading ? 'rgba(255, 167, 38, 0.15)' : 'rgba(67, 160, 71, 0.15)' },
+                  {
+                    backgroundColor: aiLoading
+                      ? 'rgba(255, 167, 38, 0.15)'
+                      : 'rgba(67, 160, 71, 0.15)',
+                  },
                 ]}
               >
                 {aiLoading ? (
@@ -335,7 +352,7 @@ export default function ElderlyHealthScreen() {
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={styles.aiTitle}>Nhận định từ AI</Text>
-                  {aiLoading && <Text style={styles.aiAnalyzing}>  đang phân tích...</Text>}
+                  {aiLoading && <Text style={styles.aiAnalyzing}> đang phân tích...</Text>}
                 </View>
                 <Text style={styles.aiText}>{displayText}</Text>
               </View>
@@ -405,7 +422,11 @@ export default function ElderlyHealthScreen() {
             {METRIC_KEYS.map((key) => {
               const config = METRIC_CONFIGS[key];
               return (
-                <TouchableOpacity key={key} style={styles.sheetItem} onPress={() => openValueDialog(key)}>
+                <TouchableOpacity
+                  key={key}
+                  style={styles.sheetItem}
+                  onPress={() => openValueDialog(key)}
+                >
                   <View style={[styles.sheetItemIcon, { backgroundColor: config.bgColor }]}>
                     <Ionicons name={config.icon} size={22} color={config.color} />
                   </View>
@@ -488,7 +509,15 @@ export default function ElderlyHealthScreen() {
   );
 }
 
-function PeriodChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+function PeriodChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -500,7 +529,9 @@ function PeriodChip({ label, selected, onPress }: { label: string; selected: boo
         },
       ]}
     >
-      <Text style={[styles.periodChipText, { color: selected ? '#FFFFFF' : Colors.textSecondary }]}>{label}</Text>
+      <Text style={[styles.periodChipText, { color: selected ? '#FFFFFF' : Colors.textSecondary }]}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -567,7 +598,10 @@ function MetricSection({
     : '--';
 
   const sorted = useMemo(
-    () => [...metrics].sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()),
+    () =>
+      [...metrics].sort(
+        (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime(),
+      ),
     [metrics],
   );
   const values = sorted.map((m) => Number.parseFloat(m.value) || 0);
@@ -586,10 +620,15 @@ function MetricSection({
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: `${statusColor(status)}1A`, borderColor: `${statusColor(status)}4D` },
+              {
+                backgroundColor: `${statusColor(status)}1A`,
+                borderColor: `${statusColor(status)}4D`,
+              },
             ]}
           >
-            <Text style={[styles.statusText, { color: statusColor(status) }]}>{statusLabel(status)}</Text>
+            <Text style={[styles.statusText, { color: statusColor(status) }]}>
+              {statusLabel(status)}
+            </Text>
           </View>
         )}
         <View style={{ width: 8 }} />
@@ -600,8 +639,8 @@ function MetricSection({
 
       <View style={styles.metricValueRow}>
         <Text style={styles.metricValue}>{displayValue}</Text>
-        <Text style={styles.metricUnit}>  {config.unit}</Text>
-        {!!timeLabel && <Text style={styles.metricTime}>  • {timeLabel}</Text>}
+        <Text style={styles.metricUnit}> {config.unit}</Text>
+        {!!timeLabel && <Text style={styles.metricTime}> • {timeLabel}</Text>}
       </View>
 
       <View style={{ height: 14 }} />
@@ -662,7 +701,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(67, 160, 71, 0.2)',
   },
   aiRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  aiIconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  aiIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   aiTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   aiAnalyzing: { color: Colors.textSecondary, fontSize: 11, fontStyle: 'italic' },
   aiText: { marginTop: 4, color: Colors.textSecondary, fontSize: 13, lineHeight: 19.5 },
@@ -694,8 +739,20 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   metricHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  metricIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  metricTitle: { flex: 1, marginLeft: 12, fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
+  metricIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metricTitle: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
   statusText: { fontSize: 12, fontWeight: '600' },
   metricValueRow: { flexDirection: 'row', alignItems: 'flex-end' },
@@ -752,11 +809,22 @@ const styles = StyleSheet.create({
   },
   sheetTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
   sheetItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  sheetItemIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  sheetItemIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sheetItemLabel: { fontWeight: '600', color: Colors.textPrimary, fontSize: 15 },
   sheetItemUnit: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
 
-  modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 },
+  modalOverlayCenter: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 32,
+  },
   dialogCard: { backgroundColor: Colors.surface, borderRadius: 16, padding: 20 },
   dialogTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   dialogInput: {
@@ -771,6 +839,11 @@ const styles = StyleSheet.create({
   dialogActions: { flexDirection: 'row', justifyContent: 'flex-end' },
   dialogCancelBtn: { paddingHorizontal: 14, paddingVertical: 10 },
   dialogCancelText: { color: Colors.textSecondary, fontWeight: '600' },
-  dialogSaveBtn: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  dialogSaveBtn: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
   dialogSaveText: { color: '#FFFFFF', fontWeight: '600' },
 });

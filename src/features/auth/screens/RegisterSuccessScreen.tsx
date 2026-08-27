@@ -1,13 +1,8 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
-import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
-
-type Route = RouteProp<RootStackParamList, 'RegisterSuccess'>;
 
 const { width } = Dimensions.get('window');
 
@@ -17,7 +12,6 @@ const SubtitleGray = '#8E8E8E';
 const White = '#FFFFFF';
 
 export default function RegisterSuccessScreen() {
-  const route = useRoute<Route>();
   const completeLogin = useAuthStore((s) => s.completeLogin);
 
   // Show the celebration screen briefly, then enter the app

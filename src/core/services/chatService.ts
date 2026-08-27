@@ -3,7 +3,11 @@ import { getErrorMessage } from '../api/errors';
 
 const HEALTH_INSIGHT_SESSION_ID = 'health-insight';
 
-export class GeminiService {
+/**
+ * Thin client for the backend chat/AI endpoint (`POST /chat/message`).
+ * The Gemini model itself runs server-side — no AI key is ever bundled into the app.
+ */
+export class ChatService {
   private sessionId: string = HEALTH_INSIGHT_SESSION_ID;
 
   async sendMessage(text: string): Promise<string> {

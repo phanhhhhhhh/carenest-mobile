@@ -89,7 +89,11 @@ CareNest is a mobile platform connecting elderly users with their families throu
 | **expo-secure-store** | Secure JWT token storage |
 | **expo-notifications** | Push notifications (FCM) |
 | **@expo/vector-icons** (Ionicons) | Icon system |
-| **Google Generative AI** | Gemini AI for chat, health analysis, STT |
+| **react-native-svg** | Charts & vector graphics |
+| **zod** | Runtime schema validation |
+
+> AI features (chat, health insights, weekly summary) are powered by Gemini **on the backend** —
+> the app only talks to the Spring Boot API.
 
 ### 🖥️ Backend
 
@@ -172,7 +176,7 @@ carenest_mobile/
 │   │   ├── navigation/ElderlyShell.tsx     # Elderly bottom-tab shell
 │   │   ├── navigation/FamilyShell.tsx      # Family bottom-tab shell
 │   │   ├── navigation/navigationRef.ts     # Navigation ref for stores
-│   │   ├── services/geminiService.ts       # Gemini AI client
+│   │   ├── services/chatService.ts         # Backend chat/AI endpoint client
 │   │   ├── services/pushNotificationService.ts  # FCM push setup
 │   │   ├── storage/secureStorage.ts        # expo-secure-store wrapper
 │   │   └── theme/                          # Colors, spacing, typography
@@ -221,8 +225,8 @@ cd carenest_mobile
 
 # 2. Environment
 cp .env.example .env
-# → Set API_BASE_URL (Android: http://10.0.2.2:8082/api, iOS/physical: http://<ip>:8082/api)
-# → Set GEMINI_API_KEY (optional, for AI features)
+# → Set EXPO_PUBLIC_API_BASE_URL (Android: http://10.0.2.2:8082/api, iOS/physical: http://<ip>:8082/api)
+# → Set GEMINI_API_KEY for the backend (optional, enables AI features — server-side only)
 
 # 3. Install dependencies
 npm install
@@ -336,11 +340,16 @@ Full API docs: `http://localhost:8082/swagger-ui.html` (when backend is running)
 | `MOMO_PARTNER_CODE` / `MOMO_ACCESS_KEY` / `MOMO_SECRET_KEY` | (empty) | For MoMo payment |
 | `IMOU_APP_ID` / `IMOU_APP_SECRET` | (empty) | For camera features |
 
-### React Native (`.env`)
+### React Native / Expo (`.env`)
+
+Expo only exposes variables prefixed with `EXPO_PUBLIC_` to the app bundle.
+
 | Variable | Default | Required |
 |----------|---------|----------|
-| `API_BASE_URL` | `http://10.0.2.2:8082/api` | For non-emulator devices |
-| `GEMINI_API_KEY` | (empty) | For AI features |
+| `EXPO_PUBLIC_API_BASE_URL` | Android: `http://10.0.2.2:8082/api`, other: `http://localhost:8082/api` (see `src/core/config/appConfig.ts`) | For physical devices / iOS simulator |
+
+> The Gemini API key is **backend-only** — it is never bundled into the app. All AI calls
+> (chat, health insights, weekly summary) go through the Spring Boot API.
 
 ---
 

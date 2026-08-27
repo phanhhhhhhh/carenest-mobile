@@ -10,7 +10,6 @@ import {
   Switch,
   TextInput,
   Modal,
-
   Image,
   Linking,
 } from 'react-native';
@@ -29,8 +28,6 @@ import {
   type CameraSnapshotData,
 } from '../store/cameraStore';
 
-
-
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function CameraScreen() {
@@ -47,7 +44,6 @@ export default function CameraScreen() {
   const cameras = useCameraStore((s) => s.cameras);
   const timeline = useCameraStore((s) => s.timeline);
   const voiceActive = useCameraStore((s) => s.voiceActive);
-  const liveStreamUrl = useCameraStore((s) => s.liveStreamUrl);
 
   const load = useCameraStore((s) => s.load);
   const bindCamera = useCameraStore((s) => s.bindCamera);
@@ -86,7 +82,6 @@ export default function CameraScreen() {
     }
   }, [elderlyId]);
 
-
   const showBindDialog = () => {
     if (!elderlyId) return;
     setSnValue('');
@@ -99,7 +94,11 @@ export default function CameraScreen() {
     const sn = snValue.trim();
     if (!sn) return;
     setBindVisible(false);
-    const ok = await bindCamera(elderlyId, sn, labelValue.trim().length > 0 ? labelValue.trim() : 'Camera');
+    const ok = await bindCamera(
+      elderlyId,
+      sn,
+      labelValue.trim().length > 0 ? labelValue.trim() : 'Camera',
+    );
     if (!ok) {
       Alert.alert('', 'Không thể liên kết camera. Vui lòng kiểm tra lại số seri.');
     }
@@ -116,7 +115,6 @@ export default function CameraScreen() {
       Alert.alert('', 'Không thể xóa camera lúc này');
     }
   };
-
 
   const handleLiveView = async (deviceId: number) => {
     if (!elderlyId) return;
@@ -148,7 +146,11 @@ export default function CameraScreen() {
     const ok = currentlyActive ? await stopVoiceCall(deviceId) : await startVoiceCall(deviceId);
     Alert.alert(
       '',
-      ok ? (currentlyActive ? 'Đã kết thúc cuộc gọi thoại' : 'Đã bắt đầu cuộc gọi thoại') : 'Không thể thay đổi trạng thái gọi thoại',
+      ok
+        ? currentlyActive
+          ? 'Đã kết thúc cuộc gọi thoại'
+          : 'Đã bắt đầu cuộc gọi thoại'
+        : 'Không thể thay đổi trạng thái gọi thoại',
     );
   };
 
@@ -157,7 +159,9 @@ export default function CameraScreen() {
     const ok = await setPrivacyMode(elderlyId, deviceId, !currentlyEnabled);
     Alert.alert(
       '',
-      ok ? `Chế độ riêng tư ${!currentlyEnabled ? 'BẬT' : 'TẮT'}` : 'Không thể thay đổi chế độ riêng tư',
+      ok
+        ? `Chế độ riêng tư ${!currentlyEnabled ? 'BẬT' : 'TẮT'}`
+        : 'Không thể thay đổi chế độ riêng tư',
     );
   };
 
@@ -166,7 +170,9 @@ export default function CameraScreen() {
     const ok = await toggleMotionDetection(elderlyId, deviceId, enabled);
     Alert.alert(
       '',
-      ok ? `Phát hiện chuyển động ${enabled ? 'BẬT' : 'TẮT'}` : 'Không thể cập nhật phát hiện chuyển động',
+      ok
+        ? `Phát hiện chuyển động ${enabled ? 'BẬT' : 'TẮT'}`
+        : 'Không thể cập nhật phát hiện chuyển động',
     );
   };
 
@@ -191,7 +197,6 @@ export default function CameraScreen() {
     await load(elderlyId);
     setRefreshing(false);
   };
-
 
   const triggerLabel = (trigger: string): string => {
     switch (trigger) {
@@ -237,7 +242,6 @@ export default function CameraScreen() {
     const diffMs = Date.now() - dt.getTime();
     const diffMinutes = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
     if (diffMinutes < 1) return 'Vừa xong';
     if (diffHours < 1) return `${diffMinutes} phút trước`;
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -249,7 +253,6 @@ export default function CameraScreen() {
     if (isYesterday) return `Hôm qua ${dt.getHours()}:${pad(dt.getMinutes())}`;
     return `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}`;
   };
-
 
   const renderAppBar = () => (
     <View style={styles.appBar}>
@@ -277,11 +280,7 @@ export default function CameraScreen() {
         <Text style={styles.statusText} numberOfLines={1}>
           {status.hasCamera ? status.statusText : 'Chưa liên kết camera nào'}
         </Text>
-        {status.hasCamera && (
-          <Text style={styles.statusCount}>
-            {status.cameraCount} camera
-          </Text>
-        )}
+        {status.hasCamera && <Text style={styles.statusCount}>{status.cameraCount} camera</Text>}
       </View>
     );
   };
@@ -386,8 +385,17 @@ export default function CameraScreen() {
       <ScrollView contentContainerStyle={styles.listPad}>
         {timeline.map((snap: CameraSnapshotData) => (
           <View key={snap.id} style={styles.timelineCard}>
-            <View style={[styles.timelineIconWrap, { backgroundColor: `${triggerColor(snap.trigger)}1A` }]}>
-              <Ionicons name={triggerIcon(snap.trigger)} size={22} color={triggerColor(snap.trigger)} />
+            <View
+              style={[
+                styles.timelineIconWrap,
+                { backgroundColor: `${triggerColor(snap.trigger)}1A` },
+              ]}
+            >
+              <Ionicons
+                name={triggerIcon(snap.trigger)}
+                size={22}
+                color={triggerColor(snap.trigger)}
+              />
             </View>
             <View style={{ width: 12 }} />
             <View style={{ flex: 1 }}>
@@ -417,7 +425,9 @@ export default function CameraScreen() {
             <View style={{ height: 4 }} />
             <Text style={styles.emptyDevicesTitle}>Chưa liên kết camera nào</Text>
             <View style={{ height: 6 }} />
-            <Text style={styles.emptyDevicesSubtitle}>Liên kết camera Imou để bắt đầu giám sát</Text>
+            <Text style={styles.emptyDevicesSubtitle}>
+              Liên kết camera Imou để bắt đầu giám sát
+            </Text>
             <View style={{ height: 24 }} />
             <TouchableOpacity style={styles.linkBtn} onPress={showBindDialog}>
               <Ionicons name="link-outline" size={18} color="#FFFFFF" />
@@ -432,7 +442,11 @@ export default function CameraScreen() {
       <ScrollView
         contentContainerStyle={styles.listPad}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefreshDevices} colors={[Colors.primary]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefreshDevices}
+            colors={[Colors.primary]}
+          />
         }
       >
         {cameras.map((cam) => (
@@ -455,7 +469,6 @@ export default function CameraScreen() {
       </ScrollView>
     );
   };
-
 
   if (!elderlyId) {
     return (
@@ -491,7 +504,12 @@ export default function CameraScreen() {
         </>
       )}
 
-      <Modal visible={bindVisible} transparent animationType="fade" onRequestClose={() => setBindVisible(false)}>
+      <Modal
+        visible={bindVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBindVisible(false)}
+      >
         <View style={styles.dialogOverlay}>
           <View style={styles.dialog}>
             <Text style={styles.dialogTitle}>Liên kết camera</Text>
@@ -521,7 +539,10 @@ export default function CameraScreen() {
             </View>
             <View style={{ height: 20 }} />
             <View style={styles.dialogActions}>
-              <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setBindVisible(false)}>
+              <TouchableOpacity
+                style={styles.dialogCancelBtn}
+                onPress={() => setBindVisible(false)}
+              >
                 <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <View style={{ width: 8 }} />
@@ -543,14 +564,22 @@ export default function CameraScreen() {
           <View style={styles.dialog}>
             <Text style={styles.dialogTitle}>Xóa camera?</Text>
             <View style={{ height: 12 }} />
-            <Text style={styles.dialogBody}>Thao tác này sẽ ngắt kết nối camera khỏi tài khoản.</Text>
+            <Text style={styles.dialogBody}>
+              Thao tác này sẽ ngắt kết nối camera khỏi tài khoản.
+            </Text>
             <View style={{ height: 20 }} />
             <View style={styles.dialogActions}>
-              <TouchableOpacity style={styles.dialogCancelBtn} onPress={() => setUnbindTarget(null)}>
+              <TouchableOpacity
+                style={styles.dialogCancelBtn}
+                onPress={() => setUnbindTarget(null)}
+              >
                 <Text style={styles.dialogCancelText}>Hủy</Text>
               </TouchableOpacity>
               <View style={{ width: 8 }} />
-              <TouchableOpacity style={[styles.dialogApplyBtn, { backgroundColor: Colors.error }]} onPress={doUnbind}>
+              <TouchableOpacity
+                style={[styles.dialogApplyBtn, { backgroundColor: Colors.error }]}
+                onPress={doUnbind}
+              >
                 <Text style={styles.dialogApplyText}>Xóa</Text>
               </TouchableOpacity>
             </View>
@@ -564,7 +593,11 @@ export default function CameraScreen() {
         animationType="fade"
         onRequestClose={() => setMenuDeviceId(null)}
       >
-        <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setMenuDeviceId(null)}>
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setMenuDeviceId(null)}
+        >
           <View style={styles.menuCard}>
             <TouchableOpacity
               style={styles.menuItem}
@@ -592,7 +625,12 @@ export default function CameraScreen() {
         </TouchableOpacity>
       </Modal>
 
-      <Modal visible={ptzDeviceId != null} transparent animationType="slide" onRequestClose={closePtz}>
+      <Modal
+        visible={ptzDeviceId != null}
+        transparent
+        animationType="slide"
+        onRequestClose={closePtz}
+      >
         <TouchableOpacity style={styles.sheetOverlay} activeOpacity={1} onPress={closePtz}>
           <TouchableOpacity activeOpacity={1} style={styles.ptzSheet}>
             <Text style={styles.ptzTitle}>Xoay camera</Text>
@@ -622,7 +660,6 @@ export default function CameraScreen() {
     </SafeAreaView>
   );
 }
-
 
 function ActionBtn({
   icon,
@@ -722,7 +759,12 @@ function CameraCard({
       <View style={{ height: 10 }} />
 
       <View style={styles.cardActionsWrap}>
-        <ActionBtn icon="tv-outline" label="Xem trực tiếp" color={Colors.primary} onPress={onLiveView} />
+        <ActionBtn
+          icon="tv-outline"
+          label="Xem trực tiếp"
+          color={Colors.primary}
+          onPress={onLiveView}
+        />
         <ActionBtn icon="camera" label="Ảnh chụp" color={Colors.secondary} onPress={onSnapshot} />
         <ActionBtn
           icon={voiceActive ? 'mic-off' : 'mic'}
@@ -741,7 +783,6 @@ function CameraCard({
   );
 }
 
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -754,7 +795,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  appBarTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
+  appBarTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
 
   emptyText: { color: Colors.textSecondary, fontSize: 15, textAlign: 'center' },
   errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
@@ -777,7 +824,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   statusDot: { width: 12, height: 12, borderRadius: 6 },
-  statusText: { flex: 1, marginLeft: 10, color: Colors.textPrimary, fontSize: 14, fontWeight: '500' },
+  statusText: {
+    flex: 1,
+    marginLeft: 10,
+    color: Colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
   statusCount: { color: Colors.textSecondary, fontSize: 12 },
 
   heroCard: {
@@ -817,7 +870,13 @@ const styles = StyleSheet.create({
   tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
   tabLabel: { fontSize: 14, fontWeight: '600', color: Colors.textHint },
   tabLabelActive: { color: Colors.primary },
-  tabIndicator: { height: 2, width: '60%', marginTop: 8, backgroundColor: 'transparent', borderRadius: 1 },
+  tabIndicator: {
+    height: 2,
+    width: '60%',
+    marginTop: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 1,
+  },
   tabIndicatorActive: { backgroundColor: Colors.primary },
 
   listPad: { padding: 16 },
@@ -835,7 +894,13 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
-  timelineIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  timelineIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   timelineTitle: { fontWeight: '600', fontSize: 14, color: Colors.textPrimary },
   timelineTime: { color: Colors.textSecondary, fontSize: 12 },
   timelineThumb: { width: 48, height: 48, borderRadius: 8, backgroundColor: Colors.background },
@@ -879,7 +944,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   cameraCardHeader: { flexDirection: 'row', alignItems: 'center' },
-  cameraIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  cameraIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   cameraLabel: { fontWeight: '700', fontSize: 15, color: Colors.textPrimary },
   cameraStatus: { fontSize: 12, marginTop: 2 },
 
@@ -899,14 +970,24 @@ const styles = StyleSheet.create({
   },
   actionBtnText: { fontSize: 12, fontWeight: '600' },
 
-  dialogOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 32 },
+  dialogOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 32,
+  },
   dialog: { backgroundColor: Colors.surface, borderRadius: 16, padding: 20 },
   dialogTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   dialogBody: { color: Colors.textSecondary, fontSize: 13 },
   dialogActions: { flexDirection: 'row', justifyContent: 'flex-end' },
   dialogCancelBtn: { paddingHorizontal: 14, paddingVertical: 10 },
   dialogCancelText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '600' },
-  dialogApplyBtn: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  dialogApplyBtn: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
   dialogApplyText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
 
   inputWrap: {
@@ -920,7 +1001,12 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, paddingVertical: 12, fontSize: 14, color: Colors.textPrimary },
 
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.15)', alignItems: 'flex-end', padding: 24 },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    alignItems: 'flex-end',
+    padding: 24,
+  },
   menuCard: {
     backgroundColor: Colors.surface,
     borderRadius: 14,
@@ -932,7 +1018,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
   },
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   menuItemText: { fontSize: 14, color: Colors.textPrimary },
 
   sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
@@ -954,5 +1046,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 4,
   },
-  ptzCloseText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '600', paddingVertical: 8 },
+  ptzCloseText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+    paddingVertical: 8,
+  },
 });
