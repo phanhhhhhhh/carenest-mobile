@@ -1,25 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { showErrorToast } from '../../../shared/components/toastStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
-import {
-  useWeeklySummaryStore,
-  getWeekLabel,
-  type WeeklySummaryData,
-} from '../store/weeklySummaryStore';
+import { useWeeklySummaryStore } from '../store/weeklySummaryStore';
+import { ErrorState, EmptyState, SummaryList } from './weeklySummary/states';
 
 export default function WeeklySummaryScreen() {
   const navigation = useNavigation();
@@ -106,11 +94,11 @@ export default function WeeklySummaryScreen() {
             <ActivityIndicator size="large" color={Colors.primary} />
           </View>
         ) : error && summaries.length === 0 ? (
-          renderError(error, () => load(elderlyId))
+          <ErrorState error={error} onRetry={() => load(elderlyId)} />
         ) : summaries.length === 0 ? (
-          renderEmpty(handleGenerate)
+          <EmptyState onGenerate={handleGenerate} />
         ) : (
-          renderList(summaries, refreshing, handleRefresh)
+          <SummaryList summaries={summaries} refreshing={refreshing} onRefresh={handleRefresh} />
         )}
 
         <TouchableOpacity
@@ -131,150 +119,6 @@ export default function WeeklySummaryScreen() {
   );
 }
 
-function renderError(error: string, onRetry: () => void) {
-  return (
-    <View style={styles.center}>
-      <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
-      <View style={{ height: 16 }} />
-      <Text style={styles.errorText}>{error}</Text>
-      <View style={{ height: 16 }} />
-      <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-        <Ionicons name="refresh" size={18} color={Colors.surface} />
-        <Text style={styles.retryBtnText}>Thử lại</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function renderEmpty(onGenerate: () => void) {
-  return (
-    <View style={styles.center}>
-      <Image
-        source={require('../../../../assets/mascot/mascot_dashboard.jpg')}
-        style={{ width: 150, height: 150 }}
-        resizeMode="contain"
-      />
-      <View style={{ height: 4 }} />
-      <Text style={styles.emptyTitle}>Chưa có báo cáo hàng tuần nào</Text>
-      <View style={{ height: 6 }} />
-      <Text style={styles.emptySubtitle}>
-        Tổng kết sức khỏe hàng tuần do AI tạo{'\n'}sẽ xuất hiện tại đây
-      </Text>
-      <View style={{ height: 24 }} />
-      <TouchableOpacity style={styles.generateBtn} onPress={onGenerate}>
-        <Ionicons name="sparkles" size={18} color="#FFFFFF" />
-        <Text style={styles.generateBtnText}>Tạo báo cáo đầu tiên</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function renderList(summaries: WeeklySummaryData[], refreshing: boolean, onRefresh: () => void) {
-  return (
-    <ScrollView
-      contentContainerStyle={styles.list}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[Colors.primary]}
-          tintColor={Colors.primary}
-        />
-      }
-    >
-      {summaries.map((s, i) => (
-        <SummaryCard key={s.id || i} summary={s} isLatest={i === 0} />
-      ))}
-    </ScrollView>
-  );
-}
-
-function SummaryCard({ summary, isLatest }: { summary: WeeklySummaryData; isLatest: boolean }) {
-  return (
-    <View
-      style={[
-        styles.card,
-        isLatest && { borderWidth: 1, borderColor: withAlpha(Colors.primary, 0.3) },
-      ]}
-    >
-      <View style={styles.cardHeaderRow}>
-        <View style={styles.cardIconWrap}>
-          <Ionicons name="sparkles" color="#FFFFFF" size={20} />
-        </View>
-        <View style={{ width: 12 }} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>{summary.title}</Text>
-          <View style={{ height: 2 }} />
-          <Text style={styles.cardWeekLabel}>{getWeekLabel(summary)}</Text>
-        </View>
-        {isLatest && (
-          <View style={styles.latestBadge}>
-            <Text style={styles.latestBadgeText}>Mới nhất</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={{ height: 14 }} />
-
-      <View style={styles.statsRow}>
-        <StatMini
-          icon="medical"
-          color={Colors.primary}
-          value={`${summary.medicationAdherence}%`}
-          label="Tuân thủ"
-        />
-        <View style={{ width: 16 }} />
-        <StatMini
-          icon="pulse"
-          color={Colors.secondary}
-          value={`${summary.totalMetrics}`}
-          label="Chỉ số"
-        />
-        <View style={{ width: 16 }} />
-        <StatMini
-          icon="warning"
-          color={summary.abnormalMetrics > 0 ? Colors.error : Colors.success}
-          value={`${summary.abnormalMetrics}`}
-          label="Bất thường"
-        />
-      </View>
-
-      <View style={{ height: 14 }} />
-      <View style={styles.divider} />
-      <View style={{ height: 10 }} />
-
-      <Text style={styles.cardContent}>{summary.content}</Text>
-    </View>
-  );
-}
-
-function StatMini({
-  icon,
-  color,
-  value,
-  label,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  value: string;
-  label: string;
-}) {
-  return (
-    <View style={styles.statMiniRow}>
-      <Ionicons name={icon} color={color} size={16} />
-      <Text style={[styles.statMiniValue, { color }]}>{value}</Text>
-      <Text style={styles.statMiniLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `${hex}${a}`;
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
@@ -287,81 +131,7 @@ const styles = StyleSheet.create({
   },
   backButton: { marginRight: 12 },
   appBarTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-
   noElderlyText: { color: Colors.textSecondary, fontSize: 15, textAlign: 'center' },
-
-  errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
-  retryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  retryBtnText: { color: Colors.surface, fontSize: 14, fontWeight: '600' },
-
-  emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: withAlpha(Colors.primary, 0.08),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyTitle: { color: Colors.textPrimary, fontSize: 16, fontWeight: '600' },
-  emptySubtitle: { color: Colors.textSecondary, fontSize: 14, lineHeight: 21, textAlign: 'center' },
-  generateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  generateBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
-
-  list: { padding: 16, paddingBottom: 96 },
-  card: {
-    marginBottom: 14,
-    padding: 20,
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  cardIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardTitle: { fontWeight: '700', fontSize: 15, color: Colors.textPrimary },
-  cardWeekLabel: { color: Colors.textSecondary, fontSize: 12 },
-  latestBadge: {
-    backgroundColor: withAlpha(Colors.success, 0.1),
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  latestBadgeText: { color: Colors.success, fontSize: 11, fontWeight: '600' },
-
-  statsRow: { flexDirection: 'row' },
-  statMiniRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statMiniValue: { fontSize: 15, fontWeight: '700' },
-  statMiniLabel: { color: Colors.textHint, fontSize: 11 },
-
-  divider: { height: 1, backgroundColor: Colors.divider },
-  cardContent: { color: Colors.textSecondary, fontSize: 14, lineHeight: 22 },
-
   fab: {
     position: 'absolute',
     right: 20,
