@@ -1,14 +1,5 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Keyboard,
-  Modal,
-  Image,
-} from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -17,55 +8,37 @@ import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+import {
+  OTP_LENGTH,
+  RESEND_SECONDS,
+  Teal,
+  BorderGray,
+  SubtitleGray,
+  TextDark,
+  White,
+  displayPhone,
+  formatCountdown,
+} from './otpVerify/constants';
+import { SuccessModal } from './otpVerify/SuccessModal';
+import { useOtpInput } from './otpVerify/useOtpInput';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Route = RouteProp<RootStackParamList, 'OtpVerify'>;
-
-const OTP_LENGTH = 6; // backend generates 6-digit codes
-const RESEND_SECONDS = 45;
-
-const Teal = '#12A79C';
-const SuccessGreen = '#22C55E';
-const SubtitleGray = '#8E8E8E';
-const BorderGray = '#C9CED4';
-const TextDark = '#37404A';
-const White = '#FFFFFF';
-
-/** +84768554948 -> 0768554948 for display */
-function displayPhone(target: string): string {
-  if (target.startsWith('+84')) return '0' + target.slice(3);
-  return target;
-}
-
-function formatCountdown(s: number): string {
-  const mm = String(Math.floor(s / 60)).padStart(2, '0');
-  const ss = String(s % 60).padStart(2, '0');
-  return `${mm}:${ss}`;
-}
 
 export default function OtpVerifyScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const { target, method, userName } = route.params;
-  const [code, setCode] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [countdown, setCountdown] = useState(RESEND_SECONDS);
-  const inputs = useRef<(TextInput | null)[]>([]);
 
   const verifyOtpAction = useAuthStore((s) => s.verifyOtp);
   const sendOtpAction = useAuthStore((s) => s.sendOtp);
 
-  // Resend countdown ticker
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const t = setInterval(() => setCountdown((c) => c - 1), 1000);
-    return () => clearInterval(t);
-  }, [countdown]);
-
   const verifyOtp = useCallback(
-    async (otpCode: string) => {
-      if (otpCode.length !== OTP_LENGTH) return;
+    async (otpCode: string): Promise<boolean> => {
+      if (otpCode.length !== OTP_LENGTH) return false;
       setLoading(true);
       const ok = await verifyOtpAction(target, otpCode);
       setLoading(false);
@@ -73,12 +46,20 @@ export default function OtpVerifyScreen() {
         setShowSuccess(true);
       } else {
         Alert.alert('Lỗi', 'Mã xác thực không đúng hoặc đã hết hạn');
-        setCode(Array(OTP_LENGTH).fill(''));
-        inputs.current[0]?.focus();
       }
+      return ok;
     },
     [target, verifyOtpAction],
   );
+
+  const { code, inputs, handleChange, handleKeyPress, resetCode } = useOtpInput(verifyOtp);
+
+  // Resend countdown ticker
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setInterval(() => setCountdown((c) => c - 1), 1000);
+    return () => clearInterval(t);
+  }, [countdown]);
 
   // Popup "Xác thực thành công" hiển thị ngắn rồi tự chuyển màn tiếp theo
   useEffect(() => {
@@ -90,69 +71,16 @@ export default function OtpVerifyScreen() {
     return () => clearTimeout(timer);
   }, [showSuccess, navigation, userName]);
 
-  const handleChange = useCallback(
-    (text: string, index: number) => {
-      const sanitized = text.replace(/[^0-9]/g, '');
-
-      if (sanitized.length > 1) {
-        const digits = sanitized.slice(0, OTP_LENGTH).split('');
-        const newCode = Array(OTP_LENGTH).fill('');
-        digits.forEach((d, i) => {
-          newCode[i] = d;
-        });
-        setCode(newCode);
-
-        const nextEmpty = newCode.findIndex((d) => !d);
-        if (nextEmpty !== -1) {
-          inputs.current[nextEmpty]?.focus();
-        } else {
-          Keyboard.dismiss();
-          verifyOtp(newCode.join(''));
-        }
-        return;
-      }
-
-      const newCode = [...code];
-      newCode[index] = sanitized.slice(0, 1);
-      setCode(newCode);
-
-      if (sanitized && index < OTP_LENGTH - 1) {
-        inputs.current[index + 1]?.focus();
-      }
-
-      if (index === OTP_LENGTH - 1 && sanitized) {
-        Keyboard.dismiss();
-        verifyOtp(newCode.join(''));
-      }
-    },
-    [code, verifyOtp],
-  );
-
-  const handleKeyPress = useCallback(
-    (key: string, index: number) => {
-      if (key !== 'Backspace') return;
-      if (code[index]) return;
-      if (index > 0) {
-        const newCode = [...code];
-        newCode[index - 1] = '';
-        setCode(newCode);
-        inputs.current[index - 1]?.focus();
-      }
-    },
-    [code],
-  );
-
   const handleResend = useCallback(async () => {
     if (countdown > 0) return;
     const ok = await sendOtpAction(target, method);
     if (ok) {
       setCountdown(RESEND_SECONDS);
-      setCode(Array(OTP_LENGTH).fill(''));
-      inputs.current[0]?.focus();
+      resetCode();
     } else {
       Alert.alert('Lỗi', 'Không thể gửi lại mã. Vui lòng thử lại.');
     }
-  }, [countdown, target, method, sendOtpAction]);
+  }, [countdown, target, method, sendOtpAction, resetCode]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -206,22 +134,7 @@ export default function OtpVerifyScreen() {
       </View>
 
       {/* Popup xác thực thành công — tự chuyển màn sau 1.4s */}
-      <Modal visible={showSuccess} transparent animationType="fade">
-        <View style={styles.popupOverlay}>
-          <View style={styles.popupCard}>
-            <View style={styles.checkCircle}>
-              <Ionicons name="checkmark" size={38} color={White} />
-            </View>
-            <Text style={styles.popupTitle}>Xác thực thành công!</Text>
-            <Text style={styles.popupSubtitle}>Bạn đã xác thực số điện thoại{'\n'}thành công.</Text>
-            <Image
-              source={require('../../../../assets/brand/logo_wordmark.jpg')}
-              style={styles.popupLogo}
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-      </Modal>
+      <SuccessModal visible={showSuccess} />
     </SafeAreaView>
   );
 }
@@ -302,46 +215,5 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     fontWeight: '700',
     color: Teal,
-  },
-  popupOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-  },
-  popupCard: {
-    backgroundColor: White,
-    borderRadius: 20,
-    paddingVertical: 30,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    width: '100%',
-  },
-  checkCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: SuccessGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  popupTitle: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: Teal,
-    marginBottom: 8,
-  },
-  popupSubtitle: {
-    fontSize: 14.5,
-    color: SubtitleGray,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 14,
-  },
-  popupLogo: {
-    width: 150,
-    height: 44,
   },
 });
