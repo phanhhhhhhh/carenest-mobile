@@ -11,142 +11,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { showSuccessToast } from '../../../shared/components/toastStore';
 import { Colors } from '../../../core/theme/colors';
 import { useAuthStore } from '../../auth/store/authStore';
-import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import {
   useNotificationStore,
   selectUnreadCount,
   type NotificationData,
 } from '../store/notificationStore';
-
-type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-/** Where tapping a notification of this type should land, per the current user's role. */
-function routeForNotification(type: string, role: string | undefined, navigation: Nav): void {
-  const isFamily = role === 'FAMILY';
-  switch (type) {
-    case 'EMERGENCY':
-      if (isFamily) navigation.navigate('FamilyAlerts');
-      break;
-    case 'HEALTH_ALERT':
-      if (isFamily) navigation.navigate('FamilyHealth');
-      else navigation.navigate('ElderlyHealth');
-      break;
-    case 'MEDICATION_REMINDER':
-      if (isFamily) navigation.navigate('FamilyShell', { screen: 'FamilyMeds' });
-      else navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' });
-      break;
-    case 'APPOINTMENT_REMINDER':
-      if (isFamily) navigation.navigate('FamilyShell', { screen: 'FamilyAppointmentsTab' });
-      else navigation.navigate('ElderlyAppointments');
-      break;
-    default:
-      break;
-  }
-}
-
-function formatTime(createdAt: string): string {
-  const dt = new Date(createdAt);
-  const now = new Date();
-  const diffMs = now.getTime() - dt.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMinutes < 1) return 'Vừa xong';
-  if (diffHours < 1) return `${diffMinutes} phút trước`;
-  const hh = dt.getHours();
-  const mm = dt.getMinutes().toString().padStart(2, '0');
-  if (diffDays === 0) return `Hôm nay ${hh}:${mm}`;
-  if (diffDays === 1) return `Hôm qua ${hh}:${mm}`;
-  return `${diffDays} ngày trước`;
-}
-
-function iconForType(type: string): keyof typeof Ionicons.glyphMap {
-  switch (type) {
-    case 'EMERGENCY':
-      return 'alert-circle';
-    case 'MEDICATION_REMINDER':
-      return 'medkit';
-    case 'HEALTH_ALERT':
-      return 'warning';
-    case 'FAMILY_LINK_REQUEST':
-    case 'FAMILY_UPDATE':
-      return 'people';
-    default:
-      return 'notifications';
-  }
-}
-
-function colorForType(type: string): string {
-  switch (type) {
-    case 'EMERGENCY':
-      return Colors.error;
-    case 'MEDICATION_REMINDER':
-      return Colors.warning;
-    case 'HEALTH_ALERT':
-      return Colors.error;
-    case 'FAMILY_LINK_REQUEST':
-    case 'FAMILY_UPDATE':
-      return Colors.primary;
-    default:
-      return Colors.textSecondary;
-  }
-}
-
-function withAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `${hex}${a}`;
-}
-
-function NotificationCard({
-  notification,
-  onPress,
-}: {
-  notification: NotificationData;
-  onPress: () => void;
-}) {
-  const color = colorForType(notification.type);
-  return (
-    <TouchableOpacity
-      style={[
-        styles.card,
-        {
-          backgroundColor: notification.read ? Colors.surface : withAlpha(color, 0.04),
-          borderWidth: notification.read ? 0 : 1,
-          borderColor: notification.read ? 'transparent' : withAlpha(color, 0.3),
-        },
-      ]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View style={[styles.iconWrap, { backgroundColor: withAlpha(color, 0.1) }]}>
-        <Ionicons name={iconForType(notification.type)} color={color} size={22} />
-      </View>
-      <View style={styles.cardContent}>
-        <View style={styles.cardTitleRow}>
-          <Text
-            style={[styles.notifTitle, { fontWeight: notification.read ? '500' : '700' }]}
-            numberOfLines={1}
-          >
-            {notification.title}
-          </Text>
-          {!notification.read && <View style={styles.unreadDot} />}
-        </View>
-        <Text style={styles.notifBody}>{notification.body}</Text>
-        <Text style={styles.notifTime}>{formatTime(notification.createdAt)}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
+import { NotificationCard } from './notifications/NotificationCard';
+import { routeForNotification, type Nav } from './notifications/utils';
 
 export default function NotificationsScreen() {
   const navigation = useNavigation<Nav>();
@@ -354,14 +230,6 @@ const styles = StyleSheet.create({
   },
   retryButtonText: { color: Colors.surface, fontWeight: '600', fontSize: 14 },
 
-  emptyIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: withAlpha(Colors.primary, 0.08),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   emptyTitle: {
     marginTop: 16,
     color: Colors.textPrimary,
@@ -375,36 +243,4 @@ const styles = StyleSheet.create({
   },
 
   list: { padding: 16 },
-  card: {
-    marginBottom: 10,
-    padding: 16,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  cardContent: { flex: 1 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center' },
-  notifTitle: { flex: 1, fontSize: 15, color: Colors.textPrimary },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.error,
-    marginLeft: 8,
-  },
-  notifBody: { color: Colors.textSecondary, fontSize: 13, lineHeight: 18, marginTop: 4 },
-  notifTime: { color: Colors.textHint, fontSize: 12, marginTop: 8 },
 });
