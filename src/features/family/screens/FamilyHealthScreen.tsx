@@ -19,46 +19,9 @@ import { useFamilyDashboardStore } from '../store/familyStore';
 import { useHealthThresholdStore } from '../store/healthThresholdStore';
 import { useHealthMetricStore } from '../../elderly/store/healthMetricStore';
 import type { HealthMetric } from '../../../shared/types';
-
-const METRIC_ORDER = ['BLOOD_PRESSURE', 'BLOOD_GLUCOSE', 'HEART_RATE', 'WEIGHT'] as const;
-
-interface MetricDef {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  unit: string;
-}
-
-const METRIC_DEFS: Record<string, MetricDef> = {
-  BLOOD_PRESSURE: { title: 'Huyết áp', icon: 'heart', color: Colors.error, unit: 'mmHg' },
-  BLOOD_GLUCOSE: { title: 'Đường huyết', icon: 'water', color: '#1565C0', unit: 'mmol/L' },
-  HEART_RATE: { title: 'Nhịp tim', icon: 'pulse', color: Colors.secondary, unit: 'bpm' },
-  WEIGHT: { title: 'Cân nặng', icon: 'speedometer', color: Colors.warning, unit: 'kg' },
-};
-
-interface Status {
-  label: string;
-  color: string;
-}
-
-function formatTime(iso: string): string {
-  const dt = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - dt.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMin / 60);
-  const diffDays = Math.floor(
-    (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
-      new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime()) /
-      86400000,
-  );
-
-  if (diffMin < 1) return 'Vừa xong';
-  if (diffHours < 1) return `${diffMin} phút trước`;
-  if (diffDays === 0) return `${dt.getHours()}:${String(dt.getMinutes()).padStart(2, '0')}`;
-  if (diffDays === 1) return 'Hôm qua';
-  return `${dt.getDate()}/${dt.getMonth() + 1}`;
-}
+import { METRIC_ORDER, type Status } from './familyHealth/metricConfig';
+import { MetricSection } from './familyHealth/MetricSection';
+import { PeriodChip } from './familyHealth/widgets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -262,103 +225,6 @@ function HealthBody({
   );
 }
 
-function PeriodChip({
-  label,
-  selected,
-  onTap,
-}: {
-  label: string;
-  selected: boolean;
-  onTap: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      onPress={onTap}
-      style={[styles.chip, selected ? styles.chipSelected : styles.chipUnselected]}
-    >
-      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function MetricSection({
-  type,
-  latest,
-  all,
-  status,
-}: {
-  type: string;
-  latest: HealthMetric;
-  all: HealthMetric[];
-  status: Status;
-}) {
-  const def = METRIC_DEFS[type];
-  const displayValue =
-    type === 'BLOOD_PRESSURE' && latest.valueSecondary != null
-      ? `${latest.value}/${latest.valueSecondary}`
-      : latest.value;
-  const unitLabel = latest.unit || def.unit;
-  const timeLabel = formatTime(latest.recordedAt);
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardHeaderRow}>
-        <View style={[styles.iconWrap, { backgroundColor: `${def.color}1A` }]}>
-          <Ionicons name={def.icon} size={22} color={def.color} />
-        </View>
-        <Text style={styles.cardTitle}>{def.title}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: `${status.color}1A` }]}>
-          <Text style={[styles.statusBadgeText, { color: status.color }]}>{status.label}</Text>
-        </View>
-      </View>
-
-      <View style={{ height: 16 }} />
-
-      <View style={styles.valueRow}>
-        <Text style={styles.valueText}>{displayValue}</Text>
-        <Text style={styles.unitText}>{unitLabel}</Text>
-        {timeLabel.length > 0 && <Text style={styles.timeText}>{`• ${timeLabel}`}</Text>}
-      </View>
-
-      <View style={{ height: 14 }} />
-
-      <MiniChart metrics={all} color={def.color} />
-    </View>
-  );
-}
-
-function MiniChart({ metrics, color }: { metrics: HealthMetric[]; color: string }) {
-  if (metrics.length < 2) {
-    return (
-      <View style={styles.chartEmpty}>
-        <Text style={styles.chartEmptyText}>Cần thêm dữ liệu</Text>
-      </View>
-    );
-  }
-
-  const sorted = [...metrics].sort(
-    (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime(),
-  );
-  const values = sorted.map((m) => Number.parseFloat(m.value) || 0);
-  const maxVal = Math.max(...values);
-  const minVal = Math.min(...values);
-  const range = Math.max(maxVal - minVal, 1);
-
-  return (
-    <View style={styles.chart}>
-      {values.map((v, i) => {
-        const fraction = (v - minVal) / range;
-        const height = Math.min(50, Math.max(4, 6 + fraction * 44));
-        return (
-          <View key={i} style={styles.chartBarSlot}>
-            <View style={[styles.chartBar, { height, backgroundColor: color }]} />
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   appBar: {
@@ -387,51 +253,4 @@ const styles = StyleSheet.create({
   retryButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
   scroll: { padding: 16 },
   periodRow: { flexDirection: 'row' },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  chipSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipUnselected: { backgroundColor: Colors.surface, borderColor: 'rgba(173, 181, 189, 0.3)' },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  chipTextSelected: { color: '#FFFFFF' },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  cardTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusBadgeText: { fontSize: 12, fontWeight: '600' },
-  valueRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  valueText: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary },
-  unitText: { fontSize: 14, color: Colors.textSecondary, marginLeft: 6, marginBottom: 4 },
-  timeText: { fontSize: 12, color: Colors.textHint, marginLeft: 10, marginBottom: 4 },
-  chartEmpty: {
-    height: 50,
-    backgroundColor: Colors.background,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chartEmptyText: { color: Colors.textHint, fontSize: 12 },
-  chart: { height: 50, flexDirection: 'row', alignItems: 'flex-end' },
-  chartBarSlot: { flex: 1, marginHorizontal: 1, alignItems: 'stretch', justifyContent: 'flex-end' },
-  chartBar: { borderRadius: 3 },
 });
