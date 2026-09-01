@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius } from '../../../../core/theme';
-import { hexToRgba } from './utils';
+import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import { VitalMiniCard } from './widgets';
 
 interface Props {
@@ -40,12 +40,11 @@ export function ElderlyCard({
     <View style={styles.elderlyCard}>
       <View style={styles.elderlyCardTopRow}>
         <View style={styles.elderlyAvatar}>
-          <Ionicons name="body" color={Colors.primary} size={26} />
+          <Ionicons name="person" color={Colors.primary} size={24} />
         </View>
         <View style={{ flex: 1, marginLeft: 14 }}>
           <Text style={styles.elderlyCardName}>
-            <Text style={styles.elderlyCardLabelInline}>Người thân: </Text>
-            {hasElderly ? elderlyName : 'Chưa liên kết'}
+            {hasElderly ? elderlyName : 'Chưa liên kết người thân'}
           </Text>
           {hasElderly && (
             <Text style={styles.elderlyCardUpdated}>
@@ -54,19 +53,34 @@ export function ElderlyCard({
           )}
         </View>
         {hasElderly && (
-          <View style={styles.onlinePill}>
+          <View
+            style={[
+              styles.onlinePill,
+              {
+                backgroundColor: isRecentlyActive
+                  ? Colors.successLight
+                  : Colors.backgroundSecondary,
+              },
+            ]}
+          >
             <View
               style={[
                 styles.onlineDot,
                 { backgroundColor: isRecentlyActive ? Colors.success : Colors.textHint },
               ]}
             />
-            <Text style={styles.onlinePillText}>
-              {isRecentlyActive ? 'Trực tuyến' : 'Ngoại tuyến'}
+            <Text
+              style={[
+                styles.onlinePillText,
+                { color: isRecentlyActive ? Colors.successDark : Colors.textSecondary },
+              ]}
+            >
+              {isRecentlyActive ? 'Hoạt động' : 'Ngoại tuyến'}
             </Text>
           </View>
         )}
       </View>
+
       {hasElderly && healthConditions.length > 0 && (
         <View style={styles.conditionsWrap}>
           {healthConditions.map((c, idx) => (
@@ -76,6 +90,7 @@ export function ElderlyCard({
           ))}
         </View>
       )}
+
       {showVitals && (
         <View style={styles.vitalsRow}>
           <VitalMiniCard
@@ -83,20 +98,26 @@ export function ElderlyCard({
             value={hrText}
             isWarning={isHrWarning}
             onPress={onVitalPress}
+            icon="heart"
+            tintColor={Colors.heartRate}
           />
-          <View style={{ width: 10 }} />
+          <View style={{ width: 8 }} />
           <VitalMiniCard
             label="Huyết áp"
             value={bpText}
             isWarning={isBpWarning}
             onPress={onVitalPress}
+            icon="pulse"
+            tintColor={Colors.bloodPressure}
           />
-          <View style={{ width: 10 }} />
+          <View style={{ width: 8 }} />
           <VitalMiniCard
-            label="Đường"
+            label="Đường huyết"
             value={glucoseText}
             isWarning={isGlucoseWarning}
             onPress={onVitalPress}
+            icon="water"
+            tintColor={Colors.bloodGlucose}
           />
         </View>
       )}
@@ -106,49 +127,41 @@ export function ElderlyCard({
 
 const styles = StyleSheet.create({
   elderlyCard: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
+    padding: 20,
+    borderRadius: 22,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.25),
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    borderColor: Colors.border,
+    ...Shadows.md,
   },
   elderlyCardTopRow: { flexDirection: 'row', alignItems: 'center' },
   elderlyAvatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: hexToRgba(Colors.primary, 0.12),
+    backgroundColor: Colors.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  elderlyCardLabelInline: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
-  elderlyCardName: { color: Colors.textPrimary, fontSize: 18, fontWeight: '700', marginTop: 2 },
-  elderlyCardUpdated: { color: Colors.textSecondary, fontSize: 12, marginTop: 3 },
+  elderlyCardName: { color: Colors.textPrimary, fontSize: 18, fontWeight: '800' },
+  elderlyCardUpdated: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
   onlinePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.35),
-    backgroundColor: Colors.surface,
-  },
-  onlineDot: { width: 7, height: 7, borderRadius: 3.5 },
-  onlinePillText: { color: Colors.textPrimary, fontSize: 11, fontWeight: '600' },
-  conditionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  conditionChip: {
+    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: hexToRgba(Colors.primary, 0.1),
   },
-  conditionChipText: { color: Colors.primary, fontSize: 12, fontWeight: '600' },
+  onlineDot: { width: 7, height: 7, borderRadius: 3.5 },
+  onlinePillText: { fontSize: 11.5, fontWeight: '700' },
+  conditionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 14 },
+  conditionChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: Colors.primaryLighter,
+  },
+  conditionChipText: { color: Colors.primary, fontSize: 11.5, fontWeight: '700' },
   vitalsRow: { flexDirection: 'row', marginTop: 16 },
 });

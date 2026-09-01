@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../../core/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { MedicationItem } from '../../../../shared/types';
-import { hexToRgba, formatDoseTime } from './utils';
+import { formatDoseTime } from './utils';
 import { MedProgressRing } from './widgets';
 
 export function TodayMedsCard({
@@ -19,41 +21,57 @@ export function TodayMedsCard({
   return (
     <View style={styles.sectionCard}>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
-        <TouchableOpacity onPress={onViewAll}>
+        <View style={styles.titleRow}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="medkit" size={18} color={Colors.primary} />
+          </View>
+          <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
+        </View>
+        <TouchableOpacity onPress={onViewAll} activeOpacity={0.7}>
           <Text style={styles.viewAllText}>Xem tất cả →</Text>
         </TouchableOpacity>
       </View>
-      <View style={{ height: 10 }} />
+
+      <View style={{ height: 14 }} />
+
       {isLoading && medItems.length === 0 ? (
         <View style={styles.loadingBox}>
           <ActivityIndicator size="small" color={Colors.primary} />
         </View>
       ) : medItems.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Text style={styles.emptyBoxText}>Chưa có thuốc nào</Text>
+          <Ionicons name="medkit-outline" size={32} color={Colors.textHint} />
+          <Text style={styles.emptyBoxText}>Chưa có lịch uống thuốc</Text>
         </View>
       ) : (
         <View style={styles.medCardRow}>
           <MedProgressRing taken={takenMeds} total={medItems.length} />
-          <View style={{ width: 14 }} />
+          <View style={{ width: 18 }} />
           <View style={{ flex: 1 }}>
             {medItems.slice(0, 4).map((med) => (
               <View key={med.id} style={styles.medListRow}>
-                <Text
+                <View
                   style={[
-                    styles.medCheckMark,
-                    { color: med.taken ? Colors.success : Colors.error },
+                    styles.medCheckBadge,
+                    { backgroundColor: med.taken ? Colors.successLight : Colors.warningLight },
                   ]}
                 >
-                  {med.taken ? '✓' : '✗'}
-                </Text>
+                  <Ionicons
+                    name={med.taken ? 'checkmark' : 'time-outline'}
+                    size={13}
+                    color={med.taken ? Colors.successDark : Colors.warningDark}
+                  />
+                </View>
                 <Text style={styles.medListName} numberOfLines={1}>
-                  {med.name} {med.dosage}
+                  {med.name}
                 </Text>
-                <Text style={[styles.medListTime, !med.taken && { color: Colors.warning }]}>
+                <Text
+                  style={[
+                    styles.medListTime,
+                    { color: med.taken ? Colors.textSecondary : Colors.warningDark },
+                  ]}
+                >
                   {formatDoseTime(med)}
-                  {!med.taken ? ' (sắp tới)' : ''}
                 </Text>
               </View>
             ))}
@@ -66,45 +84,57 @@ export function TodayMedsCard({
 
 const styles = StyleSheet.create({
   sectionCard: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
+    padding: 20,
+    borderRadius: 22,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.25),
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    borderColor: Colors.border,
+    ...Shadows.md,
   },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: Colors.primaryLighter,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sectionTitle: {
-    fontSize: Typography.sectionTitle.fontSize,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
   viewAllText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: Colors.primary,
   },
   loadingBox: { height: 60, justifyContent: 'center', alignItems: 'center' },
   emptyBox: {
     width: '100%',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surface,
+    padding: 24,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
+    gap: 6,
   },
-  emptyBoxText: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
-  medCardRow: { flexDirection: 'row', alignItems: 'center', paddingTop: Spacing.md },
-  medListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  medCheckMark: { fontSize: 15, fontWeight: '700', width: 18 },
+  emptyBoxText: { color: Colors.textSecondary, fontSize: 13 },
+  medCardRow: { flexDirection: 'row', alignItems: 'center' },
+  medListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 8 },
+  medCheckBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   medListName: {
     flex: 1,
-    fontSize: Typography.buttonSmall.fontSize,
+    fontSize: 13.5,
     fontWeight: '600',
     color: Colors.textPrimary,
   },
-  medListTime: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
+  medListTime: { fontSize: 12, fontWeight: '700' },
 });
