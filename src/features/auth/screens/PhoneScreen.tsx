@@ -16,7 +16,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
-import { HintGray, White } from './register/theme';
+import { Colors } from '../../../core/theme/colors';
+import { HintGray } from './register/theme';
 import {
   normalizePhone,
   validateEmail,
@@ -128,11 +129,11 @@ export default function PhoneScreen() {
           showsVerticalScrollIndicator={false}
         >
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
             style={styles.backBtn}
-            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Ionicons name="arrow-back" size={20} color={White} />
+            <Ionicons name="arrow-back" size={24} color={Colors.primary} />
           </TouchableOpacity>
 
           <View style={styles.mascotWrapper}>
