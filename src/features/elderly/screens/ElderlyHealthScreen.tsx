@@ -76,9 +76,8 @@ export default function ElderlyHealthScreen() {
     loadThresholds(elderlyId, controller.signal);
     fitStore.getState().loadStatus(controller.signal);
     return () => controller.abort();
-    // Re-run only when the resolved elderlyId changes; the stores are keyed by it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+    // `healthStore`/`fitStore` are keyed by `elderlyId`, so they change in lockstep with it.
+  }, [elderlyId, healthStore, fitStore, loadThresholds]);
 
   const getStatus = (data: HealthMetric): Status =>
     computeStatus(data, elderlyId, findThresholdFor);

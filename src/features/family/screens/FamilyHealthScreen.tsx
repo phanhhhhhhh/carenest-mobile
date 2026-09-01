@@ -22,6 +22,7 @@ import type { HealthMetric } from '../../../shared/types';
 import { METRIC_ORDER, type Status } from './familyHealth/metricConfig';
 import { MetricSection } from './familyHealth/MetricSection';
 import { PeriodChip } from './familyHealth/widgets';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -34,14 +35,12 @@ export default function FamilyHealthScreen() {
   const elderlyId = useFamilyDashboardStore((s) => s.elderlyId());
   const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Người thân';
 
-  useEffect(() => {
+  useMountEffect(() => {
     if (dashboardData) return;
     const controller = new AbortController();
     loadDashboard(controller.signal);
     return () => controller.abort();
-    // Load the dashboard once on mount if it isn't already populated.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -100,9 +99,8 @@ function HealthBody({
     healthStore.getState().load(undefined, controller.signal);
     loadThresholds(elderlyId, controller.signal);
     return () => controller.abort();
-    // Re-run only when elderlyId changes; the store is keyed by it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+    // `healthStore` is keyed by `elderlyId`, so it changes in lockstep with it.
+  }, [elderlyId, healthStore, loadThresholds]);
 
   const deriveStatus = (type: string, metric: HealthMetric): Status => {
     const threshold = findFor(type);

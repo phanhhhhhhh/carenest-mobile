@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import * as storage from '../../../core/storage/secureStorage';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore, useFamilyLinkStore } from '../store/familyStore';
 import { styles } from './familyProfile/styles';
@@ -53,13 +54,11 @@ export default function FamilyProfileScreen() {
     })();
   }, []);
 
-  useEffect(() => {
+  useMountEffect(() => {
     if (!dashboardData) {
       loadDashboard();
     }
-    // Load the dashboard once on mount if it isn't already populated.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const openAddFamilyDialog = () => {
     setPhoneInput('');

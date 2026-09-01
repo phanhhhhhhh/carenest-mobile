@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import { QUICK_REPLIES, formatTime, greeting } from './elderlyChat/utils';
 import { ChatBubble } from './elderlyChat/ChatBubble';
 import { TypingIndicator } from './elderlyChat/TypingIndicator';
 import { WelcomeBubble } from './elderlyChat/WelcomeBubble';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function ElderlyChatScreen() {
   const navigation = useNavigation();
@@ -39,7 +40,7 @@ export default function ElderlyChatScreen() {
   const [isListening, setIsListening] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     loadHistory({ refresh: true }, controller.signal);
     (async () => {
@@ -47,9 +48,7 @@ export default function ElderlyChatScreen() {
       if (name) setUserName(name);
     })();
     return () => controller.abort();
-    // Load history once on mount; `loadHistory` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const welcomeMessage =
     `${greeting()} ${userName}! Tôi là trợ lý chăm sóc sức khỏe của bạn. ` +

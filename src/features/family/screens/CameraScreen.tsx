@@ -19,6 +19,7 @@ import {
 } from './familyCamera/CameraModals';
 import { CameraAppBar, CameraStatusBar, CameraTabBar } from './familyCamera/chrome';
 import { useCameraActions } from './familyCamera/useCameraActions';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -42,21 +43,17 @@ export default function CameraScreen() {
 
   const actions = useCameraActions(elderlyId);
 
-  useEffect(() => {
+  useMountEffect(() => {
     if (!dashboardData) {
       loadDashboard();
     }
-    // Load the dashboard once on mount if it isn't already populated.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (elderlyId) {
       load(elderlyId);
     }
-    // Re-run when the selected elderly changes; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+  }, [elderlyId, load]);
 
   const renderError = () => (
     <View style={styles.center}>

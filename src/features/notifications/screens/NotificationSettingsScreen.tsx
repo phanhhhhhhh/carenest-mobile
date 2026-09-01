@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useNotificationSettingsStore } from '../store/notificationSettingsStore
 import { Section, ToggleTile } from './notificationSettings/tiles';
 import { ReminderMinutesTile } from './notificationSettings/ReminderMinutesTile';
 import { TimePickerTile } from './notificationSettings/TimePickerTile';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function NotificationSettingsScreen() {
   const navigation = useNavigation();
@@ -36,13 +37,11 @@ export default function NotificationSettingsScreen() {
   const setQuietHoursStart = useNotificationSettingsStore((s) => s.setQuietHoursStart);
   const setQuietHoursEnd = useNotificationSettingsStore((s) => s.setQuietHoursEnd);
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
-    // Load once on mount; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const withSaveToast =
     <T,>(setter: (v: T) => Promise<boolean>) =>

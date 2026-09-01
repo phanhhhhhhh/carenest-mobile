@@ -28,6 +28,7 @@ import { showErrorToast } from '../../../shared/components/toastStore';
 import { formatDateHeader, greeting } from './elderlyHome/utils';
 import { MedicationTile, NextMedicationCard } from './elderlyHome/MedicationCards';
 import { SosPanel, useSosCountdown } from './elderlyHome/SosPanel';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -63,24 +64,20 @@ export default function ElderlyHomeScreen() {
     })();
   }, []);
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     loadProfile(controller.signal);
     loadMedications(undefined, controller.signal);
     loadNotifications(controller.signal);
     return () => controller.abort();
-    // Load once on mount; these are all stable store actions.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (!elderlyId) return;
     const controller = new AbortController();
     loadCamera(elderlyId, controller.signal);
     return () => controller.abort();
-    // Re-run when the resolved elderlyId changes; `loadCamera` is stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+  }, [elderlyId, loadCamera]);
 
   const displayName = profile?.name && profile.name.length > 0 ? profile.name : name;
 
