@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
@@ -25,16 +25,30 @@ export default function FamilyShell() {
     <>
       <SosAlertOverlay />
       <Tab.Navigator
-        // See ElderlyShell.tsx — web has no safe-area bottom inset (no
-        // viewport-fit=cover), so the tab bar's label row renders flush
-        // against — and partly past — the physical screen edge there.
-        safeAreaInsets={Platform.OS === 'web' ? { bottom: 6 } : undefined}
+        safeAreaInsets={Platform.OS === 'web' ? { bottom: 8 } : undefined}
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarActiveTintColor: Colors.primary,
-          tabBarInactiveTintColor: Colors.textHint,
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-          tabBarStyle: { height: 64, paddingTop: 6, paddingBottom: 6 },
+          tabBarInactiveTintColor: Colors.textSecondary,
+          tabBarLabelStyle: {
+            fontSize: 11.5,
+            fontWeight: '600',
+            marginTop: -2,
+            marginBottom: Platform.OS === 'ios' ? 0 : 4,
+          },
+          tabBarStyle: {
+            height: Platform.OS === 'ios' ? 86 : 68,
+            paddingTop: 8,
+            paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+            backgroundColor: Colors.surface,
+            borderTopWidth: 1,
+            borderTopColor: Colors.border,
+            shadowColor: '#0F172A',
+            shadowOffset: { width: 0, height: -3 },
+            shadowOpacity: 0.04,
+            shadowRadius: 10,
+            elevation: 8,
+          },
           tabBarIcon: ({ color, focused }) => {
             const icons: Record<string, [string, string]> = {
               FamilyDashboard: ['home-outline', 'home'],
@@ -45,11 +59,13 @@ export default function FamilyShell() {
             };
             const [outline, filled] = icons[route.name] || ['ellipse-outline', 'ellipse'];
             return (
-              <Ionicons
-                name={(focused ? filled : outline) as keyof typeof Ionicons.glyphMap}
-                size={22}
-                color={color}
-              />
+              <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+                <Ionicons
+                  name={(focused ? filled : outline) as keyof typeof Ionicons.glyphMap}
+                  size={21}
+                  color={focused ? Colors.primary : color}
+                />
+              </View>
             );
           },
         })}
@@ -83,3 +99,16 @@ export default function FamilyShell() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  iconWrapper: {
+    width: 36,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconWrapperActive: {
+    backgroundColor: Colors.primaryLighter,
+  },
+});
