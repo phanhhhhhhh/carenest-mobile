@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../../core/theme';
+import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { MedicationItem } from '../../../../shared/types';
 import { formatTimeFromIso } from './utils';
 
@@ -22,7 +23,7 @@ export function NextMedicationCard({
     <View
       style={[
         styles.nextMedCard,
-        { borderColor: medication.taken ? 'rgba(67, 160, 71, 0.3)' : 'rgba(255, 167, 38, 0.4)' },
+        medication.taken ? styles.nextMedCardTaken : styles.nextMedCardPending,
       ]}
     >
       <View style={styles.nextMedTopRow}>
@@ -30,40 +31,61 @@ export function NextMedicationCard({
           style={[
             styles.nextMedIcon,
             {
-              backgroundColor: medication.taken
-                ? 'rgba(67, 160, 71, 0.1)'
-                : 'rgba(255, 167, 38, 0.1)',
+              backgroundColor: medication.taken ? Colors.successLight : Colors.warningLight,
             },
           ]}
         >
           <Ionicons
             name="medkit"
-            size={26}
-            color={medication.taken ? Colors.success : Colors.warning}
+            size={28}
+            color={medication.taken ? Colors.successDark : Colors.warningDark}
           />
         </View>
         <View style={{ flex: 1, marginLeft: 14 }}>
-          <Text style={styles.nextMedLabel}>
-            {timeLabel ? `Thuốc tiếp theo · ${timeLabel}` : 'Thuốc tiếp theo'}
-          </Text>
-          <Text style={styles.nextMedName}>
-            {medication.name} {medication.dosage}
+          <View style={styles.labelRow}>
+            <View
+              style={[
+                styles.pillBadge,
+                { backgroundColor: medication.taken ? Colors.successLight : Colors.warningLight },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.pillBadgeText,
+                  { color: medication.taken ? Colors.successDark : Colors.warningDark },
+                ]}
+              >
+                {medication.taken ? 'ĐÃ UỐNG' : 'SẮP TỚI'}
+              </Text>
+            </View>
+            {!!timeLabel && <Text style={styles.nextMedTime}>{timeLabel}</Text>}
+          </View>
+          <Text style={styles.nextMedName}>{medication.name}</Text>
+          <Text style={styles.nextMedDosage}>
+            Liều lượng: {medication.dosage || 'Theo chỉ định'}
           </Text>
           {!!medication.instructions && (
-            <Text style={styles.nextMedInstructions}>{medication.instructions}</Text>
+            <Text style={styles.nextMedInstructions}>💡 {medication.instructions}</Text>
           )}
         </View>
       </View>
-      <View style={{ height: 14 }} />
+
+      <View style={{ height: 16 }} />
+
       <TouchableOpacity
         disabled={medication.taken}
         onPress={() => onToggleTaken(medication.id)}
-        style={[
-          styles.takeBtnFull,
-          { backgroundColor: medication.taken ? Colors.textHint : Colors.textPrimary },
-        ]}
+        style={[styles.takeBtnFull, medication.taken ? styles.takeBtnTaken : styles.takeBtnActive]}
+        activeOpacity={0.85}
       >
-        <Text style={styles.takeBtnFullText}>{medication.taken ? 'Đã uống ✓' : '✓ ĐÃ UỐNG'}</Text>
+        <Ionicons
+          name={medication.taken ? 'checkmark-circle' : 'checkmark-circle-outline'}
+          size={22}
+          color="#FFFFFF"
+        />
+        <Text style={styles.takeBtnFullText}>
+          {medication.taken ? 'ĐÃ UỐNG THUỐC' : 'XÁC NHẬN ĐÃ UỐNG'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -72,12 +94,23 @@ export function NextMedicationCard({
 export function MedicationTile({ medication }: { medication: MedicationItem }) {
   const timeLabel = formatTimeFromIso(medication.nextDoseTime);
   return (
-    <View style={styles.medTile}>
-      <View style={styles.medTileIcon}>
-        <Ionicons name="medkit" size={24} color={Colors.primary} />
+    <View style={[styles.medTile, medication.taken && styles.medTileDone]}>
+      <View
+        style={[
+          styles.medTileIcon,
+          { backgroundColor: medication.taken ? Colors.successLight : Colors.primaryLighter },
+        ]}
+      >
+        <Ionicons
+          name="medkit"
+          size={22}
+          color={medication.taken ? Colors.success : Colors.primary}
+        />
       </View>
       <View style={{ flex: 1, marginLeft: 14 }}>
-        <Text style={styles.medTileName}>{medication.name}</Text>
+        <Text style={[styles.medTileName, medication.taken && styles.medTileNameDone]}>
+          {medication.name}
+        </Text>
         <Text style={styles.medTileDosage}>{medication.dosage}</Text>
       </View>
       {!!timeLabel && (
@@ -90,12 +123,12 @@ export function MedicationTile({ medication }: { medication: MedicationItem }) {
         style={[
           styles.medTileCheck,
           {
-            borderColor: medication.taken ? Colors.success : 'rgba(173, 181, 189, 0.5)',
-            backgroundColor: medication.taken ? 'rgba(67, 160, 71, 0.1)' : 'transparent',
+            borderColor: medication.taken ? Colors.success : Colors.border,
+            backgroundColor: medication.taken ? Colors.success : 'transparent',
           },
         ]}
       >
-        {medication.taken && <Ionicons name="checkmark" size={14} color={Colors.success} />}
+        {medication.taken && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
       </View>
     </View>
   );
@@ -103,78 +136,122 @@ export function MedicationTile({ medication }: { medication: MedicationItem }) {
 
 const styles = StyleSheet.create({
   nextMedCard: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    padding: 20,
+    borderRadius: 22,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
+    ...Shadows.md,
   },
-  nextMedTopRow: { flexDirection: 'row', alignItems: 'center' },
+  nextMedCardPending: {
+    borderColor: '#FED7AA',
+  },
+  nextMedCardTaken: {
+    borderColor: '#BBF7D0',
+  },
+  nextMedTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
   nextMedIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  nextMedLabel: { fontSize: 12, color: Colors.textSecondary },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  pillBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  pillBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  nextMedTime: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
   nextMedName: {
-    marginTop: 2,
-    fontSize: Typography.cardTitle.fontSize,
-    fontWeight: '700',
+    fontSize: 19,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
-  nextMedInstructions: {
-    marginTop: 2,
-    fontSize: Typography.bodySmall.fontSize,
+  nextMedDosage: {
+    marginTop: 3,
+    fontSize: 14,
     color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  nextMedInstructions: {
+    marginTop: 4,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
   },
   takeBtnFull: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     width: '100%',
     paddingVertical: 16,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
+    borderRadius: 16,
+  },
+  takeBtnActive: {
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  takeBtnTaken: {
+    backgroundColor: Colors.success,
   },
   takeBtnFullText: {
     color: '#FFFFFF',
-    fontSize: Typography.button.fontSize,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
+
   medTile: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: BorderRadius.md,
+    borderRadius: 16,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(173, 181, 189, 0.2)',
+    borderColor: Colors.border,
+    ...Shadows.sm,
+  },
+  medTileDone: {
+    opacity: 0.85,
+    backgroundColor: '#F8FAFC',
   },
   medTileIcon: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  medTileName: { fontWeight: '600', color: Colors.textPrimary, fontSize: Typography.body.fontSize },
+  medTileName: { fontWeight: '700', color: Colors.textPrimary, fontSize: 16 },
+  medTileNameDone: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
   medTileDosage: {
     marginTop: 2,
     color: Colors.textSecondary,
-    fontSize: Typography.bodySmall.fontSize,
+    fontSize: 13,
   },
   medTileTimeBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(46, 125, 154, 0.08)',
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: Colors.primaryLighter,
   },
   medTileTimeText: {
     color: Colors.primary,
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   medTileCheck: {
     width: 24,
