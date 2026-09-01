@@ -14,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
+import { Colors } from '../../../core/theme/colors';
+import { Shadows } from '../../../core/theme/spacing';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useEmergencyEventStore } from '../store/emergencyEventStore';
@@ -24,13 +25,14 @@ import {
   useNotificationStore,
   selectUnreadCount,
 } from '../../notifications/store/notificationStore';
-import { formatRelative, hexToRgba } from './familyDashboard/utils';
+import { formatRelative } from './familyDashboard/utils';
 import { useDashboardActivity } from './familyDashboard/useDashboardActivity';
 import { ElderlyCard } from './familyDashboard/ElderlyCard';
 import { TodayMedsCard } from './familyDashboard/TodayMedsCard';
 import { DashboardCameraCard } from './familyDashboard/DashboardCameraCard';
 import { ActivityCard } from './familyDashboard/ActivityCard';
 import { AppointmentPreviewCard } from './familyDashboard/widgets';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -70,14 +72,12 @@ export default function FamilyDashboardScreen() {
   const latestByType = dashData?.latestMetrics ?? {};
   const healthIsLoading = dashLoading;
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     loadDashboard(controller.signal);
     loadNotifications(controller.signal);
     return () => controller.abort();
-    // Load once on mount; the loaders are stable store actions.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (!elderlyId) return;
@@ -86,9 +86,7 @@ export default function FamilyDashboardScreen() {
     loadCameras(elderlyId, controller.signal);
     loadAlerts(elderlyId, controller.signal);
     return () => controller.abort();
-    // Re-run when the selected elderly changes; the loaders are stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+  }, [elderlyId, loadMeds, loadCameras, loadAlerts]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -154,7 +152,7 @@ export default function FamilyDashboardScreen() {
           />
         }
       >
-        <View style={styles.headerRow}>
+        <View style={styles.headerCard}>
           <Image
             source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
             style={styles.greetingMascot}
@@ -162,18 +160,23 @@ export default function FamilyDashboardScreen() {
           />
           <View style={{ flex: 1 }}>
             <Text style={styles.greetingSmall}>Xin chào,</Text>
-            <Text style={styles.greeting}>{user?.name || 'bạn'}</Text>
+            <Text style={styles.greeting}>{user?.name || 'Gia đình'}</Text>
           </View>
           <TouchableOpacity
             style={styles.bellButton}
             onPress={() => navigation.navigate('Notifications')}
+            activeOpacity={0.8}
           >
-            <Ionicons name="notifications-outline" size={26} color={Colors.textPrimary} />
-            {unreadCount > 0 && <View style={styles.dotBadge} />}
+            <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+            {unreadCount > 0 && (
+              <View style={styles.dotBadge}>
+                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 18 }} />
 
         {dashData && dashData.linkedElderly.length > 1 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selector}>
@@ -184,11 +187,12 @@ export default function FamilyDashboardScreen() {
                   key={e.elderlyId}
                   style={[styles.elderlyChip, isSelected && styles.elderlyChipActive]}
                   onPress={() => selectElderly(i)}
+                  activeOpacity={0.8}
                 >
                   <Ionicons
-                    name="body-outline"
-                    size={16}
-                    color={isSelected ? 'white' : Colors.primary}
+                    name="person"
+                    size={15}
+                    color={isSelected ? '#FFFFFF' : Colors.primary}
                   />
                   <Text
                     style={[styles.elderlyChipText, isSelected && styles.elderlyChipTextActive]}
@@ -217,7 +221,7 @@ export default function FamilyDashboardScreen() {
           onVitalPress={openHealth}
         />
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 18 }} />
 
         <TodayMedsCard
           medItems={medItems}
@@ -225,48 +229,58 @@ export default function FamilyDashboardScreen() {
           onViewAll={() => navigation.navigate('FamilyShell', { screen: 'FamilyMeds' })}
         />
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 18 }} />
 
         {elderlyId && (
           <TouchableOpacity
             style={styles.weeklyReportCard}
             onPress={() => navigation.navigate('WeeklySummary')}
+            activeOpacity={0.88}
           >
             <View style={styles.weeklyReportIcon}>
-              <Ionicons name="sparkles" size={20} color={Colors.primary} />
+              <Ionicons name="sparkles" size={22} color="#FFFFFF" />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.sectionTitle}>Báo cáo tuần</Text>
-              <Text style={styles.emptyBoxText}>Tổng hợp sức khỏe do AI tạo</Text>
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <View style={styles.aiTagRow}>
+                <Text style={styles.aiTagText}>BÁO CÁO AI HÀNG TUẦN</Text>
+              </View>
+              <Text style={styles.weeklyTitle}>Tổng hợp & Đánh giá sức khỏe</Text>
+              <Text style={styles.weeklySubtitle}>
+                Xem phân tích xu hướng tuần này của người thân
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" color={Colors.textHint} size={20} />
+            <Ionicons name="chevron-forward" color={Colors.aiPrimary} size={22} />
           </TouchableOpacity>
         )}
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 18 }} />
 
         {elderlyId && (
           <>
             <DashboardCameraCard cam={cam} onOpenCamera={openCamera} />
-            <View style={{ height: 24 }} />
+            <View style={{ height: 18 }} />
           </>
         )}
 
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Cảnh báo gần đây</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('FamilyAlerts')}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('FamilyAlerts')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Text style={styles.viewAllText}>Xem tất cả →</Text>
           </TouchableOpacity>
         </View>
-        <View style={{ height: 14 }} />
+        <View style={{ height: 12 }} />
         <ActivityCard items={activityItems} />
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 22 }} />
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Lịch hẹn sắp tới</Text>
+          <Text style={styles.sectionTitle}>Lịch hẹn khám bệnh</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate('FamilyShell', { screen: 'FamilyAppointmentsTab' })}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text style={styles.viewAllText}>Xem tất cả →</Text>
           </TouchableOpacity>
@@ -279,7 +293,9 @@ export default function FamilyDashboardScreen() {
         ) : upcoming.length === 0 ? (
           <View style={styles.emptyBox}>
             <Ionicons name="calendar-outline" color={Colors.textHint} size={32} />
-            <Text style={[styles.emptyBoxText, { marginTop: 8 }]}>Chưa có lịch hẹn nào</Text>
+            <Text style={[styles.emptyBoxText, { marginTop: 6 }]}>
+              Chưa có lịch hẹn khám sắp tới
+            </Text>
           </View>
         ) : (
           upcoming.map((apt) => (
@@ -292,6 +308,8 @@ export default function FamilyDashboardScreen() {
             />
           ))
         )}
+
+        <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -299,24 +317,44 @@ export default function FamilyDashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: Spacing.xl },
+  scroll: { padding: 20 },
 
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  greetingMascot: { width: 52, height: 52, marginRight: 10 },
-  greetingSmall: { fontSize: 14, color: Colors.textSecondary, marginBottom: 2 },
-  greeting: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, flexShrink: 1 },
-  bellButton: { padding: 4 },
+  headerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    padding: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.md,
+  },
+  greetingMascot: { width: 56, height: 56, marginRight: 12 },
+  greetingSmall: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
+  greeting: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginTop: 1 },
+  bellButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dotBadge: {
     position: 'absolute',
     right: 4,
     top: 4,
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: Colors.warning,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: Colors.background,
+    borderColor: Colors.surface,
   },
+  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
 
   selector: { marginBottom: 16 },
   elderlyChip: {
@@ -324,63 +362,83 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 14,
     backgroundColor: Colors.surface,
-    marginRight: 8,
+    marginRight: 10,
     borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.3),
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   elderlyChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   elderlyChipText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
+    fontSize: 13.5,
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
-  elderlyChipTextActive: { color: 'white' },
+  elderlyChipTextActive: { color: '#FFFFFF' },
 
   weeklyReportCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.surface,
+    padding: 18,
+    borderRadius: 22,
+    backgroundColor: Colors.aiLighter,
     borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.25),
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    borderColor: '#C7D2FE',
+    shadowColor: Colors.aiPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
   },
   weeklyReportIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: hexToRgba(Colors.primary, 0.1),
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.aiPrimary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  aiTagRow: { marginBottom: 2 },
+  aiTagText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: Colors.aiPrimary,
+    letterSpacing: 0.5,
+  },
+  weeklyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#312E81',
+  },
+  weeklySubtitle: {
+    fontSize: 12,
+    color: '#4338CA',
+    marginTop: 2,
   },
 
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: {
-    fontSize: Typography.sectionTitle.fontSize,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
   viewAllText: {
-    fontSize: Typography.bodySmall.fontSize,
-    fontWeight: '600',
+    fontSize: 13.5,
+    fontWeight: '700',
     color: Colors.primary,
   },
 
   loadingBox: { height: 60, justifyContent: 'center', alignItems: 'center' },
   emptyBox: {
     width: '100%',
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.md,
+    padding: 24,
+    borderRadius: 18,
     backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
     alignItems: 'center',
   },
-  emptyBoxText: { color: Colors.textSecondary, fontSize: Typography.bodySmall.fontSize },
+  emptyBoxText: { color: Colors.textSecondary, fontSize: 13 },
 });

@@ -22,6 +22,7 @@ import type { MedicationItem } from '../../../shared/types';
 import { pad2, UPCOMING_WINDOW_MS } from './elderlyMedication/utils';
 import { DueBanner } from './elderlyMedication/DueBanner';
 import { MedRow } from './elderlyMedication/MedRow';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -36,13 +37,11 @@ export default function ElderlyMedicationScreen() {
 
   const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     load(undefined, controller.signal);
     return () => controller.abort();
-    // Load once on mount; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   // Ticks the "còn X phút" countdown and the upcoming→due transition live,
   // without needing a manual refresh, for the 15-minutes-before demo flow.

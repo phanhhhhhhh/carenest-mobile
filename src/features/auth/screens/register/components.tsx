@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BorderGray, ErrorRed, HintGray, LabelGray, Teal, White } from './theme';
+import { ErrorRed, HintGray, Teal } from './theme';
 import { PASSWORD_RULES } from './validators';
 
 interface PillFieldProps {
@@ -47,30 +47,32 @@ export function PasswordChecklist({ value }: { value: string }) {
 
 const styles = StyleSheet.create({
   fieldBlock: { marginBottom: 16 },
-  label: { fontSize: 14.5, fontWeight: '600', color: LabelGray, marginBottom: 7 },
+  label: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 6 },
   labelError: { color: ErrorRed },
   inputPill: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.2,
-    borderColor: BorderGray,
-    borderRadius: 9999,
-    paddingHorizontal: 18,
-    height: 54,
-    backgroundColor: White,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    backgroundColor: '#F8FAFC',
   },
-  inputPillError: { borderColor: ErrorRed },
-  fieldError: { fontSize: 13, color: ErrorRed, marginTop: 5, marginLeft: 16 },
+  inputPillError: { borderColor: ErrorRed, backgroundColor: '#FFF5F5' },
+  fieldError: { fontSize: 12.5, color: ErrorRed, marginTop: 4, marginLeft: 12 },
   checklist: {
-    backgroundColor: '#F2FAF9',
+    backgroundColor: '#F0FDFA',
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#CCFBF1',
     paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     marginTop: -4,
     marginBottom: 16,
   },
-  checklistTitle: { fontSize: 13.5, fontWeight: '600', color: LabelGray, marginBottom: 8 },
+  checklistTitle: { fontSize: 13, fontWeight: '700', color: '#0F766E', marginBottom: 8 },
   checklistRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  checklistLabel: { fontSize: 13.5, color: LabelGray, marginLeft: 8 },
-  checklistLabelOk: { color: Teal, fontWeight: '600' },
+  checklistLabel: { fontSize: 13, color: '#64748B', marginLeft: 8 },
+  checklistLabelOk: { color: '#0F766E', fontWeight: '600' },
 });

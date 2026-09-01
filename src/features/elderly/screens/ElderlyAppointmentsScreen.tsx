@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { Colors } from '../../../core/theme/colors';
 import { useAppointmentStore } from '../../family/store/appointmentStore';
 import type { AppointmentItem } from '../../../shared/types';
 import { AppointmentCard } from './elderlyAppointments/AppointmentCard';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function ElderlyAppointmentsScreen() {
   const navigation = useNavigation();
@@ -29,13 +30,11 @@ export default function ElderlyAppointmentsScreen() {
   const [tab, setTab] = useState<0 | 1>(0);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     load(undefined, controller.signal);
     return () => controller.abort();
-    // Load once on mount; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const upcomingList = upcoming();
   const pastList = past();

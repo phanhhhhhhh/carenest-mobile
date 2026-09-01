@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../../core/theme';
+import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { MedicationItem } from '../../../../shared/types';
 
 export function DueBanner({
@@ -20,45 +21,57 @@ export function DueBanner({
   onSnooze: (med: MedicationItem) => void;
 }) {
   const isUpcoming = phase === 'upcoming';
-  const accent = isUpcoming ? Colors.primary : Colors.warning;
+  const accent = isUpcoming ? Colors.primary : Colors.warningDark;
+  const bgAccent = isUpcoming ? Colors.primaryLighter : Colors.warningLight;
 
   return (
-    <View style={[styles.dueBanner, isUpcoming && styles.upcomingBanner]}>
+    <View style={[styles.dueBanner, isUpcoming ? styles.upcomingBanner : styles.dueNowBanner]}>
       <View style={styles.dueHeaderRow}>
-        <Ionicons name={isUpcoming ? 'time-outline' : 'alarm'} size={18} color={accent} />
-        <Text style={[styles.dueHeaderText, isUpcoming && styles.upcomingHeaderText]}>
-          {isUpcoming ? 'SẮP ĐẾN GIỜ UỐNG THUỐC' : 'ĐẾN GIỜ UỐNG THUỐC'}
+        <View style={[styles.phaseBadge, { backgroundColor: bgAccent }]}>
+          <Ionicons name={isUpcoming ? 'time' : 'alarm'} size={15} color={accent} />
+          <Text style={[styles.dueHeaderText, { color: accent }]}>
+            {isUpcoming ? 'SẮP ĐẾN GIỜ UỐNG THUỐC' : 'ĐẾN GIỜ UỐNG THUỐC'}
+          </Text>
+        </View>
+        <Text style={styles.dueTimeLabel}>
+          {isUpcoming ? `Còn ~${minutesUntilDue} phút` : dueTimeLabel}
         </Text>
       </View>
-      <View style={{ height: 14 }} />
+
+      <View style={{ height: 16 }} />
+
       <View style={styles.dueRow}>
-        <View style={[styles.dueIconWrap, isUpcoming && styles.upcomingIconWrap]}>
-          <Ionicons name="medkit" size={26} color={accent} />
+        <View style={[styles.dueIconWrap, { backgroundColor: bgAccent }]}>
+          <Ionicons name="medkit" size={28} color={accent} />
         </View>
         <View style={{ flex: 1, marginLeft: 14 }}>
-          <Text style={styles.dueMedName}>
-            {med.name} {med.dosage}
-          </Text>
-          {!!med.instructions && <Text style={styles.dueInstructions}>{med.instructions}</Text>}
-          <Text style={styles.dueTimeLabel}>
-            {isUpcoming
-              ? `Còn khoảng ${minutesUntilDue} phút nữa${dueTimeLabel ? ` · ${dueTimeLabel}` : ''}`
-              : dueTimeLabel}
-          </Text>
+          <Text style={styles.dueMedName}>{med.name}</Text>
+          <Text style={styles.dueDosage}>Liều: {med.dosage || '1 liều'}</Text>
+          {!!med.instructions && <Text style={styles.dueInstructions}>💡 {med.instructions}</Text>}
         </View>
       </View>
-      <View style={{ height: 16 }} />
+
+      <View style={{ height: 18 }} />
+
       <TouchableOpacity
-        style={[styles.dueTakeBtn, isUpcoming && styles.upcomingTakeBtn]}
+        style={styles.dueTakeBtn}
         onPress={() => onTakeNow(med)}
+        activeOpacity={0.85}
       >
-        <Text style={styles.dueTakeBtnText}>✓ ĐÃ UỐNG</Text>
+        <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
+        <Text style={styles.dueTakeBtnText}>XÁC NHẬN ĐÃ UỐNG</Text>
       </TouchableOpacity>
+
       {phase === 'due' && (
         <>
           <View style={{ height: 10 }} />
-          <TouchableOpacity style={styles.dueSnoozeBtn} onPress={() => onSnooze(med)}>
-            <Text style={styles.dueSnoozeBtnText}>Hoãn 10 phút</Text>
+          <TouchableOpacity
+            style={styles.dueSnoozeBtn}
+            onPress={() => onSnooze(med)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="timer-outline" size={18} color={Colors.textSecondary} />
+            <Text style={styles.dueSnoozeBtnText}>Nhắc lại sau 10 phút</Text>
           </TouchableOpacity>
         </>
       )}
@@ -68,64 +81,100 @@ export function DueBanner({
 
 const styles = StyleSheet.create({
   dueBanner: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    padding: 20,
+    borderRadius: 22,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
-    borderColor: Colors.textPrimary,
+    ...Shadows.md,
   },
-  dueHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dueHeaderText: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, letterSpacing: 0.5 },
-  upcomingHeaderText: { color: Colors.primary },
+  upcomingBanner: {
+    borderColor: '#BAE6FD',
+  },
+  dueNowBanner: {
+    borderColor: '#FED7AA',
+  },
+  dueHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  phaseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  dueHeaderText: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  dueTimeLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+  },
   dueRow: { flexDirection: 'row', alignItems: 'center' },
   dueIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 167, 38, 0.4)',
-    borderStyle: 'dashed',
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  upcomingBanner: { borderColor: Colors.primary },
-  upcomingIconWrap: { borderColor: 'rgba(46, 125, 154, 0.4)' },
-  upcomingTakeBtn: { backgroundColor: Colors.primary },
   dueMedName: {
-    fontSize: Typography.cardTitle.fontSize,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
-  dueInstructions: {
-    fontSize: Typography.bodySmall.fontSize,
+  dueDosage: {
+    fontSize: 14,
     color: Colors.textSecondary,
+    fontWeight: '500',
     marginTop: 2,
   },
-  dueTimeLabel: { fontSize: 12, color: Colors.textHint, marginTop: 2 },
+  dueInstructions: {
+    fontSize: 12.5,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
   dueTakeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     width: '100%',
     paddingVertical: 16,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.textPrimary,
-    alignItems: 'center',
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   dueTakeBtnText: {
     color: '#FFFFFF',
-    fontSize: Typography.button.fontSize,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   dueSnoozeBtn: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: Colors.backgroundSecondary,
   },
   dueSnoozeBtnText: {
-    color: Colors.textPrimary,
-    fontSize: Typography.button.fontSize,
-    fontWeight: '600',
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
