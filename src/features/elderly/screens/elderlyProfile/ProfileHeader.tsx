@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 
 export function ProfileHeader({
   name,
@@ -23,7 +24,7 @@ export function ProfileHeader({
           />
         </View>
         <View style={styles.avatarBadge}>
-          <Ionicons name="camera" size={16} color="#FFFFFF" />
+          <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
         </View>
       </View>
       <View style={{ height: 14 }} />
@@ -39,17 +40,22 @@ export function ProfileHeader({
         style={[
           styles.roleBadge,
           {
-            backgroundColor: isElderlyRole ? 'rgba(46, 125, 154, 0.1)' : 'rgba(76, 175, 130, 0.1)',
+            backgroundColor: isElderlyRole ? Colors.primaryLighter : Colors.secondaryLighter,
           },
         ]}
       >
+        <Ionicons
+          name={isElderlyRole ? 'person' : 'people'}
+          size={14}
+          color={isElderlyRole ? Colors.primary : Colors.secondaryDark}
+        />
         <Text
           style={[
             styles.roleBadgeText,
-            { color: isElderlyRole ? Colors.primary : Colors.secondary },
+            { color: isElderlyRole ? Colors.primary : Colors.secondaryDark },
           ]}
         >
-          {isElderlyRole ? 'Người cao tuổi' : 'Gia đình'}
+          {isElderlyRole ? 'Tài khoản Người cao tuổi' : 'Tài khoản Gia đình'}
         </Text>
       </View>
     </View>
@@ -58,17 +64,23 @@ export function ProfileHeader({
 
 const styles = StyleSheet.create({
   avatarSection: { alignItems: 'center' },
-  avatarWrap: { width: 100, height: 100 },
+  avatarWrap: {
+    width: 104,
+    height: 104,
+    ...Shadows.lg,
+  },
   avatarCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(46, 125, 154, 0.1)',
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: Colors.primaryLighter,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: Colors.surface,
   },
-  avatarMascot: { width: '100%', height: '100%', borderRadius: 999 },
+  avatarMascot: { width: '100%', height: '100%' },
   avatarBadge: {
     position: 'absolute',
     right: 0,
@@ -82,8 +94,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  name: { fontSize: 22, fontWeight: '700', color: Colors.textPrimary },
-  phone: { color: Colors.textSecondary, fontSize: 14 },
-  roleBadge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20 },
-  roleBadgeText: { fontSize: 13, fontWeight: '600' },
+  name: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  phone: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  roleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  roleBadgeText: { fontSize: 13, fontWeight: '700' },
 });

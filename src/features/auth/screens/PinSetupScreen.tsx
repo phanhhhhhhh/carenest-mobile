@@ -11,7 +11,9 @@ import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
+import { Shadows } from '../../../core/theme/spacing';
 import { useAuthStore } from '../store/authStore';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { usePinEntry } from './pinSetup/usePinEntry';
@@ -91,51 +93,58 @@ export default function PinSetupScreen() {
             style={styles.backBtn}
             activeOpacity={0.7}
           >
-            <Text style={styles.backText}>{'← Quay lại'}</Text>
+            <Ionicons name="arrow-back" size={20} color={Colors.primary} />
+            <Text style={styles.backText}>Quay lại</Text>
           </TouchableOpacity>
 
-          <StepIndicator step={step} />
+          <View style={styles.card}>
+            <View style={styles.iconCircle}>
+              <Ionicons name="shield-checkmark" size={32} color={Colors.primary} />
+            </View>
 
-          <Text style={styles.title}>
-            {step === 'setup' ? 'Thiết lập mã PIN' : 'Xác nhận mã PIN'}
-          </Text>
-          <Text style={styles.subtitle}>
-            {step === 'setup'
-              ? 'Tạo mã PIN gồm 4 chữ số để bảo vệ ứng dụng của bạn'
-              : 'Nhập lại mã PIN để xác nhận'}
-          </Text>
+            <StepIndicator step={step} />
 
-          <PinBoxes
-            pin={pin}
-            inputRefs={inputRefs}
-            onChange={handleChange}
-            onKeyPress={handleKeyPress}
-          />
-
-          <TouchableOpacity
-            style={[styles.btn, loading && styles.btnDisabled]}
-            onPress={() => submitPin(pin.join(''))}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.btnText}>
-              {loading ? 'Đang thiết lập...' : step === 'setup' ? 'Tiếp tục' : 'Xác nhận mã PIN'}
+            <Text style={styles.title}>
+              {step === 'setup' ? 'Thiết lập mã PIN' : 'Xác nhận mã PIN'}
             </Text>
-          </TouchableOpacity>
+            <Text style={styles.subtitle}>
+              {step === 'setup'
+                ? 'Tạo mã PIN gồm 4 chữ số để bảo vệ tài khoản và mở khóa nhanh'
+                : 'Nhập lại mã PIN 4 chữ số để hoàn tất'}
+            </Text>
 
-          {step === 'confirm' && (
+            <PinBoxes
+              pin={pin}
+              inputRefs={inputRefs}
+              onChange={handleChange}
+              onKeyPress={handleKeyPress}
+            />
+
             <TouchableOpacity
-              style={styles.resetBtn}
-              onPress={() => {
-                setStep('setup');
-                setFirstPin('');
-                clearPin();
-              }}
-              activeOpacity={0.7}
+              style={[styles.btn, loading && styles.btnDisabled]}
+              onPress={() => submitPin(pin.join(''))}
+              disabled={loading}
+              activeOpacity={0.85}
             >
-              <Text style={styles.resetText}>Bắt đầu lại</Text>
+              <Text style={styles.btnText}>
+                {loading ? 'Đang thiết lập...' : step === 'setup' ? 'Tiếp tục' : 'Xác nhận mã PIN'}
+              </Text>
             </TouchableOpacity>
-          )}
+
+            {step === 'confirm' && (
+              <TouchableOpacity
+                style={styles.resetBtn}
+                onPress={() => {
+                  setStep('setup');
+                  setFirstPin('');
+                  clearPin();
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.resetText}>Bắt đầu lại</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -156,31 +165,68 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backBtn: {
-    marginBottom: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 20,
     alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   backText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.md,
+    alignItems: 'center',
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.primaryLighter,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: 14,
     color: Colors.textSecondary,
     marginTop: 6,
-    marginBottom: 32,
+    marginBottom: 28,
     textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 12,
   },
   btn: {
+    width: '100%',
     backgroundColor: Colors.primary,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: 9999,
+    paddingVertical: 16,
     alignItems: 'center',
+    shadowColor: Colors.primaryDark,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   btnDisabled: {
     opacity: 0.6,
@@ -196,7 +242,7 @@ const styles = StyleSheet.create({
   },
   resetText: {
     fontSize: 14,
-    color: Colors.textSecondary,
-    textDecorationLine: 'underline',
+    fontWeight: '600',
+    color: Colors.primary,
   },
 });

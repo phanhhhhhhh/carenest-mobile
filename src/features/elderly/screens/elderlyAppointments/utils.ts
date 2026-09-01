@@ -1,3 +1,5 @@
+import { Colors } from '../../../../core/theme/colors';
+
 export const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Sắp tới',
   COMPLETED: 'Đã hoàn thành',
@@ -6,10 +8,10 @@ export const STATUS_LABELS: Record<string, string> = {
 };
 
 export const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: '#2E7D9A',
-  COMPLETED: '#4CAF50',
-  CANCELLED: '#E53935',
-  RESCHEDULED: '#F9A825',
+  SCHEDULED: Colors.primary,
+  COMPLETED: Colors.success,
+  CANCELLED: Colors.error,
+  RESCHEDULED: Colors.warning,
 };
 
 const MONTHS = [

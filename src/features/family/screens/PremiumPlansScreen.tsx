@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
 import { usePaymentStore, isFreePlan } from '../store/paymentStore';
 import { CurrentPlanBanner, MethodCard, PlanCard } from './premiumPlans/cards';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function PremiumPlansScreen() {
   const navigation = useNavigation();
@@ -33,11 +34,9 @@ export default function PremiumPlansScreen() {
 
   const [selectedMethod, setSelectedMethod] = useState<'vnpay' | 'momo'>('vnpay');
 
-  useEffect(() => {
+  useMountEffect(() => {
     load();
-    // Load once on mount; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const handleSubscribe = async () => {
     const premiumPlan = plans.find((p) => !isFreePlan(p));

@@ -8,17 +8,16 @@ import {
   initializePushNotifications,
   flushPendingDeepLink,
 } from './src/core/services/pushNotificationService';
+import { useMountEffect } from './src/shared/hooks/useMountEffect';
 
 export default function App() {
   const loadSession = useAuthStore((s) => s.loadSession);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  useEffect(() => {
+  useMountEffect(() => {
     loadSession();
     initializePushNotifications();
-    // Run once on mount; loadSession is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   // Retry any deep link that arrived before the navigator/auth state was ready
   // (cold start from a notification tap) once the authenticated stack mounts.

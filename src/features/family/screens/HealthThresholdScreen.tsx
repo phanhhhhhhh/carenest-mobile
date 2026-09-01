@@ -26,6 +26,7 @@ import { METRIC_TYPES } from './healthThreshold/utils';
 import { ThresholdCard } from './healthThreshold/ThresholdCard';
 import { ThresholdEditSheet } from './healthThreshold/ThresholdEditSheet';
 import { RecommendDialog } from './healthThreshold/RecommendDialog';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -56,21 +57,17 @@ export default function HealthThresholdScreen() {
   // Bumped on every open so ThresholdEditSheet remounts with fresh state.
   const [sheetNonce, setSheetNonce] = useState(0);
 
-  useEffect(() => {
+  useMountEffect(() => {
     if (!dashboardData) {
       loadDashboard();
     }
-    // Load the dashboard once on mount if it isn't already populated.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (elderlyId) {
       load(elderlyId);
     }
-    // Re-run when the selected elderly changes; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+  }, [elderlyId, load]);
 
   const openEditSheet = (metricType: string, existing: ThresholdItem | null) => {
     setSheetMetricType(metricType);
