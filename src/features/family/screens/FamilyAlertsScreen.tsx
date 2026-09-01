@@ -18,6 +18,7 @@ import { useFamilyDashboardStore } from '../store/familyStore';
 import { useEmergencyEventStore } from '../store/emergencyEventStore';
 import { AlertsHeader } from './familyAlerts/AlertsHeader';
 import { AlertCard } from './familyAlerts/AlertCard';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function FamilyAlertsScreen() {
   const navigation = useNavigation();
@@ -42,17 +43,13 @@ export default function FamilyAlertsScreen() {
       ? (dashboardData.linkedElderly[dashboardData.selectedIndex]?.elderlyId ?? null)
       : null;
 
-  useEffect(() => {
+  useMountEffect(() => {
     loadDashboard();
-    // Load the dashboard once on mount; `loadDashboard` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (elderlyId) load(elderlyId);
-    // Re-run when the selected elderly changes; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+  }, [elderlyId, load]);
 
   const activeCount = events.filter((e) => e.status === 'ACTIVE').length;
 

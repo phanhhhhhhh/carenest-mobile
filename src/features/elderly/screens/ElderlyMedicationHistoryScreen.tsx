@@ -51,9 +51,7 @@ export default function ElderlyMedicationHistoryScreen() {
 
   useEffect(() => {
     fetchLogs(medicationId);
-    // Re-run when the medication changes; `fetchLogs` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [medicationId]);
+  }, [medicationId, fetchLogs]);
 
   const grouped: Record<string, MedicationLogEntry[]> = {};
   for (const log of logs) {

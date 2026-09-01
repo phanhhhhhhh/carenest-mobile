@@ -31,6 +31,7 @@ import { TodayMedsCard } from './familyDashboard/TodayMedsCard';
 import { DashboardCameraCard } from './familyDashboard/DashboardCameraCard';
 import { ActivityCard } from './familyDashboard/ActivityCard';
 import { AppointmentPreviewCard } from './familyDashboard/widgets';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -70,14 +71,12 @@ export default function FamilyDashboardScreen() {
   const latestByType = dashData?.latestMetrics ?? {};
   const healthIsLoading = dashLoading;
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     loadDashboard(controller.signal);
     loadNotifications(controller.signal);
     return () => controller.abort();
-    // Load once on mount; the loaders are stable store actions.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (!elderlyId) return;
@@ -86,9 +85,7 @@ export default function FamilyDashboardScreen() {
     loadCameras(elderlyId, controller.signal);
     loadAlerts(elderlyId, controller.signal);
     return () => controller.abort();
-    // Re-run when the selected elderly changes; the loaders are stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+  }, [elderlyId, loadMeds, loadCameras, loadAlerts]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

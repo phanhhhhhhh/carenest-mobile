@@ -20,6 +20,7 @@ import { getName, saveName } from '../../../core/storage/secureStorage';
 import { styles } from './elderlyEditProfile/styles';
 import { Card } from './elderlyEditProfile/Card';
 import { BloodTypePicker } from './elderlyEditProfile/BloodTypePicker';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -42,7 +43,9 @@ export default function ElderlyEditProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [bloodTypePickerVisible, setBloodTypePickerVisible] = useState(false);
 
-  useEffect(() => {
+  // Fetch the profile once on mount; the separate effect below syncs form
+  // state whenever `profile` changes.
+  useMountEffect(() => {
     const controller = new AbortController();
     (async () => {
       const storedName = await getName();
@@ -52,10 +55,7 @@ export default function ElderlyEditProfileScreen() {
       load(controller.signal);
     }
     return () => controller.abort();
-    // Fetch the profile once on mount; the separate effect below syncs form
-    // state whenever `profile` changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (profile) {

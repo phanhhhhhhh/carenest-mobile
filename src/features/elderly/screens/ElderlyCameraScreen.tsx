@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../core/theme';
 import { getUserId } from '../../../core/storage/secureStorage';
 import { useCameraStore, type CameraDeviceData } from '../../family/store/cameraStore';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function ElderlyCameraScreen() {
   const [elderlyId, setElderlyId] = useState<string | null>(null);
@@ -25,15 +26,13 @@ export default function ElderlyCameraScreen() {
   const load = useCameraStore((s) => s.load);
   const setPrivacyMode = useCameraStore((s) => s.setPrivacyMode);
 
-  useEffect(() => {
+  useMountEffect(() => {
     (async () => {
       const id = await getUserId();
       setElderlyId(id);
       if (id) load(id);
     })();
-    // Resolve the user id and load once on mount; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const onRefresh = async () => {
     if (!elderlyId) return;

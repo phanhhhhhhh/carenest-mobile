@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
 } from '../store/notificationStore';
 import { NotificationCard } from './notifications/NotificationCard';
 import { routeForNotification, type Nav } from './notifications/utils';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function NotificationsScreen() {
   const navigation = useNavigation<Nav>();
@@ -38,13 +39,11 @@ export default function NotificationsScreen() {
 
   const [markingAll, setMarkingAll] = useState(false);
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
-    // Load once on mount; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const unreadCount = selectUnreadCount(items);
 
