@@ -2,7 +2,9 @@ import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../core/theme/colors';
+import { Shadows } from '../../../core/theme/spacing';
 import { useAuthStore } from '../store/authStore';
 
 export default function PinVerifyScreen() {
@@ -53,35 +55,45 @@ export default function PinVerifyScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Nhập mã PIN để mở khóa</Text>
-        <Text style={styles.subtitle}>Nhập mã PIN gồm 4 chữ số</Text>
-
-        <View style={styles.pinRow}>
-          {pin.map((digit, i) => (
-            <TextInput
-              key={i}
-              ref={(ref) => {
-                inputs.current[i] = ref;
-              }}
-              style={[styles.pinBox, loading && styles.pinBoxDisabled]}
-              value={digit}
-              onChangeText={(t) => handleChange(t, i)}
-              onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
-              keyboardType="number-pad"
-              maxLength={1}
-              secureTextEntry
-              editable={!loading}
-              autoFocus={i === 0}
-            />
-          ))}
-        </View>
-
-        {loading && (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator size="small" color={Colors.primary} />
-            <Text style={styles.loadingText}>Đang xác thực mã PIN...</Text>
+        <View style={styles.card}>
+          <View style={styles.iconCircle}>
+            <Ionicons name="lock-closed" size={32} color={Colors.primary} />
           </View>
-        )}
+
+          <Text style={styles.title}>Nhập mã PIN</Text>
+          <Text style={styles.subtitle}>Nhập mã PIN 4 chữ số để mở khóa CareNest</Text>
+
+          <View style={styles.pinRow}>
+            {pin.map((digit, i) => (
+              <TextInput
+                key={i}
+                ref={(ref) => {
+                  inputs.current[i] = ref;
+                }}
+                style={[
+                  styles.pinBox,
+                  digit ? styles.pinBoxFilled : null,
+                  loading && styles.pinBoxDisabled,
+                ]}
+                value={digit}
+                onChangeText={(t) => handleChange(t, i)}
+                onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, i)}
+                keyboardType="number-pad"
+                maxLength={1}
+                secureTextEntry
+                editable={!loading}
+                autoFocus={i === 0}
+              />
+            ))}
+          </View>
+
+          {loading && (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color={Colors.primary} />
+              <Text style={styles.loadingText}>Đang xác thực mã PIN...</Text>
+            </View>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -96,10 +108,27 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.md,
     alignItems: 'center',
   },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.primaryLighter,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
@@ -108,7 +137,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
     marginTop: 4,
-    marginBottom: 32,
+    marginBottom: 28,
     textAlign: 'center',
   },
   pinRow: {
@@ -117,16 +146,20 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   pinBox: {
-    width: 60,
-    height: 68,
+    width: 56,
+    height: 66,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: Colors.border,
     textAlign: 'center',
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.textPrimary,
-    backgroundColor: Colors.surface,
+    backgroundColor: '#F8FAFC',
+  },
+  pinBoxFilled: {
+    borderColor: Colors.primary,
+    backgroundColor: '#F0F7FA',
   },
   pinBoxDisabled: {
     opacity: 0.6,
@@ -134,7 +167,7 @@ const styles = StyleSheet.create({
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 28,
+    marginTop: 24,
     gap: 8,
   },
   loadingText: {
