@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { HealthMetric } from '../../../../shared/types';
 import { METRIC_DEFS, formatTime, type Status } from './metricConfig';
 
@@ -27,11 +28,14 @@ export function MetricSection({
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
-        <View style={[styles.iconWrap, { backgroundColor: `${def.color}1A` }]}>
-          <Ionicons name={def.icon} size={22} color={def.color} />
+        <View style={[styles.iconWrap, { backgroundColor: `${def.color}15` }]}>
+          <Ionicons name={def.icon} size={20} color={def.color} />
         </View>
-        <Text style={styles.cardTitle}>{def.title}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: `${status.color}1A` }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>{def.title}</Text>
+          {timeLabel.length > 0 && <Text style={styles.timeText}>{timeLabel}</Text>}
+        </View>
+        <View style={[styles.statusBadge, { backgroundColor: `${status.color}18` }]}>
           <Text style={[styles.statusBadgeText, { color: status.color }]}>{status.label}</Text>
         </View>
       </View>
@@ -41,10 +45,9 @@ export function MetricSection({
       <View style={styles.valueRow}>
         <Text style={styles.valueText}>{displayValue}</Text>
         <Text style={styles.unitText}>{unitLabel}</Text>
-        {timeLabel.length > 0 && <Text style={styles.timeText}>{`• ${timeLabel}`}</Text>}
       </View>
 
-      <View style={{ height: 14 }} />
+      <View style={{ height: 16 }} />
 
       <MiniChart metrics={all} color={def.color} />
     </View>
@@ -55,7 +58,8 @@ function MiniChart({ metrics, color }: { metrics: HealthMetric[]; color: string 
   if (metrics.length < 2) {
     return (
       <View style={styles.chartEmpty}>
-        <Text style={styles.chartEmptyText}>Cần thêm dữ liệu</Text>
+        <Ionicons name="bar-chart-outline" size={18} color={Colors.textHint} />
+        <Text style={styles.chartEmptyText}>Cần thêm dữ liệu để hiển thị biểu đồ</Text>
       </View>
     );
   }
@@ -72,10 +76,19 @@ function MiniChart({ metrics, color }: { metrics: HealthMetric[]; color: string 
     <View style={styles.chart}>
       {values.map((v, i) => {
         const fraction = (v - minVal) / range;
-        const height = Math.min(50, Math.max(4, 6 + fraction * 44));
+        const height = Math.min(54, Math.max(8, 10 + fraction * 44));
+        const isLatest = i === values.length - 1;
         return (
           <View key={i} style={styles.chartBarSlot}>
-            <View style={[styles.chartBar, { height, backgroundColor: color }]} />
+            <View
+              style={[
+                styles.chartBar,
+                {
+                  height,
+                  backgroundColor: isLatest ? color : `${color}60`,
+                },
+              ]}
+            />
           </View>
         );
       })}
@@ -86,39 +99,47 @@ function MiniChart({ metrics, color }: { metrics: HealthMetric[]; color: string 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    borderRadius: 22,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.md,
+    marginBottom: 16,
   },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
-  cardTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: Colors.textPrimary },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusBadgeText: { fontSize: 12, fontWeight: '600' },
-  valueRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  valueText: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary },
-  unitText: { fontSize: 14, color: Colors.textSecondary, marginLeft: 6, marginBottom: 4 },
-  timeText: { fontSize: 12, color: Colors.textHint, marginLeft: 10, marginBottom: 4 },
+  cardTitle: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
+  timeText: { fontSize: 12, color: Colors.textSecondary, marginTop: 2, fontWeight: '500' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusBadgeText: { fontSize: 11.5, fontWeight: '800' },
+  valueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  valueText: { fontSize: 32, fontWeight: '900', color: Colors.textPrimary, letterSpacing: -0.5 },
+  unitText: { fontSize: 14, color: Colors.textSecondary, fontWeight: '600' },
   chartEmpty: {
-    height: 50,
-    backgroundColor: Colors.background,
-    borderRadius: 10,
+    height: 54,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
-  chartEmptyText: { color: Colors.textHint, fontSize: 12 },
-  chart: { height: 50, flexDirection: 'row', alignItems: 'flex-end' },
-  chartBarSlot: { flex: 1, marginHorizontal: 1, alignItems: 'stretch', justifyContent: 'flex-end' },
-  chartBar: { borderRadius: 3 },
+  chartEmptyText: { color: Colors.textSecondary, fontSize: 12.5, fontWeight: '500' },
+  chart: {
+    height: 54,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 8,
+  },
+  chartBarSlot: { flex: 1, marginHorizontal: 2, alignItems: 'stretch', justifyContent: 'flex-end' },
+  chartBar: { borderRadius: 4 },
 });
