@@ -2,13 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../../core/theme';
+import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { AppointmentItem } from '../../../../shared/types';
-import { MONTHS, hexToRgba } from './utils';
+import { MONTHS } from './utils';
 
 export function MedProgressRing({ taken, total }: { taken: number; total: number }) {
-  const size = 60;
-  const strokeWidth = 6;
+  const size = 68;
+  const strokeWidth = 7;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = total > 0 ? taken / total : 0;
@@ -22,7 +23,7 @@ export function MedProgressRing({ taken, total }: { taken: number; total: number
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={hexToRgba(Colors.textHint, 0.2)}
+          stroke={Colors.border}
           strokeWidth={strokeWidth}
           fill="none"
         />
@@ -43,6 +44,7 @@ export function MedProgressRing({ taken, total }: { taken: number; total: number
       <Text style={styles.ringText}>
         {taken}/{total}
       </Text>
+      <Text style={styles.ringSubtext}>uống</Text>
     </View>
   );
 }
@@ -52,25 +54,49 @@ export function VitalMiniCard({
   value,
   isWarning,
   onPress,
+  icon,
+  tintColor,
 }: {
   label: string;
   value: string;
   isWarning: boolean;
   onPress: () => void;
+  icon?: keyof typeof Ionicons.glyphMap;
+  tintColor?: string;
 }) {
   const statusColor = isWarning ? Colors.error : Colors.success;
+  const statusBg = isWarning ? Colors.sosLight : Colors.successLight;
+  const color = tintColor || Colors.primary;
+
   return (
-    <TouchableOpacity style={styles.vitalCard} onPress={onPress}>
-      <Text style={styles.vitalLabel}>{label.toUpperCase()}</Text>
-      <View style={{ height: 4 }} />
-      <Text style={styles.vitalValue}>{value}</Text>
-      <View style={{ height: 4 }} />
-      <View style={styles.vitalStatusRow}>
-        <View style={[styles.vitalDot, { borderColor: statusColor }]} />
-        <Text style={[styles.vitalStatusText, { color: statusColor }]}>
-          {isWarning ? 'Cảnh báo' : 'OK'}
-        </Text>
+    <TouchableOpacity
+      style={[
+        styles.vitalCard,
+        isWarning && { borderColor: '#FECDD3', backgroundColor: '#FFF1F2' },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.vitalTopRow}>
+        <View
+          style={[
+            styles.vitalIconWrap,
+            { backgroundColor: isWarning ? Colors.sosLight : `${color}15` },
+          ]}
+        >
+          <Ionicons name={icon || 'heart'} size={14} color={isWarning ? Colors.error : color} />
+        </View>
+        <View style={[styles.vitalBadge, { backgroundColor: statusBg }]}>
+          <Text style={[styles.vitalBadgeText, { color: statusColor }]}>
+            {isWarning ? 'Cảnh báo' : 'Bình thường'}
+          </Text>
+        </View>
       </View>
+      <View style={{ height: 8 }} />
+      <Text style={styles.vitalLabel}>{label}</Text>
+      <Text style={styles.vitalValue} numberOfLines={1}>
+        {value}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -85,8 +111,8 @@ export function CameraActionButton({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.cameraActionButton} onPress={onPress}>
-      <Ionicons name={icon} size={16} color={Colors.primary} />
+    <TouchableOpacity style={styles.cameraActionButton} onPress={onPress} activeOpacity={0.8}>
+      <Ionicons name={icon} size={15} color={Colors.primary} />
       <Text style={styles.cameraActionLabel}>{label}</Text>
     </TouchableOpacity>
   );
@@ -104,44 +130,63 @@ export function AppointmentPreviewCard({
   const day = date.getDate();
   const monthStr = MONTHS[date.getMonth()];
   return (
-    <TouchableOpacity style={styles.aptCard} onPress={onPress}>
+    <TouchableOpacity style={styles.aptCard} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.aptDateBox}>
         <Text style={styles.aptDay}>{day}</Text>
         <Text style={styles.aptMonth}>{monthStr}</Text>
       </View>
-      <View style={{ flex: 1, marginLeft: 12 }}>
+      <View style={{ flex: 1, marginLeft: 14 }}>
         <Text style={styles.aptDoctor}>{apt.doctor}</Text>
         <Text style={styles.aptDetail}>
           {apt.specialty} • {timeStr}
         </Text>
       </View>
-      <Ionicons name="chevron-forward" color={Colors.textHint} size={20} />
+      <Ionicons name="chevron-forward" color={Colors.textHint} size={18} />
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  ringText: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
+  ringText: { fontSize: 14, fontWeight: '800', color: Colors.textPrimary },
+  ringSubtext: { fontSize: 10, color: Colors.textSecondary, marginTop: -2 },
   vitalCard: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
+    padding: 12,
+    borderRadius: 16,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: hexToRgba(Colors.textHint, 0.25),
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
-  vitalLabel: { fontSize: 9, color: Colors.textSecondary, letterSpacing: 0.4 },
-  vitalValue: { fontSize: Typography.body.fontSize, fontWeight: '700', color: Colors.textPrimary },
-  vitalStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  vitalDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    backgroundColor: 'transparent',
+  vitalTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  vitalStatusText: { fontSize: 9 },
+  vitalIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vitalBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  vitalBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+  },
+  vitalLabel: { fontSize: 11, color: Colors.textSecondary, fontWeight: '500' },
+  vitalValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginTop: 2,
+  },
+
   cameraActionButton: {
     flex: 1,
     flexDirection: 'row',
@@ -149,37 +194,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderColor: hexToRgba(Colors.primary, 0.4),
+    borderRadius: 12,
+    backgroundColor: Colors.primaryLighter,
   },
-  cameraActionLabel: { fontSize: 12, color: Colors.primary },
+  cameraActionLabel: { fontSize: 13, color: Colors.primary, fontWeight: '700' },
+
   aptCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: 10,
     padding: 14,
-    borderRadius: BorderRadius.md,
+    borderRadius: 18,
     backgroundColor: Colors.surface,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.sm,
   },
   aptDateBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: hexToRgba(Colors.primary, 0.08),
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: Colors.primaryLighter,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  aptDay: { fontWeight: '700', fontSize: Typography.cardTitle.fontSize, color: Colors.primary },
-  aptMonth: { fontSize: 10, color: Colors.primary },
+  aptDay: { fontWeight: '800', fontSize: 17, color: Colors.primary },
+  aptMonth: { fontSize: 10, color: Colors.primary, fontWeight: '700' },
   aptDoctor: {
-    fontWeight: '600',
-    fontSize: Typography.buttonSmall.fontSize,
+    fontWeight: '700',
+    fontSize: 14.5,
     color: Colors.textPrimary,
   },
   aptDetail: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
