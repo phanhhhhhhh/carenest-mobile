@@ -1,0 +1,12 @@
+# GitGuardian config — https://docs.gitguardian.com/ggshield-docs/reference/config
+# Test files hold only synthetic fixtures (fake passwords/tokens for validator
+# and mapping tests), never real credentials. Skip them so those don't raise
+# "generic password / secret" false positives.
+version: 2
+
+secret:
+  ignored-paths:
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/__tests__/**"
+    - "**/__mocks__/**"
