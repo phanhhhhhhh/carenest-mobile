@@ -8,6 +8,7 @@ import { showErrorToast } from '../../../shared/components/toastStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useWeeklySummaryStore } from '../store/weeklySummaryStore';
 import { ErrorState, EmptyState, SummaryList } from './weeklySummary/states';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function WeeklySummaryScreen() {
   const navigation = useNavigation();
@@ -24,19 +25,15 @@ export default function WeeklySummaryScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+  useMountEffect(() => {
     if (!dashboardData) {
       loadDashboard();
     }
-    // Load the dashboard once on mount if it isn't already populated.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   useEffect(() => {
     if (elderlyId) load(elderlyId);
-    // Re-run when the selected elderly changes; `load` is a stable store action.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elderlyId]);
+  }, [elderlyId, load]);
 
   const handleRefresh = async () => {
     if (!elderlyId) return;

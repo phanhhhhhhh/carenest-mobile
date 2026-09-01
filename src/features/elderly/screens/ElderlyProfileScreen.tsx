@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import { getName, getPhone, getRole } from '../../../core/storage/secureStorage'
 import { ProfileHeader } from './elderlyProfile/ProfileHeader';
 import { ConditionTags, AllergyTags, InfoRow } from './elderlyProfile/tags';
 import { buildProfileMenuItems } from './elderlyProfile/menuItems';
+import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,7 +42,7 @@ export default function ElderlyProfileScreen() {
   const familyLoading = useLinkedFamilyStore((s) => s.isLoading);
   const loadFamily = useLinkedFamilyStore((s) => s.load);
 
-  useEffect(() => {
+  useMountEffect(() => {
     (async () => {
       const [n, p, r] = await Promise.all([getName(), getPhone(), getRole()]);
       setName(n || 'Người dùng');
@@ -50,9 +51,7 @@ export default function ElderlyProfileScreen() {
     })();
     loadProfile();
     loadFamily();
-    // Load once on mount; the loaders are stable store actions.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  });
 
   const isElderlyRole = role === 'ELDERLY';
 
