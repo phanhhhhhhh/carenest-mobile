@@ -31,21 +31,21 @@ export default function FamilyAppointmentsScreen() {
   const remove = useAppointmentStore((s) => s.delete);
   const updateStatus = useAppointmentStore((s) => s.updateStatus);
 
-  // Family dashboard store — provides the currently-selected linked elderly
   const dashData = useFamilyDashboardStore((s) => s.data);
   const dashLoad = useFamilyDashboardStore((s) => s.load);
-  const currentElderlyId = useMemo(() => {
+  const currentElderly = useMemo(() => {
     if (!dashData || dashData.linkedElderly.length === 0) return null;
     if (dashData.selectedIndex >= dashData.linkedElderly.length) return null;
-    return dashData.linkedElderly[dashData.selectedIndex].elderlyId;
+    return dashData.linkedElderly[dashData.selectedIndex];
   }, [dashData]);
+  const currentElderlyId = currentElderly?.elderlyId ?? null;
+  const currentElderlyName = currentElderly?.elderlyName ?? 'Người thân';
 
   const [tab, setTab] = useState<0 | 1>(0);
   const [refreshing, setRefreshing] = useState(false);
 
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editing, setEditing] = useState<AppointmentItem | null>(null);
-  // Bumped on every open so AppointmentFormSheet remounts with fresh state.
   const [sheetNonce, setSheetNonce] = useState(0);
 
   useEffect(() => {
@@ -126,11 +126,13 @@ export default function FamilyAppointmentsScreen() {
         >
           <Image
             source={require('../../../../assets/mascot/mascot_confused.jpg')}
-            style={{ width: 130, height: 130 }}
+            style={{ width: 130, height: 130, marginBottom: 8 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>Chưa có lịch hẹn nào</Text>
-          <Text style={styles.emptySubtext}>Nhấn + để thêm lịch hẹn</Text>
+          <Text style={styles.emptyText}>Chưa có lịch hẹn khám nào</Text>
+          <Text style={styles.emptySubtext}>
+            Bấm nút {'“'}Thêm lịch hẹn{'”'} để tạo lịch khám mới
+          </Text>
         </ScrollView>
       );
     }
@@ -140,6 +142,10 @@ export default function FamilyAppointmentsScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+        }
         renderItem={({ item }) => (
           <AppointmentCard
             item={item}
@@ -150,45 +156,74 @@ export default function FamilyAppointmentsScreen() {
             onCancel={() => handleStatus(item.id, 'CANCELLED')}
           />
         )}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
-        }
       />
     );
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Lịch hẹn</Text>
+      {/* Top Header */}
+      <View style={styles.appBar}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.appBarTitle}>Lịch hẹn khám bệnh</Text>
+          <Text style={styles.appBarSubtitle}>Người thân: {currentElderlyName}</Text>
+        </View>
+        <TouchableOpacity style={styles.addTopBtn} onPress={openAddSheet} activeOpacity={0.85}>
+          <Ionicons name="add" size={20} color="#FFFFFF" />
+          <Text style={styles.addTopBtnText}>Thêm lịch hẹn</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setTab(0)}>
+      {/* Segment Tabs */}
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tabButton, tab === 0 && styles.tabButtonActive]}
+          onPress={() => setTab(0)}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={tab === 0 ? Colors.primary : '#64748B'}
+            style={{ marginRight: 6 }}
+          />
           <Text style={[styles.tabText, tab === 0 && styles.tabTextActive]}>
             Sắp tới ({upcomingList.length})
           </Text>
-          {tab === 0 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setTab(1)}>
+
+        <TouchableOpacity
+          style={[styles.tabButton, tab === 1 && styles.tabButtonActive]}
+          onPress={() => setTab(1)}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="checkmark-done-outline"
+            size={16}
+            color={tab === 1 ? Colors.primary : '#64748B'}
+            style={{ marginRight: 6 }}
+          />
           <Text style={[styles.tabText, tab === 1 && styles.tabTextActive]}>
-            Đã qua ({pastList.length})
+            Lịch sử khám ({pastList.length})
           </Text>
-          {tab === 1 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
       </View>
 
       {isLoading && appointments.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Colors.primary} />
+        <View style={styles.centerPad}>
+          <ActivityIndicator color={Colors.primary} size="large" />
+          <Text style={styles.loadingText}>Đang tải lịch hẹn...</Text>
         </View>
       ) : error && appointments.length === 0 ? (
-        <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" color={Colors.textHint} size={48} />
-          <View style={{ height: 12 }} />
+        <View style={styles.centerPad}>
+          <Ionicons name="alert-circle-outline" size={48} color="#94A3B8" />
           <Text style={styles.errorText}>{error}</Text>
-          <View style={{ height: 12 }} />
-          <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => load(currentElderlyId ?? undefined)}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="refresh" size={18} color="#FFFFFF" />
             <Text style={styles.retryBtnText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
@@ -196,75 +231,91 @@ export default function FamilyAppointmentsScreen() {
         renderList(tab === 0 ? upcomingList : pastList, tab === 0)
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={openAddSheet} activeOpacity={0.85}>
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </TouchableOpacity>
-
       <AppointmentFormSheet
         key={sheetNonce}
         visible={sheetVisible}
-        editing={editing}
         currentElderlyId={currentElderlyId}
-        onClose={() => setSheetVisible(false)}
+        editing={editing}
+        onClose={() => {
+          setSheetVisible(false);
+          setEditing(null);
+          load(currentElderlyId ?? undefined);
+        }}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  header: {
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  appBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
     paddingVertical: 14,
-    backgroundColor: Colors.surface,
-  },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
+    borderBottomColor: '#E2E8F0',
   },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  tabText: { fontSize: 14, fontWeight: '600', color: Colors.textHint },
-  tabTextActive: { color: Colors.primary },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 2,
-    width: '60%',
-    backgroundColor: Colors.primary,
-    borderRadius: 1,
-  },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
-  retryBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
-  listContent: { padding: 16, paddingBottom: 96 },
-  emptyState: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: Colors.textSecondary, fontSize: 15, marginTop: 12 },
-  emptySubtext: { color: Colors.textHint, fontSize: 13, marginTop: 4 },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
+  appBarTitle: { fontSize: 19, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  appBarSubtitle: { fontSize: 12.5, color: '#64748B', marginTop: 2, fontWeight: '500' },
+  addTopBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    gap: 6,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
   },
+  addTopBtnText: { color: '#FFFFFF', fontSize: 13.5, fontWeight: '700' },
+
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    gap: 8,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+  },
+  tabButtonActive: { backgroundColor: '#E6F7F5' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+  tabTextActive: { color: Colors.primary, fontWeight: '800' },
+
+  listContent: { padding: 18 },
+  centerPad: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  loadingText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '500' },
+  errorText: {
+    color: '#64748B',
+    fontSize: 14,
+    marginTop: 12,
+    marginBottom: 16,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 9999,
+  },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+
+  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  emptyText: { fontSize: 16.5, fontWeight: '800', color: '#0F172A', marginTop: 8 },
+  emptySubtext: { fontSize: 13.5, color: '#64748B', marginTop: 4, textAlign: 'center' },
 });
