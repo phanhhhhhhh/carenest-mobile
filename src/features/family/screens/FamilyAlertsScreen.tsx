@@ -76,7 +76,7 @@ export default function FamilyAlertsScreen() {
 
   if (!elderlyId) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <AlertsHeader
           activeCount={0}
           marking={false}
@@ -86,7 +86,7 @@ export default function FamilyAlertsScreen() {
         <View style={styles.center}>
           <Image
             source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
-            style={{ width: 140, height: 140 }}
+            style={{ width: 140, height: 140, marginBottom: 8 }}
             resizeMode="contain"
           />
           <Text style={styles.noElderlyText}>Chưa liên kết người thân nào</Text>
@@ -96,7 +96,7 @@ export default function FamilyAlertsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <AlertsHeader
         activeCount={activeCount}
         marking={markingRead}
@@ -111,7 +111,8 @@ export default function FamilyAlertsScreen() {
     if (isLoading && events.length === 0) {
       return (
         <View style={styles.center}>
-          <ActivityIndicator color={Colors.primary} />
+          <ActivityIndicator color={Colors.primary} size="large" />
+          <Text style={styles.loadingText}>Đang tải danh sách cảnh báo...</Text>
         </View>
       );
     }
@@ -119,10 +120,12 @@ export default function FamilyAlertsScreen() {
     if (error && events.length === 0) {
       return (
         <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
+          <Ionicons name="alert-circle-outline" size={52} color="#EF4444" />
+          <View style={{ height: 12 }} />
           <Text style={styles.errorText}>{error}</Text>
+          <View style={{ height: 16 }} />
           <TouchableOpacity style={styles.retryButton} onPress={() => elderlyId && load(elderlyId)}>
-            <Ionicons name="refresh" size={18} color={Colors.surface} />
+            <Ionicons name="refresh" size={18} color="#FFFFFF" />
             <Text style={styles.retryText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
@@ -134,11 +137,13 @@ export default function FamilyAlertsScreen() {
         <View style={styles.center}>
           <Image
             source={require('../../../../assets/mascot/mascot_thumbsup.jpg')}
-            style={{ width: 130, height: 130 }}
+            style={{ width: 140, height: 140, marginBottom: 8 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyTitle}>Không có cảnh báo</Text>
-          <Text style={styles.emptySubtitle}>Mọi thứ đều ổn!</Text>
+          <Text style={styles.emptyTitle}>Mọi thứ đều bình an</Text>
+          <Text style={styles.emptySubtitle}>
+            Không có cảnh báo hay sự cố khẩn cấp nào gần đây.
+          </Text>
         </View>
       );
     }
@@ -148,79 +153,82 @@ export default function FamilyAlertsScreen() {
 
     return (
       <ScrollView
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
             colors={[Colors.primary]}
-            tintColor={Colors.primary}
           />
         }
       >
         {active.length > 0 && (
           <>
-            <Text style={styles.sectionTitleActive}>Đang hoạt động</Text>
-            {active.map((e) => (
-              <View key={e.id} style={styles.cardWrapper}>
-                <AlertCard
-                  event={e}
-                  acknowledging={acknowledgingId === e.id}
-                  onAcknowledge={handleAcknowledge}
-                />
-              </View>
+            <Text style={styles.sectionTitleActive}>Đang hoạt động ({active.length})</Text>
+            {active.map((event) => (
+              <AlertCard
+                key={event.id}
+                event={event}
+                acknowledging={acknowledgingId === event.id}
+                onAcknowledge={handleAcknowledge}
+              />
             ))}
           </>
         )}
         {resolved.length > 0 && (
           <>
-            {active.length > 0 && <View style={{ height: 10 }} />}
+            {active.length > 0 && <View style={{ height: 14 }} />}
             <Text style={styles.sectionTitleResolved}>Đã xử lý</Text>
-            {resolved.map((e) => (
-              <View key={e.id} style={styles.cardWrapper}>
-                <AlertCard
-                  event={e}
-                  acknowledging={acknowledgingId === e.id}
-                  onAcknowledge={handleAcknowledge}
-                />
-              </View>
+            {resolved.map((event) => (
+              <AlertCard
+                key={event.id}
+                event={event}
+                acknowledging={acknowledgingId === event.id}
+                onAcknowledge={handleAcknowledge}
+              />
             ))}
           </>
         )}
+        <View style={{ height: 30 }} />
       </ScrollView>
     );
   }
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 8 },
-
-  noElderlyText: { color: Colors.textSecondary, fontSize: 15, textAlign: 'center', marginTop: 16 },
-
-  errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center', marginTop: 16 },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  scroll: { padding: 18 },
+  noElderlyText: { color: '#0F172A', fontSize: 16.5, fontWeight: '700', textAlign: 'center' },
+  loadingText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '500' },
+  errorText: { color: '#EF4444', fontSize: 14.5, textAlign: 'center', lineHeight: 20 },
   retryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: Colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginTop: 16,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 9999,
   },
-  retryText: { color: Colors.surface, fontSize: 14, fontWeight: '600' },
-
-  emptyTitle: { color: Colors.textPrimary, fontSize: 16, fontWeight: '600' },
-  emptySubtitle: { color: Colors.textSecondary, fontSize: 14, marginTop: 6 },
-
-  list: { padding: 16 },
-  sectionTitleActive: { fontSize: 14, fontWeight: '600', color: Colors.error, marginBottom: 10 },
-  sectionTitleResolved: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+  retryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14.5 },
+  emptyTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginTop: 4 },
+  emptySubtitle: { fontSize: 13.5, color: '#64748B', textAlign: 'center', marginTop: 4 },
+  sectionTitleActive: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#DC2626',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
     marginBottom: 10,
   },
-  cardWrapper: { marginBottom: 10 },
+  sectionTitleResolved: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 10,
+  },
 });
