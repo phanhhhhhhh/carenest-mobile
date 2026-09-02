@@ -21,18 +21,10 @@ import { TabKey } from './familyMedication/constants';
 import { MedCard } from './familyMedication/MedCard';
 import { ComplianceCard } from './familyMedication/ComplianceCard';
 import { HistoryTab } from './familyMedication/HistoryTab';
-import { MedicationForm, AddMedicationTrigger } from './familyMedication/MedicationForm';
+import { MedicationForm } from './familyMedication/MedicationForm';
 import { useAdherence } from './familyMedication/useAdherence';
 
-/**
- * Port of Flutter's family_medication_screen.dart. The Flutter screen used
- * `showModalBottomSheet` + native `showTimePicker`; both are rebuilt here as
- * `Modal`-based sheets (see familyMedication/TimePickerModal). The Flutter
- * compliance card used a `LinearGradient`; there is no gradient dependency
- * installed, so ComplianceCard uses a solid background instead.
- */
 export default function FamilyMedicationScreen() {
-  // Medication store (elderly-side store, driven remotely by family here)
   const items = useMedicationStore((s) => s.items);
   const isLoading = useMedicationStore((s) => s.isLoading);
   const logs = useMedicationStore((s) => s.logs);
@@ -43,7 +35,6 @@ export default function FamilyMedicationScreen() {
   const allLogs = useMedicationStore((s) => s.allLogs);
   const fetchAllLogs = useMedicationStore((s) => s.fetchAllLogs);
 
-  // Family dashboard store — provides the currently-selected linked elderly
   const dashData = useFamilyDashboardStore((s) => s.data);
   const dashLoad = useFamilyDashboardStore((s) => s.load);
 
@@ -59,8 +50,6 @@ export default function FamilyMedicationScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedHistoryMedId, setSelectedHistoryMedId] = useState<string | null>(null);
 
-  // Add/edit inline form: form mở rộng ngay trong trang (không phải modal
-  // bottom-sheet). MedicationForm tự khởi tạo state từ `editing` qua `key`.
   const [formExpanded, setFormExpanded] = useState(false);
   const [editing, setEditing] = useState<MedicationItem | null>(null);
 
@@ -89,7 +78,6 @@ export default function FamilyMedicationScreen() {
     setRefreshing(false);
   }, [dashLoad, loadMedications, currentElderlyId]);
 
-  // Logs của mọi thuốc — nạp lại mỗi khi danh sách/trạng thái uống đổi.
   useEffect(() => {
     fetchAllLogs();
   }, [items, fetchAllLogs]);
@@ -129,7 +117,7 @@ export default function FamilyMedicationScreen() {
         <View style={styles.emptyBox}>
           <Image
             source={require('../../../../assets/mascot/mascot_confused.jpg')}
-            style={{ width: 110, height: 110 }}
+            style={{ width: 120, height: 120, marginBottom: 8 }}
             resizeMode="contain"
           />
           <Text style={styles.emptyText}>{emptyHint}</Text>
@@ -138,126 +126,162 @@ export default function FamilyMedicationScreen() {
     }
     return (
       <View>
-        {items.map((m) => (
+        {items.map((item) => (
           <MedCard
-            key={m.id}
-            item={m}
-            onEdit={() => openAddForm(m)}
-            onDelete={() => confirmDelete(m)}
+            key={item.id}
+            item={item}
+            onEdit={() => openAddForm(item)}
+            onDelete={() => confirmDelete(item)}
           />
         ))}
       </View>
     );
   };
 
-  const renderAddForm = () =>
-    formExpanded ? (
-      <MedicationForm
-        key={editing?.id ?? 'new'}
-        editing={editing}
-        currentElderlyId={currentElderlyId}
-        currentElderlyName={currentElderlyName}
-        onClose={() => setFormExpanded(false)}
-      />
-    ) : (
-      <AddMedicationTrigger onPress={() => openAddForm()} />
-    );
-
-  const renderTodayTab = () => (
-    <ScrollView
-      contentContainerStyle={styles.tabContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
-      }
-    >
-      <ComplianceCard
-        displayAdherence={displayAdherence}
-        rangeDays={rangeDays}
-        onOpenRangePicker={() => setRangePickerVisible(true)}
-      />
-      <Text style={styles.sectionTitle}>Lịch thuốc hôm nay</Text>
-      <View style={{ height: 12 }} />
-      {renderMedList('Chưa có thuốc nào hôm nay')}
-      <View style={{ height: 14 }} />
-      {renderAddForm()}
-    </ScrollView>
-  );
-
-  const renderListTab = () => (
-    <ScrollView
-      contentContainerStyle={styles.tabContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
-      }
-    >
-      {renderMedList('Chưa có thuốc nào được thêm')}
-      <View style={{ height: 14 }} />
-      {renderAddForm()}
-    </ScrollView>
-  );
-
-  const TABS: { key: TabKey; label: string }[] = [
-    { key: 'today', label: 'Hôm nay' },
-    { key: 'list', label: 'Danh sách' },
-    { key: 'history', label: 'Lịch sử' },
-  ];
-
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Quản lý thuốc</Text>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Top Header */}
+      <View style={styles.appBar}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.appBarTitle}>Quản lý thuốc uống</Text>
+          <Text style={styles.appBarSubtitle}>Đang chăm sóc: {currentElderlyName}</Text>
+        </View>
         <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => {
-            setActiveTab('today');
-            openAddForm();
-          }}
+          style={styles.addTopBtn}
+          onPress={() => openAddForm()}
+          activeOpacity={0.85}
         >
-          <Ionicons name="add" size={18} color={Colors.primary} />
-          <Text style={styles.addBtnText}>Thêm</Text>
+          <Ionicons name="add" size={20} color="#FFFFFF" />
+          <Text style={styles.addTopBtnText}>Thêm thuốc</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabBar}>
-        {TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={styles.tabItem}
-            onPress={() => setActiveTab(tab.key)}
-          >
-            <Text style={[styles.tabLabel, activeTab === tab.key && styles.tabLabelActive]}>
-              {tab.label}
-            </Text>
-            <View
-              style={[styles.tabIndicator, activeTab === tab.key && styles.tabIndicatorActive]}
-            />
-          </TouchableOpacity>
-        ))}
+      {/* Segment Tabs */}
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'today' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('today')}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="today-outline"
+            size={16}
+            color={activeTab === 'today' ? Colors.primary : '#64748B'}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'today' && styles.tabTextActive]}>
+            Hôm nay ({items.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'list' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('list')}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="list-outline"
+            size={16}
+            color={activeTab === 'list' ? Colors.primary : '#64748B'}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'list' && styles.tabTextActive]}>
+            Tất cả ({items.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'history' && styles.tabButtonActive]}
+          onPress={() => setActiveTab('history')}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="time-outline"
+            size={16}
+            color={activeTab === 'history' ? Colors.primary : '#64748B'}
+            style={{ marginRight: 6 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>
+            Lịch sử
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {isLoading && items.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Colors.primary} />
-        </View>
-      ) : (
-        <>
-          {activeTab === 'today' && renderTodayTab()}
-          {activeTab === 'list' && renderListTab()}
-          {activeTab === 'history' && (
-            <HistoryTab
-              items={items}
-              selectedMedId={selectedHistoryMedId}
-              logs={logs}
-              logsError={logsError}
-              onSelectMed={handleSelectHistoryMed}
-              refreshing={refreshing}
-              onRefresh={onRefresh}
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
+      >
+        {formExpanded && (
+          <View style={{ marginBottom: 16 }}>
+            <MedicationForm
+              key={editing ? editing.id : 'new-med'}
+              currentElderlyId={currentElderlyId}
+              currentElderlyName={currentElderlyName}
+              editing={editing}
+              onClose={() => {
+                setFormExpanded(false);
+                setEditing(null);
+                if (currentElderlyId) loadMedications(currentElderlyId);
+              }}
             />
-          )}
-        </>
-      )}
+          </View>
+        )}
 
-      {/* Compliance range picker modal */}
+        {isLoading && items.length === 0 ? (
+          <View style={styles.centerPad}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Đang tải danh sách thuốc...</Text>
+          </View>
+        ) : (
+          <>
+            {activeTab === 'today' && (
+              <>
+                <ComplianceCard
+                  displayAdherence={displayAdherence}
+                  rangeDays={rangeDays}
+                  onOpenRangePicker={() => setRangePickerVisible(true)}
+                />
+                <View style={{ height: 18 }} />
+                <Text style={styles.sectionHeading}>Danh sách liều dùng trong ngày</Text>
+                <View style={{ height: 10 }} />
+                {renderMedList('Chưa có lịch uống thuốc nào cho hôm nay')}
+              </>
+            )}
+
+            {activeTab === 'list' && (
+              <>
+                <Text style={styles.sectionHeading}>Tất cả các loại thuốc đang dùng</Text>
+                <View style={{ height: 10 }} />
+                {renderMedList('Chưa thiết lập danh sách thuốc nào')}
+              </>
+            )}
+
+            {activeTab === 'history' && (
+              <HistoryTab
+                items={items}
+                selectedMedId={selectedHistoryMedId}
+                logs={logs}
+                logsError={logsError}
+                onSelectMed={handleSelectHistoryMed}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+              />
+            )}
+          </>
+        )}
+
+        <View style={{ height: 30 }} />
+      </ScrollView>
+
+      {/* Range Picker Modal */}
       <Modal
         visible={rangePickerVisible}
         transparent
@@ -269,23 +293,28 @@ export default function FamilyMedicationScreen() {
           activeOpacity={1}
           onPress={() => setRangePickerVisible(false)}
         >
-          <View style={styles.rangeModalSheet}>
-            <Text style={styles.modalTitle}>Xem theo</Text>
-            {([7, 30] as const).map((option, index) => (
-              <TouchableOpacity
-                key={option}
-                style={[styles.rangeModalOption, index > 0 && styles.rangeModalOptionDivider]}
-                onPress={() => {
-                  setRangeDays(option);
-                  setRangePickerVisible(false);
-                }}
-              >
-                <Text style={styles.rangeModalOptionText}>{option} ngày</Text>
-                {rangeDays === option && (
-                  <Ionicons name="checkmark" size={18} color={Colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
+          <View style={styles.rangeDialog}>
+            <Text style={styles.rangeDialogTitle}>Khoảng thời gian theo dõi</Text>
+            <TouchableOpacity
+              style={styles.rangeOption}
+              onPress={() => {
+                setRangeDays(7);
+                setRangePickerVisible(false);
+              }}
+            >
+              <Text style={styles.rangeOptionText}>7 ngày gần nhất</Text>
+              {rangeDays === 7 && <Ionicons name="checkmark" size={18} color={Colors.primary} />}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.rangeOption}
+              onPress={() => {
+                setRangeDays(30);
+                setRangePickerVisible(false);
+              }}
+            >
+              <Text style={styles.rangeOptionText}>30 ngày gần nhất</Text>
+              {rangeDays === 30 && <Ionicons name="checkmark" size={18} color={Colors.primary} />}
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
@@ -294,80 +323,82 @@ export default function FamilyMedicationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  appBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  addBtnText: { color: Colors.primary, fontWeight: '600', fontSize: 14 },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: '#E2E8F0',
   },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  tabLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  tabLabelActive: { color: Colors.primary },
-  tabIndicator: {
-    height: 2,
-    width: '60%',
-    marginTop: 8,
-    backgroundColor: 'transparent',
-    borderRadius: 1,
+  appBarTitle: { fontSize: 19, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  appBarSubtitle: { fontSize: 12.5, color: '#64748B', marginTop: 2, fontWeight: '500' },
+  addTopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
   },
-  tabIndicatorActive: { backgroundColor: Colors.primary },
+  addTopBtnText: { color: '#FFFFFF', fontSize: 13.5, fontWeight: '700' },
 
-  tabContent: { padding: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginTop: 20 },
+  tabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    gap: 8,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+  },
+  tabButtonActive: { backgroundColor: '#E6F7F5' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+  tabTextActive: { color: Colors.primary, fontWeight: '800' },
+
+  scroll: { padding: 18 },
+  sectionHeading: { fontSize: 16.5, fontWeight: '800', color: '#0F172A' },
+  centerPad: { paddingVertical: 40, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '500' },
+
   emptyBox: {
-    paddingVertical: 40,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
+    padding: 32,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
   },
-  emptyText: { color: Colors.textSecondary, fontSize: 14, marginTop: 12, textAlign: 'center' },
+  emptyText: { color: '#64748B', fontSize: 14, textAlign: 'center', marginTop: 4 },
 
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
-    alignItems: 'center',
+    padding: 24,
   },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  rangeModalSheet: {
-    width: 220,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-  },
-  rangeModalOption: {
+  rangeDialog: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20 },
+  rangeDialogTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A', marginBottom: 14 },
+  rangeOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
-    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  rangeModalOptionDivider: { borderTopWidth: 1, borderTopColor: Colors.divider },
-  rangeModalOptionText: { fontSize: 15, color: Colors.textPrimary },
+  rangeOptionText: { fontSize: 15, fontWeight: '600', color: '#0F172A' },
 });

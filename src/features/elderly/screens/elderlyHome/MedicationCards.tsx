@@ -31,41 +31,46 @@ export function NextMedicationCard({
           style={[
             styles.nextMedIcon,
             {
-              backgroundColor: medication.taken ? Colors.successLight : Colors.warningLight,
+              backgroundColor: medication.taken ? '#DCFCE7' : '#FEF3C7',
             },
           ]}
         >
-          <Ionicons
-            name="medkit"
-            size={28}
-            color={medication.taken ? Colors.successDark : Colors.warningDark}
-          />
+          <Ionicons name="medkit" size={30} color={medication.taken ? '#15803D' : '#B45309'} />
         </View>
         <View style={{ flex: 1, marginLeft: 14 }}>
           <View style={styles.labelRow}>
             <View
               style={[
                 styles.pillBadge,
-                { backgroundColor: medication.taken ? Colors.successLight : Colors.warningLight },
+                { backgroundColor: medication.taken ? '#DCFCE7' : '#FEF3C7' },
               ]}
             >
               <Text
-                style={[
-                  styles.pillBadgeText,
-                  { color: medication.taken ? Colors.successDark : Colors.warningDark },
-                ]}
+                style={[styles.pillBadgeText, { color: medication.taken ? '#15803D' : '#92400E' }]}
               >
-                {medication.taken ? 'ĐÃ UỐNG' : 'SẮP TỚI'}
+                {medication.taken ? 'ĐÃ UỐNG XONG' : 'CẦN UỐNG TIẾP THEO'}
               </Text>
             </View>
-            {!!timeLabel && <Text style={styles.nextMedTime}>{timeLabel}</Text>}
+            {!!timeLabel && (
+              <View style={styles.timePill}>
+                <Ionicons
+                  name="time-outline"
+                  size={13}
+                  color="#0F172A"
+                  style={{ marginRight: 3 }}
+                />
+                <Text style={styles.nextMedTime}>{timeLabel}</Text>
+              </View>
+            )}
           </View>
           <Text style={styles.nextMedName}>{medication.name}</Text>
           <Text style={styles.nextMedDosage}>
-            Liều lượng: {medication.dosage || 'Theo chỉ định'}
+            Liều lượng: <Text style={styles.boldText}>{medication.dosage || 'Theo chỉ định'}</Text>
           </Text>
           {!!medication.instructions && (
-            <Text style={styles.nextMedInstructions}>💡 {medication.instructions}</Text>
+            <View style={styles.instructionWrap}>
+              <Text style={styles.nextMedInstructions}>💡 {medication.instructions}</Text>
+            </View>
           )}
         </View>
       </View>
@@ -80,11 +85,11 @@ export function NextMedicationCard({
       >
         <Ionicons
           name={medication.taken ? 'checkmark-circle' : 'checkmark-circle-outline'}
-          size={22}
+          size={24}
           color="#FFFFFF"
         />
         <Text style={styles.takeBtnFullText}>
-          {medication.taken ? 'ĐÃ UỐNG THUỐC' : 'XÁC NHẬN ĐÃ UỐNG'}
+          {medication.taken ? 'ĐÃ XÁC NHẬN UỐNG THUỐC' : 'BÁC ĐÃ UỐNG THUỐC NÀY'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -96,22 +101,15 @@ export function MedicationTile({ medication }: { medication: MedicationItem }) {
   return (
     <View style={[styles.medTile, medication.taken && styles.medTileDone]}>
       <View
-        style={[
-          styles.medTileIcon,
-          { backgroundColor: medication.taken ? Colors.successLight : Colors.primaryLighter },
-        ]}
+        style={[styles.medTileIcon, { backgroundColor: medication.taken ? '#DCFCE7' : '#E6F7F5' }]}
       >
-        <Ionicons
-          name="medkit"
-          size={22}
-          color={medication.taken ? Colors.success : Colors.primary}
-        />
+        <Ionicons name="medkit" size={22} color={medication.taken ? '#16A34A' : Colors.primary} />
       </View>
       <View style={{ flex: 1, marginLeft: 14 }}>
         <Text style={[styles.medTileName, medication.taken && styles.medTileNameDone]}>
           {medication.name}
         </Text>
-        <Text style={styles.medTileDosage}>{medication.dosage}</Text>
+        <Text style={styles.medTileDosage}>{medication.dosage || '1 liều'}</Text>
       </View>
       {!!timeLabel && (
         <View style={styles.medTileTimeBadge}>
@@ -123,8 +121,8 @@ export function MedicationTile({ medication }: { medication: MedicationItem }) {
         style={[
           styles.medTileCheck,
           {
-            borderColor: medication.taken ? Colors.success : Colors.border,
-            backgroundColor: medication.taken ? Colors.success : 'transparent',
+            borderColor: medication.taken ? '#16A34A' : '#CBD5E1',
+            backgroundColor: medication.taken ? '#16A34A' : 'transparent',
           },
         ]}
       >
@@ -138,120 +136,159 @@ const styles = StyleSheet.create({
   nextMedCard: {
     padding: 20,
     borderRadius: 22,
-    backgroundColor: Colors.surface,
     borderWidth: 1.5,
+    backgroundColor: '#FFFFFF',
     ...Shadows.md,
   },
   nextMedCardPending: {
-    borderColor: '#FED7AA',
+    borderColor: '#FCD34D',
+    backgroundColor: '#FFFDF5',
   },
   nextMedCardTaken: {
-    borderColor: '#BBF7D0',
+    borderColor: '#86EFAC',
+    backgroundColor: '#F0FDF4',
   },
-  nextMedTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  nextMedTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
   nextMedIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    flexWrap: 'wrap',
+    gap: 6,
+  },
   pillBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   pillBadgeText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
-  nextMedTime: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
+  timePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  nextMedTime: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
   nextMedName: {
     fontSize: 19,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
+    marginBottom: 4,
   },
   nextMedDosage: {
-    marginTop: 3,
-    fontSize: 14,
-    color: Colors.textSecondary,
-    fontWeight: '500',
+    fontSize: 14.5,
+    color: '#475569',
+  },
+  boldText: {
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  instructionWrap: {
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    marginTop: 6,
   },
   nextMedInstructions: {
-    marginTop: 4,
     fontSize: 13,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
+    color: '#64748B',
+    lineHeight: 18,
   },
   takeBtnFull: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    width: '100%',
-    paddingVertical: 16,
+    paddingVertical: 15,
     borderRadius: 16,
+    gap: 8,
   },
   takeBtnActive: {
     backgroundColor: Colors.primary,
-    shadowColor: Colors.primaryDark,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.28,
     shadowRadius: 8,
     elevation: 4,
   },
   takeBtnTaken: {
-    backgroundColor: Colors.success,
+    backgroundColor: '#16A34A',
+    opacity: 0.9,
   },
   takeBtnFullText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
 
   medTile: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 15,
+    borderRadius: 18,
     marginBottom: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     ...Shadows.sm,
   },
   medTileDone: {
-    opacity: 0.85,
     backgroundColor: '#F8FAFC',
+    borderColor: '#CBD5E1',
   },
   medTileIcon: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  medTileName: { fontWeight: '700', color: Colors.textPrimary, fontSize: 16 },
-  medTileNameDone: { color: Colors.textSecondary, textDecorationLine: 'line-through' },
+  medTileName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  medTileNameDone: {
+    color: '#64748B',
+    textDecorationLine: 'line-through',
+  },
   medTileDosage: {
-    marginTop: 2,
-    color: Colors.textSecondary,
     fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
   },
   medTileTimeBadge: {
-    paddingHorizontal: 10,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 10,
-    backgroundColor: Colors.primaryLighter,
   },
   medTileTimeText: {
-    color: Colors.primary,
     fontSize: 12.5,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: '#334155',
   },
   medTileCheck: {
     width: 24,

@@ -54,25 +54,31 @@ export default function HealthReportScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Top Header */}
       <View style={styles.appBar}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+          <Ionicons name="arrow-back" size={22} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.appBarTitle}>Báo cáo sức khỏe</Text>
+        <Text style={styles.appBarTitle}>Báo cáo sức khỏe của Bác</Text>
         {!isLoading && metricReports.length > 0 && (
-          <TouchableOpacity onPress={() => load(elderlyId)} style={styles.refreshButton}>
-            <Ionicons name="refresh" size={22} color={Colors.textPrimary} />
+          <TouchableOpacity
+            onPress={() => load(elderlyId)}
+            style={styles.refreshButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="refresh" size={20} color={Colors.primary} />
           </TouchableOpacity>
         )}
       </View>
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={Colors.primary} />
+          <ActivityIndicator color={Colors.primary} size="large" />
+          <Text style={styles.loadingText}>Đang tổng hợp báo cáo sức khỏe...</Text>
         </View>
       ) : error && metricReports.length === 0 ? (
         <View style={styles.center}>
@@ -90,6 +96,7 @@ export default function HealthReportScreen() {
       ) : (
         <ScrollView
           contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={false}
@@ -101,14 +108,16 @@ export default function HealthReportScreen() {
         >
           {elderlyName != null && (
             <SectionCard
-              title={`Báo cáo của ${elderlyName}`}
-              subtitle={fromDate && toDate ? `${fromDate} → ${toDate}` : '30 ngày gần đây'}
+              title={`Tổng quan sức khỏe của Bác`}
+              subtitle={
+                fromDate && toDate ? `${fromDate} → ${toDate}` : 'Theo dõi 30 ngày gần nhất'
+              }
               icon="person"
               color={Colors.primary}
             />
           )}
 
-          <View style={{ height: 12 }} />
+          <View style={{ height: 14 }} />
           <View style={styles.statsRow}>
             <StatCard
               value={`${metricReports.length}`}
@@ -116,23 +125,18 @@ export default function HealthReportScreen() {
               icon="trending-up"
               color={Colors.primary}
             />
-            <StatCard
-              value={`${dosesTaken}`}
-              label="Liều đã uống"
-              icon="medkit"
-              color={Colors.success}
-            />
+            <StatCard value={`${dosesTaken}`} label="Liều đã uống" icon="medkit" color="#059669" />
             <StatCard
               value={`${totalAppointments}`}
-              label="Lịch hẹn"
+              label="Lịch khám"
               icon="calendar"
-              color={Colors.secondary}
+              color="#0284C7"
             />
           </View>
 
           {adherenceData.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Tuân thủ uống thuốc</Text>
+              <Text style={styles.sectionTitle}>Tỷ lệ tuân thủ uống thuốc</Text>
               {adherenceData.map((m, i) => (
                 <AdherenceCard key={`${m.medicationName}-${i}`} m={m} />
               ))}
@@ -141,7 +145,7 @@ export default function HealthReportScreen() {
 
           {metricReports.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Chỉ số sức khỏe</Text>
+              <Text style={styles.sectionTitle}>Diễn biến các chỉ số đo</Text>
               {metricReports.map((r, i) => (
                 <MetricCard key={`${r.type}-${i}`} report={r} />
               ))}
@@ -150,7 +154,7 @@ export default function HealthReportScreen() {
 
           {!!aiSummary && (
             <>
-              <Text style={styles.sectionTitle}>Tóm tắt AI hàng tuần</Text>
+              <Text style={styles.sectionTitle}>Đánh giá y tế từ AI CareNest</Text>
               <AiSummaryCard summary={aiSummary} />
             </>
           )}
@@ -163,25 +167,44 @@ export default function HealthReportScreen() {
 }
 
 const styles = StyleSheet.create({
-  emptyMascot: { width: 150, height: 150, marginBottom: 8 },
-  container: { flex: 1, backgroundColor: Colors.background },
+  emptyMascot: { width: 160, height: 160, marginBottom: 12 },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   appBar: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  backButton: { marginRight: 12 },
-  appBarTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  refreshButton: { padding: 4 },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  appBarTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  refreshButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  loadingText: { marginTop: 12, fontSize: 14.5, color: '#64748B', fontWeight: '500' },
   errorText: {
-    color: Colors.textSecondary,
-    fontSize: 14,
+    color: '#64748B',
+    fontSize: 14.5,
     textAlign: 'center',
     marginTop: 16,
+    lineHeight: 22,
   },
   retryButton: {
     marginTop: 16,
@@ -189,18 +212,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 9999,
   },
-  retryButtonText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
-  scroll: { padding: 16 },
+  retryButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  scroll: { padding: 18 },
   statsRow: { flexDirection: 'row', gap: 10 },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginTop: 20,
-    marginBottom: 10,
+    fontSize: 17.5,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 22,
+    marginBottom: 12,
   },
 });

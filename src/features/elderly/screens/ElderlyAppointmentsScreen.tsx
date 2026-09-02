@@ -51,10 +51,15 @@ export default function ElderlyAppointmentsScreen() {
         <View style={styles.emptyState}>
           <Image
             source={require('../../../../assets/mascot/mascot_confused.jpg')}
-            style={{ width: 130, height: 130 }}
+            style={{ width: 140, height: 140, marginBottom: 8 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>Chưa có lịch hẹn nào</Text>
+          <Text style={styles.emptyTitle}>
+            {tab === 0 ? 'Bác chưa có lịch hẹn khám sắp tới' : 'Chưa có lịch khám đã hoàn thành'}
+          </Text>
+          <Text style={styles.emptyText}>
+            Lịch tái khám định kỳ sẽ được người thân cập nhật tại đây.
+          </Text>
         </View>
       );
     }
@@ -63,52 +68,77 @@ export default function ElderlyAppointmentsScreen() {
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => <AppointmentCard item={item} />}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
         }
       />
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+          <Ionicons name="arrow-back" size={22} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Lịch hẹn của tôi</Text>
+        <Text style={styles.headerTitle}>Lịch hẹn khám của Bác</Text>
       </View>
 
+      {/* Segmented Tab Bar */}
       <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setTab(0)}>
+        <TouchableOpacity
+          style={[styles.tabItem, tab === 0 && styles.tabItemActive]}
+          onPress={() => setTab(0)}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={18}
+            color={tab === 0 ? Colors.primary : '#64748B'}
+            style={{ marginRight: 6 }}
+          />
           <Text style={[styles.tabText, tab === 0 && styles.tabTextActive]}>
             Sắp tới ({upcomingList.length})
           </Text>
-          {tab === 0 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setTab(1)}>
+        <TouchableOpacity
+          style={[styles.tabItem, tab === 1 && styles.tabItemActive]}
+          onPress={() => setTab(1)}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="checkmark-done-outline"
+            size={18}
+            color={tab === 1 ? Colors.primary : '#64748B'}
+            style={{ marginRight: 6 }}
+          />
           <Text style={[styles.tabText, tab === 1 && styles.tabTextActive]}>
-            Đã qua ({pastList.length})
+            Đã khám ({pastList.length})
           </Text>
-          {tab === 1 && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
       </View>
 
       {isLoading && appointments.length === 0 ? (
         <View style={styles.center}>
-          <ActivityIndicator color={Colors.primary} />
+          <ActivityIndicator color={Colors.primary} size="large" />
+          <Text style={styles.loadingText}>Đang tải lịch hẹn...</Text>
         </View>
       ) : error && appointments.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" color={Colors.textHint} size={48} />
-          <View style={{ height: 12 }} />
+          <Ionicons name="alert-circle-outline" color="#EF4444" size={54} />
           <Text style={styles.errorText}>{error}</Text>
-          <View style={{ height: 12 }} />
           <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
             <Text style={styles.retryBtnText}>Thử lại</Text>
           </TouchableOpacity>
@@ -121,43 +151,86 @@ export default function ElderlyAppointmentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  backButton: { marginRight: 12 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  headerTitle: { fontSize: 19, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
+    borderBottomColor: '#E2E8F0',
+    gap: 8,
   },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  tabText: { fontSize: 14, fontWeight: '600', color: Colors.textHint },
-  tabTextActive: { color: Colors.primary },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    height: 2,
-    width: '60%',
-    backgroundColor: Colors.primary,
-    borderRadius: 1,
-  },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
-  retryBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 14,
+    backgroundColor: '#F8FAFC',
   },
-  retryBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
-  listContent: { padding: 16 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
-  emptyText: { color: Colors.textSecondary, fontSize: 15, marginTop: 12 },
+  tabItemActive: {
+    backgroundColor: '#E6F7F5',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  tabTextActive: {
+    color: Colors.primary,
+    fontWeight: '800',
+  },
+  listContent: { padding: 18 },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    marginTop: 40,
+  },
+  emptyTitle: {
+    fontSize: 16.5,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
+  emptyText: {
+    marginTop: 6,
+    color: '#64748B',
+    fontSize: 13.5,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#64748B', fontWeight: '500' },
+  errorText: { color: '#64748B', fontSize: 14, textAlign: 'center', marginTop: 12, lineHeight: 22 },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 9999,
+  },
+  retryBtnText: { color: '#FFFFFF', fontSize: 14.5, fontWeight: '700' },
 });

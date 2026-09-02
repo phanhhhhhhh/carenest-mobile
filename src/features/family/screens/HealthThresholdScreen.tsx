@@ -39,7 +39,6 @@ export default function HealthThresholdScreen() {
   const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Người thân';
 
   const isLoading = useHealthThresholdStore((s) => s.isLoading);
-  const isSaving = useHealthThresholdStore((s) => s.isSaving);
   const thresholds = useHealthThresholdStore((s) => s.thresholds);
   const load = useHealthThresholdStore((s) => s.load);
   const create = useHealthThresholdStore((s) => s.create);
@@ -54,7 +53,6 @@ export default function HealthThresholdScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [sheetMetricType, setSheetMetricType] = useState<string>('BLOOD_PRESSURE');
   const [sheetExisting, setSheetExisting] = useState<ThresholdItem | null>(null);
-  // Bumped on every open so ThresholdEditSheet remounts with fresh state.
   const [sheetNonce, setSheetNonce] = useState(0);
 
   useMountEffect(() => {
@@ -85,7 +83,7 @@ export default function HealthThresholdScreen() {
     } else if (recs == null) {
       showErrorToast(useHealthThresholdStore.getState().error ?? 'Không thể lấy đề xuất');
     } else {
-      Alert.alert('', 'Không có đề xuất nào');
+      Alert.alert('Thông báo', 'Hiện chưa có đề xuất mới.');
     }
   };
 
@@ -110,159 +108,150 @@ export default function HealthThresholdScreen() {
     setPendingRecs(null);
   };
 
-  const renderAppBar = () => (
-    <View style={styles.appBar}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
-      </TouchableOpacity>
-      <Text style={styles.appBarTitle} numberOfLines={1}>
-        Ngưỡng cảnh báo sức khỏe — {elderlyName}
-      </Text>
-      <View style={styles.backBtn} />
-    </View>
-  );
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.appBar}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="arrow-back" size={22} color={Colors.primary} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.appBarTitle}>Ngưỡng cảnh báo y tế</Text>
+            <Text style={styles.appBarSubtitle}>Người thân: {elderlyName}</Text>
+          </View>
+        </View>
+        {elderlyId && (
+          <TouchableOpacity
+            style={styles.recommendBtn}
+            onPress={handleRecommend}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="sparkles" size={16} color="#FFFFFF" />
+            <Text style={styles.recommendBtnText}>Đề xuất AI</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
-  if (!elderlyId) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        {renderAppBar()}
+      {!elderlyId ? (
         <View style={styles.center}>
           <Image
             source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
-            style={{ width: 140, height: 140 }}
+            style={{ width: 140, height: 140, marginBottom: 8 }}
             resizeMode="contain"
           />
-          <Text style={styles.emptyText}>Chưa liên kết với người cao tuổi nào</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {renderAppBar()}
-
-      {isLoading && thresholds.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.emptyText}>Chưa liên kết với người thân nào</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <View style={styles.recommendBanner}>
-            <View style={styles.recommendIconWrap}>
-              <Ionicons name="sparkles" size={20} color={Colors.success} />
-            </View>
-            <Text style={styles.recommendText}>
-              AI có thể phân tích hồ sơ sức khỏe và đề xuất ngưỡng cảnh báo phù hợp cho từng chỉ số.
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.infoBanner}>
+            <Ionicons name="information-circle" size={22} color={Colors.primary} />
+            <Text style={styles.infoBannerText}>
+              Khi người thân đo chỉ số vượt ngoài các ngưỡng an toàn này, CareNest sẽ tự động gửi
+              cảnh báo khẩn cấp đến điện thoại của bạn.
             </Text>
-            <TouchableOpacity
-              style={styles.recommendBtn}
-              disabled={isSaving}
-              onPress={handleRecommend}
-            >
-              <Ionicons name="sparkles" size={16} color="#FFFFFF" />
-              <Text style={styles.recommendBtnText}>Đề xuất</Text>
-            </TouchableOpacity>
           </View>
 
-          <View style={{ height: 20 }} />
-
-          <Text style={styles.sectionTitle}>Ngưỡng cảnh báo</Text>
-          <View style={{ height: 4 }} />
-          <Text style={styles.sectionSubtitle}>
-            Đặt giới hạn cá nhân — AI sẽ cảnh báo khi vượt ngưỡng
-          </Text>
           <View style={{ height: 16 }} />
 
-          {METRIC_TYPES.map((type) => {
-            const existing = findFor(type);
-            return (
-              <ThresholdCard
-                key={type}
-                type={type}
-                existing={existing}
-                onPress={() => openEditSheet(type, existing)}
-              />
-            );
-          })}
+          {isLoading && thresholds.length === 0 ? (
+            <View style={styles.centerPad}>
+              <ActivityIndicator color={Colors.primary} size="large" />
+              <Text style={styles.loadingText}>Đang tải cấu hình ngưỡng...</Text>
+            </View>
+          ) : (
+            METRIC_TYPES.map((type) => {
+              const item = findFor(type);
+              return (
+                <ThresholdCard
+                  key={type}
+                  type={type}
+                  existing={item ?? null}
+                  onPress={() => openEditSheet(type, item ?? null)}
+                />
+              );
+            })
+          )}
 
-          <View style={{ height: 20 }} />
+          <View style={{ height: 30 }} />
         </ScrollView>
       )}
 
       <ThresholdEditSheet
         key={sheetNonce}
         visible={sheetVisible}
+        elderlyId={elderlyId}
         metricType={sheetMetricType}
         existing={sheetExisting}
-        elderlyId={elderlyId}
-        onClose={() => setSheetVisible(false)}
+        onClose={() => {
+          setSheetVisible(false);
+          if (elderlyId) load(elderlyId);
+        }}
       />
 
       <RecommendDialog
         visible={recommendDialogVisible}
-        onCancel={() => setRecommendDialogVisible(false)}
         onApply={applyAllRecommendations}
+        onCancel={() => {
+          setRecommendDialogVisible(false);
+          clearRecommendations();
+          setPendingRecs(null);
+        }}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   appBar: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  appBarTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  emptyText: { color: Colors.textSecondary, fontSize: 15 },
-  scroll: { padding: 16 },
-  recommendBanner: {
-    flexDirection: 'row',
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#EEF6EA',
-    borderWidth: 1,
-    borderColor: 'rgba(67, 160, 71, 0.2)',
-  },
-  recommendIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(67, 160, 71, 0.15)',
     justifyContent: 'center',
-    alignItems: 'center',
+    marginRight: 10,
   },
-  recommendText: {
-    flex: 1,
-    marginLeft: 12,
-    color: Colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
-  },
+  appBarTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  appBarSubtitle: { fontSize: 12.5, color: '#64748B', marginTop: 1, fontWeight: '500' },
   recommendBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginLeft: 8,
-    backgroundColor: Colors.success,
-    paddingHorizontal: 12,
+    backgroundColor: '#4F46E5',
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 9999,
   },
-  recommendBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  sectionSubtitle: { color: Colors.textSecondary, fontSize: 13 },
+  recommendBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  scroll: { padding: 18 },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: '#E6F7F5',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#99E6E0',
+  },
+  infoBannerText: { flex: 1, fontSize: 13.5, color: '#0F172A', lineHeight: 20, fontWeight: '500' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  centerPad: { paddingVertical: 40, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '500' },
+  emptyText: { color: '#0F172A', fontSize: 16, fontWeight: '700', textAlign: 'center' },
 });

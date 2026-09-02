@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../../../core/theme/colors';
 
 export function AiInsightCard({
   displayText,
@@ -23,28 +22,35 @@ export function AiInsightCard({
           style={[
             styles.aiIconWrap,
             {
-              backgroundColor: aiLoading ? 'rgba(255, 167, 38, 0.15)' : 'rgba(67, 160, 71, 0.15)',
+              backgroundColor: aiLoading ? '#FEF3C7' : '#DCFCE7',
             },
           ]}
         >
           {aiLoading ? (
-            <ActivityIndicator size="small" color={Colors.warning} />
+            <ActivityIndicator size="small" color="#D97706" />
           ) : (
-            <Ionicons name="sparkles" size={20} color={Colors.success} />
+            <Ionicons name="sparkles" size={22} color="#15803D" />
           )}
         </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.aiTitle}>Nhận định từ AI</Text>
-            {aiLoading && <Text style={styles.aiAnalyzing}> đang phân tích...</Text>}
+        <View style={{ flex: 1, marginLeft: 14 }}>
+          <View
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <Text style={styles.aiTitle}>Bác sĩ AI CareNest nhận định</Text>
+            {!aiLoading && showReload && (
+              <TouchableOpacity
+                onPress={onReload}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="refresh" size={18} color="#64748B" />
+              </TouchableOpacity>
+            )}
           </View>
+          {aiLoading && (
+            <Text style={styles.aiAnalyzing}>Đang phân tích các chỉ số mới nhất của Bác...</Text>
+          )}
           <Text style={styles.aiText}>{displayText}</Text>
         </View>
-        {!aiLoading && showReload && (
-          <TouchableOpacity onPress={onReload} style={{ padding: 4 }}>
-            <Ionicons name="refresh" size={18} color={Colors.textHint} />
-          </TouchableOpacity>
-        )}
       </View>
       {!!aiError && <Text style={styles.aiError}>{aiError}</Text>}
     </View>
@@ -53,22 +59,22 @@ export function AiInsightCard({
 
 const styles = StyleSheet.create({
   aiCard: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#EFF7EF',
-    borderWidth: 1,
-    borderColor: 'rgba(67, 160, 71, 0.2)',
+    padding: 18,
+    borderRadius: 22,
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1.5,
+    borderColor: '#BBF7D0',
   },
   aiRow: { flexDirection: 'row', alignItems: 'flex-start' },
   aiIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  aiTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  aiAnalyzing: { color: Colors.textSecondary, fontSize: 11, fontStyle: 'italic' },
-  aiText: { marginTop: 4, color: Colors.textSecondary, fontSize: 13, lineHeight: 19.5 },
-  aiError: { marginTop: 8, color: Colors.warning, fontSize: 11, fontStyle: 'italic' },
+  aiTitle: { fontSize: 15, fontWeight: '800', color: '#14532D' },
+  aiAnalyzing: { color: '#B45309', fontSize: 12.5, fontWeight: '500', marginTop: 2 },
+  aiText: { marginTop: 6, color: '#166534', fontSize: 14, lineHeight: 21, fontWeight: '500' },
+  aiError: { marginTop: 8, color: '#DC2626', fontSize: 12, fontWeight: '500' },
 });

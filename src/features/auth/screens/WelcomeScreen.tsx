@@ -229,18 +229,22 @@ export default function WelcomeScreen() {
   const isLastSlide = currentIndex === slides.length - 1;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* "Bỏ qua" chỉ hiện khi chưa ở trang cuối */}
-      {!isLastSlide && (
-        <TouchableOpacity
-          style={styles.skipButton}
-          onPress={handleSkip}
-          activeOpacity={0.7}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.skipButtonText}>Bỏ qua</Text>
-        </TouchableOpacity>
-      )}
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Header with "Bỏ qua" button safely inside the SafeAreaView */}
+      <View style={styles.header}>
+        {!isLastSlide ? (
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={handleSkip}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Text style={styles.skipButtonText}>Bỏ qua</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.skipPlaceholder} />
+        )}
+      </View>
 
       <Animated.View style={[styles.flatListWrapper, { opacity: contentOpacity }]}>
         <FlatList

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { HealthMetric } from '../../../../shared/types';
 import { type MetricConfig, type Status, statusColor, statusLabel } from './metricConfig';
 
@@ -40,7 +40,7 @@ export function MetricSection({
     <View style={styles.metricCard}>
       <View style={styles.metricHeaderRow}>
         <View style={[styles.metricIconWrap, { backgroundColor: config.bgColor }]}>
-          <Ionicons name={config.icon} size={22} color={config.color} />
+          <Ionicons name={config.icon} size={24} color={config.color} />
         </View>
         <Text style={styles.metricTitle}>{config.label}</Text>
         {status !== 'none' && (
@@ -48,8 +48,8 @@ export function MetricSection({
             style={[
               styles.statusBadge,
               {
-                backgroundColor: `${statusColor(status)}1A`,
-                borderColor: `${statusColor(status)}4D`,
+                backgroundColor: `${statusColor(status)}1F`,
+                borderColor: `${statusColor(status)}66`,
               },
             ]}
           >
@@ -58,8 +58,6 @@ export function MetricSection({
             </Text>
           </View>
         )}
-        <View style={{ width: 8 }} />
-        <Ionicons name="chevron-forward" size={18} color={Colors.textHint} />
       </View>
 
       <View style={{ height: 16 }} />
@@ -74,13 +72,13 @@ export function MetricSection({
 
       {values.length < 2 ? (
         <View style={styles.miniChartEmpty}>
-          <Text style={styles.miniChartEmptyText}>Cần thêm dữ liệu để hiển thị biểu đồ</Text>
+          <Text style={styles.miniChartEmptyText}>Cần thêm lượt đo để vẽ xu hướng</Text>
         </View>
       ) : (
         <View style={styles.miniChart}>
           {values.map((v, i) => {
             const fraction = range > 0 ? (v - minVal) / range : 0;
-            const height = Math.min(50, Math.max(4, fraction * 46 + 4));
+            const height = Math.min(50, Math.max(6, fraction * 44 + 6));
             return (
               <View key={i} style={styles.miniBarSlot}>
                 <View style={[styles.miniBar, { height, backgroundColor: config.color }]} />
@@ -95,46 +93,44 @@ export function MetricSection({
 
 const styles = StyleSheet.create({
   metricCard: {
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    marginBottom: 14,
+    padding: 18,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.sm,
   },
   metricHeaderRow: { flexDirection: 'row', alignItems: 'center' },
   metricIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   metricTitle: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textPrimary,
+    marginLeft: 14,
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0F172A',
   },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
-  statusText: { fontSize: 12, fontWeight: '600' },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12, borderWidth: 1.2 },
+  statusText: { fontSize: 12.5, fontWeight: '700' },
   metricValueRow: { flexDirection: 'row', alignItems: 'flex-end' },
-  metricValue: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary },
-  metricUnit: { fontSize: 14, color: Colors.textSecondary },
-  metricTime: { fontSize: 12, color: Colors.textHint },
+  metricValue: { fontSize: 32, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
+  metricUnit: { fontSize: 15, color: '#64748B', fontWeight: '600', marginBottom: 4 },
+  metricTime: { fontSize: 13, color: '#94A3B8', marginBottom: 4 },
   miniChartEmpty: {
-    height: 50,
-    borderRadius: 10,
-    backgroundColor: Colors.background,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  miniChartEmptyText: { color: Colors.textHint, fontSize: 12 },
-  miniChart: { height: 50, flexDirection: 'row', alignItems: 'flex-end' },
-  miniBarSlot: { flex: 1, marginHorizontal: 1, justifyContent: 'flex-end' },
-  miniBar: { borderRadius: 3 },
+  miniChartEmptyText: { color: '#94A3B8', fontSize: 12.5, fontWeight: '500' },
+  miniChart: { height: 46, flexDirection: 'row', alignItems: 'flex-end' },
+  miniBarSlot: { flex: 1, marginHorizontal: 2, justifyContent: 'flex-end' },
+  miniBar: { borderRadius: 4 },
 });

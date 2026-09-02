@@ -24,25 +24,25 @@ export default function ElderlyShell() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarInactiveTintColor: '#64748B',
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 12.5,
           fontWeight: '700',
           marginTop: -2,
           marginBottom: Platform.OS === 'ios' ? 0 : 4,
         },
         tabBarStyle: {
-          height: Platform.OS === 'ios' ? 88 : 70,
+          height: Platform.OS === 'ios' ? 88 : 72,
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-          backgroundColor: Colors.surface,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: Colors.border,
+          borderTopColor: '#E2E8F0',
           shadowColor: '#0F172A',
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.04,
-          shadowRadius: 10,
-          elevation: 8,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          elevation: 10,
         },
         tabBarIcon: ({ color, focused }) => {
           const icons: Record<string, [string, string]> = {
@@ -56,7 +56,7 @@ export default function ElderlyShell() {
             <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
               <Ionicons
                 name={(focused ? filled : outline) as keyof typeof Ionicons.glyphMap}
-                size={23}
+                size={24}
                 color={focused ? Colors.primary : color}
               />
             </View>
@@ -90,13 +90,13 @@ export default function ElderlyShell() {
 
 const styles = StyleSheet.create({
   iconWrapper: {
-    width: 38,
-    height: 30,
-    borderRadius: 15,
+    width: 48,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconWrapperActive: {
-    backgroundColor: Colors.primaryLighter,
+    backgroundColor: '#E6F7F5',
   },
 });

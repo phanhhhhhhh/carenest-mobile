@@ -41,7 +41,7 @@ export default function PremiumPlansScreen() {
   const handleSubscribe = async () => {
     const premiumPlan = plans.find((p) => !isFreePlan(p));
     if (!premiumPlan) {
-      Alert.alert('', 'Không có gói Premium nào khả dụng');
+      Alert.alert('Thông báo', 'Không có gói Premium nào khả dụng');
       return;
     }
 
@@ -52,13 +52,13 @@ export default function PremiumPlansScreen() {
       if (canOpen) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('', `Đường dẫn thanh toán: ${url}`);
+        Alert.alert('Liên kết thanh toán', `Đường dẫn thanh toán: ${url}`);
       }
     }
 
     const successMsg = usePaymentStore.getState().paymentSuccess;
     if (successMsg) {
-      Alert.alert('', successMsg);
+      Alert.alert('Thành công', successMsg);
       clearSuccess();
       load();
     }
@@ -90,27 +90,28 @@ export default function PremiumPlansScreen() {
           style={styles.backButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+          <Ionicons name="arrow-back" size={22} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.appBarTitle}>Gói Premium</Text>
+        <Text style={styles.appBarTitle}>Gói Hội Viên CareNest Premium</Text>
       </View>
 
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Đang tải thông tin gói cước...</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
+          <Ionicons name="alert-circle-outline" size={52} color="#EF4444" />
           <View style={{ height: 12 }} />
           <Text style={styles.errorText}>{error}</Text>
-          <View style={{ height: 12 }} />
+          <View style={{ height: 16 }} />
           <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
             <Text style={styles.retryBtnText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scroll}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.heroWrap}>
             <Image
               source={require('../../../../assets/mascot/mascot_thumbsup_stethoscope.jpg')}
@@ -125,9 +126,10 @@ export default function PremiumPlansScreen() {
           />
           <View style={{ height: 24 }} />
 
-          <Text style={styles.sectionTitle}>Chọn gói của bạn</Text>
-          <View style={{ height: 4 }} />
-          <Text style={styles.sectionSubtitle}>Nâng cấp để mở khóa tất cả tính năng Premium</Text>
+          <Text style={styles.sectionTitle}>Các gói dịch vụ chăm sóc</Text>
+          <Text style={styles.sectionSubtitle}>
+            Nâng cấp để mở khóa chăm sóc đa người thân và báo cáo AI chuyên sâu
+          </Text>
           <View style={{ height: 16 }} />
 
           {plans.map((plan) => (
@@ -138,18 +140,18 @@ export default function PremiumPlansScreen() {
             />
           ))}
 
-          <View style={{ height: 24 }} />
+          <View style={{ height: 20 }} />
 
           {!isPremium && (
             <>
-              <Text style={styles.sectionTitle}>Phương thức thanh toán</Text>
+              <Text style={styles.sectionTitle}>Phương thức thanh toán an toàn</Text>
               <View style={{ height: 12 }} />
               <View style={styles.methodRow}>
                 <View style={{ flex: 1 }}>
                   <MethodCard
                     icon="VNPay"
                     label="VNPay"
-                    subtitle="Ngân hàng trực tuyến"
+                    subtitle="Ngân hàng & QR Pay"
                     selected={selectedMethod === 'vnpay'}
                     onPress={() => setSelectedMethod('vnpay')}
                   />
@@ -159,7 +161,7 @@ export default function PremiumPlansScreen() {
                   <MethodCard
                     icon="MoMo"
                     label="MoMo"
-                    subtitle="Ví điện tử"
+                    subtitle="Ví điện tử MoMo"
                     selected={selectedMethod === 'momo'}
                     onPress={() => setSelectedMethod('momo')}
                   />
@@ -174,11 +176,12 @@ export default function PremiumPlansScreen() {
               style={styles.manageBtn}
               disabled={isProcessing}
               onPress={confirmCancel}
+              activeOpacity={0.85}
             >
               {isProcessing ? (
-                <ActivityIndicator size="small" color={Colors.error} />
+                <ActivityIndicator size="small" color="#EF4444" />
               ) : (
-                <Text style={styles.manageBtnText}>Hủy gói đăng ký</Text>
+                <Text style={styles.manageBtnText}>Hủy gia hạn gói Premium</Text>
               )}
             </TouchableOpacity>
           ) : (
@@ -186,11 +189,12 @@ export default function PremiumPlansScreen() {
               style={styles.subscribeBtn}
               disabled={isProcessing}
               onPress={handleSubscribe}
+              activeOpacity={0.88}
             >
               {isProcessing ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.subscribeBtnText}>Đăng ký ngay</Text>
+                <Text style={styles.subscribeBtnText}>Đăng ký CareNest Premium ngay</Text>
               )}
             </TouchableOpacity>
           )}
@@ -204,48 +208,64 @@ export default function PremiumPlansScreen() {
 
 const styles = StyleSheet.create({
   heroWrap: { alignItems: 'center', marginBottom: 4 },
-  heroMascot: { width: 160, height: 160 },
-  container: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  heroMascot: { width: 150, height: 150 },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  loadingText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '500' },
   appBar: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  backButton: { marginRight: 12 },
-  appBarTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  appBarTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  errorText: { color: '#EF4444', fontSize: 14.5, textAlign: 'center', lineHeight: 22 },
   retryBtn: {
     backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 9999,
   },
-  retryBtnText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
-  scroll: { padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  sectionSubtitle: { color: Colors.textSecondary, fontSize: 13 },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14.5 },
+  scroll: { padding: 18 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  sectionSubtitle: { color: '#64748B', fontSize: 13, marginTop: 2, lineHeight: 18 },
   methodRow: { flexDirection: 'row' },
   subscribeBtn: {
     width: '100%',
-    height: 54,
-    borderRadius: 16,
+    height: 52,
+    borderRadius: 9999,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 2,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  subscribeBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  subscribeBtnText: { color: '#FFFFFF', fontSize: 15.5, fontWeight: '800' },
   manageBtn: {
     width: '100%',
-    height: 54,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.error,
+    height: 52,
+    borderRadius: 9999,
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  manageBtnText: { color: Colors.error, fontSize: 16, fontWeight: '600' },
+  manageBtnText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
 });
