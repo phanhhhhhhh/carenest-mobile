@@ -58,8 +58,8 @@ export default function CameraScreen() {
   const renderError = () => (
     <View style={styles.center}>
       <View style={{ padding: 32, alignItems: 'center' }}>
-        <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
-        <View style={{ height: 16 }} />
+        <Ionicons name="alert-circle-outline" size={52} color="#EF4444" />
+        <View style={{ height: 12 }} />
         <Text style={styles.errorText}>{error}</Text>
         <View style={{ height: 16 }} />
         <TouchableOpacity style={styles.retryBtn} onPress={() => elderlyId && load(elderlyId)}>
@@ -75,7 +75,7 @@ export default function CameraScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <CameraAppBar elderlyName={elderlyName} onBack={() => navigation.goBack()} />
         <View style={styles.center}>
-          <Ionicons name="people-outline" size={56} color={Colors.textHint} />
+          <Ionicons name="people-outline" size={56} color="#94A3B8" />
           <View style={{ height: 16 }} />
           <Text style={styles.emptyText}>Chưa liên kết người thân nào</Text>
         </View>
@@ -87,11 +87,16 @@ export default function CameraScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <CameraAppBar elderlyName={elderlyName} onBack={() => navigation.goBack()} />
+      <CameraAppBar
+        elderlyName={elderlyName}
+        onBack={() => navigation.goBack()}
+        onAddCamera={actions.showBindDialog}
+      />
 
       {isLoading && cameras.length === 0 ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Đang tải danh sách camera...</Text>
         </View>
       ) : error && cameras.length === 0 ? (
         renderError()
@@ -141,53 +146,56 @@ export default function CameraScreen() {
         label={actions.labelValue}
         onChangeSn={actions.setSnValue}
         onChangeLabel={actions.setLabelValue}
-        onCancel={() => actions.setBindVisible(false)}
         onConfirm={actions.confirmBind}
+        onCancel={() => actions.setBindVisible(false)}
       />
 
       <ConfirmUnbindModal
         visible={actions.unbindTarget != null}
-        onCancel={() => actions.setUnbindTarget(null)}
         onConfirm={actions.doUnbind}
+        onCancel={() => actions.setUnbindTarget(null)}
       />
 
       <CameraMenuModal
-        visible={menuCam != null}
+        visible={actions.menuDeviceId != null}
         onClose={() => actions.setMenuDeviceId(null)}
         onTogglePrivacy={() => {
-          const cam = menuCam;
-          actions.setMenuDeviceId(null);
-          if (cam) actions.handlePrivacyToggle(cam.id, cam.privacyMode);
+          if (menuCam) {
+            actions.handlePrivacyToggle(menuCam.id, menuCam.privacyMode);
+            actions.setMenuDeviceId(null);
+          }
         }}
         onDelete={() => {
-          const id = actions.menuDeviceId;
-          actions.setMenuDeviceId(null);
-          if (id != null) actions.setUnbindTarget(id);
+          if (menuCam) {
+            actions.setUnbindTarget(menuCam.id);
+            actions.setMenuDeviceId(null);
+          }
         }}
       />
 
       <PtzControlModal
         visible={actions.ptzDeviceId != null}
+        onMove={(dir) => actions.sendPtz(dir)}
         onClose={actions.closePtz}
-        onMove={actions.sendPtz}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { color: Colors.textSecondary, fontSize: 15, textAlign: 'center' },
-  errorText: { color: Colors.textSecondary, fontSize: 14, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  emptyText: { color: '#0F172A', fontSize: 16.5, fontWeight: '700', textAlign: 'center' },
+  loadingText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '500' },
+  errorText: { color: '#EF4444', fontSize: 14.5, textAlign: 'center', lineHeight: 22 },
   retryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: Colors.primary,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 9999,
   },
-  retryBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14.5 },
 });

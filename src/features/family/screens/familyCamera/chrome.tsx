@@ -4,16 +4,38 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
 import type { CameraStatusData } from '../../store/cameraStore';
 
-export function CameraAppBar({ elderlyName, onBack }: { elderlyName: string; onBack: () => void }) {
+export function CameraAppBar({
+  elderlyName,
+  onBack,
+  onAddCamera,
+}: {
+  elderlyName: string;
+  onBack: () => void;
+  onAddCamera?: () => void;
+}) {
   return (
     <View style={styles.appBar}>
-      <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
-      </TouchableOpacity>
-      <Text style={styles.appBarTitle} numberOfLines={1}>
-        Camera — {elderlyName}
-      </Text>
-      <View style={styles.backBtn} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+        <TouchableOpacity
+          onPress={onBack}
+          style={styles.backBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.primary} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.appBarTitle} numberOfLines={1}>
+            Camera an tâm
+          </Text>
+          <Text style={styles.appBarSubtitle}>Người thân: {elderlyName}</Text>
+        </View>
+      </View>
+      {onAddCamera && (
+        <TouchableOpacity style={styles.addBtn} onPress={onAddCamera} activeOpacity={0.85}>
+          <Ionicons name="add" size={18} color="#FFFFFF" />
+          <Text style={styles.addBtnText}>Thêm Camera</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -21,17 +43,25 @@ export function CameraAppBar({ elderlyName, onBack }: { elderlyName: string; onB
 export function CameraStatusBar({ status }: { status: CameraStatusData }) {
   const indicatorColor =
     status.indicatorColor === 'GREEN'
-      ? Colors.success
+      ? '#16A34A'
       : status.indicatorColor === 'RED'
-        ? Colors.error
-        : Colors.textHint;
+        ? '#DC2626'
+        : '#64748B';
+  const indicatorBg =
+    status.indicatorColor === 'GREEN'
+      ? '#DCFCE7'
+      : status.indicatorColor === 'RED'
+        ? '#FEE2E2'
+        : '#F1F5F9';
 
   return (
     <View style={styles.statusBar}>
-      <View style={[styles.statusDot, { backgroundColor: indicatorColor }]} />
-      <Text style={styles.statusText} numberOfLines={1}>
-        {status.hasCamera ? status.statusText : 'Chưa liên kết camera nào'}
-      </Text>
+      <View style={[styles.statusBadge, { backgroundColor: indicatorBg }]}>
+        <View style={[styles.statusDot, { backgroundColor: indicatorColor }]} />
+        <Text style={[styles.statusText, { color: indicatorColor }]} numberOfLines={1}>
+          {status.hasCamera ? status.statusText : 'Chưa liên kết camera nào'}
+        </Text>
+      </View>
       {status.hasCamera && <Text style={styles.statusCount}>{status.cameraCount} camera</Text>}
     </View>
   );
@@ -50,17 +80,35 @@ export function CameraTabBar({
 }) {
   return (
     <View style={styles.tabBar}>
-      <TouchableOpacity style={styles.tabItem} onPress={() => onSelect(0)}>
+      <TouchableOpacity
+        style={[styles.tabItem, tab === 0 && styles.tabItemActive]}
+        onPress={() => onSelect(0)}
+        activeOpacity={0.8}
+      >
+        <Ionicons
+          name="images-outline"
+          size={16}
+          color={tab === 0 ? Colors.primary : '#64748B'}
+          style={{ marginRight: 6 }}
+        />
         <Text style={[styles.tabLabel, tab === 0 && styles.tabLabelActive]}>
-          {`Kiểm tra (${checkCount})`}
+          Ảnh định kỳ ({checkCount})
         </Text>
-        <View style={[styles.tabIndicator, tab === 0 && styles.tabIndicatorActive]} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.tabItem} onPress={() => onSelect(1)}>
+      <TouchableOpacity
+        style={[styles.tabItem, tab === 1 && styles.tabItemActive]}
+        onPress={() => onSelect(1)}
+        activeOpacity={0.8}
+      >
+        <Ionicons
+          name="videocam-outline"
+          size={16}
+          color={tab === 1 ? Colors.primary : '#64748B'}
+          style={{ marginRight: 6 }}
+        />
         <Text style={[styles.tabLabel, tab === 1 && styles.tabLabelActive]}>
-          {`Thiết bị (${deviceCount})`}
+          Thiết bị ({deviceCount})
         </Text>
-        <View style={[styles.tabIndicator, tab === 1 && styles.tabIndicatorActive]} />
       </TouchableOpacity>
     </View>
   );
@@ -70,44 +118,83 @@ const styles = StyleSheet.create({
   appBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 4,
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
   appBarTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3,
   },
+  appBarSubtitle: { fontSize: 12.5, color: '#64748B', marginTop: 1, fontWeight: '500' },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 9999,
+  },
+  addBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.surface,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  statusDot: { width: 12, height: 12, borderRadius: 6 },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
   statusText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  statusCount: { color: '#64748B', fontSize: 13, fontWeight: '600' },
+
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    gap: 8,
+  },
+  tabItem: {
     flex: 1,
-    marginLeft: 10,
-    color: Colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '500',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
   },
-  statusCount: { color: Colors.textSecondary, fontSize: 12 },
-  tabBar: { flexDirection: 'row', backgroundColor: Colors.surface },
-  tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
-  tabLabel: { fontSize: 14, fontWeight: '600', color: Colors.textHint },
-  tabLabelActive: { color: Colors.primary },
-  tabIndicator: {
-    height: 2,
-    width: '60%',
-    marginTop: 8,
-    backgroundColor: 'transparent',
-    borderRadius: 1,
-  },
-  tabIndicatorActive: { backgroundColor: Colors.primary },
+  tabItemActive: { backgroundColor: '#E6F7F5' },
+  tabLabel: { fontSize: 13.5, fontWeight: '600', color: '#64748B' },
+  tabLabelActive: { color: Colors.primary, fontWeight: '800' },
 });
