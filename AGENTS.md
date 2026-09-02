@@ -1,3 +1,8 @@
+# Where things live
+
+See `PROJECT_STRUCTURE.md` for the feature → file map (backend controllers/services/entities
+and frontend screens/stores). Read it before hunting for where a feature is implemented.
+
 # Expo HAS CHANGED
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing any code.
