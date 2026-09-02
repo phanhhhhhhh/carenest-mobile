@@ -55,6 +55,7 @@ export interface HealthMetric {
 export interface ElderlySummary {
   elderlyId: string;
   elderlyName: string;
+  phone?: string;
   healthConditions: string[];
 }
 

@@ -62,13 +62,12 @@ export default function FamilyDashboardScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  const elderlyId =
+  const currentElderlyObj =
     dashData && dashData.linkedElderly.length > 0
-      ? (dashData.linkedElderly[dashData.selectedIndex]?.elderlyId ?? null)
+      ? dashData.linkedElderly[dashData.selectedIndex]
       : null;
+  const elderlyId = currentElderlyObj?.elderlyId ?? null;
 
-  // Vitals and upcoming appointments come from the dashboard aggregate response
-  // (familyStore) rather than separate healthMetric/appointment fetches.
   const latestByType = dashData?.latestMetrics ?? {};
   const healthIsLoading = dashLoading;
 
@@ -100,15 +99,15 @@ export default function FamilyDashboardScreen() {
   const unreadCount = selectUnreadCount(notifItems);
   const upcoming = (dashData?.upcomingAppointments ?? []).slice(0, 3);
 
-  const hasElderly = !!dashData?.linkedElderly[dashData.selectedIndex]?.elderlyName;
-  const elderlyName = dashData?.linkedElderly[dashData.selectedIndex]?.elderlyName ?? '';
-  const healthConditions = dashData?.linkedElderly[dashData.selectedIndex]?.healthConditions ?? [];
+  const hasElderly = !!currentElderlyObj?.elderlyName;
+  const elderlyName = currentElderlyObj?.elderlyName ?? '';
+  const elderlyPhone = currentElderlyObj?.phone ?? '';
+  const healthConditions = currentElderlyObj?.healthConditions ?? [];
 
   const hr = latestByType['HEART_RATE'];
   const bp = latestByType['BLOOD_PRESSURE'];
   const glucose = latestByType['BLOOD_GLUCOSE'];
-  // Quick-glance thresholds (systolic >=135, resting HR ngoài 50-110,
-  // đường huyết mmol/L ngoài 3.9-7.8). Chi tiết hơn xem FamilyHealth.
+
   const isBpWarning = bp ? (Number.parseFloat(bp.value) || 0) >= 135 : false;
   const hrValue = hr ? Number.parseFloat(hr.value) || 0 : 0;
   const isHrWarning = hr ? hrValue < 50 || hrValue > 110 : false;
@@ -140,9 +139,10 @@ export default function FamilyDashboardScreen() {
   const openHealth = () => navigation.navigate('FamilyHealth');
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView
         contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing || dashLoading}
@@ -152,33 +152,47 @@ export default function FamilyDashboardScreen() {
           />
         }
       >
+        {/* Header with Mascot & Notifications */}
         <View style={styles.headerCard}>
           <Image
             source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
             style={styles.greetingMascot}
             resizeMode="contain"
           />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greetingSmall}>Xin chào,</Text>
-            <Text style={styles.greeting}>{user?.name || 'Gia đình'}</Text>
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.greetingSmall}>Xin chào gia đình,</Text>
+            <Text style={styles.greeting} numberOfLines={1}>
+              {user?.name || 'Người chăm sóc'}
+            </Text>
           </View>
-          <TouchableOpacity
-            style={styles.bellButton}
-            onPress={() => navigation.navigate('Notifications')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
-            {unreadCount > 0 && (
-              <View style={styles.dotBadge}>
-                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              style={styles.qrScanBtn}
+              onPress={() => navigation.navigate('FamilyScanQR')}
+              activeOpacity={0.8}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="qr-code-outline" size={20} color={Colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.bellButton}
+              onPress={() => navigation.navigate('Notifications')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="notifications-outline" size={22} color="#0F172A" />
+              {unreadCount > 0 && (
+                <View style={styles.dotBadge}>
+                  <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={{ height: 18 }} />
+        <View style={{ height: 16 }} />
 
-        {dashData && dashData.linkedElderly.length > 1 && (
+        {/* Multi-Elderly Switcher Tabs (UC-22) */}
+        {dashData && dashData.linkedElderly.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selector}>
             {dashData.linkedElderly.map((e, i) => {
               const isSelected = i === dashData.selectedIndex;
@@ -202,12 +216,24 @@ export default function FamilyDashboardScreen() {
                 </TouchableOpacity>
               );
             })}
+            <TouchableOpacity
+              style={styles.addElderlyChip}
+              onPress={() => navigation.navigate('FamilyShell', { screen: 'FamilyProfile' })}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={16} color={Colors.primary} />
+              <Text style={styles.addElderlyChipText}>Thêm</Text>
+            </TouchableOpacity>
           </ScrollView>
         )}
 
+        <View style={{ height: 12 }} />
+
+        {/* Elderly Overview Card with Vitals */}
         <ElderlyCard
           hasElderly={hasElderly}
           elderlyName={elderlyName}
+          elderlyPhone={elderlyPhone}
           lastUpdatedLabel={lastUpdatedLabel}
           isRecentlyActive={isRecentlyActive}
           healthConditions={healthConditions}
@@ -221,16 +247,18 @@ export default function FamilyDashboardScreen() {
           onVitalPress={openHealth}
         />
 
-        <View style={{ height: 18 }} />
+        <View style={{ height: 16 }} />
 
+        {/* Today's Medication Card */}
         <TodayMedsCard
           medItems={medItems}
           isLoading={medLoading}
           onViewAll={() => navigation.navigate('FamilyShell', { screen: 'FamilyMeds' })}
         />
 
-        <View style={{ height: 18 }} />
+        <View style={{ height: 16 }} />
 
+        {/* Weekly AI Summary Report (UC-13) */}
         {elderlyId && (
           <TouchableOpacity
             style={styles.weeklyReportCard}
@@ -244,26 +272,28 @@ export default function FamilyDashboardScreen() {
               <View style={styles.aiTagRow}>
                 <Text style={styles.aiTagText}>BÁO CÁO AI HÀNG TUẦN</Text>
               </View>
-              <Text style={styles.weeklyTitle}>Tổng hợp & Đánh giá sức khỏe</Text>
+              <Text style={styles.weeklyTitle}>Đánh giá sức khỏe toàn diện</Text>
               <Text style={styles.weeklySubtitle}>
-                Xem phân tích xu hướng tuần này của người thân
+                Bác sĩ AI phân tích xu hướng tuần & tỷ lệ uống thuốc
               </Text>
             </View>
-            <Ionicons name="chevron-forward" color={Colors.aiPrimary} size={22} />
+            <Ionicons name="chevron-forward" color="#4F46E5" size={22} />
           </TouchableOpacity>
         )}
 
-        <View style={{ height: 18 }} />
+        <View style={{ height: 16 }} />
 
+        {/* Camera Monitor Preview Card (UC-27, UC-32) */}
         {elderlyId && (
           <>
             <DashboardCameraCard cam={cam} onOpenCamera={openCamera} />
-            <View style={{ height: 18 }} />
+            <View style={{ height: 16 }} />
           </>
         )}
 
+        {/* Recent Alerts Feed */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Cảnh báo gần đây</Text>
+          <Text style={styles.sectionTitle}>Cảnh báo & Sự cố gần đây</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate('FamilyAlerts')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -271,37 +301,38 @@ export default function FamilyDashboardScreen() {
             <Text style={styles.viewAllText}>Xem tất cả →</Text>
           </TouchableOpacity>
         </View>
-        <View style={{ height: 12 }} />
+        <View style={{ height: 10 }} />
         <ActivityCard items={activityItems} />
 
-        <View style={{ height: 22 }} />
+        <View style={{ height: 20 }} />
 
+        {/* Upcoming Appointments Preview (UC-21) */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Lịch hẹn khám bệnh</Text>
+          <Text style={styles.sectionTitle}>Lịch hẹn khám bệnh viện</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate('FamilyShell', { screen: 'FamilyAppointmentsTab' })}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={styles.viewAllText}>Xem tất cả →</Text>
+            <Text style={styles.viewAllText}>Quản lý →</Text>
           </TouchableOpacity>
         </View>
-        <View style={{ height: 12 }} />
+        <View style={{ height: 10 }} />
         {dashLoading && upcoming.length === 0 ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator size="small" color={Colors.primary} />
           </View>
         ) : upcoming.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Ionicons name="calendar-outline" color={Colors.textHint} size={32} />
+            <Ionicons name="calendar-outline" color="#94A3B8" size={32} />
             <Text style={[styles.emptyBoxText, { marginTop: 6 }]}>
               Chưa có lịch hẹn khám sắp tới
             </Text>
           </View>
         ) : (
-          upcoming.map((apt) => (
+          upcoming.map((appt) => (
             <AppointmentPreviewCard
-              key={apt.id}
-              apt={apt}
+              key={appt.id}
+              apt={appt}
               onPress={() =>
                 navigation.navigate('FamilyShell', { screen: 'FamilyAppointmentsTab' })
               }
@@ -309,136 +340,136 @@ export default function FamilyDashboardScreen() {
           ))
         )}
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 30 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { padding: 20 },
-
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  scroll: { padding: 18 },
   headerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     padding: 16,
     borderRadius: 22,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadows.md,
+    borderColor: '#E2E8F0',
+    ...Shadows.sm,
   },
-  greetingMascot: { width: 56, height: 56, marginRight: 12 },
-  greetingSmall: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
-  greeting: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginTop: 1 },
+  greetingMascot: { width: 44, height: 44, borderRadius: 22 },
+  greetingSmall: { color: '#64748B', fontSize: 12.5, fontWeight: '500' },
+  greeting: { color: '#0F172A', fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+  qrScanBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   bellButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.backgroundSecondary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dotBadge: {
     position: 'absolute',
-    right: 4,
-    top: 4,
+    top: -2,
+    right: -2,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: Colors.error,
+    backgroundColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
-    borderWidth: 1.5,
-    borderColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
 
-  selector: { marginBottom: 16 },
+  selector: { marginBottom: 8 },
   elderlyChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: Colors.surface,
-    marginRight: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    backgroundColor: '#E6F7F5',
+    marginRight: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadows.sm,
+    borderColor: '#99E6E0',
   },
   elderlyChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  elderlyChipText: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
+  elderlyChipText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
   elderlyChipTextActive: { color: '#FFFFFF' },
+  addElderlyChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  addElderlyChipText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
 
   weeklyReportCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 18,
     borderRadius: 22,
-    backgroundColor: Colors.aiLighter,
-    borderWidth: 1,
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1.5,
     borderColor: '#C7D2FE',
-    shadowColor: Colors.aiPrimary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 2,
+    ...Shadows.sm,
   },
   weeklyReportIcon: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.aiPrimary,
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  aiTagRow: { marginBottom: 2 },
-  aiTagText: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: Colors.aiPrimary,
-    letterSpacing: 0.5,
+  aiTagRow: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E0E7FF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 4,
   },
-  weeklyTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#312E81',
-  },
-  weeklySubtitle: {
-    fontSize: 12,
-    color: '#4338CA',
-    marginTop: 2,
-  },
+  aiTagText: { fontSize: 10.5, fontWeight: '800', color: '#4338CA' },
+  weeklyTitle: { fontSize: 15.5, fontWeight: '800', color: '#1E1B4B' },
+  weeklySubtitle: { fontSize: 12.5, color: '#4338CA', marginTop: 2, fontWeight: '500' },
 
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: Colors.textPrimary,
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
   },
-  viewAllText: {
-    fontSize: 13.5,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
+  viewAllText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
 
-  loadingBox: { height: 60, justifyContent: 'center', alignItems: 'center' },
+  loadingBox: { height: 80, justifyContent: 'center', alignItems: 'center' },
   emptyBox: {
-    width: '100%',
     padding: 24,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
   },
-  emptyBoxText: { color: Colors.textSecondary, fontSize: 13 },
+  emptyBoxText: { color: '#64748B', fontSize: 13.5, fontWeight: '500' },
 });
