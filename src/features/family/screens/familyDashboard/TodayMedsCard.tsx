@@ -17,6 +17,7 @@ export function TodayMedsCard({
   onViewAll: () => void;
 }) {
   const takenMeds = medItems.filter((m) => m.taken).length;
+  const adherenceRate = medItems.length > 0 ? Math.round((takenMeds / medItems.length) * 100) : 0;
 
   return (
     <View style={styles.sectionCard}>
@@ -25,14 +26,22 @@ export function TodayMedsCard({
           <View style={styles.iconCircle}>
             <Ionicons name="medkit" size={18} color={Colors.primary} />
           </View>
-          <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
+          <View>
+            <Text style={styles.sectionTitle}>Thuốc trong ngày</Text>
+            <Text style={styles.sectionSub}>Tiến độ: {adherenceRate}% đã hoàn thành</Text>
+          </View>
         </View>
-        <TouchableOpacity onPress={onViewAll} activeOpacity={0.7}>
-          <Text style={styles.viewAllText}>Xem tất cả →</Text>
+        <TouchableOpacity
+          onPress={onViewAll}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.viewAllBtn}
+        >
+          <Text style={styles.viewAllText}>Chi tiết →</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={{ height: 14 }} />
+      <View style={{ height: 16 }} />
 
       {isLoading && medItems.length === 0 ? (
         <View style={styles.loadingBox}>
@@ -40,8 +49,8 @@ export function TodayMedsCard({
         </View>
       ) : medItems.length === 0 ? (
         <View style={styles.emptyBox}>
-          <Ionicons name="medkit-outline" size={32} color={Colors.textHint} />
-          <Text style={styles.emptyBoxText}>Chưa có lịch uống thuốc</Text>
+          <Ionicons name="medkit-outline" size={36} color="#94A3B8" />
+          <Text style={styles.emptyBoxText}>Người thân chưa có lịch uống thuốc nào hôm nay</Text>
         </View>
       ) : (
         <View style={styles.medCardRow}>
@@ -53,24 +62,19 @@ export function TodayMedsCard({
                 <View
                   style={[
                     styles.medCheckBadge,
-                    { backgroundColor: med.taken ? Colors.successLight : Colors.warningLight },
+                    { backgroundColor: med.taken ? '#DCFCE7' : '#FEF3C7' },
                   ]}
                 >
                   <Ionicons
                     name={med.taken ? 'checkmark' : 'time-outline'}
-                    size={13}
-                    color={med.taken ? Colors.successDark : Colors.warningDark}
+                    size={14}
+                    color={med.taken ? '#15803D' : '#D97706'}
                   />
                 </View>
                 <Text style={styles.medListName} numberOfLines={1}>
                   {med.name}
                 </Text>
-                <Text
-                  style={[
-                    styles.medListTime,
-                    { color: med.taken ? Colors.textSecondary : Colors.warningDark },
-                  ]}
-                >
+                <Text style={[styles.medListTime, { color: med.taken ? '#64748B' : '#D97706' }]}>
                   {formatDoseTime(med)}
                 </Text>
               </View>
@@ -85,56 +89,67 @@ export function TodayMedsCard({
 const styles = StyleSheet.create({
   sectionCard: {
     padding: 20,
-    borderRadius: 22,
-    backgroundColor: Colors.surface,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     ...Shadows.md,
   },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: Colors.primaryLighter,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: '#E6F7F5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
+  },
+  sectionSub: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  viewAllBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: '#E6F7F5',
   },
   viewAllText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
     color: Colors.primary,
   },
-  loadingBox: { height: 60, justifyContent: 'center', alignItems: 'center' },
+  loadingBox: { height: 70, justifyContent: 'center', alignItems: 'center' },
   emptyBox: {
     width: '100%',
-    padding: 24,
+    padding: 20,
     borderRadius: 16,
     backgroundColor: '#F8FAFC',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  emptyBoxText: { color: Colors.textSecondary, fontSize: 13 },
+  emptyBoxText: { color: '#64748B', fontSize: 13.5, textAlign: 'center' },
   medCardRow: { flexDirection: 'row', alignItems: 'center' },
-  medListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 8 },
+  medListRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 10 },
   medCheckBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   medListName: {
     flex: 1,
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: Colors.textPrimary,
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#0F172A',
   },
-  medListTime: { fontSize: 12, fontWeight: '700' },
+  medListTime: { fontSize: 12.5, fontWeight: '700' },
 });

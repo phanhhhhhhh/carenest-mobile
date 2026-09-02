@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { EmergencyEvent } from '../../../../shared/types';
 import { eventColor, eventIcon, eventTitle, formatRelative, hexToRgba } from './utils';
 
@@ -23,47 +23,40 @@ export function AlertCard({
     <View
       style={[
         styles.card,
-        { backgroundColor: isActive ? hexToRgba(color, 0.04) : Colors.surface },
-        isActive && { borderWidth: 1, borderColor: hexToRgba(color, 0.3) },
+        { backgroundColor: isActive ? '#FFF1F2' : '#FFFFFF' },
+        isActive && { borderWidth: 1.5, borderColor: '#FECDD3' },
       ]}
     >
-      <View style={[styles.iconContainer, { backgroundColor: hexToRgba(color, 0.1) }]}>
-        <Ionicons name={icon} size={22} color={color} />
+      <View style={[styles.iconContainer, { backgroundColor: hexToRgba(color, 0.12) }]}>
+        <Ionicons name={icon} size={24} color={color} />
       </View>
       <View style={styles.cardContent}>
         <View style={styles.cardTitleRow}>
-          <Text
-            style={[
-              styles.cardTitle,
-              { color: isActive ? Colors.textPrimary : Colors.textSecondary },
-            ]}
-          >
+          <Text style={[styles.cardTitle, { color: isActive ? '#0F172A' : '#475569' }]}>
             {title}
           </Text>
           {isActive ? (
             <View style={styles.activeDot} />
           ) : (
-            <Ionicons name="checkmark-circle" color={Colors.success} size={18} />
+            <Ionicons name="checkmark-circle" color="#16A34A" size={18} />
           )}
         </View>
         <Text style={styles.cardDesc}>{event.description}</Text>
         <View style={styles.cardFooterRow}>
-          <Ionicons name="time-outline" size={12} color={Colors.textHint} />
-          <Text style={styles.cardTime}>{formatRelative(event.createdAt)}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name="time-outline" size={13} color="#94A3B8" />
+            <Text style={styles.cardTime}>{formatRelative(event.createdAt)}</Text>
+          </View>
           <View
             style={[
               styles.statusBadge,
               {
-                backgroundColor: isActive
-                  ? hexToRgba(Colors.error, 0.08)
-                  : hexToRgba(Colors.success, 0.08),
+                backgroundColor: isActive ? '#FEE2E2' : '#DCFCE7',
               },
             ]}
           >
-            <Text
-              style={[styles.statusBadgeText, { color: isActive ? Colors.error : Colors.success }]}
-            >
-              {isActive ? 'ĐANG HOẠT ĐỘNG' : 'ĐÃ XỬ LÝ'}
+            <Text style={[styles.statusBadgeText, { color: isActive ? '#DC2626' : '#15803D' }]}>
+              {isActive ? 'ĐANG CHỜ XỬ LÝ' : 'ĐÃ XỬ LÝ'}
             </Text>
           </View>
           {isActive && (
@@ -71,13 +64,14 @@ export function AlertCard({
               style={styles.ackButton}
               disabled={acknowledging}
               onPress={() => onAcknowledge(event.id)}
+              activeOpacity={0.8}
             >
               {acknowledging ? (
-                <ActivityIndicator size="small" color={Colors.success} />
+                <ActivityIndicator size="small" color="#059669" />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle-outline" size={16} color={Colors.success} />
-                  <Text style={styles.ackText}>Xác nhận đã biết</Text>
+                  <Ionicons name="checkmark-circle-outline" size={16} color="#059669" />
+                  <Text style={styles.ackText}>Xác nhận</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -90,45 +84,47 @@ export function AlertCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+    ...Shadows.sm,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: 'center',
-    marginRight: 14,
+    justifyContent: 'center',
   },
-  cardContent: { flex: 1 },
+  cardContent: { flex: 1, marginLeft: 14 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardTitle: { fontWeight: '600', fontSize: 15, flexShrink: 1 },
-  activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.error },
-  cardDesc: { color: Colors.textSecondary, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  cardTitle: { fontSize: 16, fontWeight: '800' },
+  activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' },
+  cardDesc: { fontSize: 13.5, color: '#475569', marginTop: 4, lineHeight: 19 },
   cardFooterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
+    gap: 8,
+    marginTop: 10,
     flexWrap: 'wrap',
   },
-  cardTime: { color: Colors.textHint, fontSize: 12, marginRight: 8 },
-  statusBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-  statusBadgeText: { fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
+  cardTime: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  statusBadgeText: { fontSize: 11, fontWeight: '800' },
   ackButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginLeft: 'auto',
-    paddingHorizontal: 8,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
   },
-  ackText: { color: Colors.success, fontSize: 12, fontWeight: '500' },
+  ackText: { fontSize: 12, fontWeight: '700', color: '#059669' },
 });

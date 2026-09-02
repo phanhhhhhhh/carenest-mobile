@@ -35,7 +35,7 @@ export default function ElderlyChatScreen() {
   const sendMessage = useChatStore((s) => s.sendMessage);
   const clearHistory = useChatStore((s) => s.clearHistory);
 
-  const [userName, setUserName] = useState('you');
+  const [userName, setUserName] = useState('Bác');
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
@@ -51,11 +51,11 @@ export default function ElderlyChatScreen() {
   });
 
   const welcomeMessage =
-    `${greeting()} ${userName}! Tôi là trợ lý chăm sóc sức khỏe của bạn. ` +
-    'Hôm nay bạn cảm thấy thế nào? Tôi có thể giúp bạn:\n' +
-    '• Kiểm tra chỉ số sức khỏe\n' +
-    '• Nhắc uống thuốc\n' +
-    '• Trò chuyện cùng bạn';
+    `${greeting()} ${userName}! Cháu là trợ lý chăm sóc sức khỏe CareNest. ` +
+    'Hôm nay Bác cảm thấy trong người thế nào ạ? Cháu có thể giúp Bác:\n' +
+    '• Tra cứu & giải thích chỉ số sức khỏe\n' +
+    '• Nhắc nhở uống thuốc đúng giờ\n' +
+    '• Trò chuyện, tâm sự và tư vấn lối sống';
 
   const scrollToBottom = () => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
@@ -74,7 +74,7 @@ export default function ElderlyChatScreen() {
       setIsListening(false);
       return;
     }
-    Alert.alert('', 'Nhập bằng giọng nói chưa khả dụng');
+    Alert.alert('Nhập bằng giọng nói', 'Tính năng giọng nói đang được chuẩn bị.');
   };
 
   const confirmClearHistory = () => {
@@ -90,37 +90,38 @@ export default function ElderlyChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Top Header */}
       <View style={styles.appBar}>
         <View style={styles.appBarLeft}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="chevron-back" size={26} color={Colors.primary} />
           </TouchableOpacity>
           <View style={styles.avatarWrap}>
             <View style={styles.avatarCircle}>
               <Ionicons name="sparkles" size={22} color="#FFFFFF" />
             </View>
             <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: aiAvailable ? Colors.success : Colors.warning },
-              ]}
+              style={[styles.statusDot, { backgroundColor: aiAvailable ? '#10B981' : '#F59E0B' }]}
             />
           </View>
           <View style={{ marginLeft: 12 }}>
             <Text style={styles.appBarTitle}>CareNest AI</Text>
-            <Text
-              style={[
-                styles.appBarSubtitle,
-                { color: aiAvailable ? Colors.success : Colors.textSecondary },
-              ]}
-            >
-              {aiAvailable ? 'Trực tuyến — Hỗ trợ bởi AI' : 'Chế độ ngoại tuyến'}
+            <Text style={[styles.appBarSubtitle, { color: aiAvailable ? '#059669' : '#D97706' }]}>
+              {aiAvailable ? 'Trực tuyến — Sẵn sàng hỗ trợ' : 'Chế độ ngoại tuyến'}
             </Text>
           </View>
         </View>
         {messages.length > 0 && (
-          <TouchableOpacity onPress={confirmClearHistory} style={styles.clearBtn}>
-            <Ionicons name="trash-outline" size={20} color={Colors.textSecondary} />
+          <TouchableOpacity
+            onPress={confirmClearHistory}
+            style={styles.clearBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="trash-outline" size={22} color="#94A3B8" />
           </TouchableOpacity>
         )}
       </View>
@@ -130,20 +131,18 @@ export default function ElderlyChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
           <ProactiveReminderCard />
         </View>
 
         {isLoading && messages.length === 0 ? (
           <View style={styles.center}>
-            <ActivityIndicator color={Colors.primary} />
+            <ActivityIndicator color={Colors.primary} size="large" />
           </View>
         ) : (
           <FlatList
             ref={listRef}
             data={messages.length === 0 ? [] : messages}
-            // messageId can collide (schema defaults missing ids to 0, optimistic
-            // messages use Date.now()) — include the index to keep keys unique.
             keyExtractor={(item, index) => `${item.messageId}-${index}`}
             contentContainerStyle={styles.list}
             onContentSizeChange={scrollToBottom}
@@ -162,46 +161,56 @@ export default function ElderlyChatScreen() {
           />
         )}
 
-        <FlatList
-          horizontal
-          data={QUICK_REPLIES}
-          keyExtractor={(r) => r}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickRepliesRow}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.quickReplyChip} onPress={() => handleSend(item)}>
-              <Text style={styles.quickReplyText}>{item}</Text>
-            </TouchableOpacity>
-          )}
-        />
+        {/* Quick Replies Chips */}
+        <View style={styles.quickRepliesContainer}>
+          <FlatList
+            horizontal
+            data={QUICK_REPLIES}
+            keyExtractor={(r) => r}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickRepliesRow}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.quickReplyChip}
+                onPress={() => handleSend(item)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.quickReplyText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
 
+        {/* Input Bar */}
         <View style={styles.inputBar}>
           <TouchableOpacity
             style={[styles.micBtn, isListening && styles.micBtnListening]}
             onPress={toggleListening}
+            activeOpacity={0.8}
           >
             <Ionicons
               name={isListening ? 'mic' : 'mic-outline'}
-              size={22}
-              color={isListening ? Colors.error : Colors.textSecondary}
+              size={24}
+              color={isListening ? '#EF4444' : '#64748B'}
             />
           </TouchableOpacity>
-          <View style={{ width: 8 }} />
+
           <TextInput
             style={styles.textInput}
             value={input}
             onChangeText={setInput}
-            placeholder="Nhập tin nhắn..."
-            placeholderTextColor={Colors.textHint}
+            placeholder="Bác hãy nhập tin nhắn vào đây..."
+            placeholderTextColor="#94A3B8"
             editable={!isSending}
             onSubmitEditing={() => handleSend()}
             returnKeyType="send"
           />
-          <View style={{ width: 8 }} />
+
           <TouchableOpacity
-            style={[styles.sendBtn, isSending && styles.sendBtnDisabled]}
+            style={[styles.sendBtn, (!input.trim() || isSending) && styles.sendBtnDisabled]}
             onPress={() => handleSend()}
-            disabled={isSending}
+            disabled={!input.trim() || isSending}
+            activeOpacity={0.85}
           >
             <Ionicons name="send" size={20} color="#FFFFFF" />
           </TouchableOpacity>
@@ -212,23 +221,33 @@ export default function ElderlyChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   appBar: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
   appBarLeft: { flexDirection: 'row', alignItems: 'center' },
-  backBtn: { marginRight: 8, padding: 4 },
-  avatarWrap: { width: 40, height: 40 },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  avatarWrap: { width: 44, height: 44 },
   avatarCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -236,66 +255,85 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     bottom: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 13,
+    height: 13,
+    borderRadius: 6.5,
     borderWidth: 2,
-    borderColor: Colors.surface,
+    borderColor: '#FFFFFF',
   },
-  appBarTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  appBarSubtitle: { fontSize: 12, marginTop: 1 },
-  clearBtn: { padding: 6 },
+  appBarTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  appBarSubtitle: { fontSize: 12.5, marginTop: 1, fontWeight: '600' },
+  clearBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { padding: 16, flexGrow: 1 },
+  list: { padding: 18, flexGrow: 1 },
 
-  quickRepliesRow: { paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
-  quickReplyChip: {
-    paddingHorizontal: 16,
+  quickRepliesContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(46, 125, 154, 0.4)',
-    backgroundColor: 'rgba(46, 125, 154, 0.05)',
   },
-  quickReplyText: { color: Colors.primary, fontSize: 13 },
+  quickRepliesRow: { paddingHorizontal: 16, gap: 8 },
+  quickReplyChip: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  quickReplyText: { fontSize: 13.5, color: '#4338CA', fontWeight: '700' },
 
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    gap: 10,
   },
   micBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  micBtnListening: {
-    backgroundColor: 'rgba(229, 57, 53, 0.1)',
-    borderWidth: 2,
-    borderColor: Colors.error,
-  },
+  micBtnListening: { backgroundColor: '#FEE2E2' },
   textInput: {
     flex: 1,
-    height: 44,
+    height: 48,
+    backgroundColor: '#F8FAFC',
     borderRadius: 24,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    color: Colors.textPrimary,
+    paddingHorizontal: 18,
+    fontSize: 15.5,
+    color: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  sendBtnDisabled: { backgroundColor: Colors.textHint },
+  sendBtnDisabled: { opacity: 0.5, backgroundColor: '#94A3B8' },
 });

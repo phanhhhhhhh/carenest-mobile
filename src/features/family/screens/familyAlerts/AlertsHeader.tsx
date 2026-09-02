@@ -15,28 +15,31 @@ export function AlertsHeader({
   onBack: () => void;
 }) {
   return (
-    <View style={styles.header}>
+    <View style={styles.appBar}>
       <TouchableOpacity
         onPress={onBack}
         style={styles.backButton}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
+        <Ionicons name="arrow-back" size={22} color={Colors.primary} />
       </TouchableOpacity>
-      <View style={styles.headerTitleRow}>
-        <Text style={styles.headerTitle}>Cảnh báo</Text>
-        {activeCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{activeCount} mới</Text>
-          </View>
-        )}
+      <View style={{ flex: 1 }}>
+        <Text style={styles.appBarTitle}>Cảnh báo & Sự cố</Text>
+        <Text style={styles.appBarSubtitle}>
+          {activeCount > 0 ? `${activeCount} cảnh báo cần chú ý` : 'Tất cả an toàn'}
+        </Text>
       </View>
       {activeCount > 0 && (
-        <TouchableOpacity onPress={onMarkAllRead} disabled={marking} style={styles.markAllButton}>
+        <TouchableOpacity
+          style={styles.markReadButton}
+          onPress={onMarkAllRead}
+          disabled={marking}
+          activeOpacity={0.8}
+        >
           {marking ? (
             <ActivityIndicator size="small" color={Colors.primary} />
           ) : (
-            <Text style={styles.markAllText}>Đánh dấu đã đọc tất cả</Text>
+            <Text style={styles.markReadText}>Đã xem hết</Text>
           )}
         </TouchableOpacity>
       )}
@@ -45,24 +48,32 @@ export function AlertsHeader({
 }
 
 const styles = StyleSheet.create({
-  header: {
+  appBar: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  backButton: { marginRight: 12 },
-  headerTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
-  badge: {
-    backgroundColor: Colors.error,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  markAllButton: { paddingHorizontal: 8, paddingVertical: 4, minWidth: 16, alignItems: 'center' },
-  markAllText: { color: Colors.primary, fontSize: 13, fontWeight: '500' },
+  appBarTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  appBarSubtitle: { fontSize: 12.5, color: '#64748B', marginTop: 1, fontWeight: '500' },
+  markReadButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: '#E6F7F5',
+  },
+  markReadText: { fontSize: 12.5, fontWeight: '700', color: Colors.primary },
 });
