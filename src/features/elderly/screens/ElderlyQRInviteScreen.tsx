@@ -40,19 +40,25 @@ export default function ElderlyQRInviteScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Top Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={26} color={Colors.textPrimary} />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mã QR kết nối</Text>
-        <View style={styles.backBtn} />
+        <Text style={styles.headerTitle}>Mã QR kết nối người thân</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.instructionCard}>
-          <Ionicons name="information-circle" size={22} color={Colors.primary} />
+          <View style={styles.instructionIconWrap}>
+            <Ionicons name="information-circle" size={24} color={Colors.primary} />
+          </View>
           <Text style={styles.instructionText}>
-            Cho người thân quét mã này bằng ứng dụng CareNest để kết nối tài khoản
+            Bác hãy đưa mã QR này cho con cháu quét bằng ứng dụng CareNest để kết nối tài khoản.
           </Text>
         </View>
 
@@ -66,45 +72,63 @@ export default function ElderlyQRInviteScreen() {
         />
 
         <StepsCard />
+
+        <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
+    borderBottomColor: '#E2E8F0',
   },
-  backBtn: { width: 40, alignItems: 'center' },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.textPrimary,
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3,
   },
   scroll: { padding: 20, gap: 16 },
   instructionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: `${Colors.primary}12`,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: `${Colors.primary}30`,
+    backgroundColor: '#E6F7F5',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#99E6E0',
+  },
+  instructionIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   instructionText: {
     flex: 1,
-    fontSize: 14,
-    color: Colors.primary,
-    lineHeight: 20,
-    fontWeight: '500',
+    fontSize: 14.5,
+    color: '#0F172A',
+    lineHeight: 21,
+    fontWeight: '600',
   },
 });
