@@ -52,16 +52,21 @@ export default function WeeklySummaryScreen() {
 
   const renderAppBar = () => (
     <View style={styles.appBar}>
-      <TouchableOpacity
-        onPress={() => navigation.goBack()}
-        style={styles.backButton}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-      </TouchableOpacity>
-      <Text style={styles.appBarTitle} numberOfLines={1}>
-        Báo cáo hàng tuần — {elderlyName}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="arrow-back" size={22} color={Colors.primary} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.appBarTitle} numberOfLines={1}>
+            Báo cáo AI hàng tuần
+          </Text>
+          <Text style={styles.appBarSubtitle}>Người thân: {elderlyName}</Text>
+        </View>
+      </View>
     </View>
   );
 
@@ -72,7 +77,7 @@ export default function WeeklySummaryScreen() {
         <View style={styles.center}>
           <Image
             source={require('../../../../assets/mascot/mascot_wave_heart.jpg')}
-            style={{ width: 140, height: 140 }}
+            style={{ width: 140, height: 140, marginBottom: 8 }}
             resizeMode="contain"
           />
           <Text style={styles.noElderlyText}>Chưa liên kết với người cao tuổi nào</Text>
@@ -89,6 +94,7 @@ export default function WeeklySummaryScreen() {
         {isLoading && summaries.length === 0 ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Đang tổng hợp báo cáo AI...</Text>
           </View>
         ) : error && summaries.length === 0 ? (
           <ErrorState error={error} onRetry={() => load(elderlyId)} />
@@ -102,14 +108,16 @@ export default function WeeklySummaryScreen() {
           style={styles.fab}
           disabled={isLoading}
           onPress={handleGenerate}
-          activeOpacity={0.85}
+          activeOpacity={0.88}
         >
           {isLoading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <Ionicons name="sparkles" size={18} color="#FFFFFF" />
           )}
-          <Text style={styles.fabText}>{isLoading ? 'Đang tạo...' : 'Tạo ngay'}</Text>
+          <Text style={styles.fabText}>
+            {isLoading ? 'Đang phân tích...' : 'Tạo báo cáo tuần mới'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -117,34 +125,46 @@ export default function WeeklySummaryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   appBar: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
-  backButton: { marginRight: 12 },
-  appBarTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  noElderlyText: { color: Colors.textSecondary, fontSize: 15, textAlign: 'center' },
+  backButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#E6F7F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  appBarTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', letterSpacing: -0.3 },
+  appBarSubtitle: { fontSize: 12.5, color: '#64748B', marginTop: 1, fontWeight: '500' },
+  noElderlyText: { color: '#0F172A', fontSize: 16.5, fontWeight: '700', textAlign: 'center' },
+  loadingText: { color: '#64748B', fontSize: 14, marginTop: 12, fontWeight: '500' },
   fab: {
     position: 'absolute',
-    right: 20,
+    right: 18,
     bottom: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 20,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primary,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    height: 50,
+    borderRadius: 9999,
+    backgroundColor: '#4F46E5',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  fabText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  fabText: { color: '#FFFFFF', fontSize: 14.5, fontWeight: '800' },
 });
