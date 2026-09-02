@@ -18,17 +18,9 @@ export function MedCard({
   const now = Date.now();
   const isMissed =
     !item.taken && !!item.nextDoseTime && new Date(item.nextDoseTime).getTime() < now;
-  const statusLabel = item.taken ? 'Đã uống' : isMissed ? 'Bỏ lỡ' : 'Sắp tới';
-  const statusColor = item.taken
-    ? Colors.successDark
-    : isMissed
-      ? Colors.error
-      : Colors.warningDark;
-  const statusBg = item.taken
-    ? Colors.successLight
-    : isMissed
-      ? Colors.sosLight
-      : Colors.warningLight;
+  const statusLabel = item.taken ? 'Đã uống' : isMissed ? 'Bỏ lỡ' : 'Chưa uống';
+  const statusColor = item.taken ? '#15803D' : isMissed ? '#DC2626' : '#D97706';
+  const statusBg = item.taken ? '#DCFCE7' : isMissed ? '#FEE2E2' : '#FEF3C7';
   const firstTime =
     item.scheduleTimes[0] ?? (item.nextDoseTime ? formatIsoTime(item.nextDoseTime) : '');
   const subtitleParts = [firstTime, item.instructions, dayPatternLabel(item.daysOfWeek)].filter(
@@ -38,7 +30,7 @@ export function MedCard({
   return (
     <View style={styles.medCard}>
       <View style={styles.medIconBox}>
-        <Ionicons name="medkit" size={22} color={Colors.primary} />
+        <Ionicons name="medkit" size={24} color={Colors.primary} />
       </View>
       <View style={styles.medInfo}>
         <Text style={styles.medName}>{item.name}</Text>
@@ -54,11 +46,21 @@ export function MedCard({
         </View>
       </View>
       <View style={styles.medCardActions}>
-        <TouchableOpacity style={styles.iconBtnEdit} onPress={onEdit} activeOpacity={0.7}>
-          <Ionicons name="create-outline" size={17} color={Colors.primary} />
+        <TouchableOpacity
+          style={styles.iconBtnEdit}
+          onPress={onEdit}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="create-outline" size={18} color={Colors.primary} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconBtnDelete} onPress={onDelete} activeOpacity={0.7}>
-          <Ionicons name="trash-outline" size={17} color={Colors.error} />
+        <TouchableOpacity
+          style={styles.iconBtnDelete}
+          onPress={onDelete}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="trash-outline" size={18} color="#EF4444" />
         </TouchableOpacity>
       </View>
     </View>
@@ -72,50 +74,50 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     ...Shadows.sm,
   },
   medIconBox: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
     borderRadius: 14,
-    backgroundColor: Colors.primaryLighter,
+    backgroundColor: '#E6F7F5',
     justifyContent: 'center',
     alignItems: 'center',
   },
   medInfo: { flex: 1, marginLeft: 14 },
-  medName: { fontWeight: '800', fontSize: 16, color: Colors.textPrimary },
-  medDosage: { color: Colors.textSecondary, fontSize: 13, marginTop: 2, fontWeight: '500' },
-  medSubRow: { color: Colors.textHint, fontSize: 12, marginTop: 2 },
+  medName: { fontWeight: '800', fontSize: 16.5, color: '#0F172A' },
+  medDosage: { color: '#475569', fontSize: 13.5, marginTop: 2, fontWeight: '600' },
+  medSubRow: { color: '#64748B', fontSize: 12.5, marginTop: 2 },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: 4,
     marginTop: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  statusBadgeText: { fontSize: 11.5, fontWeight: '700' },
-  medCardActions: { justifyContent: 'flex-start', gap: 6, marginLeft: 8 },
-  iconBtnEdit: {
-    width: 32,
-    height: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 10,
-    backgroundColor: Colors.primaryLighter,
-    justifyContent: 'center',
+  },
+  statusBadgeText: { fontSize: 12, fontWeight: '700' },
+  medCardActions: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 8 },
+  iconBtnEdit: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E6F7F5',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   iconBtnDelete: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: Colors.errorLight,
-    justifyContent: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
+    justifyContent: 'center',
   },
 });
