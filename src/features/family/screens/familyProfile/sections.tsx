@@ -22,14 +22,14 @@ export function Avatar({ name, phone }: { name: string; phone: string }) {
       <View style={{ height: 14 }} />
       <Text style={styles.avatarName}>{name}</Text>
       {phone.length > 0 && (
-        <>
-          <View style={{ height: 4 }} />
+        <View style={styles.phonePill}>
+          <Ionicons name="call-outline" size={13} color="#475569" style={{ marginRight: 4 }} />
           <Text style={styles.avatarPhone}>{phone}</Text>
-        </>
+        </View>
       )}
       <View style={{ height: 10 }} />
       <View style={styles.roleBadge}>
-        <Ionicons name="people" size={14} color={Colors.primary} />
+        <Ionicons name="people" size={14} color="#059669" />
         <Text style={styles.roleBadgeText}>Gia đình / Người chăm sóc</Text>
       </View>
     </View>
@@ -51,7 +51,10 @@ export function ConnectedElderly({
         <View style={styles.headerIconCircle}>
           <Ionicons name="people" size={18} color={Colors.primary} />
         </View>
-        <Text style={styles.cardHeaderTitle}>Người thân đang theo dõi</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardHeaderTitle}>Người thân đang theo dõi</Text>
+          <Text style={styles.cardHeaderSub}>Đang đồng bộ dữ liệu sức khỏe</Text>
+        </View>
       </View>
       <View style={styles.divider} />
       <View style={styles.elderlyRow}>
@@ -85,7 +88,7 @@ export function AddFamilyCard({ onPress }: { onPress: () => void }) {
       <View style={styles.addFamilyText}>
         <Text style={styles.addFamilyTitle}>Thêm thành viên gia đình</Text>
         <Text style={styles.addFamilySubtitle}>
-          Kết nối với tài khoản người cao tuổi để theo dõi sức khỏe
+          Kết nối với tài khoản người cao tuổi bằng số điện thoại
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
@@ -97,13 +100,15 @@ export function ScanQRCard({ onPress }: { onPress: () => void }) {
   return (
     <TouchableOpacity style={styles.scanQRCard} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.scanQRIconWrap}>
-        <Ionicons name="qr-code-outline" size={22} color={Colors.secondaryDark} />
+        <Ionicons name="qr-code-outline" size={22} color="#059669" />
       </View>
       <View style={styles.addFamilyText}>
         <Text style={styles.scanQRTitle}>Quét mã QR kết nối</Text>
-        <Text style={styles.addFamilySubtitle}>Quét mã QR do người cao tuổi cung cấp</Text>
+        <Text style={styles.addFamilySubtitle}>
+          Quét mã QR từ màn hình điện thoại của người thân
+        </Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={Colors.secondaryDark} />
+      <Ionicons name="chevron-forward" size={20} color="#059669" />
     </TouchableOpacity>
   );
 }
@@ -130,55 +135,57 @@ export function Settings({
   }[] = [
     {
       icon: 'create-outline',
-      label: 'Chỉnh sửa hồ sơ',
+      label: 'Chỉnh sửa thông tin',
       color: Colors.primary,
-      bg: Colors.primaryLighter,
+      bg: '#E6F7F5',
       onPress: onEditProfile,
     },
     {
       icon: 'notifications-outline',
-      label: 'Cài đặt thông báo',
-      color: Colors.secondaryDark,
-      bg: Colors.secondaryLighter,
+      label: 'Cài đặt thông báo & DND',
+      color: '#059669',
+      bg: '#ECFDF5',
       onPress: onNotificationSettings,
     },
     {
       icon: 'ribbon-outline',
-      label: 'Nâng cấp Premium',
-      color: Colors.warningDark,
-      bg: Colors.warningLight,
+      label: 'Nâng cấp CareNest Premium',
+      color: '#D97706',
+      bg: '#FEF3C7',
       onPress: onUpgradePremium,
     },
     {
       icon: 'help-circle-outline',
       label: 'Trợ giúp & Hỗ trợ',
-      color: Colors.textSecondary,
-      bg: Colors.backgroundSecondary,
+      color: '#64748B',
+      bg: '#F1F5F9',
       onPress: onHelpSupport,
     },
   ];
 
   return (
     <View style={styles.settingsCard}>
-      {items.map((item, i) => (
-        <View key={i}>
-          <TouchableOpacity style={styles.settingRow} onPress={item.onPress} activeOpacity={0.7}>
-            <View style={[styles.settingIconWrap, { backgroundColor: item.bg }]}>
+      {items.map((item, idx) => (
+        <View key={item.label}>
+          <TouchableOpacity style={styles.settingsRow} onPress={item.onPress} activeOpacity={0.7}>
+            <View style={[styles.settingsIconWrap, { backgroundColor: item.bg }]}>
               <Ionicons name={item.icon} size={20} color={item.color} />
             </View>
-            <Text style={styles.settingLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.textHint} />
+            <Text style={styles.settingsLabel}>{item.label}</Text>
+            <View style={{ flex: 1 }} />
+            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
           </TouchableOpacity>
-          <View style={styles.settingDivider} />
+          {idx < items.length - 1 && <View style={styles.settingsDivider} />}
         </View>
       ))}
-
-      <TouchableOpacity style={styles.settingRow} onPress={onLogout} activeOpacity={0.7}>
-        <View style={[styles.settingIconWrap, { backgroundColor: Colors.errorLight }]}>
-          <Ionicons name="log-out" size={20} color={Colors.error} />
+      <View style={styles.settingsDivider} />
+      <TouchableOpacity style={styles.settingsRow} onPress={onLogout} activeOpacity={0.7}>
+        <View style={[styles.settingsIconWrap, { backgroundColor: '#FEE2E2' }]}>
+          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
         </View>
-        <Text style={[styles.settingLabel, { color: Colors.error }]}>Đăng xuất</Text>
-        <Ionicons name="chevron-forward" size={18} color={Colors.textHint} />
+        <Text style={[styles.settingsLabel, { color: '#EF4444' }]}>Đăng xuất tài khoản</Text>
+        <View style={{ flex: 1 }} />
+        <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
       </TouchableOpacity>
     </View>
   );
