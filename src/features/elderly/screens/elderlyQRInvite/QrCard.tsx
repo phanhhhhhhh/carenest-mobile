@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import type { InviteTokenData } from '../../../../core/api/inviteApi';
 import { QR_SIZE, formatCountdown } from './countdown';
 
@@ -21,19 +22,19 @@ export function QrCard({
   secondsLeft: number;
   onRefresh: () => void;
 }) {
-  const countdownColor =
-    secondsLeft > 120 ? Colors.secondary : secondsLeft > 30 ? Colors.warning : Colors.error;
+  const countdownColor = secondsLeft > 120 ? '#059669' : secondsLeft > 30 ? '#D97706' : '#EF4444';
+  const countdownBg = secondsLeft > 120 ? '#ECFDF5' : secondsLeft > 30 ? '#FEF3C7' : '#FEE2E2';
 
   return (
     <View style={styles.qrCard}>
       {loading ? (
         <View style={styles.qrPlaceholder}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>Đang tạo mã QR...</Text>
+          <Text style={styles.loadingText}>Đang tạo mã QR kết nối...</Text>
         </View>
       ) : error ? (
         <View style={styles.qrPlaceholder}>
-          <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
+          <Ionicons name="alert-circle-outline" size={52} color="#EF4444" />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : invite ? (
@@ -42,35 +43,35 @@ export function QrCard({
             <QRCode
               value={invite.token}
               size={QR_SIZE}
-              color={isExpired ? '#BBBBBB' : '#1A2B40'}
+              color={isExpired ? '#94A3B8' : '#0F172A'}
               backgroundColor="#FFFFFF"
               logo={undefined}
             />
             {isExpired && (
               <View style={styles.expiredOverlay}>
-                <Ionicons name="time-outline" size={40} color="#FFFFFF" />
-                <Text style={styles.expiredOverlayText}>Hết hạn</Text>
+                <Ionicons name="time-outline" size={44} color="#FFFFFF" />
+                <Text style={styles.expiredOverlayText}>Mã đã hết hạn</Text>
               </View>
             )}
           </View>
 
           {!isExpired ? (
-            <View style={styles.countdownRow}>
-              <Ionicons name="timer-outline" size={18} color={countdownColor} />
+            <View style={[styles.countdownRow, { backgroundColor: countdownBg }]}>
+              <Ionicons name="timer-outline" size={20} color={countdownColor} />
               <Text style={[styles.countdownText, { color: countdownColor }]}>
-                {'  '}Hết hạn sau {formatCountdown(secondsLeft)}
+                Hết hạn sau: {formatCountdown(secondsLeft)}
               </Text>
             </View>
           ) : (
-            <Text style={styles.expiredText}>Mã đã hết hạn</Text>
+            <Text style={styles.expiredText}>Mã kết nối đã hết hạn, hãy tạo mã mới</Text>
           )}
         </>
       ) : null}
 
       {(isExpired || error) && !loading && (
-        <TouchableOpacity style={styles.refreshBtn} onPress={onRefresh}>
-          <Ionicons name="refresh" size={18} color="#FFFFFF" />
-          <Text style={styles.refreshText}> Tạo mã mới</Text>
+        <TouchableOpacity style={styles.refreshBtn} onPress={onRefresh} activeOpacity={0.85}>
+          <Ionicons name="refresh" size={20} color="#FFFFFF" />
+          <Text style={styles.refreshText}>Tạo mã QR mới</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -79,15 +80,13 @@ export function QrCard({
 
 const styles = StyleSheet.create({
   qrCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.md,
     gap: 16,
   },
   qrPlaceholder: {
@@ -97,36 +96,51 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 16,
   },
-  loadingText: { color: Colors.textSecondary, fontSize: 14 },
-  errorText: { color: Colors.error, fontSize: 14, textAlign: 'center' },
+  loadingText: { color: '#64748B', fontSize: 14.5, fontWeight: '600' },
+  errorText: { color: '#EF4444', fontSize: 14, textAlign: 'center', lineHeight: 20 },
   qrWrapper: {
-    padding: 12,
-    borderRadius: 16,
+    padding: 16,
+    borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: `${Colors.primary}30`,
-    position: 'relative',
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
   },
-  qrExpired: { borderColor: '#CCCCCC' },
+  qrExpired: { opacity: 0.4 },
   expiredOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+  },
+  expiredOverlayText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  countdownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 9999,
     gap: 8,
   },
-  expiredOverlayText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
-  countdownRow: { flexDirection: 'row', alignItems: 'center' },
-  countdownText: { fontSize: 14, fontWeight: '600' },
-  expiredText: { fontSize: 14, color: Colors.error, fontWeight: '600' },
+  countdownText: { fontSize: 14.5, fontWeight: '800' },
+  expiredText: { color: '#EF4444', fontSize: 14, fontWeight: '700' },
   refreshBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 9999,
+    gap: 8,
+    width: '100%',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  refreshText: { color: '#FFFFFF', fontWeight: '600', fontSize: 14 },
+  refreshText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
 });

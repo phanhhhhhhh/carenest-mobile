@@ -24,15 +24,15 @@ export function ChatBubble({
           <View style={[styles.aiAvatarTiny, isError && styles.errorAvatarTiny]}>
             <Ionicons
               name={isError ? 'alert-circle' : 'sparkles'}
-              size={16}
-              color={isError ? Colors.error : Colors.aiPrimary}
+              size={18}
+              color={isError ? '#EF4444' : '#4F46E5'}
             />
           </View>
           <View style={{ width: 8 }} />
         </>
       )}
       <View
-        style={{ flexShrink: 1, alignItems: isAi ? 'flex-start' : 'flex-end', maxWidth: '82%' }}
+        style={{ flexShrink: 1, alignItems: isAi ? 'flex-start' : 'flex-end', maxWidth: '84%' }}
       >
         {!!intent && !isError && (
           <View style={styles.intentBadge}>
@@ -62,49 +62,53 @@ export function ChatBubble({
 }
 
 const styles = StyleSheet.create({
-  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 14 },
+  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 16 },
   bubbleRowUser: { justifyContent: 'flex-end' },
   aiAvatarTiny: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.aiLighter,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EEF2FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
-  errorAvatarTiny: { backgroundColor: Colors.sosLight },
+  errorAvatarTiny: { backgroundColor: '#FEE2E2' },
+  intentBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  intentText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
   messageBubble: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderRadius: 22,
     ...Shadows.sm,
   },
   aiMessageBubble: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
   },
   userMessageBubble: {
     backgroundColor: Colors.primary,
     borderBottomRightRadius: 4,
   },
   errorMessageBubble: {
-    backgroundColor: Colors.sosLight,
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: Colors.error,
+    borderColor: '#FECDD3',
   },
-  aiBubbleText: { color: Colors.textPrimary, fontSize: 15, lineHeight: 22, fontWeight: '400' },
-  userBubbleText: { color: '#FFFFFF', fontSize: 15, lineHeight: 22, fontWeight: '500' },
-  errorBubbleText: { color: Colors.error },
-  timeText: { color: Colors.textSecondary, fontSize: 11, marginTop: 4, marginHorizontal: 4 },
-  intentBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    backgroundColor: Colors.aiLighter,
-    marginBottom: 4,
-  },
-  intentText: { color: Colors.aiPrimary, fontSize: 10, fontWeight: '700' },
+  aiBubbleText: { color: '#0F172A', fontSize: 16, lineHeight: 24, fontWeight: '500' },
+  userBubbleText: { color: '#FFFFFF', fontSize: 16, lineHeight: 24, fontWeight: '600' },
+  errorBubbleText: { color: '#EF4444' },
+  timeText: { fontSize: 12, color: '#94A3B8', marginTop: 4, marginHorizontal: 4 },
 });
