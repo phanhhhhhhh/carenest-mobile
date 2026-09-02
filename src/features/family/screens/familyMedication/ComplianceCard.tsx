@@ -41,7 +41,7 @@ export function ComplianceCard({ displayAdherence, rangeDays, onOpenRangePicker 
           <View style={{ height: 16 }} />
           <View style={styles.averageRow}>
             <Text style={styles.averageNumber}>{average}%</Text>
-            <Text style={styles.averageLabel}>trung bình hoàn thành</Text>
+            <Text style={styles.averageLabel}>trung bình hoàn thành đúng giờ</Text>
           </View>
         </>
       )}
@@ -55,9 +55,9 @@ export function ComplianceCard({ displayAdherence, rangeDays, onOpenRangePicker 
           {HISTORY_DAY_LABELS.map((label, i) => {
             const isToday = i === todayIndex;
             const ratio = displayAdherence[i];
-            const barHeight = ratio === null ? 0 : Math.max(4, ratio * 84);
+            const barHeight = ratio === null ? 0 : Math.max(6, ratio * 84);
             const isLow = ratio !== null && ratio < 0.5;
-            const fillColor = isLow ? Colors.warning : isToday ? Colors.primary : '#93C5FD';
+            const fillColor = isLow ? '#D97706' : isToday ? Colors.primary : '#5EEAD4';
             return (
               <View key={label} style={styles.weekBarCol}>
                 <View style={styles.weekBarTrack}>
@@ -90,7 +90,7 @@ export function ComplianceCard({ displayAdherence, rangeDays, onOpenRangePicker 
           <Text style={styles.legendText}>Đạt chỉ tiêu</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: Colors.warning }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#D97706' }]} />
           <Text style={styles.legendText}>Cần chú ý (&lt;50%)</Text>
         </View>
       </View>
@@ -100,58 +100,62 @@ export function ComplianceCard({ displayAdherence, rangeDays, onOpenRangePicker 
 
 const styles = StyleSheet.create({
   complianceCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 22,
     padding: 20,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     ...Shadows.md,
   },
   complianceHeaderRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
   },
   headerLeft: { flex: 1 },
-  complianceHeaderTitle: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
-  complianceSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  complianceHeaderTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
+  complianceSubtitle: { fontSize: 12.5, color: '#64748B', marginTop: 2, fontWeight: '500' },
   rangeDropdown: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: Colors.primaryLighter,
+    borderRadius: 12,
+    backgroundColor: '#E6F7F5',
+    borderWidth: 1,
+    borderColor: '#99E6E0',
   },
-  rangeDropdownText: { fontSize: 12, fontWeight: '700', color: Colors.primary },
+  rangeDropdownText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
   averageRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  averageNumber: { fontSize: 36, fontWeight: '900', color: Colors.textPrimary, letterSpacing: -1 },
-  averageLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
-  weekBarChart: {
-    position: 'relative',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    paddingTop: 10,
-    paddingHorizontal: 6,
-  },
+  averageNumber: { fontSize: 32, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
+  averageLabel: { fontSize: 13.5, color: '#64748B', fontWeight: '500' },
+  weekBarChart: { height: 130, justifyContent: 'flex-end', position: 'relative' },
   weekBarGridline: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 24,
     height: 1,
-    backgroundColor: Colors.divider,
+    backgroundColor: '#F1F5F9',
   },
-  weekBarRow: { flexDirection: 'row' },
-  weekBarCol: { flex: 1, alignItems: 'center', paddingHorizontal: 2 },
-  weekBarTrack: { width: 22, height: 108, justifyContent: 'flex-end', alignItems: 'center' },
-  weekBarValue: { fontSize: 9.5, fontWeight: '700', color: Colors.textSecondary, marginBottom: 4 },
-  weekBarFill: { width: '100%', borderTopLeftRadius: 6, borderTopRightRadius: 6 },
-  weekBarLabel: { color: Colors.textHint, fontSize: 11, fontWeight: '500' },
+  weekBarRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  weekBarCol: { flex: 1, alignItems: 'center' },
+  weekBarTrack: { height: 100, justifyContent: 'flex-end', alignItems: 'center', width: '100%' },
+  weekBarValue: { fontSize: 10, color: '#94A3B8', fontWeight: '700', marginBottom: 4 },
+  weekBarFill: { width: 14, borderRadius: 6 },
+  weekBarLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
   weekBarLabelActive: { color: Colors.primary, fontWeight: '800' },
-  legendRow: { flexDirection: 'row', gap: 16 },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 11.5, color: Colors.textSecondary, fontWeight: '500' },
+  legendText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
 });
