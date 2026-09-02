@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
+import { Shadows } from '../../../../core/theme/spacing';
 import {
   metricDisplayName,
   trendLabel,
@@ -23,7 +24,7 @@ export function SectionCard({
   return (
     <View style={styles.sectionCard}>
       <View style={[styles.sectionIconWrap, { backgroundColor: `${color}1A` }]}>
-        <Ionicons name={icon} size={22} color={color} />
+        <Ionicons name={icon} size={24} color={color} />
       </View>
       <View style={{ flex: 1, marginLeft: 14 }}>
         <Text style={styles.sectionCardTitle}>{title}</Text>
@@ -46,7 +47,7 @@ export function StatCard({
 }) {
   return (
     <View style={styles.statCard}>
-      <Ionicons name={icon} size={24} color={color} />
+      <Ionicons name={icon} size={26} color={color} />
       <Text style={[styles.statValue, { color }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
@@ -55,16 +56,19 @@ export function StatCard({
 
 export function AdherenceCard({ m }: { m: MedicationAdherenceData }) {
   const rate = m.adherenceRate;
-  const color = rate >= 0.8 ? Colors.success : rate >= 0.5 ? Colors.warning : Colors.error;
+  const color = rate >= 0.8 ? '#15803D' : rate >= 0.5 ? '#D97706' : '#DC2626';
+  const bg = rate >= 0.8 ? '#DCFCE7' : rate >= 0.5 ? '#FEF3C7' : '#FEE2E2';
+
   return (
-    <View style={[styles.adherenceCard, { borderColor: `${color}4D` }]}>
+    <View style={[styles.adherenceCard, { borderColor: `${color}33` }]}>
       <View style={{ flex: 1 }}>
         <Text style={styles.adherenceName}>{m.medicationName}</Text>
         <Text style={styles.adherenceDetail}>
-          Đã uống: {m.taken} • Bỏ lỡ: {m.missed}
+          Đã uống: <Text style={{ fontWeight: '700', color: '#15803D' }}>{m.taken}</Text> • Bỏ lỡ:{' '}
+          <Text style={{ fontWeight: '700', color: '#DC2626' }}>{m.missed}</Text>
         </Text>
       </View>
-      <View style={[styles.adherenceBadge, { backgroundColor: `${color}1A` }]}>
+      <View style={[styles.adherenceBadge, { backgroundColor: bg }]}>
         <Text style={[styles.adherenceBadgeText, { color }]}>{Math.round(rate * 100)}%</Text>
       </View>
     </View>
@@ -75,16 +79,16 @@ export function MetricCard({ report }: { report: MetricReportData }) {
   let trendColor: string;
   switch (report.trend) {
     case 'INCREASING':
-      trendColor = Colors.warning;
+      trendColor = '#D97706';
       break;
     case 'DECREASING':
-      trendColor = Colors.primary;
+      trendColor = '#0284C7';
       break;
     case 'STABLE':
-      trendColor = Colors.success;
+      trendColor = '#15803D';
       break;
     default:
-      trendColor = Colors.textHint;
+      trendColor = '#64748B';
   }
 
   const maxVal = report.maxValue ?? 1;
@@ -106,7 +110,7 @@ export function MetricCard({ report }: { report: MetricReportData }) {
         <View style={styles.barChart}>
           {report.dataPoints.map((dp, i) => {
             const fraction = maxVal > 0 ? (dp.value ?? 0) / maxVal : 0;
-            const height = Math.min(56, Math.max(4, fraction * 56));
+            const height = Math.min(56, Math.max(6, fraction * 56));
             return (
               <View key={i} style={styles.barSlot}>
                 <View style={[styles.bar, { height }]} />
@@ -118,7 +122,7 @@ export function MetricCard({ report }: { report: MetricReportData }) {
 
       <View style={styles.metricStatsRow}>
         <MetricStat
-          label="TB"
+          label="Trung bình"
           value={`${report.avgValue !== undefined ? report.avgValue.toFixed(1) : '--'} ${report.unit}`}
         />
         <MetricStat
@@ -138,129 +142,139 @@ export function MetricCard({ report }: { report: MetricReportData }) {
 
 function MetricStat({ label, value }: { label: string; value: string }) {
   return (
-    <View style={{ marginRight: 16 }}>
-      <Text style={styles.metricStatLabel}>{label}</Text>
-      <Text style={styles.metricStatValue}>{value}</Text>
+    <View style={styles.statCol}>
+      <Text style={styles.statColLabel}>{label}</Text>
+      <Text style={styles.statColValue}>{value}</Text>
     </View>
   );
 }
 
 export function AiSummaryCard({ summary }: { summary: string }) {
   return (
-    <View style={styles.aiCard}>
-      <View style={styles.aiIconWrap}>
-        <Ionicons name="sparkles" size={20} color={Colors.secondary} />
+    <View style={styles.aiSummaryCard}>
+      <View style={styles.aiSummaryHeader}>
+        <View style={styles.aiSummaryIconWrap}>
+          <Ionicons name="sparkles" size={20} color="#4F46E5" />
+        </View>
+        <Text style={styles.aiSummaryTitle}>Bác sĩ AI CareNest Tổng kết</Text>
       </View>
-      <Text style={styles.aiText}>{summary}</Text>
+      <Text style={styles.aiSummaryText}>{summary}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   sectionCard: {
-    padding: 18,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.sm,
   },
   sectionIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionCardTitle: { fontWeight: '600', fontSize: 15, color: Colors.textPrimary },
-  sectionCardSubtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
+  sectionCardTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
+  sectionCardSubtitle: { fontSize: 13, color: '#64748B', marginTop: 2, fontWeight: '500' },
+
   statCard: {
     flex: 1,
     padding: 16,
-    borderRadius: 14,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  statValue: { fontSize: 22, fontWeight: '800', marginTop: 8 },
-  statLabel: { color: Colors.textSecondary, fontSize: 11, marginTop: 4, textAlign: 'center' },
-  adherenceCard: {
-    marginBottom: 8,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  adherenceName: { fontWeight: '600', fontSize: 14, color: Colors.textPrimary },
-  adherenceDetail: { color: Colors.textSecondary, fontSize: 12, marginTop: 4 },
-  adherenceBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  adherenceBadgeText: { fontWeight: '700', fontSize: 14 },
-  metricCard: {
-    marginBottom: 10,
-    padding: 16,
-    borderRadius: 14,
-    backgroundColor: Colors.surface,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  metricHeaderRow: { flexDirection: 'row', alignItems: 'center' },
-  metricTitle: { flex: 1, fontWeight: '700', fontSize: 15, color: Colors.textPrimary },
-  metricTrendBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  metricTrendText: { fontSize: 11, fontWeight: '600' },
-  barChart: {
-    height: 60,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginTop: 10,
-  },
-  barSlot: { flex: 1, marginHorizontal: 1, alignItems: 'stretch', justifyContent: 'flex-end' },
-  bar: {
-    backgroundColor: 'rgba(46, 125, 154, 0.6)',
-    borderRadius: 3,
-  },
-  metricStatsRow: { flexDirection: 'row', marginTop: 8, alignItems: 'center' },
-  metricStatLabel: { color: Colors.textHint, fontSize: 10 },
-  metricStatValue: { color: Colors.textSecondary, fontSize: 12, fontWeight: '600', marginTop: 2 },
-  aiCard: {
-    padding: 18,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 130, 0.3)',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  aiIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: 'rgba(76, 175, 130, 0.1)',
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
+    ...Shadows.sm,
   },
-  aiText: {
-    flex: 1,
-    marginLeft: 14,
-    color: Colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19.5,
+  statValue: { fontSize: 24, fontWeight: '900', marginTop: 6, letterSpacing: -0.3 },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 2,
+    textAlign: 'center',
   },
+
+  adherenceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    marginBottom: 10,
+    ...Shadows.sm,
+  },
+  adherenceName: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  adherenceDetail: { fontSize: 13, color: '#64748B', marginTop: 3 },
+  adherenceBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
+  adherenceBadgeText: { fontSize: 15, fontWeight: '800' },
+
+  metricCard: {
+    padding: 18,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+    ...Shadows.sm,
+  },
+  metricHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  metricTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A', flex: 1 },
+  metricTrendBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  metricTrendText: { fontSize: 12, fontWeight: '800' },
+  barChart: { height: 60, flexDirection: 'row', alignItems: 'flex-end', marginBottom: 14 },
+  barSlot: { flex: 1, marginHorizontal: 2, justifyContent: 'flex-end' },
+  bar: { borderRadius: 4, backgroundColor: Colors.primary },
+  metricStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    gap: 14,
+  },
+  statCol: { alignItems: 'flex-start' },
+  statColLabel: { fontSize: 11.5, color: '#94A3B8', fontWeight: '600' },
+  statColValue: { fontSize: 13.5, fontWeight: '700', color: '#0F172A', marginTop: 2 },
+
+  aiSummaryCard: {
+    padding: 18,
+    borderRadius: 22,
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1.5,
+    borderColor: '#C7D2FE',
+    marginBottom: 16,
+  },
+  aiSummaryHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  aiSummaryIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E0E7FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  aiSummaryTitle: { fontSize: 16, fontWeight: '800', color: '#1E1B4B' },
+  aiSummaryText: { fontSize: 14.5, color: '#312E81', lineHeight: 22, fontWeight: '500' },
 });
