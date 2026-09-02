@@ -36,7 +36,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 export default function ElderlyHomeScreen() {
   const navigation = useNavigation<Nav>();
 
-  const [name, setName] = useState('you');
+  const [name, setName] = useState('Bác');
   const [elderlyId, setElderlyId] = useState<string | null>(null);
 
   const profile = useElderlyProfileStore((s) => s.profile);
@@ -60,7 +60,7 @@ export default function ElderlyHomeScreen() {
     (async () => {
       const storedName = await getName();
       const id = await getUserId();
-      setName(storedName ?? 'you');
+      setName(storedName ?? 'Bác');
       setElderlyId(id);
     })();
   }, []);
@@ -91,19 +91,19 @@ export default function ElderlyHomeScreen() {
       const ok = await createSosEvent(elderlyId);
       if (ok) {
         Alert.alert(
-          'Đã gửi SOS',
-          'Tín hiệu khẩn cấp đã được gửi. Người thân đã nhận được thông báo.',
+          'ĐÃ PHÁT TÍN HIỆU SOS',
+          'Tín hiệu khẩn cấp đã được gửi thành công. Người thân đã nhận được thông báo.',
         );
       } else {
         Alert.alert(
           'Khẩn cấp',
-          'Không thể gửi SOS. Vui lòng gọi trực tiếp cho người thân nếu có việc khẩn cấp!',
+          'Không thể gửi SOS tự động. Vui lòng bấm gọi trực tiếp cho người thân!',
         );
       }
     } catch {
       Alert.alert(
         'Khẩn cấp',
-        'Không thể gửi SOS. Vui lòng gọi trực tiếp cho người thân nếu có việc khẩn cấp!',
+        'Không thể gửi SOS tự động. Vui lòng bấm gọi trực tiếp cho người thân!',
       );
     }
   };
@@ -126,24 +126,36 @@ export default function ElderlyHomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Header Greeting Card */}
         <View style={styles.headerCard}>
           <Image
             source={require('../../../../assets/mascot/mascot_nurse.jpg')}
             style={styles.greetingMascot}
             resizeMode="contain"
           />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={styles.greeting}>{`${greeting()},`}</Text>
-            <Text style={styles.greetingName}>{displayName}</Text>
-            <Text style={styles.dateText}>{formatDateHeader()}</Text>
+            <Text style={styles.greetingName} numberOfLines={1}>
+              {displayName}
+            </Text>
+            <View style={styles.dateRow}>
+              <Ionicons
+                name="calendar-outline"
+                size={13}
+                color="#64748B"
+                style={{ marginRight: 4 }}
+              />
+              <Text style={styles.dateText}>{formatDateHeader()}</Text>
+            </View>
           </View>
           <TouchableOpacity
             style={styles.notifButton}
             onPress={() => navigation.navigate('Notifications')}
             activeOpacity={0.8}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
+            <Ionicons name="notifications-outline" size={24} color="#0F172A" />
             {unreadCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -152,7 +164,7 @@ export default function ElderlyHomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 18 }} />
 
         {/* SOS Panel */}
         <SosPanel
@@ -162,7 +174,7 @@ export default function ElderlyHomeScreen() {
           onCancel={sos.cancel}
         />
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 18 }} />
 
         {/* AI Assistant Banner */}
         <TouchableOpacity
@@ -177,11 +189,12 @@ export default function ElderlyHomeScreen() {
             <Text style={styles.aiBannerTitle}>Trò chuyện với CareNest AI</Text>
             <Text style={styles.aiBannerSubtitle}>Hỏi đáp sức khỏe & nhắc nhở giọng nói</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.aiPrimary} />
+          <Ionicons name="chevron-forward" size={22} color="#4F46E5" />
         </TouchableOpacity>
 
         <View style={{ height: 18 }} />
 
+        {/* Next Medication Dose Card */}
         {nextMed && (
           <>
             <NextMedicationCard
@@ -192,57 +205,72 @@ export default function ElderlyHomeScreen() {
           </>
         )}
 
-        {elderlyId && (
-          <View style={styles.quickGrid}>
-            <View style={styles.cameraCard}>
-              <View
-                style={[
-                  styles.cameraDot,
-                  { backgroundColor: isCameraOn ? Colors.success : Colors.textHint },
-                ]}
-              />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.cameraTitle}>
-                  {isCameraOn ? 'Camera trực tuyến' : 'Camera chờ kết nối'}
-                </Text>
-                <Text style={styles.cameraSubtitle}>
-                  {isCameraOn ? 'Con đang quan sát' : 'Chưa có người xem'}
-                </Text>
-              </View>
-              <Ionicons
-                name="videocam"
-                size={24}
-                color={isCameraOn ? Colors.primary : Colors.textHint}
-              />
+        {/* Quick Actions Grid */}
+        <View style={styles.quickGrid}>
+          {/* Direct Call to Family */}
+          <TouchableOpacity
+            style={styles.callCard}
+            onPress={() => navigation.navigate('ElderlyEmergencyContacts')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.callIconBox}>
+              <Ionicons name="call" size={22} color="#FFFFFF" />
             </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.callCardText}>Gọi người thân</Text>
+              <Text style={styles.callCardSubtext}>Bấm để liên lạc nhanh với gia đình</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={22} color="#047857" />
+          </TouchableOpacity>
 
+          {/* Quick Health Track and Camera Row */}
+          <View style={styles.twoColumnGrid}>
             <TouchableOpacity
-              style={styles.callCard}
-              onPress={() => navigation.navigate('ElderlyEmergencyContacts')}
+              style={styles.miniCard}
+              onPress={() => navigation.navigate('ElderlyHealth')}
               activeOpacity={0.85}
             >
-              <View style={styles.callIconBox}>
-                <Ionicons name="call" size={20} color="#FFFFFF" />
+              <View style={[styles.miniIconBox, { backgroundColor: '#E0F2FE' }]}>
+                <Ionicons name="heart-circle" size={24} color="#0284C7" />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.callCardText}>Gọi người thân</Text>
-                <Text style={styles.callCardSubtext}>Liên lạc nhanh với gia đình</Text>
+              <Text style={styles.miniCardTitle}>Đo sức khỏe</Text>
+              <Text style={styles.miniCardSub}>Huyết áp, đường huyết</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.miniCard}
+              onPress={() => navigation.navigate('ElderlyShell', { screen: 'ElderlyCamera' })}
+              activeOpacity={0.85}
+            >
+              <View
+                style={[
+                  styles.miniIconBox,
+                  { backgroundColor: isCameraOn ? '#DCFCE7' : '#F1F5F9' },
+                ]}
+              >
+                <Ionicons name="videocam" size={24} color={isCameraOn ? '#16A34A' : '#64748B'} />
               </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.secondaryDark} />
+              <Text style={styles.miniCardTitle}>
+                {isCameraOn ? 'Camera online' : 'Camera chờ'}
+              </Text>
+              <Text style={styles.miniCardSub}>
+                {isCameraOn ? 'Con đang quan sát' : 'Nhấn để xem'}
+              </Text>
             </TouchableOpacity>
           </View>
-        )}
+        </View>
 
         <View style={{ height: 24 }} />
 
+        {/* Today's Medications List */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Thuốc hôm nay</Text>
+          <Text style={styles.sectionTitle}>Lịch uống thuốc hôm nay</Text>
           {medItems.length > 0 && (
             <TouchableOpacity
               onPress={() => navigation.navigate('ElderlyShell', { screen: 'ElderlyMeds' })}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.viewAll}>Xem tất cả →</Text>
+              <Text style={styles.viewAll}>Xem tất cả ({medItems.length}) →</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -253,52 +281,62 @@ export default function ElderlyHomeScreen() {
           </View>
         ) : medItems.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Ionicons name="medkit-outline" size={36} color={Colors.textHint} />
-            <Text style={styles.emptyText}>Chưa có lịch uống thuốc nào hôm nay</Text>
+            <Image
+              source={require('../../../../assets/mascot/mascot_cap_thumbsup.jpg')}
+              style={{ width: 80, height: 80, marginBottom: 8 }}
+              resizeMode="contain"
+            />
+            <Text style={styles.emptyTitle}>Hôm nay không có thuốc cần uống</Text>
+            <Text style={styles.emptyText}>Chúc Bác một ngày thật nhiều sức khỏe và niềm vui!</Text>
           </View>
         ) : (
           medItems.slice(0, 3).map((med) => <MedicationTile key={med.id} medication={med} />)
         )}
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 30 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   scroll: { padding: 20 },
 
   headerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FFFFFF',
     padding: 16,
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     ...Shadows.md,
   },
-  greetingMascot: { width: 58, height: 58, marginRight: 14 },
-  greeting: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
+  greetingMascot: { width: 62, height: 62, marginRight: 14 },
+  greeting: { fontSize: 13.5, color: '#64748B', fontWeight: '600' },
   greetingName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
-    color: Colors.textPrimary,
-    marginTop: 1,
+    color: '#0F172A',
+    marginTop: 2,
+    letterSpacing: -0.3,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
   dateText: {
-    marginTop: 3,
-    color: Colors.textSecondary,
-    fontSize: 12,
+    color: '#64748B',
+    fontSize: 12.5,
     fontWeight: '500',
   },
   notifButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.backgroundSecondary,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -309,122 +347,148 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: Colors.error,
+    backgroundColor: '#EF4444',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
     borderWidth: 1.5,
-    borderColor: Colors.surface,
+    borderColor: '#FFFFFF',
   },
   badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '800' },
 
   aiBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.aiLighter,
+    backgroundColor: '#EEF2FF',
     padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 1.5,
     borderColor: '#C7D2FE',
-    shadowColor: Colors.aiPrimary,
+    shadowColor: '#4F46E5',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
   aiIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.aiPrimary,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   aiBannerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#312E81',
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1E1B4B',
   },
   aiBannerSubtitle: {
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#4338CA',
     marginTop: 2,
   },
 
   quickGrid: { gap: 12 },
-  cameraCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadows.sm,
-  },
-  cameraDot: { width: 10, height: 10, borderRadius: 5 },
-  cameraTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  cameraSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 1 },
-
   callCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 18,
-    backgroundColor: Colors.secondaryLighter,
-    borderWidth: 1,
+    borderRadius: 20,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
     borderColor: '#A7F3D0',
-    shadowColor: Colors.secondary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 1,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
   callIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.secondary,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#059669',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
   callCardText: {
-    color: Colors.secondaryDark,
-    fontSize: 15,
-    fontWeight: '700',
+    color: '#065F46',
+    fontSize: 16.5,
+    fontWeight: '800',
   },
   callCardSubtext: {
-    color: '#065F46',
+    color: '#047857',
+    fontSize: 13,
+    marginTop: 2,
+  },
+
+  twoColumnGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  miniCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.sm,
+  },
+  miniIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  miniCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  miniCardSub: {
     fontSize: 12,
-    marginTop: 1,
+    color: '#64748B',
+    marginTop: 2,
   },
 
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#0F172A',
   },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  viewAll: { color: Colors.primary, fontSize: 13.5, fontWeight: '700' },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  viewAll: { color: Colors.primary, fontSize: 14, fontWeight: '700' },
 
   centerPad: { alignItems: 'center', paddingVertical: 20 },
   emptyCard: {
     width: '100%',
-    paddingVertical: 32,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
   },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
+  },
   emptyText: {
-    marginTop: 8,
-    color: Colors.textSecondary,
+    marginTop: 4,
+    color: '#64748B',
     fontSize: 13.5,
+    textAlign: 'center',
   },
 });
