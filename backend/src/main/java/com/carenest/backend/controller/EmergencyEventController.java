@@ -50,6 +50,25 @@ public class EmergencyEventController {
         return ResponseEntity.ok(emergencyEventService.acknowledge(id, familyUserId));
     }
 
+    @PatchMapping("/elderly/{elderlyId}/emergency-events/{id}/cancel")
+    @PreAuthorize("hasRole('ELDERLY') and @authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
+    public ResponseEntity<EmergencyEventResponse> cancel(
+        @PathVariable Long elderlyId,
+        @PathVariable Long id,
+        @AuthenticationPrincipal Long elderlyPrincipalId
+    ) {
+        return ResponseEntity.ok(emergencyEventService.cancel(id, elderlyPrincipalId));
+    }
+
+    @PostMapping("/emergency-events/{id}/call-emergency")
+    @PreAuthorize("@authz.canAccessEmergencyEvent(authentication.principal, #id)")
+    public ResponseEntity<EmergencyEventResponse> logEmergencyCall(
+        @PathVariable Long id,
+        @AuthenticationPrincipal Long familyUserId
+    ) {
+        return ResponseEntity.ok(emergencyEventService.logEmergencyCall(id, familyUserId));
+    }
+
     @GetMapping("/elderly/{elderlyId}/emergency-events")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
     public ResponseEntity<List<EmergencyEventResponse>> getByElderlyId(

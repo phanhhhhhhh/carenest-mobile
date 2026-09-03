@@ -78,10 +78,13 @@ export const EmergencyEventSchema = z.object({
   description: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   status: z.string(),
+  escalationLevel: z.coerce.number().optional().default(0),
+  escalatedAt: z.string().optional().nullable(),
+  emergencyCallLoggedAt: z.string().optional().nullable(),
+  emergencyCallLoggedBy: z.coerce.number().optional().nullable(),
+  emergencyCallLoggedByName: z.string().optional().nullable(),
   triggeredAt: z.string().optional(),
   createdAt: z.string().optional(),
-  escalationLevel: z.number().optional().nullable(),
-  emergencyCallLoggedAt: z.string().optional().nullable(),
 });
 export type EmergencyEventParsed = z.infer<typeof EmergencyEventSchema>;
 

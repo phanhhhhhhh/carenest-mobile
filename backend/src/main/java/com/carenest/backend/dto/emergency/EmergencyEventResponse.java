@@ -25,6 +25,11 @@ public class EmergencyEventResponse {
     private OffsetDateTime acknowledgedAt;
     private Long acknowledgedBy;
     private String acknowledgedByName;
+    private Integer escalationLevel;
+    private OffsetDateTime escalatedAt;
+    private OffsetDateTime emergencyCallLoggedAt;
+    private Long emergencyCallLoggedBy;
+    private String emergencyCallLoggedByName;
     private String notes;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;

@@ -38,10 +38,16 @@ public class ElderlyProfileService {
             throw new IllegalArgumentException("Profile already exists for this user");
         }
 
+        User secondaryContact = null;
+        if (request.getSecondaryFamilyUserId() != null && request.getSecondaryFamilyUserId() > 0) {
+            secondaryContact = userRepository.findById(request.getSecondaryFamilyUserId()).orElse(null);
+        }
+
         ElderlyProfile profile = ElderlyProfile.builder()
             .user(user)
             .healthConditions(request.getHealthConditions())
             .emergencyContacts(mapContactsFromDto(request.getEmergencyContacts()))
+            .secondaryFamilyUser(secondaryContact)
             .allergies(request.getAllergies())
             .bloodType(request.getBloodType())
             .weightKg(request.getWeightKg())
@@ -65,6 +71,14 @@ public class ElderlyProfileService {
         }
         if (request.getEmergencyContacts() != null) {
             profile.setEmergencyContacts(mapContactsFromDto(request.getEmergencyContacts()));
+        }
+        if (request.getSecondaryFamilyUserId() != null) {
+            if (request.getSecondaryFamilyUserId() <= 0) {
+                profile.setSecondaryFamilyUser(null);
+            } else {
+                User sec = userRepository.findById(request.getSecondaryFamilyUserId()).orElse(null);
+                profile.setSecondaryFamilyUser(sec);
+            }
         }
         if (request.getAllergies() != null) {
             profile.setAllergies(request.getAllergies());
@@ -113,12 +127,17 @@ public class ElderlyProfileService {
     }
 
     private ElderlyProfileResponse toResponse(ElderlyProfile p) {
+        Long secondaryId = p.getSecondaryFamilyUser() != null ? p.getSecondaryFamilyUser().getId() : null;
+        String secondaryName = p.getSecondaryFamilyUser() != null ? p.getSecondaryFamilyUser().getName() : null;
+
         return ElderlyProfileResponse.builder()
             .id(p.getId())
             .userId(p.getUser().getId())
             .userName(p.getUser().getName())
             .healthConditions(p.getHealthConditions())
             .emergencyContacts(mapContactsToDto(p.getEmergencyContacts()))
+            .secondaryFamilyUserId(secondaryId)
+            .secondaryFamilyUserName(secondaryName)
             .allergies(p.getAllergies())
             .bloodType(p.getBloodType())
             .weightKg(p.getWeightKg())

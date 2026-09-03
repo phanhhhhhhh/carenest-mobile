@@ -7,6 +7,9 @@ import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.entity.NotificationType;
+import com.carenest.backend.exception.UnauthorizedException;
+import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.UserRepository;
@@ -29,6 +32,8 @@ public class EmergencyEventService {
     private final EmergencyEventRepository emergencyEventRepository;
     private final UserRepository userRepository;
     private final FamilyLinkRepository familyLinkRepository;
+    private final ElderlyProfileRepository elderlyProfileRepository;
+    private final NotificationService notificationService;
     private final FcmService fcmService;
     private final CameraService cameraService;
 
@@ -74,6 +79,15 @@ public class EmergencyEventService {
                     "eventId", saved.getId().toString(),
                     "elderlyId", elderly.getId().toString()
                 ));
+            notificationService.createForUsers(familyUserIds,
+                NotificationType.EMERGENCY,
+                "Cảnh báo khẩn cấp (SOS)",
+                elderly.getName() + " vừa kích hoạt báo động khẩn cấp!",
+                Map.of(
+                    "type", "SOS",
+                    "eventId", saved.getId(),
+                    "elderlyId", elderly.getId()
+                ));
             log.info("Emergency push sent to {} family members for elderlyId={}",
                 familyUserIds.size(), elderly.getId());
         }
@@ -85,6 +99,145 @@ public class EmergencyEventService {
         }
 
         return toResponse(saved);
+    }
+
+    public EmergencyEventResponse cancel(Long eventId, Long elderlyUserId) {
+        EmergencyEvent event = emergencyEventRepository.findById(eventId)
+            .orElseThrow(() -> new NotFoundException("EmergencyEvent not found: " + eventId));
+
+        if (!event.getElderly().getId().equals(elderlyUserId)) {
+            throw new UnauthorizedException("Only the elderly owner can cancel this emergency alert");
+        }
+
+        if (event.getStatus() == EmergencyStatus.RESOLVED || event.getStatus() == EmergencyStatus.CANCELLED) {
+            return toResponse(event);
+        }
+
+        event.setStatus(EmergencyStatus.CANCELLED);
+        event.setResolvedAt(OffsetDateTime.now());
+        EmergencyEvent saved = emergencyEventRepository.save(event);
+
+        List<Long> familyUserIds = familyLinkRepository
+            .findAllFamilyByElderlyIdAndStatus(elderlyUserId, FamilyLinkStatus.ACTIVE)
+            .stream()
+            .map(fl -> fl.getFamily().getId())
+            .collect(Collectors.toList());
+
+        if (!familyUserIds.isEmpty()) {
+            fcmService.sendToUsers(familyUserIds,
+                "Thông báo an toàn",
+                event.getElderly().getName() + " đã hủy báo động khẩn cấp (xác nhận an toàn).",
+                Map.of(
+                    "type", "SOS_CANCELLED",
+                    "eventId", saved.getId().toString(),
+                    "elderlyId", elderlyUserId.toString()
+                ));
+            notificationService.createForUsers(familyUserIds,
+                NotificationType.EMERGENCY,
+                "Báo động đã được hủy",
+                event.getElderly().getName() + " đã hủy báo động khẩn cấp và xác nhận an toàn.",
+                Map.of(
+                    "type", "SOS_CANCELLED",
+                    "eventId", saved.getId(),
+                    "elderlyId", elderlyUserId,
+                    "status", "CANCELLED"
+                ));
+        }
+
+        log.info("SOS event {} cancelled by elderlyId={}", eventId, elderlyUserId);
+        return toResponse(saved);
+    }
+
+    public EmergencyEventResponse logEmergencyCall(Long eventId, Long familyUserId) {
+        EmergencyEvent event = emergencyEventRepository.findById(eventId)
+            .orElseThrow(() -> new NotFoundException("EmergencyEvent not found: " + eventId));
+
+        userRepository.findById(familyUserId)
+            .orElseThrow(() -> new NotFoundException("User (family) not found: " + familyUserId));
+
+        event.setEmergencyCallLoggedAt(OffsetDateTime.now());
+        event.setEmergencyCallLoggedBy(familyUserId);
+        EmergencyEvent saved = emergencyEventRepository.save(event);
+
+        log.info("Emergency call logged for eventId={} by familyUserId={}", eventId, familyUserId);
+        return toResponse(saved);
+    }
+
+    public void escalate(Long eventId, int targetLevel) {
+        EmergencyEvent event = emergencyEventRepository.findById(eventId)
+            .orElseThrow(() -> new NotFoundException("EmergencyEvent not found: " + eventId));
+
+        if (event.getStatus() != EmergencyStatus.ACTIVE || event.getAcknowledgedAt() != null) {
+            log.debug("Event {} is no longer active or already acknowledged - skipping escalation", eventId);
+            return;
+        }
+
+        if (event.getEscalationLevel() != null && event.getEscalationLevel() >= targetLevel) {
+            log.debug("Event {} already at escalation level {} >= target {} - skipping duplicate",
+                eventId, event.getEscalationLevel(), targetLevel);
+            return;
+        }
+
+        User elderly = event.getElderly();
+        List<Long> familyUserIds = familyLinkRepository
+            .findAllFamilyByElderlyIdAndStatus(elderly.getId(), FamilyLinkStatus.ACTIVE)
+            .stream()
+            .map(fl -> fl.getFamily().getId())
+            .collect(Collectors.toList());
+
+        // AC2: Check if elderly has secondaryFamilyContact configured
+        Long secondaryUserId = elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(elderly.getId())
+            .map(p -> p.getSecondaryFamilyUser() != null ? p.getSecondaryFamilyUser().getId() : null)
+            .orElse(null);
+
+        if (secondaryUserId != null && !familyUserIds.contains(secondaryUserId)) {
+            familyUserIds.add(secondaryUserId);
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+        event.setEscalationLevel(targetLevel);
+        event.setEscalatedAt(now);
+        emergencyEventRepository.save(event);
+
+        if (!familyUserIds.isEmpty()) {
+            String title;
+            String body;
+            String fcmType;
+            if (targetLevel == 1) {
+                title = "CẢNH BÁO KHẨN CẤP CẤP ĐỘ 2 (CHƯA PHẢN HỒI)";
+                body = elderly.getName() + " đã phát tín hiệu SOS cách đây 3 phút nhưng chưa ai xác nhận! Vui lòng kiểm tra ngay!";
+                fcmType = "SOS_ESCALATION_LEVEL_1";
+            } else {
+                title = "BÁO ĐỘNG ĐỎ: SOS CHƯA ĐƯỢC XỬ LÝ (10 PHÚT)";
+                body = elderly.getName() + " đã gửi SOS hơn 10 phút chưa được xử lý! Bấm để gọi cấp cứu 115 ngay lập tức!";
+                fcmType = "SOS_ESCALATION_LEVEL_2";
+            }
+
+            fcmService.sendToUsers(familyUserIds,
+                title,
+                body,
+                Map.of(
+                    "type", fcmType,
+                    "eventId", event.getId().toString(),
+                    "elderlyId", elderly.getId().toString(),
+                    "escalationLevel", String.valueOf(targetLevel),
+                    "urgent", "true"
+                ));
+
+            notificationService.createForUsers(familyUserIds,
+                NotificationType.EMERGENCY,
+                title,
+                body,
+                Map.of(
+                    "eventId", event.getId(),
+                    "elderlyId", elderly.getId(),
+                    "escalationLevel", targetLevel,
+                    "urgent", true
+                ));
+
+            log.info("Escalated eventId={} to level={} and notified {} users (secondaryId={})",
+                eventId, targetLevel, familyUserIds.size(), secondaryUserId);
+        }
     }
 
     public EmergencyEventResponse acknowledge(Long eventId, Long familyUserId) {
@@ -167,6 +320,13 @@ public class EmergencyEventService {
                 .orElse(null);
         }
 
+        String emergencyCallLoggedByName = null;
+        if (e.getEmergencyCallLoggedBy() != null) {
+            emergencyCallLoggedByName = userRepository.findById(e.getEmergencyCallLoggedBy())
+                .map(user -> user.getName())
+                .orElse(null);
+        }
+
         String type = "SOS";
         String description = "";
         String displayNotes = e.getNotes();
@@ -199,6 +359,11 @@ public class EmergencyEventService {
             .type(type)
             .description(description)
             .status(e.getStatus())
+            .escalationLevel(e.getEscalationLevel() != null ? e.getEscalationLevel() : 0)
+            .escalatedAt(e.getEscalatedAt())
+            .emergencyCallLoggedAt(e.getEmergencyCallLoggedAt())
+            .emergencyCallLoggedBy(e.getEmergencyCallLoggedBy())
+            .emergencyCallLoggedByName(emergencyCallLoggedByName)
             .triggeredAt(e.getTriggeredAt())
             .resolvedAt(e.getResolvedAt())
             .acknowledgedAt(e.getAcknowledgedAt())

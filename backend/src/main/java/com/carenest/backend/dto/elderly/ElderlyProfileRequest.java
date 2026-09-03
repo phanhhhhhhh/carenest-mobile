@@ -27,4 +27,6 @@ public class ElderlyProfileRequest {
     private BigDecimal heightCm;
 
     private String notes;
+
+    private Long secondaryFamilyUserId;
 }
