@@ -77,7 +77,10 @@ export interface EmergencyEvent {
   status: string;
   createdAt: string;
   escalationLevel?: number;
+  escalatedAt?: string;
   emergencyCallLoggedAt?: string;
+  emergencyCallLoggedBy?: number;
+  emergencyCallLoggedByName?: string;
 }
 
 export interface NotificationItem {
