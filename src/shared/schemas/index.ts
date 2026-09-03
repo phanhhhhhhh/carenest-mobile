@@ -80,6 +80,8 @@ export const EmergencyEventSchema = z.object({
   status: z.string(),
   triggeredAt: z.string().optional(),
   createdAt: z.string().optional(),
+  escalationLevel: z.number().optional().nullable(),
+  emergencyCallLoggedAt: z.string().optional().nullable(),
 });
 export type EmergencyEventParsed = z.infer<typeof EmergencyEventSchema>;
 

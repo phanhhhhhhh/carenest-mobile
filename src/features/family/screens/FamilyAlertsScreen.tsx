@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,10 +34,12 @@ export default function FamilyAlertsScreen() {
   const load = useEmergencyEventStore((s) => s.load);
   const acknowledge = useEmergencyEventStore((s) => s.acknowledge);
   const markAllRead = useEmergencyEventStore((s) => s.markAllRead);
+  const logEmergencyCall = useEmergencyEventStore((s) => s.logEmergencyCall);
 
   const [markingRead, setMarkingRead] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+  const [callingId, setCallingId] = useState<string | null>(null);
 
   const elderlyId =
     dashboardData && dashboardData.linkedElderly.length > 0
@@ -72,6 +75,19 @@ export default function FamilyAlertsScreen() {
     setRefreshing(true);
     await load(elderlyId);
     setRefreshing(false);
+  };
+
+  const handleCallEmergencyServices = async (eventId: string) => {
+    if (!elderlyId) return;
+    setCallingId(eventId);
+    try {
+      await logEmergencyCall(elderlyId, eventId);
+      await Linking.openURL('tel:115');
+    } catch (e) {
+      console.warn('[FamilyAlertsScreen] Emergency call error', e);
+    } finally {
+      setCallingId(null);
+    }
   };
 
   if (!elderlyId) {
@@ -172,6 +188,8 @@ export default function FamilyAlertsScreen() {
                 event={event}
                 acknowledging={acknowledgingId === event.id}
                 onAcknowledge={handleAcknowledge}
+                calling={callingId === event.id}
+                onCallEmergencyServices={handleCallEmergencyServices}
               />
             ))}
           </>

@@ -14,6 +14,8 @@ function toEmergencyEvent(e: ReturnType<typeof EmergencyEventSchema.parse>): Eme
     description: e.description || e.notes || '',
     status: e.status,
     createdAt: e.triggeredAt ?? e.createdAt ?? new Date().toISOString(),
+    escalationLevel: e.escalationLevel ?? 0,
+    emergencyCallLoggedAt: e.emergencyCallLoggedAt ?? undefined,
   };
 }
 
@@ -26,6 +28,7 @@ interface EmergencyEventState {
   createSosEvent: (elderlyId: string) => Promise<boolean>;
   acknowledge: (elderlyId: string, eventId: string) => Promise<boolean>;
   markAllRead: (elderlyId: string, userId: string) => Promise<boolean>;
+  logEmergencyCall: (elderlyId: string, eventId: string) => Promise<boolean>;
   refresh: (elderlyId: string) => void;
   activeCount: () => number;
 }
@@ -96,6 +99,17 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
       return true;
     } catch (e) {
       showErrorToast(`Không thể đánh dấu đã đọc cảnh báo: ${getErrorMessage(e)}`);
+      return false;
+    }
+  },
+
+  logEmergencyCall: async (elderlyId, eventId) => {
+    try {
+      await api.post(`/emergency-events/${eventId}/emergency-call`);
+      await get().load(elderlyId);
+      return true;
+    } catch (e) {
+      console.warn('[emergencyEventStore.logEmergencyCall]', e);
       return false;
     }
   },
