@@ -43,6 +43,9 @@ public class CameraDevice {
     @Column(name = "access_token", length = 512)
     private String accessToken;
 
+    @Column(name = "token_refreshed_at")
+    private Instant tokenRefreshedAt;
+
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

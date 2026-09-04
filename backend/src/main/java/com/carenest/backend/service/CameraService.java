@@ -52,14 +52,16 @@ public class CameraService {
             throw new RuntimeException("Failed to bind device: " + result.get("error"));
         }
 
+        Instant boundAt = Instant.now();
         CameraDevice device = CameraDevice.builder()
             .elderly(elderly)
             .label(label)
             .deviceSn(deviceSn)
             .deviceId((String) result.getOrDefault("deviceId", deviceSn))
             .accessToken(accessToken)
+            .tokenRefreshedAt(boundAt)
             .status(CameraDevice.CameraStatus.ONLINE)
-            .lastSeenAt(Instant.now())
+            .lastSeenAt(boundAt)
             .build();
         device = cameraDeviceRepository.save(device);
 
