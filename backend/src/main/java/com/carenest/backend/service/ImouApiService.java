@@ -1,9 +1,10 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.config.ImouProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -17,24 +18,22 @@ public class ImouApiService {
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
+    private final ImouProperties properties;
 
-    @Value("${imou.api.base-url:https://openapi.imoulife.com}")
-    private String baseUrl;
-
-    @Value("${imou.api.app-id:}")
-    private String appId;
-
-    @Value("${imou.api.app-secret:}")
-    private String appSecret;
-
-    public ImouApiService(ObjectMapper objectMapper) {
-        this.restClient = RestClient.builder().build();
+    public ImouApiService(ObjectMapper objectMapper, ImouProperties properties) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(properties.getConnectionTimeout());
+        requestFactory.setReadTimeout(properties.getReadTimeout());
+        this.restClient = RestClient.builder()
+            .baseUrl(properties.getBaseUrl())
+            .requestFactory(requestFactory)
+            .build();
         this.objectMapper = objectMapper;
+        this.properties = properties;
     }
 
     public boolean isConfigured() {
-        return appId != null && !appId.isBlank()
-            && appSecret != null && !appSecret.isBlank();
+        return properties.isEnabled();
     }
 
     public Map<String, Object> bindDevice(String deviceSn, String accessToken) {
@@ -119,7 +118,10 @@ public class ImouApiService {
             log.warn("Imou API not configured");
             return null;
         }
-        Map<String, Object> params = Map.of("appId", appId, "appSecret", appSecret);
+        Map<String, Object> params = Map.of(
+            "appId", properties.getAppId(),
+            "appSecret", properties.getAppSecret()
+        );
         Map<String, Object> result = callImouApi("getAccessToken", params, null);
         return result != null ? (String) result.get("accessToken") : null;
     }
@@ -133,7 +135,7 @@ public class ImouApiService {
         try {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("id", UUID.randomUUID().toString());
-            body.put("system", Map.of("ver", "1.0", "appId", appId));
+            body.put("system", Map.of("ver", "1.0", "appId", properties.getAppId()));
             body.put("method", method);
             body.put("params", params);
             if (accessToken != null) {
@@ -141,7 +143,7 @@ public class ImouApiService {
             }
 
             String response = restClient.post()
-                .uri(baseUrl + "/openapi/device")
+                .uri("/openapi/device")
                 .header("Content-Type", "application/json")
                 .body(objectMapper.writeValueAsString(body))
                 .retrieve()
