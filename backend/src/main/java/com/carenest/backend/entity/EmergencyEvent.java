@@ -68,6 +68,19 @@ public class EmergencyEvent {
     @Column(name = "acknowledged_by")
     private Long acknowledgedBy;
 
+    @Column(name = "escalation_level", nullable = false)
+    @Builder.Default
+    private Integer escalationLevel = 0;
+
+    @Column(name = "escalated_at")
+    private OffsetDateTime escalatedAt;
+
+    @Column(name = "emergency_call_logged_at")
+    private OffsetDateTime emergencyCallLoggedAt;
+
+    @Column(name = "emergency_call_logged_by")
+    private Long emergencyCallLoggedBy;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 

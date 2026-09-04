@@ -21,6 +21,8 @@ public class ElderlyProfileResponse {
     private BigDecimal weightKg;
     private BigDecimal heightCm;
     private String notes;
+    private Long secondaryFamilyUserId;
+    private String secondaryFamilyUserName;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }
