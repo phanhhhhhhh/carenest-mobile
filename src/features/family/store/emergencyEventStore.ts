@@ -14,6 +14,11 @@ function toEmergencyEvent(e: ReturnType<typeof EmergencyEventSchema.parse>): Eme
     description: e.description || e.notes || '',
     status: e.status,
     createdAt: e.triggeredAt ?? e.createdAt ?? new Date().toISOString(),
+    escalationLevel: e.escalationLevel ?? 0,
+    escalatedAt: e.escalatedAt ?? undefined,
+    emergencyCallLoggedAt: e.emergencyCallLoggedAt ?? undefined,
+    emergencyCallLoggedBy: e.emergencyCallLoggedBy ?? undefined,
+    emergencyCallLoggedByName: e.emergencyCallLoggedByName ?? undefined,
   };
 }
 
@@ -24,6 +29,9 @@ interface EmergencyEventState {
 
   load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
   createSosEvent: (elderlyId: string) => Promise<boolean>;
+  cancelSosEvent: (elderlyId: string, eventId: string) => Promise<boolean>;
+  logEmergencyCall: (elderlyId: string, eventId: string) => Promise<boolean>;
+  getActiveEvent: (elderlyId: string) => Promise<EmergencyEvent | null>;
   acknowledge: (elderlyId: string, eventId: string) => Promise<boolean>;
   markAllRead: (elderlyId: string, userId: string) => Promise<boolean>;
   refresh: (elderlyId: string) => void;
@@ -73,6 +81,47 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
     } catch (e) {
       console.warn('[emergencyEventStore.createSosEvent]', e);
       return false;
+    }
+  },
+
+  cancelSosEvent: async (elderlyId, eventId) => {
+    try {
+      const resp = await api.patch(`/elderly/${elderlyId}/emergency-events/${eventId}/cancel`);
+      if (resp.status === 200) {
+        await get().load(elderlyId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      showErrorToast(`Không thể hủy báo động: ${getErrorMessage(e)}`);
+      return false;
+    }
+  },
+
+  logEmergencyCall: async (elderlyId, eventId) => {
+    try {
+      const resp = await api.post(`/emergency-events/${eventId}/call-emergency`);
+      if (resp.status === 200) {
+        await get().load(elderlyId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      console.warn('[emergencyEventStore.logEmergencyCall]', e);
+      return false;
+    }
+  },
+
+  getActiveEvent: async (elderlyId) => {
+    try {
+      const resp = await api.get(`/elderly/${elderlyId}/emergency-events/active`);
+      if (resp.status === 200 && resp.data) {
+        const parsed = EmergencyEventSchema.safeParse(resp.data);
+        return parsed.success ? toEmergencyEvent(parsed.data) : null;
+      }
+      return null;
+    } catch {
+      return null;
     }
   },
 
