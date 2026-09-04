@@ -10,3 +10,4 @@ secret:
     - "**/*.test.tsx"
     - "**/__tests__/**"
     - "**/__mocks__/**"
+    - "backend/src/test/**"
