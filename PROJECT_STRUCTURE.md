@@ -36,8 +36,10 @@ Spec'd but **not yet in code** (no files exist for these — build targets):
   never SOS.
 - **A7 Visit Streak** — new `family_visits` + `family_visit_settings` tables,
   scheduler, `visitStreakStore.ts`, manual-confirm screen (no camera auto-detect).
-- **B1** — remove prescription-photo/OCR from new UI/API (keep `medications.photo_url`
-  column, add `voice_url`); `MedicationForm.tsx` still has a disabled photo placeholder.
+- **B1** — prescription-photo/OCR **removed** from the UI (`MedicationForm.tsx`) and
+  API (`MedicationRequest`/`MedicationResponse`/`MedicationService`); `medications.photo_url`
+  column and the now-`@Deprecated` `Medication.photoUrl` field are kept but unused.
+  Still to do: add `medications.voice_url` + a voice-to-text entry path for schedules.
 - **D1** camera-consent onboarding + D7 privacy-mode fallback.
 
 Dropped from roadmap: QR scanner, PDF export, Zalo OA, prescription-photo storage,

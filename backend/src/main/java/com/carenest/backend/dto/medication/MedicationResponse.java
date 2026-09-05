@@ -18,7 +18,6 @@ public class MedicationResponse {
     private MedicationSchedule schedule;
     private OffsetDateTime nextDoseTime;
     private String instructions;
-    private String photoUrl;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }

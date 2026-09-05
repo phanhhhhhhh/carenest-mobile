@@ -56,6 +56,13 @@ public class Medication {
     @Column(columnDefinition = "TEXT")
     private String instructions;
 
+    /**
+     * @deprecated Prescription-photo / OCR entry was dropped in Master Spec v3.5
+     * (unreliable handwriting recognition for health data). The column is kept so
+     * existing rows are not lost, but it is no longer written or exposed via the API.
+     * Medication schedules are now entered by typing or voice-to-text.
+     */
+    @Deprecated
     @Column(name = "photo_url", length = 512)
     private String photoUrl;
 

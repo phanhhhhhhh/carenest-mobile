@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Alert } from '../../../../shared/utils/crossPlatformAlert';
 import { Colors } from '../../../../core/theme/colors';
 import { useMedicationStore } from '../../../elderly/store/medicationStore';
 import type { MedicationItem } from '../../../../shared/types';
@@ -223,19 +222,7 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
         })}
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 14 }}>
-        <TouchableOpacity
-          style={styles.secondaryActionBtn}
-          onPress={() =>
-            Alert.alert(
-              'Sắp ra mắt',
-              'Tính năng tải ảnh đơn thuốc lên đang được phát triển (backend hiện chưa có endpoint upload file).',
-            )
-          }
-        >
-          <Ionicons name="camera-outline" size={16} color={Colors.textSecondary} />
-          <Text style={styles.secondaryActionText}>Ảnh đơn</Text>
-        </TouchableOpacity>
+      <View style={{ flexDirection: 'row', marginTop: 14 }}>
         <TouchableOpacity
           style={styles.secondaryActionBtn}
           onPress={() => setShowNotesField((v) => !v)}
