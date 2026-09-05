@@ -1,6 +1,7 @@
 package com.carenest.backend.controller;
 
 import com.carenest.backend.dto.family.FamilyElderlyResponse;
+import com.carenest.backend.dto.family.FamilyLinkAvailabilityRequest;
 import com.carenest.backend.dto.family.FamilyLinkRequest;
 import com.carenest.backend.dto.family.FamilyLinkResponse;
 import com.carenest.backend.dto.family.FamilyLinkStatusRequest;
@@ -58,5 +59,14 @@ public class FamilyLinkController {
         @Valid @RequestBody FamilyLinkStatusRequest request
     ) {
         return ResponseEntity.ok(familyLinkService.updateStatus(id, request.getStatus()));
+    }
+
+    @PatchMapping("/family-links/{id}/availability")
+    @PreAuthorize("hasRole('FAMILY') and @authz.isFamilyLinkParticipant(authentication.principal, #id)")
+    public ResponseEntity<FamilyLinkResponse> updateAvailability(
+        @PathVariable Long id,
+        @Valid @RequestBody FamilyLinkAvailabilityRequest request
+    ) {
+        return ResponseEntity.ok(familyLinkService.updateAvailability(id, request.getAvailabilityStatus()));
     }
 }

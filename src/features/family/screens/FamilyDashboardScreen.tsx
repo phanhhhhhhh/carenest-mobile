@@ -32,6 +32,10 @@ import { TodayCheckinCard } from './familyDashboard/TodayCheckinCard';
 import { FeedRow } from './familyFeed/FeedRow';
 import { useCheckInStore, selectTodayCheckIn } from '../../elderly/store/checkinStore';
 import { useFeedStore, selectFeed } from '../store/feedStore';
+import { useAvailabilityStore, selectAvailability } from '../store/availabilityStore';
+import { useBroadcastStore, selectActiveBroadcast } from '../store/broadcastStore';
+import { AvailabilityChip } from './familyDashboard/AvailabilityChip';
+import { BroadcastBanner } from './familyDashboard/BroadcastBanner';
 import { AppointmentPreviewCard } from './familyDashboard/widgets';
 import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
@@ -61,6 +65,12 @@ export default function FamilyDashboardScreen() {
   const loadFeed = useFeedStore((s) => s.load);
   const toggleFeedReaction = useFeedStore((s) => s.toggleReaction);
 
+  const loadAvailability = useAvailabilityStore((s) => s.load);
+  const setAvailability = useAvailabilityStore((s) => s.setStatus);
+  const loadBroadcasts = useBroadcastStore((s) => s.load);
+  const acknowledgeBroadcast = useBroadcastStore((s) => s.acknowledge);
+  const acknowledgingBroadcastId = useBroadcastStore((s) => s.acknowledgingId);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const currentElderlyObj =
@@ -74,11 +84,14 @@ export default function FamilyDashboardScreen() {
   const todayCheckIn = useCheckInStore((s) => selectTodayCheckIn(s, elderlyId));
   const feedItems = useFeedStore((s) => selectFeed(s, elderlyId));
   const feedLoading = useFeedStore((s) => s.loading);
+  const myAvailability = useAvailabilityStore((s) => selectAvailability(s, elderlyId));
+  const activeBroadcast = useBroadcastStore((s) => selectActiveBroadcast(s, elderlyId));
 
   useMountEffect(() => {
     const controller = new AbortController();
     loadDashboard(controller.signal);
     loadNotifications(controller.signal);
+    loadAvailability(controller.signal);
     return () => controller.abort();
   });
 
@@ -89,8 +102,9 @@ export default function FamilyDashboardScreen() {
     loadCameras(elderlyId, controller.signal);
     loadTodayCheckIn(elderlyId, controller.signal);
     loadFeed(elderlyId, controller.signal);
+    loadBroadcasts(elderlyId, controller.signal);
     return () => controller.abort();
-  }, [elderlyId, loadMeds, loadCameras, loadTodayCheckIn, loadFeed]);
+  }, [elderlyId, loadMeds, loadCameras, loadTodayCheckIn, loadFeed, loadBroadcasts]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -101,6 +115,8 @@ export default function FamilyDashboardScreen() {
         loadCameras(elderlyId),
         loadTodayCheckIn(elderlyId),
         loadFeed(elderlyId),
+        loadBroadcasts(elderlyId),
+        loadAvailability(),
       ]);
     }
     setRefreshing(false);
@@ -191,7 +207,28 @@ export default function FamilyDashboardScreen() {
           </View>
         </View>
 
+        {myAvailability && (
+          <View style={styles.availabilityRow}>
+            <Text style={styles.availabilityLabel}>Nhận báo tin hằng ngày</Text>
+            <AvailabilityChip
+              status={myAvailability.status}
+              onToggle={(next) => elderlyId && setAvailability(elderlyId, next)}
+            />
+          </View>
+        )}
+
         <View style={{ height: 16 }} />
+
+        {activeBroadcast && (
+          <>
+            <BroadcastBanner
+              broadcast={activeBroadcast}
+              acknowledging={acknowledgingBroadcastId === activeBroadcast.id}
+              onAcknowledge={(id) => elderlyId && acknowledgeBroadcast(elderlyId, id)}
+            />
+            <View style={{ height: 16 }} />
+          </>
+        )}
 
         {/* Multi-Elderly Switcher Tabs (UC-22) */}
         {dashData && dashData.linkedElderly.length > 0 && (
@@ -503,6 +540,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   feedDivider: { height: 1, backgroundColor: '#EEF2F6' },
+  availabilityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    paddingHorizontal: 4,
+  },
+  availabilityLabel: { fontSize: 12.5, color: '#64748B', fontWeight: '600' },
   feedEmptyText: {
     color: '#64748B',
     fontSize: 13,

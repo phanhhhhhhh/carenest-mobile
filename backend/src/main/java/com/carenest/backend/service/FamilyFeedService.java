@@ -47,6 +47,7 @@ public class FamilyFeedService {
     private final CheckInRepository checkInRepository;
     private final MedicationLogRepository medicationLogRepository;
     private final EmergencyEventRepository emergencyEventRepository;
+    private final NotificationBroadcastService notificationBroadcastService;
     private final FeedReactionRepository feedReactionRepository;
     private final UserRepository userRepository;
 
@@ -112,11 +113,20 @@ public class FamilyFeedService {
             reactedByMe.put(entry.getKey(), mine);
         }
 
+        // A check-in also counts as "handled" if a family member acknowledged the
+        // Free Broadcast it triggered (UC A3), not just if someone reacted.
+        Set<Long> checkInIdsWithAckedBroadcast = notificationBroadcastService.acknowledgedTriggerRefs(
+            elderlyId, com.carenest.backend.entity.BroadcastTriggerType.CHECK_IN_UNWELL,
+            refsByType.getOrDefault(FeedItemType.CHECK_IN, List.of()));
+
         List<FeedItemResponse> out = new ArrayList<>(drafts.size());
         for (Draft d : drafts) {
             int count = countsByType.getOrDefault(d.type, Map.of()).getOrDefault(d.ref, 0);
             boolean mine = reactedByMe.getOrDefault(d.type, Set.of()).contains(d.ref);
-            boolean handled = d.handledOverride != null ? d.handledOverride : count > 0;
+            boolean handled = d.handledOverride != null
+                ? d.handledOverride
+                : count > 0
+                    || (d.type == FeedItemType.CHECK_IN && checkInIdsWithAckedBroadcast.contains(d.ref));
             out.add(FeedItemResponse.builder()
                 .id(d.type.name() + ":" + d.ref)
                 .type(d.type)

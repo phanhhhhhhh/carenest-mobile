@@ -94,6 +94,24 @@ export interface CheckIn {
   createdAt: string;
 }
 
+/** A family member's self-set availability for daily notifications (UC A3). Not used for SOS. */
+export type AvailabilityStatus = 'FREE' | 'BUSY';
+
+/** An in-flight sequential Free Broadcast (UC A3 / A4). */
+export interface FamilyBroadcast {
+  id: string;
+  elderlyId: number;
+  triggerType: string;
+  title: string;
+  body: string;
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'ESCALATED';
+  currentRecipientId?: number;
+  startedAt: string;
+  acknowledgedAt?: string;
+  acknowledgedBy?: number;
+  escalatedAt?: string;
+}
+
 /** Family Care Feed (UC A2). */
 export type FeedItemType = 'CHECK_IN' | 'MEDICATION_LOG' | 'EMERGENCY';
 

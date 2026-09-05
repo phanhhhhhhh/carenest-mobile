@@ -34,13 +34,21 @@ Built and current (spec only documents these — do not rebuild):
   "Cảnh báo & Sự cố" section is now a feed preview. `useDashboardActivity` +
   `ActivityCard` were deleted. "Thả tim" persists a reaction; the elderly-device
   sound feedback is NOT built yet.
-- Flyway is at **V40**; next migration is V41.
+- **A3 Free Broadcast (sequential) + A4 Escalation** — built. Migration `V41`:
+  `family_links` gains `availability_status` (`AvailabilityStatus` FREE/BUSY),
+  `last_ack_at`, `last_notified_at`; new `family_broadcasts` table. Backend:
+  `NotificationBroadcastService` (pages one FREE member at a time, oldest-notified
+  first; escalates to the whole family once the FREE list is exhausted or 2 h pass),
+  `BroadcastEscalationScheduler` (`@Scheduled`, advances at 15 min), `FamilyBroadcastController`
+  (`GET /api/elderly/{id}/broadcasts/active`, `PATCH /api/broadcasts/{id}/acknowledge`),
+  `PATCH /api/family-links/{id}/availability`. Trigger this iteration: an unwell
+  check-in (mood 3) — wired in `CheckInService`. Never used for SOS. Frontend:
+  `availabilityStore.ts` + `familyDashboard/AvailabilityChip.tsx` (header toggle),
+  `broadcastStore.ts` + `familyDashboard/BroadcastBanner.tsx` (dashboard "Tôi lo được").
+  Config: `carenest.broadcast.*` in `application.properties`.
+- Flyway is at **V41**; next migration is V42.
 
 Spec'd but **not yet in code** (no files exist for these — build targets):
-- **A3 Free Broadcast (sequential) + A4 Escalation** — `family_links` needs
-  `availability_status`/`last_ack_at`/`last_notified_at`; new
-  `NotificationBroadcastService` + `availabilityStore.ts`. Daily notifications only,
-  never SOS.
 - **A7 Visit Streak** — new `family_visits` + `family_visit_settings` tables,
   scheduler, `visitStreakStore.ts`, manual-confirm screen (no camera auto-detect).
 - **B1** — prescription-photo/OCR **removed** from the UI (`MedicationForm.tsx`) and
@@ -63,7 +71,8 @@ Standard layered Spring Boot structure: `controller` → `service` → `reposito
 | Auth (register/login/OTP/PIN) | `AuthController` | `AuthService`, `JwtService`, `OtpService` | `User`, `UserRole`, `RefreshToken`, `OtpVerification` |
 | User & notification prefs | `UserController` | `UserService`, `FcmService` | `NotificationPreferences` |
 | Elderly profile | `ElderlyProfileController` | `ElderlyProfileService` | `ElderlyProfile`, `EmergencyContact` |
-| Family linking | `FamilyLinkController` | `FamilyLinkService` | `FamilyLink`, `FamilyLinkStatus` |
+| Family linking + availability (A3) | `FamilyLinkController` | `FamilyLinkService` | `FamilyLink`, `FamilyLinkStatus`, `AvailabilityStatus` |
+| Free Broadcast / escalation (A3/A4) | `FamilyBroadcastController` | `NotificationBroadcastService` (+ `BroadcastEscalationScheduler`) | `FamilyBroadcast`, `BroadcastStatus`, `BroadcastTriggerType` |
 | Camera monitoring (IMOU) | `CameraController` | `CameraService`, `ImouApiService` | `CameraDevice`, `CameraSnapshot` |
 | Emergency / SOS | `EmergencyEventController` | `EmergencyEventService` | `EmergencyEvent`, `EmergencyStatus` |
 | Daily check-in (A1) | `CheckInController` | `CheckInService` | `CheckIn`, `CheckInSource` |
@@ -126,7 +135,7 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 |---|---|---|---|
 | **auth** | GetStarted, Welcome, WelcomeBack, Phone, Register (+Success), OtpVerify, VerificationChoice, VerifyEmail (+Prompt), Forgot/NewPassword, PasswordResetSuccess, PinSetup, PinVerify | `authStore.ts` | `screens/phone/validators.ts`, `screens/register/validators.ts` |
 | **elderly** | Home, Appointments, Camera, Chat, EditProfile, EmergencyContacts, Health, HealthReport, Medication, MedicationHistory, Profile, QRInvite | `elderlyStore`, `chatStore`, `checkinStore`, `googleFitStore`, `healthMetricStore`, `healthReportStore`, `medicationStore` | `components/ProactiveReminderCard.tsx`; `screens/elderlyHome/CheckinPanel.tsx` |
-| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health, Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx` |
+| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health, Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
 | **medication** | — (screens live under `elderly` / `family`) | — | `services/medicationCatalogApi.ts`, `medicationReminderService.ts` |
 | **notifications** | NotificationsScreen, NotificationSettingsScreen | `notificationStore`, `notificationSettingsStore` | — |
 

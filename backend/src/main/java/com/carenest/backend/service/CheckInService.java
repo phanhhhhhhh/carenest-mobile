@@ -2,6 +2,7 @@ package com.carenest.backend.service;
 
 import com.carenest.backend.dto.checkin.CheckInRequest;
 import com.carenest.backend.dto.checkin.CheckInResponse;
+import com.carenest.backend.entity.BroadcastTriggerType;
 import com.carenest.backend.entity.CheckIn;
 import com.carenest.backend.entity.CheckInSource;
 import com.carenest.backend.entity.User;
@@ -10,6 +11,7 @@ import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.CheckInRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,13 +19,18 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class CheckInService {
 
+    /** mood value that means "unwell" — pages the family sequentially (UC A3). */
+    private static final short MOOD_UNWELL = 3;
+
     private final CheckInRepository checkInRepository;
     private final UserRepository userRepository;
+    private final NotificationBroadcastService notificationBroadcastService;
 
     public CheckInResponse create(Long elderlyId, CheckInRequest request) {
         User elderly = userRepository.findById(elderlyId)
@@ -40,7 +47,21 @@ public class CheckInService {
             .source(request.getSource() != null ? request.getSource() : CheckInSource.BUTTON)
             .build();
 
-        return toResponse(checkInRepository.save(checkIn));
+        CheckIn saved = checkInRepository.save(checkIn);
+
+        if (saved.getMood() != null && saved.getMood() == MOOD_UNWELL) {
+            try {
+                notificationBroadcastService.startDailyBroadcast(
+                    elderlyId, BroadcastTriggerType.CHECK_IN_UNWELL, saved.getId(),
+                    elderly.getName() + " đang thấy mệt",
+                    "Ông/bà vừa báo tin thấy mệt trong người. Nhấn để hỏi thăm.");
+            } catch (Exception e) {
+                log.error("Failed to start Free Broadcast for unwell check-in {}: {}",
+                    saved.getId(), e.getMessage(), e);
+            }
+        }
+
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)

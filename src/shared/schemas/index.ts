@@ -110,6 +110,29 @@ export const FeedItemSchema = z.object({
 });
 export type FeedItemParsed = z.infer<typeof FeedItemSchema>;
 
+export const FamilyElderlyLinkSchema = z.object({
+  linkId: z.coerce.string(),
+  elderlyId: z.coerce.string(),
+  elderlyName: z.string().optional().nullable(),
+  availabilityStatus: z.enum(['FREE', 'BUSY']).optional().default('FREE'),
+});
+export type FamilyElderlyLinkParsed = z.infer<typeof FamilyElderlyLinkSchema>;
+
+export const FamilyBroadcastSchema = z.object({
+  id: z.coerce.string(),
+  elderlyId: z.coerce.number(),
+  triggerType: z.string(),
+  title: z.string(),
+  body: z.string(),
+  status: z.enum(['ACTIVE', 'ACKNOWLEDGED', 'ESCALATED']),
+  currentRecipientId: z.coerce.number().optional().nullable(),
+  startedAt: z.string(),
+  acknowledgedAt: z.string().optional().nullable(),
+  acknowledgedBy: z.coerce.number().optional().nullable(),
+  escalatedAt: z.string().optional().nullable(),
+});
+export type FamilyBroadcastParsed = z.infer<typeof FamilyBroadcastSchema>;
+
 export const FamilyLinkSchema = z.object({
   id: z.coerce.string().optional(),
   linkId: z.coerce.string().optional(),

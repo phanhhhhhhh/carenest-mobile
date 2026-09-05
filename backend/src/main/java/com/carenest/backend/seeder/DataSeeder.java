@@ -17,6 +17,7 @@ import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.CameraSnapshot;
+import com.carenest.backend.entity.AvailabilityStatus;
 import com.carenest.backend.entity.ChatMessage;
 import com.carenest.backend.entity.CheckIn;
 import com.carenest.backend.entity.CheckInSource;
@@ -178,6 +179,11 @@ public class DataSeeder implements CommandLineRunner {
         saveFamilyLink(e2, f9,  "Người thân");
         saveFamilyLink(e2, f10, "Người thân");
 
+        // UC A3: a couple of e1's caregivers start out BUSY so the sequential
+        // Free Broadcast has both FREE and BUSY members to walk.
+        setAvailability(e1, f7, AvailabilityStatus.BUSY);
+        setAvailability(e1, f8, AvailabilityStatus.BUSY);
+
         log.info("Seeded {} elderly + {} family users.", elderlyUsers.size(), familyUsers.size());
     }
 
@@ -211,6 +217,14 @@ public class DataSeeder implements CommandLineRunner {
             .status(FamilyLinkStatus.ACTIVE)
             .build();
         familyLinkRepository.save(link);
+    }
+
+    private void setAvailability(User elderly, User family, AvailabilityStatus status) {
+        familyLinkRepository.findByElderlyIdAndFamilyIdAndDeletedAtIsNull(elderly.getId(), family.getId())
+            .ifPresent(link -> {
+                link.setAvailabilityStatus(status);
+                familyLinkRepository.save(link);
+            });
     }
 
     private void seedMedications() {
