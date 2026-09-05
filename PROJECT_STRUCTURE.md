@@ -8,6 +8,41 @@
 > This repo is a **monorepo**: React Native / Expo app at the root (`src/`), Spring
 > Boot backend under `backend/`.
 
+## Canonical spec: Master Spec v3.5 (2026-09-06)
+
+`Doc/Now/General/CareNest_Master_Spec_v2.docx` (content is **v3.5**) supersedes the old
+USE_CASE / Feature_Analysis / Documentation docs. Product repositioned to a **daily
+family-connection app**; medication / SOS / camera are safety layers, not the core.
+
+Built and current (spec only documents these — do not rebuild):
+- SOS 1-touch + 2-level escalation (3 / 10 min no-ack) + secondary contact —
+  `EmergencyEventService`, `EmergencyEscalationScheduler`, migration `V37`,
+  `elderly_profiles.secondary_family_user_id`. SOS always broadcasts to the whole
+  family immediately, never filtered by availability.
+- **A1 Daily 1-Touch Check-in** — built. Backend: `check_ins` table (migration
+  `V39`), `CheckIn`/`CheckInSource` entities, `CheckInController`
+  (`/api/elderly/{id}/check-ins`, `.../today`), `CheckInService`. Frontend:
+  `features/elderly/store/checkinStore.ts`, `elderlyHome/CheckinPanel.tsx` (3 mood
+  buttons + a 🆘 button that runs the existing SOS countdown, not a 4th mood),
+  family-side `familyDashboard/TodayCheckinCard.tsx`. Mood 1-3 = happy/neutral/unwell.
+- Flyway is at **V39**; next migration is V40.
+
+Spec'd but **not yet in code** (no files exist for these — build targets):
+- **A2 Family Care Feed** — social timeline replacing the dashboard aggregate;
+  generic ack status only, never names who acked.
+- **A3 Free Broadcast (sequential) + A4 Escalation** — `family_links` needs
+  `availability_status`/`last_ack_at`/`last_notified_at`; new
+  `NotificationBroadcastService` + `availabilityStore.ts`. Daily notifications only,
+  never SOS.
+- **A7 Visit Streak** — new `family_visits` + `family_visit_settings` tables,
+  scheduler, `visitStreakStore.ts`, manual-confirm screen (no camera auto-detect).
+- **B1** — remove prescription-photo/OCR from new UI/API (keep `medications.photo_url`
+  column, add `voice_url`); `MedicationForm.tsx` still has a disabled photo placeholder.
+- **D1** camera-consent onboarding + D7 privacy-mode fallback.
+
+Dropped from roadmap: QR scanner, PDF export, Zalo OA, prescription-photo storage,
+camera-based visit auto-detect.
+
 ## Backend (`backend/src/main/java/com/carenest/backend/`)
 
 Standard layered Spring Boot structure: `controller` → `service` → `repository` → `entity`, with `dto` per feature and cross-cutting `config`/`security`/`scheduler`/`exception`.
@@ -22,6 +57,7 @@ Standard layered Spring Boot structure: `controller` → `service` → `reposito
 | Family linking | `FamilyLinkController` | `FamilyLinkService` | `FamilyLink`, `FamilyLinkStatus` |
 | Camera monitoring (IMOU) | `CameraController` | `CameraService`, `ImouApiService` | `CameraDevice`, `CameraSnapshot` |
 | Emergency / SOS | `EmergencyEventController` | `EmergencyEventService` | `EmergencyEvent`, `EmergencyStatus` |
+| Daily check-in (A1) | `CheckInController` | `CheckInService` | `CheckIn`, `CheckInSource` |
 | Health metrics | `HealthMetricController`, `HealthMetricThresholdController` | `HealthMetricService`, `HealthMetricThresholdService`, `HealthReportService`, `HealthSyncService`, `AnomalyDetectionService` | `HealthMetric`, `HealthMetricType`, `HealthMetricThreshold` |
 | Google Fit integration | `GoogleFitController` | `GoogleFitService` | `GoogleFitToken` |
 | Medication | `MedicationController`, `MedicationCatalogController`, `MedicationLogController` | `MedicationService`, `MedicationCatalogService`, `MedicationLogService`, `MedicationScheduleCalculator` | `Medication`, `MedicationCatalogItem`, `MedicationLog`, `MedicationLogStatus`, `MedicationSchedule` |
@@ -79,7 +115,7 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 | Feature | Screens (`features/<domain>/screens/`) | Stores (`features/<domain>/store/`) | Other |
 |---|---|---|---|
 | **auth** | GetStarted, Welcome, WelcomeBack, Phone, Register (+Success), OtpVerify, VerificationChoice, VerifyEmail (+Prompt), Forgot/NewPassword, PasswordResetSuccess, PinSetup, PinVerify | `authStore.ts` | `screens/phone/validators.ts`, `screens/register/validators.ts` |
-| **elderly** | Home, Appointments, Camera, Chat, EditProfile, EmergencyContacts, Health, HealthReport, Medication, MedicationHistory, Profile, QRInvite | `elderlyStore`, `chatStore`, `googleFitStore`, `healthMetricStore`, `healthReportStore`, `medicationStore` | `components/ProactiveReminderCard.tsx` |
+| **elderly** | Home, Appointments, Camera, Chat, EditProfile, EmergencyContacts, Health, HealthReport, Medication, MedicationHistory, Profile, QRInvite | `elderlyStore`, `chatStore`, `checkinStore`, `googleFitStore`, `healthMetricStore`, `healthReportStore`, `medicationStore` | `components/ProactiveReminderCard.tsx`; `screens/elderlyHome/CheckinPanel.tsx` |
 | **family** | Camera, Alerts, Appointments, Dashboard, Health, Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `components/SosAlertOverlay.tsx` |
 | **medication** | — (screens live under `elderly` / `family`) | — | `services/medicationCatalogApi.ts`, `medicationReminderService.ts` |
 | **notifications** | NotificationsScreen, NotificationSettingsScreen | `notificationStore`, `notificationSettingsStore` | — |
