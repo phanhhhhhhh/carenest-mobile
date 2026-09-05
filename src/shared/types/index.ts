@@ -83,6 +83,52 @@ export interface EmergencyEvent {
   emergencyCallLoggedByName?: string;
 }
 
+/** Daily 1-touch check-in mood: 1 = happy, 2 = neutral, 3 = unwell, 4 = emergency (SOS). */
+export type CheckInMood = 1 | 2 | 3 | 4;
+
+export interface CheckIn {
+  id: string;
+  mood: CheckInMood;
+  note?: string;
+  source?: string;
+  createdAt: string;
+}
+
+/** A family member's self-set availability for daily notifications (UC A3). Not used for SOS. */
+export type AvailabilityStatus = 'FREE' | 'BUSY';
+
+/** An in-flight sequential Free Broadcast (UC A3 / A4). */
+export interface FamilyBroadcast {
+  id: string;
+  elderlyId: number;
+  triggerType: string;
+  title: string;
+  body: string;
+  status: 'ACTIVE' | 'ACKNOWLEDGED' | 'ESCALATED';
+  currentRecipientId?: number;
+  startedAt: string;
+  acknowledgedAt?: string;
+  acknowledgedBy?: number;
+  escalatedAt?: string;
+}
+
+/** Family Care Feed (UC A2). */
+export type FeedItemType = 'CHECK_IN' | 'MEDICATION_LOG' | 'EMERGENCY';
+
+export interface FeedItem {
+  /** Composite id "TYPE:ref" — stable per source row. */
+  id: string;
+  type: FeedItemType;
+  itemRef: number;
+  occurredAt: string;
+  title: string;
+  subtitle: string;
+  /** Generic "someone dealt with this" — the feed never shows who. */
+  handled: boolean;
+  reactionCount: number;
+  reactedByMe: boolean;
+}
+
 export interface NotificationItem {
   id: string;
   title: string;

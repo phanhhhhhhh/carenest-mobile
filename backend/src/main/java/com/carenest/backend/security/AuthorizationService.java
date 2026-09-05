@@ -3,6 +3,7 @@ package com.carenest.backend.security;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.repository.AppointmentRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
+import com.carenest.backend.repository.FamilyBroadcastRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
 import com.carenest.backend.repository.HealthMetricThresholdRepository;
@@ -28,6 +29,7 @@ public class AuthorizationService {
     private final ReminderRepository reminderRepository;
     private final HealthMetricThresholdRepository healthMetricThresholdRepository;
     private final CameraDeviceRepository cameraDeviceRepository;
+    private final FamilyBroadcastRepository familyBroadcastRepository;
 
     public boolean isOwnerOrLinkedFamily(Long principalId, Long elderlyId) {
         if (principalId == null || elderlyId == null) return false;
@@ -62,6 +64,13 @@ public class AuthorizationService {
         if (principalId == null || eventId == null) return false;
         return emergencyEventRepository.findById(eventId)
             .map(e -> isOwnerOrLinkedFamily(principalId, e.getElderly().getId()))
+            .orElse(false);
+    }
+
+    public boolean canAccessBroadcast(Long principalId, Long broadcastId) {
+        if (principalId == null || broadcastId == null) return false;
+        return familyBroadcastRepository.findById(broadcastId)
+            .map(b -> isOwnerOrLinkedFamily(principalId, b.getElderlyId()))
             .orElse(false);
     }
 

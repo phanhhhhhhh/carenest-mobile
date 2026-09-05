@@ -114,6 +114,15 @@ public class FamilyLinkService {
         return toResponse(familyLinkRepository.save(link));
     }
 
+    /** Toggle this family member's FREE/BUSY availability for the linked elderly (UC A3). */
+    public FamilyLinkResponse updateAvailability(Long id, com.carenest.backend.entity.AvailabilityStatus availabilityStatus) {
+        FamilyLink link = familyLinkRepository.findByIdAndDeletedAtIsNull(id)
+            .orElseThrow(() -> new NotFoundException("FamilyLink not found: " + id));
+
+        link.setAvailabilityStatus(availabilityStatus);
+        return toResponse(familyLinkRepository.save(link));
+    }
+
     private FamilyElderlyResponse toElderlyResponse(FamilyLink fl) {
         List<String> healthConditions = elderlyProfileRepository
             .findByUserIdAndDeletedAtIsNull(fl.getElderly().getId())
@@ -129,6 +138,7 @@ public class FamilyLinkService {
             .elderlyPhone(fl.getElderly().getPhone())
             .relationship(fl.getRelationship())
             .status(fl.getStatus())
+            .availabilityStatus(fl.getAvailabilityStatus())
             .createdAt(fl.getCreatedAt())
             .healthConditions(healthConditions)
             .build();
@@ -143,6 +153,7 @@ public class FamilyLinkService {
             .familyName(fl.getFamily().getName())
             .relationship(fl.getRelationship())
             .status(fl.getStatus())
+            .availabilityStatus(fl.getAvailabilityStatus())
             .createdAt(fl.getCreatedAt())
             .build();
     }

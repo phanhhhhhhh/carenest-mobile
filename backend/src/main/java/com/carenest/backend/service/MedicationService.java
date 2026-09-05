@@ -35,7 +35,6 @@ public class MedicationService {
             .schedule(request.getSchedule())
             .nextDoseTime(calculateNextDoseTime(request.getSchedule()))
             .instructions(request.getInstructions())
-            .photoUrl(request.getPhotoUrl())
             .build();
 
         return toResponse(medicationRepository.save(medication));
@@ -68,9 +67,6 @@ public class MedicationService {
         if (request.getInstructions() != null) {
             medication.setInstructions(request.getInstructions());
         }
-        if (request.getPhotoUrl() != null) {
-            medication.setPhotoUrl(request.getPhotoUrl());
-        }
 
         return toResponse(medicationRepository.save(medication));
     }
@@ -96,7 +92,6 @@ public class MedicationService {
             .schedule(m.getSchedule())
             .nextDoseTime(m.getNextDoseTime())
             .instructions(m.getInstructions())
-            .photoUrl(m.getPhotoUrl())
             .createdAt(m.getCreatedAt())
             .updatedAt(m.getUpdatedAt())
             .build();

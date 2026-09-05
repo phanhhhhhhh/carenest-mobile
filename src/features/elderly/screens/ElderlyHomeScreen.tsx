@@ -21,6 +21,7 @@ import { useElderlyProfileStore } from '../store/elderlyStore';
 import { useMedicationStore } from '../store/medicationStore';
 import { useCameraStore } from '../../family/store/cameraStore';
 import { useEmergencyEventStore } from '../../family/store/emergencyEventStore';
+import { useCheckInStore, selectTodayCheckIn } from '../store/checkinStore';
 import {
   useNotificationStore,
   selectUnreadCount,
@@ -29,6 +30,8 @@ import { showErrorToast } from '../../../shared/components/toastStore';
 import { formatDateHeader, greeting } from './elderlyHome/utils';
 import { MedicationTile, NextMedicationCard } from './elderlyHome/MedicationCards';
 import { SosPanel, useSosCountdown } from './elderlyHome/SosPanel';
+import { CheckinPanel } from './elderlyHome/CheckinPanel';
+import type { CheckInMood } from '../../../shared/types';
 import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -51,6 +54,11 @@ export default function ElderlyHomeScreen() {
   const loadCamera = useCameraStore((s) => s.load);
 
   const createSosEvent = useEmergencyEventStore((s) => s.createSosEvent);
+
+  const todayCheckIn = useCheckInStore((s) => selectTodayCheckIn(s, elderlyId));
+  const checkInSubmitting = useCheckInStore((s) => s.submitting);
+  const loadTodayCheckIn = useCheckInStore((s) => s.loadToday);
+  const submitCheckIn = useCheckInStore((s) => s.submit);
 
   const notificationItems = useNotificationStore((s) => s.items);
   const loadNotifications = useNotificationStore((s) => s.load);
@@ -77,8 +85,9 @@ export default function ElderlyHomeScreen() {
     if (!elderlyId) return;
     const controller = new AbortController();
     loadCamera(elderlyId, controller.signal);
+    loadTodayCheckIn(elderlyId, controller.signal);
     return () => controller.abort();
-  }, [elderlyId, loadCamera]);
+  }, [elderlyId, loadCamera, loadTodayCheckIn]);
 
   const displayName = profile?.name && profile.name.length > 0 ? profile.name : name;
 
@@ -109,6 +118,14 @@ export default function ElderlyHomeScreen() {
   };
 
   const sos = useSosCountdown(sendSos);
+
+  const handleSelectMood = async (mood: CheckInMood) => {
+    if (!elderlyId) return;
+    const ok = await submitCheckIn(elderlyId, mood);
+    if (!ok) {
+      showErrorToast('Không gửi được trạng thái. Vui lòng thử lại.');
+    }
+  };
 
   const sortedMeds = useMemo(() => {
     const items = [...medItems];
@@ -163,6 +180,16 @@ export default function ElderlyHomeScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        <View style={{ height: 18 }} />
+
+        {/* Daily 1-Touch Check-in (UC A1) */}
+        <CheckinPanel
+          today={todayCheckIn}
+          submitting={checkInSubmitting}
+          onSelectMood={handleSelectMood}
+          onSos={sos.start}
+        />
 
         <View style={{ height: 18 }} />
 

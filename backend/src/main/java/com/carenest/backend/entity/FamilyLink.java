@@ -59,6 +59,20 @@ public class FamilyLink {
     @Builder.Default
     private FamilyLinkStatus status = FamilyLinkStatus.PENDING;
 
+    /** Self-set FREE/BUSY for the sequential Free Broadcast (UC A3). Not used for SOS. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "availability_status", nullable = false, length = 10)
+    @Builder.Default
+    private AvailabilityStatus availabilityStatus = AvailabilityStatus.FREE;
+
+    /** When this member last acknowledged a daily broadcast — for fairness ordering. */
+    @Column(name = "last_ack_at")
+    private OffsetDateTime lastAckAt;
+
+    /** When this member was last paged by a sequential broadcast — oldest goes first. */
+    @Column(name = "last_notified_at")
+    private OffsetDateTime lastNotifiedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

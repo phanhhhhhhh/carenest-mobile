@@ -88,6 +88,51 @@ export const EmergencyEventSchema = z.object({
 });
 export type EmergencyEventParsed = z.infer<typeof EmergencyEventSchema>;
 
+export const CheckInSchema = z.object({
+  id: z.coerce.string(),
+  mood: z.coerce.number(),
+  note: z.string().optional().nullable(),
+  source: z.string().optional().nullable(),
+  createdAt: z.string(),
+});
+export type CheckInParsed = z.infer<typeof CheckInSchema>;
+
+export const FeedItemSchema = z.object({
+  id: z.coerce.string(),
+  type: z.enum(['CHECK_IN', 'MEDICATION_LOG', 'EMERGENCY']),
+  itemRef: z.coerce.number(),
+  occurredAt: z.string(),
+  title: z.string(),
+  subtitle: z.string().optional().nullable(),
+  handled: z.coerce.boolean().optional().default(false),
+  reactionCount: z.coerce.number().optional().default(0),
+  reactedByMe: z.coerce.boolean().optional().default(false),
+});
+export type FeedItemParsed = z.infer<typeof FeedItemSchema>;
+
+export const FamilyElderlyLinkSchema = z.object({
+  linkId: z.coerce.string(),
+  elderlyId: z.coerce.string(),
+  elderlyName: z.string().optional().nullable(),
+  availabilityStatus: z.enum(['FREE', 'BUSY']).optional().default('FREE'),
+});
+export type FamilyElderlyLinkParsed = z.infer<typeof FamilyElderlyLinkSchema>;
+
+export const FamilyBroadcastSchema = z.object({
+  id: z.coerce.string(),
+  elderlyId: z.coerce.number(),
+  triggerType: z.string(),
+  title: z.string(),
+  body: z.string(),
+  status: z.enum(['ACTIVE', 'ACKNOWLEDGED', 'ESCALATED']),
+  currentRecipientId: z.coerce.number().optional().nullable(),
+  startedAt: z.string(),
+  acknowledgedAt: z.string().optional().nullable(),
+  acknowledgedBy: z.coerce.number().optional().nullable(),
+  escalatedAt: z.string().optional().nullable(),
+});
+export type FamilyBroadcastParsed = z.infer<typeof FamilyBroadcastSchema>;
+
 export const FamilyLinkSchema = z.object({
   id: z.coerce.string().optional(),
   linkId: z.coerce.string().optional(),

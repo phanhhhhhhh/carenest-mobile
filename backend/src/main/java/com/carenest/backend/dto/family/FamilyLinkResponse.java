@@ -1,5 +1,6 @@
 package com.carenest.backend.dto.family;
 
+import com.carenest.backend.entity.AvailabilityStatus;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,5 +18,6 @@ public class FamilyLinkResponse {
     private String familyName;
     private String relationship;
     private FamilyLinkStatus status;
+    private AvailabilityStatus availabilityStatus;
     private OffsetDateTime createdAt;
 }

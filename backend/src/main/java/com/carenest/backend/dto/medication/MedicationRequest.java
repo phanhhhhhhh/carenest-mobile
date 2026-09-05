@@ -30,6 +30,4 @@ public class MedicationRequest {
     private OffsetDateTime nextDoseTime;
 
     private String instructions;
-
-    private String photoUrl;
 }

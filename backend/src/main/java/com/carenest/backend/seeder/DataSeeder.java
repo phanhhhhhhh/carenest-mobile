@@ -17,14 +17,21 @@ import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.CameraSnapshot;
+import com.carenest.backend.entity.AvailabilityStatus;
 import com.carenest.backend.entity.ChatMessage;
+import com.carenest.backend.entity.CheckIn;
+import com.carenest.backend.entity.CheckInSource;
 import com.carenest.backend.entity.EmergencyEvent;
+import com.carenest.backend.entity.FeedItemType;
+import com.carenest.backend.entity.FeedReaction;
 import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.Subscription;
 import com.carenest.backend.repository.AppointmentRepository;
 import com.carenest.backend.repository.CameraDeviceRepository;
 import com.carenest.backend.repository.CameraSnapshotRepository;
 import com.carenest.backend.repository.ChatMessageRepository;
+import com.carenest.backend.repository.CheckInRepository;
+import com.carenest.backend.repository.FeedReactionRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
@@ -76,6 +83,8 @@ public class DataSeeder implements CommandLineRunner {
     private final CameraDeviceRepository cameraDeviceRepository;
     private final EmergencyEventRepository emergencyEventRepository;
     private final CameraSnapshotRepository cameraSnapshotRepository;
+    private final CheckInRepository checkInRepository;
+    private final FeedReactionRepository feedReactionRepository;
 
     private final List<User> elderlyUsers = new ArrayList<>();
     private final List<User> familyUsers = new ArrayList<>();
@@ -98,6 +107,8 @@ public class DataSeeder implements CommandLineRunner {
         seedMedications();
         seedMedicationLogs();
         seedHealthMetrics();
+        seedCheckIns();
+        seedFeedReactions();
         seedHealthMetricThresholds();
         seedAppointments();
         seedChatMessages();
@@ -168,6 +179,11 @@ public class DataSeeder implements CommandLineRunner {
         saveFamilyLink(e2, f9,  "Người thân");
         saveFamilyLink(e2, f10, "Người thân");
 
+        // UC A3: a couple of e1's caregivers start out BUSY so the sequential
+        // Free Broadcast has both FREE and BUSY members to walk.
+        setAvailability(e1, f7, AvailabilityStatus.BUSY);
+        setAvailability(e1, f8, AvailabilityStatus.BUSY);
+
         log.info("Seeded {} elderly + {} family users.", elderlyUsers.size(), familyUsers.size());
     }
 
@@ -201,6 +217,14 @@ public class DataSeeder implements CommandLineRunner {
             .status(FamilyLinkStatus.ACTIVE)
             .build();
         familyLinkRepository.save(link);
+    }
+
+    private void setAvailability(User elderly, User family, AvailabilityStatus status) {
+        familyLinkRepository.findByElderlyIdAndFamilyIdAndDeletedAtIsNull(elderly.getId(), family.getId())
+            .ifPresent(link -> {
+                link.setAvailabilityStatus(status);
+                familyLinkRepository.save(link);
+            });
     }
 
     private void seedMedications() {
@@ -386,6 +410,56 @@ public class DataSeeder implements CommandLineRunner {
 
     private BigDecimal bd(double value) {
         return BigDecimal.valueOf(Math.round(value * 100.0) / 100.0);
+    }
+
+    /** Daily 1-touch check-ins (UC A1) — 14 days of history for the first two elderly. */
+    private void seedCheckIns() {
+        log.info("Seeding daily check-ins (14 days)...");
+
+        User e1 = elderlyUsers.get(0);
+        User e2 = elderlyUsers.get(1);
+        OffsetDateTime reference = OffsetDateTime.now();
+
+        // mood cycle: mostly good, an occasional "unwell" day — never 4 (that path fires SOS)
+        short[] e1Moods = {1, 1, 2, 1, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1};
+        short[] e2Moods = {1, 2, 1, 1, 2, 1, 1, 1, 3, 1, 2, 1, 1, 1};
+
+        for (int day = 13; day >= 0; day--) {
+            OffsetDateTime at = reference.minusDays(day).withHour(7).withMinute(30).withSecond(0).withNano(0);
+            saveCheckIn(e1, e1Moods[13 - day], at);
+            saveCheckIn(e2, e2Moods[13 - day], at.plusMinutes(20));
+        }
+
+        log.info("Check-ins seeded.");
+    }
+
+    private void saveCheckIn(User elderly, short mood, OffsetDateTime at) {
+        checkInRepository.save(CheckIn.builder()
+            .elderly(elderly)
+            .mood(mood)
+            .source(CheckInSource.BUTTON)
+            .createdAt(at)
+            .build());
+    }
+
+    /** A few "thả tim" reactions so the Family Care Feed (UC A2) shows some items as handled. */
+    private void seedFeedReactions() {
+        log.info("Seeding feed reactions...");
+
+        User e1 = elderlyUsers.get(0);
+        User f1 = familyUsers.get(0); // Linda Nguyen — linked to e1
+
+        List<CheckIn> recent = checkInRepository.findByElderlyIdOrderByCreatedAtDesc(e1.getId());
+        recent.stream().limit(2).forEach(checkIn ->
+            feedReactionRepository.save(FeedReaction.builder()
+                .elderly(e1)
+                .familyUser(f1)
+                .itemType(FeedItemType.CHECK_IN)
+                .itemRef(checkIn.getId())
+                .createdAt(checkIn.getCreatedAt().plusMinutes(15))
+                .build()));
+
+        log.info("Feed reactions seeded.");
     }
 
     private void seedHealthMetricThresholds() {
