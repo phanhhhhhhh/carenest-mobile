@@ -97,6 +97,19 @@ export const CheckInSchema = z.object({
 });
 export type CheckInParsed = z.infer<typeof CheckInSchema>;
 
+export const FeedItemSchema = z.object({
+  id: z.coerce.string(),
+  type: z.enum(['CHECK_IN', 'MEDICATION_LOG', 'EMERGENCY']),
+  itemRef: z.coerce.number(),
+  occurredAt: z.string(),
+  title: z.string(),
+  subtitle: z.string().optional().nullable(),
+  handled: z.coerce.boolean().optional().default(false),
+  reactionCount: z.coerce.number().optional().default(0),
+  reactedByMe: z.coerce.boolean().optional().default(false),
+});
+export type FeedItemParsed = z.infer<typeof FeedItemSchema>;
+
 export const FamilyLinkSchema = z.object({
   id: z.coerce.string().optional(),
   linkId: z.coerce.string().optional(),

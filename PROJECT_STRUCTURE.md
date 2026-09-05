@@ -25,11 +25,18 @@ Built and current (spec only documents these — do not rebuild):
   `features/elderly/store/checkinStore.ts`, `elderlyHome/CheckinPanel.tsx` (3 mood
   buttons + a 🆘 button that runs the existing SOS countdown, not a 4th mood),
   family-side `familyDashboard/TodayCheckinCard.tsx`. Mood 1-3 = happy/neutral/unwell.
-- Flyway is at **V39**; next migration is V40.
+- **A2 Family Care Feed** — built. Backend: `feed_reactions` table (migration `V40`),
+  `FeedReaction`/`FeedItemType`, `FamilyFeedController` (`GET /api/elderly/{id}/feed`,
+  `POST .../feed/react`), `FamilyFeedService` (unions check-ins + medication logs +
+  emergency events into one timeline; per-item generic `handled` flag, never who acted).
+  Frontend: `features/family/store/feedStore.ts`, `familyFeed/FeedRow.tsx`,
+  `FamilyFeedScreen.tsx` (stack route `FamilyFeed`); the dashboard's old
+  "Cảnh báo & Sự cố" section is now a feed preview. `useDashboardActivity` +
+  `ActivityCard` were deleted. "Thả tim" persists a reaction; the elderly-device
+  sound feedback is NOT built yet.
+- Flyway is at **V40**; next migration is V41.
 
 Spec'd but **not yet in code** (no files exist for these — build targets):
-- **A2 Family Care Feed** — social timeline replacing the dashboard aggregate;
-  generic ack status only, never names who acked.
 - **A3 Free Broadcast (sequential) + A4 Escalation** — `family_links` needs
   `availability_status`/`last_ack_at`/`last_notified_at`; new
   `NotificationBroadcastService` + `availabilityStore.ts`. Daily notifications only,
@@ -60,6 +67,7 @@ Standard layered Spring Boot structure: `controller` → `service` → `reposito
 | Camera monitoring (IMOU) | `CameraController` | `CameraService`, `ImouApiService` | `CameraDevice`, `CameraSnapshot` |
 | Emergency / SOS | `EmergencyEventController` | `EmergencyEventService` | `EmergencyEvent`, `EmergencyStatus` |
 | Daily check-in (A1) | `CheckInController` | `CheckInService` | `CheckIn`, `CheckInSource` |
+| Family Care Feed (A2) | `FamilyFeedController` | `FamilyFeedService` | `FeedReaction`, `FeedItemType` (feed items are aggregated, not stored) |
 | Health metrics | `HealthMetricController`, `HealthMetricThresholdController` | `HealthMetricService`, `HealthMetricThresholdService`, `HealthReportService`, `HealthSyncService`, `AnomalyDetectionService` | `HealthMetric`, `HealthMetricType`, `HealthMetricThreshold` |
 | Google Fit integration | `GoogleFitController` | `GoogleFitService` | `GoogleFitToken` |
 | Medication | `MedicationController`, `MedicationCatalogController`, `MedicationLogController` | `MedicationService`, `MedicationCatalogService`, `MedicationLogService`, `MedicationScheduleCalculator` | `Medication`, `MedicationCatalogItem`, `MedicationLog`, `MedicationLogStatus`, `MedicationSchedule` |
@@ -118,7 +126,7 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 |---|---|---|---|
 | **auth** | GetStarted, Welcome, WelcomeBack, Phone, Register (+Success), OtpVerify, VerificationChoice, VerifyEmail (+Prompt), Forgot/NewPassword, PasswordResetSuccess, PinSetup, PinVerify | `authStore.ts` | `screens/phone/validators.ts`, `screens/register/validators.ts` |
 | **elderly** | Home, Appointments, Camera, Chat, EditProfile, EmergencyContacts, Health, HealthReport, Medication, MedicationHistory, Profile, QRInvite | `elderlyStore`, `chatStore`, `checkinStore`, `googleFitStore`, `healthMetricStore`, `healthReportStore`, `medicationStore` | `components/ProactiveReminderCard.tsx`; `screens/elderlyHome/CheckinPanel.tsx` |
-| **family** | Camera, Alerts, Appointments, Dashboard, Health, Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `components/SosAlertOverlay.tsx` |
+| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health, Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx` |
 | **medication** | — (screens live under `elderly` / `family`) | — | `services/medicationCatalogApi.ts`, `medicationReminderService.ts` |
 | **notifications** | NotificationsScreen, NotificationSettingsScreen | `notificationStore`, `notificationSettingsStore` | — |
 

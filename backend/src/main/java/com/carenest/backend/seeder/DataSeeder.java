@@ -21,6 +21,8 @@ import com.carenest.backend.entity.ChatMessage;
 import com.carenest.backend.entity.CheckIn;
 import com.carenest.backend.entity.CheckInSource;
 import com.carenest.backend.entity.EmergencyEvent;
+import com.carenest.backend.entity.FeedItemType;
+import com.carenest.backend.entity.FeedReaction;
 import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.Subscription;
 import com.carenest.backend.repository.AppointmentRepository;
@@ -28,6 +30,7 @@ import com.carenest.backend.repository.CameraDeviceRepository;
 import com.carenest.backend.repository.CameraSnapshotRepository;
 import com.carenest.backend.repository.ChatMessageRepository;
 import com.carenest.backend.repository.CheckInRepository;
+import com.carenest.backend.repository.FeedReactionRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
@@ -80,6 +83,7 @@ public class DataSeeder implements CommandLineRunner {
     private final EmergencyEventRepository emergencyEventRepository;
     private final CameraSnapshotRepository cameraSnapshotRepository;
     private final CheckInRepository checkInRepository;
+    private final FeedReactionRepository feedReactionRepository;
 
     private final List<User> elderlyUsers = new ArrayList<>();
     private final List<User> familyUsers = new ArrayList<>();
@@ -103,6 +107,7 @@ public class DataSeeder implements CommandLineRunner {
         seedMedicationLogs();
         seedHealthMetrics();
         seedCheckIns();
+        seedFeedReactions();
         seedHealthMetricThresholds();
         seedAppointments();
         seedChatMessages();
@@ -421,6 +426,26 @@ public class DataSeeder implements CommandLineRunner {
             .source(CheckInSource.BUTTON)
             .createdAt(at)
             .build());
+    }
+
+    /** A few "thả tim" reactions so the Family Care Feed (UC A2) shows some items as handled. */
+    private void seedFeedReactions() {
+        log.info("Seeding feed reactions...");
+
+        User e1 = elderlyUsers.get(0);
+        User f1 = familyUsers.get(0); // Linda Nguyen — linked to e1
+
+        List<CheckIn> recent = checkInRepository.findByElderlyIdOrderByCreatedAtDesc(e1.getId());
+        recent.stream().limit(2).forEach(checkIn ->
+            feedReactionRepository.save(FeedReaction.builder()
+                .elderly(e1)
+                .familyUser(f1)
+                .itemType(FeedItemType.CHECK_IN)
+                .itemRef(checkIn.getId())
+                .createdAt(checkIn.getCreatedAt().plusMinutes(15))
+                .build()));
+
+        log.info("Feed reactions seeded.");
     }
 
     private void seedHealthMetricThresholds() {

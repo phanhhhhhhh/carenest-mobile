@@ -18,7 +18,6 @@ import { Colors } from '../../../core/theme/colors';
 import { Shadows } from '../../../core/theme/spacing';
 import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
-import { useEmergencyEventStore } from '../store/emergencyEventStore';
 import { useCameraStore } from '../store/cameraStore';
 import { useMedicationStore } from '../../elderly/store/medicationStore';
 import {
@@ -26,13 +25,13 @@ import {
   selectUnreadCount,
 } from '../../notifications/store/notificationStore';
 import { formatRelative } from './familyDashboard/utils';
-import { useDashboardActivity } from './familyDashboard/useDashboardActivity';
 import { ElderlyCard } from './familyDashboard/ElderlyCard';
 import { TodayMedsCard } from './familyDashboard/TodayMedsCard';
 import { DashboardCameraCard } from './familyDashboard/DashboardCameraCard';
-import { ActivityCard } from './familyDashboard/ActivityCard';
 import { TodayCheckinCard } from './familyDashboard/TodayCheckinCard';
+import { FeedRow } from './familyFeed/FeedRow';
 import { useCheckInStore, selectTodayCheckIn } from '../../elderly/store/checkinStore';
+import { useFeedStore, selectFeed } from '../store/feedStore';
 import { AppointmentPreviewCard } from './familyDashboard/widgets';
 import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
@@ -55,14 +54,12 @@ export default function FamilyDashboardScreen() {
   const cameras = useCameraStore((s) => s.cameras);
   const loadCameras = useCameraStore((s) => s.load);
 
-  const alertEvents = useEmergencyEventStore((s) => s.events);
-  const alertLoading = useEmergencyEventStore((s) => s.isLoading);
-  const loadAlerts = useEmergencyEventStore((s) => s.load);
-
   const notifItems = useNotificationStore((s) => s.items);
   const loadNotifications = useNotificationStore((s) => s.load);
 
   const loadTodayCheckIn = useCheckInStore((s) => s.loadToday);
+  const loadFeed = useFeedStore((s) => s.load);
+  const toggleFeedReaction = useFeedStore((s) => s.toggleReaction);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -73,9 +70,10 @@ export default function FamilyDashboardScreen() {
   const elderlyId = currentElderlyObj?.elderlyId ?? null;
 
   const latestByType = dashData?.latestMetrics ?? {};
-  const healthIsLoading = dashLoading;
 
   const todayCheckIn = useCheckInStore((s) => selectTodayCheckIn(s, elderlyId));
+  const feedItems = useFeedStore((s) => selectFeed(s, elderlyId));
+  const feedLoading = useFeedStore((s) => s.loading);
 
   useMountEffect(() => {
     const controller = new AbortController();
@@ -89,10 +87,10 @@ export default function FamilyDashboardScreen() {
     const controller = new AbortController();
     loadMeds(elderlyId, controller.signal);
     loadCameras(elderlyId, controller.signal);
-    loadAlerts(elderlyId, controller.signal);
     loadTodayCheckIn(elderlyId, controller.signal);
+    loadFeed(elderlyId, controller.signal);
     return () => controller.abort();
-  }, [elderlyId, loadMeds, loadCameras, loadAlerts, loadTodayCheckIn]);
+  }, [elderlyId, loadMeds, loadCameras, loadTodayCheckIn, loadFeed]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -101,8 +99,8 @@ export default function FamilyDashboardScreen() {
       await Promise.all([
         loadMeds(elderlyId),
         loadCameras(elderlyId),
-        loadAlerts(elderlyId),
         loadTodayCheckIn(elderlyId),
+        loadFeed(elderlyId),
       ]);
     }
     setRefreshing(false);
@@ -137,15 +135,7 @@ export default function FamilyDashboardScreen() {
 
   const cam = cameras.length > 0 ? cameras[0] : null;
 
-  const activityItems = useDashboardActivity({
-    elderlyId,
-    alertEvents,
-    alertLoading,
-    medItems,
-    medLoading,
-    latestByType,
-    healthLoading: healthIsLoading,
-  });
+  const feedPreview = feedItems.slice(0, 4);
 
   const openCamera = () => elderlyId && navigation.navigate('CameraScreen', { elderlyId });
   const openHealth = () => navigation.navigate('FamilyHealth');
@@ -310,18 +300,38 @@ export default function FamilyDashboardScreen() {
           </>
         )}
 
-        {/* Recent Alerts Feed */}
+        {/* Family Care Feed preview (UC A2) */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Cảnh báo & Sự cố gần đây</Text>
+          <Text style={styles.sectionTitle}>Dòng thời gian gia đình</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('FamilyAlerts')}
+            onPress={() => navigation.navigate('FamilyFeed')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Text style={styles.viewAllText}>Xem tất cả →</Text>
           </TouchableOpacity>
         </View>
         <View style={{ height: 10 }} />
-        <ActivityCard items={activityItems} />
+        {feedLoading && feedPreview.length === 0 ? (
+          <View style={styles.feedCard}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+          </View>
+        ) : feedPreview.length === 0 ? (
+          <View style={styles.feedCard}>
+            <Text style={styles.feedEmptyText}>Chưa có hoạt động nào gần đây</Text>
+          </View>
+        ) : (
+          <View style={styles.feedCard}>
+            {feedPreview.map((item, idx) => (
+              <View key={item.id}>
+                <FeedRow
+                  item={item}
+                  onToggleReaction={(it) => elderlyId && toggleFeedReaction(elderlyId, it)}
+                />
+                {idx < feedPreview.length - 1 && <View style={styles.feedDivider} />}
+              </View>
+            ))}
+          </View>
+        )}
 
         <View style={{ height: 20 }} />
 
@@ -482,6 +492,23 @@ const styles = StyleSheet.create({
   viewAllText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
 
   loadingBox: { height: 80, justifyContent: 'center', alignItems: 'center' },
+  feedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    minHeight: 60,
+    justifyContent: 'center',
+  },
+  feedDivider: { height: 1, backgroundColor: '#EEF2F6' },
+  feedEmptyText: {
+    color: '#64748B',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
   emptyBox: {
     padding: 24,
     borderRadius: 20,

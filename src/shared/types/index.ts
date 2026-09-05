@@ -94,6 +94,23 @@ export interface CheckIn {
   createdAt: string;
 }
 
+/** Family Care Feed (UC A2). */
+export type FeedItemType = 'CHECK_IN' | 'MEDICATION_LOG' | 'EMERGENCY';
+
+export interface FeedItem {
+  /** Composite id "TYPE:ref" — stable per source row. */
+  id: string;
+  type: FeedItemType;
+  itemRef: number;
+  occurredAt: string;
+  title: string;
+  subtitle: string;
+  /** Generic "someone dealt with this" — the feed never shows who. */
+  handled: boolean;
+  reactionCount: number;
+  reactedByMe: boolean;
+}
+
 export interface NotificationItem {
   id: string;
   title: string;

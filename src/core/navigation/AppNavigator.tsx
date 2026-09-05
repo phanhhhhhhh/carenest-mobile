@@ -39,6 +39,7 @@ import CameraScreen from '../../features/family/screens/CameraScreen';
 import HealthThresholdScreen from '../../features/family/screens/HealthThresholdScreen';
 import FamilyHealthScreen from '../../features/family/screens/FamilyHealthScreen';
 import FamilyAlertsScreen from '../../features/family/screens/FamilyAlertsScreen';
+import FamilyFeedScreen from '../../features/family/screens/FamilyFeedScreen';
 import PremiumPlansScreen from '../../features/family/screens/PremiumPlansScreen';
 import NotificationsScreen from '../../features/notifications/screens/NotificationsScreen';
 import NotificationSettingsScreen from '../../features/notifications/screens/NotificationSettingsScreen';
@@ -66,6 +67,7 @@ export type RootStackParamList = {
   FamilyShell: NavigatorScreenParams<FamilyTabParamList> | undefined;
   FamilyHealth: undefined;
   FamilyAlerts: undefined;
+  FamilyFeed: undefined;
   WeeklySummary: undefined;
   ElderlyEditProfile: undefined;
   ElderlyEmergencyContacts: undefined;
@@ -151,6 +153,7 @@ export default function AppNavigator() {
             <Stack.Screen name="HealthThreshold" component={HealthThresholdScreen} />
             <Stack.Screen name="FamilyHealth" component={FamilyHealthScreen} />
             <Stack.Screen name="FamilyAlerts" component={FamilyAlertsScreen} />
+            <Stack.Screen name="FamilyFeed" component={FamilyFeedScreen} />
             <Stack.Screen name="WeeklySummary" component={WeeklySummaryScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
