@@ -31,6 +31,8 @@ import { ElderlyCard } from './familyDashboard/ElderlyCard';
 import { TodayMedsCard } from './familyDashboard/TodayMedsCard';
 import { DashboardCameraCard } from './familyDashboard/DashboardCameraCard';
 import { ActivityCard } from './familyDashboard/ActivityCard';
+import { TodayCheckinCard } from './familyDashboard/TodayCheckinCard';
+import { useCheckInStore, selectTodayCheckIn } from '../../elderly/store/checkinStore';
 import { AppointmentPreviewCard } from './familyDashboard/widgets';
 import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
@@ -60,6 +62,8 @@ export default function FamilyDashboardScreen() {
   const notifItems = useNotificationStore((s) => s.items);
   const loadNotifications = useNotificationStore((s) => s.load);
 
+  const loadTodayCheckIn = useCheckInStore((s) => s.loadToday);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const currentElderlyObj =
@@ -70,6 +74,8 @@ export default function FamilyDashboardScreen() {
 
   const latestByType = dashData?.latestMetrics ?? {};
   const healthIsLoading = dashLoading;
+
+  const todayCheckIn = useCheckInStore((s) => selectTodayCheckIn(s, elderlyId));
 
   useMountEffect(() => {
     const controller = new AbortController();
@@ -84,14 +90,20 @@ export default function FamilyDashboardScreen() {
     loadMeds(elderlyId, controller.signal);
     loadCameras(elderlyId, controller.signal);
     loadAlerts(elderlyId, controller.signal);
+    loadTodayCheckIn(elderlyId, controller.signal);
     return () => controller.abort();
-  }, [elderlyId, loadMeds, loadCameras, loadAlerts]);
+  }, [elderlyId, loadMeds, loadCameras, loadAlerts, loadTodayCheckIn]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     refreshDashboard();
     if (elderlyId) {
-      await Promise.all([loadMeds(elderlyId), loadCameras(elderlyId), loadAlerts(elderlyId)]);
+      await Promise.all([
+        loadMeds(elderlyId),
+        loadCameras(elderlyId),
+        loadAlerts(elderlyId),
+        loadTodayCheckIn(elderlyId),
+      ]);
     }
     setRefreshing(false);
   };
@@ -246,6 +258,13 @@ export default function FamilyDashboardScreen() {
           isGlucoseWarning={isGlucoseWarning}
           onVitalPress={openHealth}
         />
+
+        {elderlyId && (
+          <>
+            <View style={{ height: 16 }} />
+            <TodayCheckinCard checkIn={todayCheckIn} />
+          </>
+        )}
 
         <View style={{ height: 16 }} />
 

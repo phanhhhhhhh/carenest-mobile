@@ -18,6 +18,8 @@ import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.CameraSnapshot;
 import com.carenest.backend.entity.ChatMessage;
+import com.carenest.backend.entity.CheckIn;
+import com.carenest.backend.entity.CheckInSource;
 import com.carenest.backend.entity.EmergencyEvent;
 import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.Subscription;
@@ -25,6 +27,7 @@ import com.carenest.backend.repository.AppointmentRepository;
 import com.carenest.backend.repository.CameraDeviceRepository;
 import com.carenest.backend.repository.CameraSnapshotRepository;
 import com.carenest.backend.repository.ChatMessageRepository;
+import com.carenest.backend.repository.CheckInRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
@@ -76,6 +79,7 @@ public class DataSeeder implements CommandLineRunner {
     private final CameraDeviceRepository cameraDeviceRepository;
     private final EmergencyEventRepository emergencyEventRepository;
     private final CameraSnapshotRepository cameraSnapshotRepository;
+    private final CheckInRepository checkInRepository;
 
     private final List<User> elderlyUsers = new ArrayList<>();
     private final List<User> familyUsers = new ArrayList<>();
@@ -98,6 +102,7 @@ public class DataSeeder implements CommandLineRunner {
         seedMedications();
         seedMedicationLogs();
         seedHealthMetrics();
+        seedCheckIns();
         seedHealthMetricThresholds();
         seedAppointments();
         seedChatMessages();
@@ -386,6 +391,36 @@ public class DataSeeder implements CommandLineRunner {
 
     private BigDecimal bd(double value) {
         return BigDecimal.valueOf(Math.round(value * 100.0) / 100.0);
+    }
+
+    /** Daily 1-touch check-ins (UC A1) — 14 days of history for the first two elderly. */
+    private void seedCheckIns() {
+        log.info("Seeding daily check-ins (14 days)...");
+
+        User e1 = elderlyUsers.get(0);
+        User e2 = elderlyUsers.get(1);
+        OffsetDateTime reference = OffsetDateTime.now();
+
+        // mood cycle: mostly good, an occasional "unwell" day — never 4 (that path fires SOS)
+        short[] e1Moods = {1, 1, 2, 1, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1};
+        short[] e2Moods = {1, 2, 1, 1, 2, 1, 1, 1, 3, 1, 2, 1, 1, 1};
+
+        for (int day = 13; day >= 0; day--) {
+            OffsetDateTime at = reference.minusDays(day).withHour(7).withMinute(30).withSecond(0).withNano(0);
+            saveCheckIn(e1, e1Moods[13 - day], at);
+            saveCheckIn(e2, e2Moods[13 - day], at.plusMinutes(20));
+        }
+
+        log.info("Check-ins seeded.");
+    }
+
+    private void saveCheckIn(User elderly, short mood, OffsetDateTime at) {
+        checkInRepository.save(CheckIn.builder()
+            .elderly(elderly)
+            .mood(mood)
+            .source(CheckInSource.BUTTON)
+            .createdAt(at)
+            .build());
     }
 
     private void seedHealthMetricThresholds() {

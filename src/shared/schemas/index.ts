@@ -88,6 +88,15 @@ export const EmergencyEventSchema = z.object({
 });
 export type EmergencyEventParsed = z.infer<typeof EmergencyEventSchema>;
 
+export const CheckInSchema = z.object({
+  id: z.coerce.string(),
+  mood: z.coerce.number(),
+  note: z.string().optional().nullable(),
+  source: z.string().optional().nullable(),
+  createdAt: z.string(),
+});
+export type CheckInParsed = z.infer<typeof CheckInSchema>;
+
 export const FamilyLinkSchema = z.object({
   id: z.coerce.string().optional(),
   linkId: z.coerce.string().optional(),

@@ -83,6 +83,17 @@ export interface EmergencyEvent {
   emergencyCallLoggedByName?: string;
 }
 
+/** Daily 1-touch check-in mood: 1 = happy, 2 = neutral, 3 = unwell, 4 = emergency (SOS). */
+export type CheckInMood = 1 | 2 | 3 | 4;
+
+export interface CheckIn {
+  id: string;
+  mood: CheckInMood;
+  note?: string;
+  source?: string;
+  createdAt: string;
+}
+
 export interface NotificationItem {
   id: string;
   title: string;
