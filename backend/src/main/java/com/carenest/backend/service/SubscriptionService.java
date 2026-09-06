@@ -63,11 +63,23 @@ public class SubscriptionService {
         return isPremium ? Integer.MAX_VALUE : 1;
     }
 
-    
+
     @Transactional(readOnly = true)
     public int getActiveElderlyCount(Long familyId) {
         return familyLinkRepository
             .findAllElderlyByFamilyIdAndStatus(familyId, FamilyLinkStatus.ACTIVE)
             .size();
+    }
+
+    /** True when the user has an active CareNest Family Plus (Premium) subscription. */
+    @Transactional(readOnly = true)
+    public boolean isPremium(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        return subscriptionRepository
+            .findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
+            .map(Subscription::isPremium)
+            .orElse(false);
     }
 }

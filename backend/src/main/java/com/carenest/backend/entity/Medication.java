@@ -66,6 +66,14 @@ public class Medication {
     @Column(name = "photo_url", length = 512)
     private String photoUrl;
 
+    /**
+     * Optional URL of a family member's recorded voice prompt, played by the
+     * Elderly device at reminder time instead of the standard voice (UC B2 —
+     * a CareNest Family Plus feature).
+     */
+    @Column(name = "voice_url", length = 512)
+    private String voiceUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

@@ -29,6 +29,7 @@ public class CameraService {
     private final NotificationRepository notificationRepository;
     private final FcmService fcmService;
     private final FamilyLinkRepository familyLinkRepository;
+    private final CameraConsentService cameraConsentService;
 
     private static final ZoneId ICT = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
@@ -37,6 +38,9 @@ public class CameraService {
     public CameraDevice bindCamera(Long elderlyId, String deviceSn, String label) {
         User elderly = userRepository.findById(elderlyId)
             .orElseThrow(() -> new NotFoundException("User not found"));
+
+        // UC D1: no camera may be linked without the elderly person's explicit consent.
+        cameraConsentService.requireConsent(elderlyId);
 
         if (cameraDeviceRepository.existsByDeviceSn(deviceSn)) {
             throw new ConflictException("Device " + deviceSn + " is already bound to another account");
@@ -86,6 +90,14 @@ public class CameraService {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
             .orElseThrow(() -> new NotFoundException("Camera not found"));
 
+        if (!cameraConsentService.hasConsent(device.getElderly().getId())) {
+            return Map.of("status", "CONSENT_REQUIRED",
+                "message", "Camera monitoring is turned off — the elderly person has not consented");
+        }
+        if (device.isPrivacyMode()) {
+            return Map.of("status", "PRIVACY",
+                "message", "Người thân đang tạm tắt camera để riêng tư");
+        }
         if (!device.isOnline()) {
             return Map.of(
                 "status", "OFFLINE",
@@ -112,6 +124,20 @@ public class CameraService {
         }
 
         CameraDevice camera = cameras.get(0);
+
+        // UC D4: consent / privacy block the snapshot but MUST NOT block the SOS.
+        if (!cameraConsentService.hasConsent(elderlyId) || camera.isPrivacyMode()) {
+            CameraSnapshot blocked = CameraSnapshot.builder()
+                .camera(camera)
+                .elderly(camera.getElderly())
+                .trigger(CameraSnapshot.SnapshotTrigger.SOS)
+                .emergencyEventId(emergencyEventId)
+                .success(false)
+                .errorMessage(camera.isPrivacyMode() ? "Privacy mode active" : "Camera consent not given")
+                .build();
+            return cameraSnapshotRepository.save(blocked);
+        }
+
         if (!camera.isOnline()) {
             CameraSnapshot failed = CameraSnapshot.builder()
                 .camera(camera)
@@ -311,6 +337,12 @@ public class CameraService {
     public Map<String, Object> startTwoWayAudio(Long deviceId) {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
             .orElseThrow(() -> new NotFoundException("Camera not found"));
+        if (!cameraConsentService.hasConsent(device.getElderly().getId())) {
+            return Map.of("status", "ERROR", "message", "Camera monitoring is not consented to");
+        }
+        if (device.isPrivacyMode()) {
+            return Map.of("status", "ERROR", "message", "Camera is in privacy mode");
+        }
         if (!device.isOnline()) {
             return Map.of("status", "ERROR", "message", "Camera offline");
         }
@@ -327,21 +359,65 @@ public class CameraService {
 
     @Transactional
     public Map<String, Object> setPrivacyMode(Long deviceId, boolean enabled) {
+        return setPrivacyMode(deviceId, enabled, null);
+    }
+
+    /**
+     * Temporary Privacy Mode (UC D7). When enabled with {@code hours} (1 or 2) the
+     * window auto-expires and {@link #expirePrivacyWindows()} restores monitoring
+     * and tells the family. {@code hours == null} keeps the legacy manual toggle.
+     */
+    @Transactional
+    public Map<String, Object> setPrivacyMode(Long deviceId, boolean enabled, Integer hours) {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
             .orElseThrow(() -> new NotFoundException("Camera not found"));
 
         imouApiService.setPrivacyMode(device.getDeviceSn(), enabled, device.getAccessToken());
         device.setPrivacyMode(enabled);
         device.setStatus(enabled ? CameraDevice.CameraStatus.PRIVACY : CameraDevice.CameraStatus.ONLINE);
+
+        Instant expiresAt = null;
+        if (enabled && hours != null) {
+            int clamped = Math.max(1, Math.min(2, hours));
+            expiresAt = Instant.now().plus(Duration.ofHours(clamped));
+        }
+        device.setPrivacyModeExpiresAt(expiresAt);
         cameraDeviceRepository.save(device);
 
         notifyFamilyPrivacyChange(device, enabled);
 
-        log.info("Privacy mode {} for cameraId={}", enabled ? "ON" : "OFF", deviceId);
+        log.info("Privacy mode {} for cameraId={} (expiresAt={})", enabled ? "ON" : "OFF", deviceId, expiresAt);
         return Map.of(
             "status", enabled ? "PRIVACY_ENABLED" : "PRIVACY_DISABLED",
+            "expiresAt", expiresAt != null ? expiresAt.toString() : "",
             "message", enabled ? "Camera turned off for privacy" : "Camera streaming resumed"
         );
+    }
+
+    /** UC D7: restore monitoring when a temporary Privacy Mode window has passed. */
+    @Transactional
+    @Scheduled(fixedRate = 60000)
+    public void expirePrivacyWindows() {
+        Instant now = Instant.now();
+        for (CameraDevice camera : cameraDeviceRepository.findByStatus(CameraDevice.CameraStatus.PRIVACY)) {
+            if (!camera.isPrivacyMode() || camera.getPrivacyModeExpiresAt() == null) {
+                continue;
+            }
+            if (camera.getPrivacyModeExpiresAt().isAfter(now)) {
+                continue;
+            }
+            try {
+                imouApiService.setPrivacyMode(camera.getDeviceSn(), false, camera.getAccessToken());
+            } catch (Exception e) {
+                log.warn("Imou privacy-off failed on expiry for cameraId={}: {}", camera.getId(), e.getMessage());
+            }
+            camera.setPrivacyMode(false);
+            camera.setPrivacyModeExpiresAt(null);
+            camera.setStatus(CameraDevice.CameraStatus.ONLINE);
+            cameraDeviceRepository.save(camera);
+            notifyFamilyPrivacyChange(camera, false);
+            log.info("Privacy Mode window expired — monitoring resumed for cameraId={}", camera.getId());
+        }
     }
 
     private void notifyFamilyPrivacyChange(CameraDevice device, boolean privacyOn) {
@@ -400,15 +476,17 @@ public class CameraService {
             }
         }
 
-        return Map.of(
-            "deviceId", camera.getId(),
-            "label", camera.getLabel(),
-            "status", camera.getStatus().name(),
-            "indicatorColor", color,
-            "message", message,
-            "lastSeenAt", camera.getLastSeenAt() != null ? camera.getLastSeenAt().toString() : null,
-            "privacyMode", camera.isPrivacyMode()
-        );
+        Map<String, Object> out = new java.util.HashMap<>();
+        out.put("deviceId", camera.getId());
+        out.put("label", camera.getLabel());
+        out.put("status", camera.getStatus().name());
+        out.put("indicatorColor", color);
+        out.put("message", message);
+        out.put("lastSeenAt", camera.getLastSeenAt() != null ? camera.getLastSeenAt().toString() : null);
+        out.put("privacyMode", camera.isPrivacyMode());
+        out.put("privacyModeExpiresAt",
+            camera.getPrivacyModeExpiresAt() != null ? camera.getPrivacyModeExpiresAt().toString() : null);
+        return out;
     }
 
     private CameraDevice.CameraStatus mapImouStatus(String imouStatus) {

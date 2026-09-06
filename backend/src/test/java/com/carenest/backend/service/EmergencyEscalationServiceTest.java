@@ -32,6 +32,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -100,8 +101,9 @@ class EmergencyEscalationServiceTest {
     }
 
     @Test
-    void testEscalateLevel1_withSecondaryContact_notifiesBoth( ) {
-        // AC1 & AC2
+    void testEscalateLevel1_doesNotPageSecondaryContact() {
+        // v3.5 §4.6 / UC C1: the Secondary Contact is only added at Level 2, never
+        // at the 3-minute Level 1 mark — even when one is configured.
         EmergencyEvent event = EmergencyEvent.builder()
             .id(1L)
             .elderly(elderlyUser)
@@ -110,16 +112,9 @@ class EmergencyEscalationServiceTest {
             .triggeredAt(OffsetDateTime.now().minusMinutes(4))
             .build();
 
-        ElderlyProfile profile = ElderlyProfile.builder()
-            .id(5L)
-            .user(elderlyUser)
-            .secondaryFamilyUser(secondaryFamilyUser)
-            .build();
-
         when(emergencyEventRepository.findById(1L)).thenReturn(Optional.of(event));
         when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(10L, FamilyLinkStatus.ACTIVE))
             .thenReturn(List.of(familyLink));
-        when(elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(profile));
         when(emergencyEventRepository.save(any(EmergencyEvent.class))).thenAnswer(inv -> inv.getArgument(0));
 
         emergencyEventService.escalate(1L, 1);
@@ -131,9 +126,9 @@ class EmergencyEscalationServiceTest {
         ArgumentCaptor<List<Long>> recipientsCaptor = ArgumentCaptor.forClass(List.class);
         verify(fcmService).sendToUsers(recipientsCaptor.capture(), anyString(), anyString(), anyMap());
 
-        List<Long> recipients = recipientsCaptor.getValue();
-        assertTrue(recipients.contains(20L));
-        assertTrue(recipients.contains(30L)); // AC2: secondary contact included!
+        assertEquals(List.of(20L), recipientsCaptor.getValue());
+        // secondary contact lookup must not even be attempted at Level 1
+        verify(elderlyProfileRepository, never()).findByUserIdAndDeletedAtIsNull(anyLong());
     }
 
     @Test
@@ -147,16 +142,9 @@ class EmergencyEscalationServiceTest {
             .triggeredAt(OffsetDateTime.now().minusMinutes(4))
             .build();
 
-        ElderlyProfile profile = ElderlyProfile.builder()
-            .id(6L)
-            .user(elderlyUser)
-            .secondaryFamilyUser(null)
-            .build();
-
         when(emergencyEventRepository.findById(2L)).thenReturn(Optional.of(event));
         when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(10L, FamilyLinkStatus.ACTIVE))
             .thenReturn(List.of(familyLink));
-        when(elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(profile));
         when(emergencyEventRepository.save(any(EmergencyEvent.class))).thenAnswer(inv -> inv.getArgument(0));
 
         emergencyEventService.escalate(2L, 1);
@@ -196,6 +184,41 @@ class EmergencyEscalationServiceTest {
         verify(fcmService).sendToUsers(anyList(), anyString(), anyString(), dataCaptor.capture());
         assertEquals("SOS_ESCALATION_LEVEL_2", dataCaptor.getValue().get("type"));
         assertEquals("2", dataCaptor.getValue().get("escalationLevel"));
+    }
+
+    @Test
+    void testEscalateLevel2_addsSecondaryContact() {
+        // v3.5 §4.6 / UC C1: at Level 2 (10 min, no ack) the configured Secondary
+        // Contact is pulled in alongside the whole family.
+        EmergencyEvent event = EmergencyEvent.builder()
+            .id(8L)
+            .elderly(elderlyUser)
+            .status(EmergencyStatus.ACTIVE)
+            .escalationLevel(1)
+            .triggeredAt(OffsetDateTime.now().minusMinutes(11))
+            .build();
+
+        ElderlyProfile profile = ElderlyProfile.builder()
+            .id(7L)
+            .user(elderlyUser)
+            .secondaryFamilyUser(secondaryFamilyUser)
+            .build();
+
+        when(emergencyEventRepository.findById(8L)).thenReturn(Optional.of(event));
+        when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(10L, FamilyLinkStatus.ACTIVE))
+            .thenReturn(List.of(familyLink));
+        when(elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(profile));
+        when(emergencyEventRepository.save(any(EmergencyEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        emergencyEventService.escalate(8L, 2);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Long>> recipientsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(fcmService).sendToUsers(recipientsCaptor.capture(), anyString(), anyString(), anyMap());
+
+        List<Long> recipients = recipientsCaptor.getValue();
+        assertTrue(recipients.contains(20L));
+        assertTrue(recipients.contains(30L));
     }
 
     @Test
@@ -266,6 +289,31 @@ class EmergencyEscalationServiceTest {
         assertNotNull(resp.getEmergencyCallLoggedAt());
         assertEquals(20L, resp.getEmergencyCallLoggedBy());
         assertEquals("Con trai Bình", resp.getEmergencyCallLoggedByName());
+    }
+
+    @Test
+    void testAcknowledgeAllForUser_neverResolvesActiveEmergency() {
+        // "Mark all read" from the alerts list must not close a live SOS or stop
+        // escalation — only stamp a seen marker on already-resolved incidents.
+        EmergencyEvent active = EmergencyEvent.builder()
+            .id(50L).elderly(elderlyUser).status(EmergencyStatus.ACTIVE).escalationLevel(1)
+            .triggeredAt(OffsetDateTime.now().minusMinutes(2)).build();
+        EmergencyEvent resolved = EmergencyEvent.builder()
+            .id(51L).elderly(elderlyUser).status(EmergencyStatus.RESOLVED)
+            .triggeredAt(OffsetDateTime.now().minusDays(1)).build();
+
+        when(emergencyEventRepository.findByElderlyIdOrderByTriggeredAtDesc(10L))
+            .thenReturn(List.of(active, resolved));
+        when(emergencyEventRepository.save(any(EmergencyEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        int count = emergencyEventService.acknowledgeAllForUser(10L, 20L);
+
+        assertEquals(1, count);
+        assertEquals(EmergencyStatus.ACTIVE, active.getStatus());
+        assertNull(active.getAcknowledgedAt());
+        assertNull(active.getResolvedAt());
+        assertEquals(20L, resolved.getAcknowledgedBy());
+        assertNotNull(resolved.getAcknowledgedAt());
     }
 
     @Test

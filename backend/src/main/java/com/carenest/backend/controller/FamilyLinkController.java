@@ -56,9 +56,10 @@ public class FamilyLinkController {
     @PreAuthorize("@authz.isFamilyLinkParticipant(authentication.principal, #id)")
     public ResponseEntity<FamilyLinkResponse> updateStatus(
         @PathVariable Long id,
+        @org.springframework.security.core.annotation.AuthenticationPrincipal Long principalId,
         @Valid @RequestBody FamilyLinkStatusRequest request
     ) {
-        return ResponseEntity.ok(familyLinkService.updateStatus(id, request.getStatus()));
+        return ResponseEntity.ok(familyLinkService.updateStatus(id, request.getStatus(), principalId));
     }
 
     @PatchMapping("/family-links/{id}/availability")

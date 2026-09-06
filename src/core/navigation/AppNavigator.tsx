@@ -46,6 +46,10 @@ import NotificationSettingsScreen from '../../features/notifications/screens/Not
 import WeeklySummaryScreen from '../../features/family/screens/WeeklySummaryScreen';
 import ElderlyQRInviteScreen from '../../features/elderly/screens/ElderlyQRInviteScreen';
 import FamilyScanQRScreen from '../../features/family/screens/FamilyScanQRScreen';
+import FamilyVisitStreakScreen from '../../features/family/screens/FamilyVisitStreakScreen';
+import FamilyDigestScreen from '../../features/family/screens/FamilyDigestScreen';
+import ElderlyCameraConsentScreen from '../../features/elderly/screens/ElderlyCameraConsentScreen';
+import PrivacyPolicyScreen from '../../features/auth/screens/PrivacyPolicyScreen';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -83,6 +87,10 @@ export type RootStackParamList = {
   PremiumPlans: undefined;
   ElderlyQRInvite: undefined;
   FamilyScanQR: undefined;
+  FamilyVisitStreak: undefined;
+  FamilyDigest: undefined;
+  ElderlyCameraConsent: undefined;
+  PrivacyPolicy: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -128,6 +136,7 @@ export default function AppNavigator() {
             <Stack.Screen name="PinSetup" component={PinSetupScreen} />
             <Stack.Screen name="PinVerify" component={PinVerifyScreen} />
             <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
           </>
         ) : (
           <>
@@ -160,6 +169,10 @@ export default function AppNavigator() {
             <Stack.Screen name="PremiumPlans" component={PremiumPlansScreen} />
             <Stack.Screen name="ElderlyQRInvite" component={ElderlyQRInviteScreen} />
             <Stack.Screen name="FamilyScanQR" component={FamilyScanQRScreen} />
+            <Stack.Screen name="FamilyVisitStreak" component={FamilyVisitStreakScreen} />
+            <Stack.Screen name="FamilyDigest" component={FamilyDigestScreen} />
+            <Stack.Screen name="ElderlyCameraConsent" component={ElderlyCameraConsentScreen} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
             <Stack.Screen name="PinSetup" component={PinSetupScreen} />
           </>
         )}

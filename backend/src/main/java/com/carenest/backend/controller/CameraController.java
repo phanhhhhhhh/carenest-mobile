@@ -1,8 +1,10 @@
 package com.carenest.backend.controller;
 
+import com.carenest.backend.dto.camera.CameraConsentResponse;
 import com.carenest.backend.dto.camera.CameraStatusResponse;
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.CameraSnapshot;
+import com.carenest.backend.service.CameraConsentService;
 import com.carenest.backend.service.CameraService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,24 @@ import java.util.stream.Collectors;
 public class CameraController {
 
     private final CameraService cameraService;
+    private final CameraConsentService cameraConsentService;
+
+    /** Camera consent onboarding state (UC D1). */
+    @GetMapping("/elderly/{elderlyId}/camera-consent")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
+    public ResponseEntity<CameraConsentResponse> getCameraConsent(@PathVariable Long elderlyId) {
+        return ResponseEntity.ok(cameraConsentService.getStatus(elderlyId));
+    }
+
+    /** The elderly person accepts or declines camera monitoring (UC D1). */
+    @PostMapping("/elderly/{elderlyId}/camera-consent")
+    @PreAuthorize("hasRole('ELDERLY') and #elderlyId == authentication.principal")
+    public ResponseEntity<CameraConsentResponse> decideCameraConsent(
+            @PathVariable Long elderlyId,
+            @RequestBody Map<String, Boolean> body) {
+        boolean accepted = Boolean.TRUE.equals(body.get("accepted"));
+        return ResponseEntity.ok(cameraConsentService.decide(elderlyId, accepted));
+    }
 
     @PostMapping("/elderly/{elderlyId}/cameras")
     @PreAuthorize("hasRole('FAMILY') and @authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
@@ -145,9 +165,11 @@ public class CameraController {
     @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> togglePrivacy(
             @PathVariable Long deviceId,
-            @RequestBody Map<String, Boolean> body) {
-        boolean enabled = body.getOrDefault("enabled", true);
-        return ResponseEntity.ok(cameraService.setPrivacyMode(deviceId, enabled));
+            @RequestBody Map<String, Object> body) {
+        boolean enabled = !Boolean.FALSE.equals(body.get("enabled"));
+        Integer hours = body.get("hours") != null
+            ? Integer.valueOf(body.get("hours").toString()) : null;
+        return ResponseEntity.ok(cameraService.setPrivacyMode(deviceId, enabled, hours));
     }
 
     @GetMapping("/cameras/{deviceId}/status")

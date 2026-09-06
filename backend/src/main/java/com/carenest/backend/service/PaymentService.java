@@ -54,8 +54,23 @@ public class PaymentService {
     @Value("${payment.momo.pay-url:https://test-payment.momo.vn/v2/gateway/api/create}")
     private String momoPayUrl;
 
+    // CareNest Family Plus pricing (Master Spec v3.5 §8 / UC G3).
     private static final BigDecimal PREMIUM_MONTHLY_PRICE = new BigDecimal("49000");
-    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("399000");
+    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("499000");
+
+    // VietQR / NAPAS bank transfer — the spec's primary payment channel, reconciled
+    // manually. Configure per deployment; blank values disable the VietQR option.
+    @Value("${payment.vietqr.bank-bin:}")
+    private String vietqrBankBin;
+
+    @Value("${payment.vietqr.bank-name:}")
+    private String vietqrBankName;
+
+    @Value("${payment.vietqr.account-number:}")
+    private String vietqrAccountNumber;
+
+    @Value("${payment.vietqr.account-name:}")
+    private String vietqrAccountName;
 
     
     @Transactional
@@ -226,7 +241,93 @@ public class PaymentService {
         }
     }
 
-    
+    /**
+     * VietQR / NAPAS bank transfer (UC G3) — the spec's primary payment channel.
+     * Creates a PENDING subscription and returns transfer instructions plus a
+     * VietQR image URL. Activation is MANUAL: an operator reconciles the incoming
+     * transfer and calls {@link #confirmManualPayment(String)}.
+     */
+    @Transactional
+    public com.carenest.backend.dto.payment.PaymentInitResponse createVietQrPayment(Long userId, String planType) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        if (vietqrBankBin.isBlank() || vietqrAccountNumber.isBlank()) {
+            throw new IllegalStateException("VietQR is not configured for this deployment");
+        }
+
+        Subscription.PlanType plan = Subscription.PlanType.valueOf(planType);
+        BigDecimal amount = plan == Subscription.PlanType.PREMIUM_YEARLY
+                ? PREMIUM_YEARLY_PRICE : PREMIUM_MONTHLY_PRICE;
+
+        String txnRef = generateTxnRef(userId);
+        subscriptionRepository.save(Subscription.builder()
+                .user(user)
+                .planType(plan)
+                .status(Subscription.SubscriptionStatus.PENDING)
+                .paymentProvider("VIETQR")
+                .transactionId(txnRef)
+                .amount(amount)
+                .startDate(Instant.now())
+                .build());
+
+        String memo = "CARENEST " + txnRef;
+        String qrUrl = "https://img.vietqr.io/image/" + vietqrBankBin + "-" + vietqrAccountNumber
+                + "-compact2.png?amount=" + amount.toBigInteger()
+                + "&addInfo=" + java.net.URLEncoder.encode(memo, StandardCharsets.UTF_8)
+                + "&accountName=" + java.net.URLEncoder.encode(vietqrAccountName, StandardCharsets.UTF_8);
+
+        log.info("VietQR payment created (manual reconciliation): userId={} txnRef={}", userId, txnRef);
+        return com.carenest.backend.dto.payment.PaymentInitResponse.builder()
+                .paymentUrl(qrUrl)
+                .transactionId(txnRef)
+                .amount(amount)
+                .planType(planType)
+                .provider("VIETQR")
+                .bankName(vietqrBankName)
+                .accountNumber(vietqrAccountNumber)
+                .accountName(vietqrAccountName)
+                .transferMemo(memo)
+                .activation("MANUAL_REVIEW")
+                .build();
+    }
+
+    /** Operator view: all payments still awaiting manual reconciliation (UC G3). */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listPendingPayments() {
+        return subscriptionRepository
+                .findByStatusOrderByStartDateDesc(Subscription.SubscriptionStatus.PENDING)
+                .stream()
+                .map(sub -> {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("transactionId", sub.getTransactionId());
+                    m.put("userId", sub.getUser() != null ? sub.getUser().getId() : null);
+                    m.put("userName", sub.getUser() != null ? sub.getUser().getName() : null);
+                    m.put("planType", sub.getPlanType().name());
+                    m.put("amount", sub.getAmount());
+                    m.put("provider", sub.getPaymentProvider());
+                    m.put("createdAt", sub.getStartDate());
+                    return m;
+                })
+                .toList();
+    }
+
+    /** Operator marks a VietQR transfer as received and reconciled (UC G3). */
+    @Transactional
+    public Map<String, String> confirmManualPayment(String txnRef) {
+        return subscriptionRepository.findByTransactionId(txnRef)
+                .map(sub -> {
+                    if (sub.getStatus() == Subscription.SubscriptionStatus.ACTIVE) {
+                        return Map.of("status", "ALREADY_ACTIVE", "message", "Subscription is already active");
+                    }
+                    activateSubscription(txnRef,
+                            sub.getPaymentProvider() != null ? sub.getPaymentProvider() : "VIETQR");
+                    log.info("Manual payment reconciled and activated: txnRef={}", txnRef);
+                    return Map.of("status", "ACTIVATED", "message", "Family Plus activated");
+                })
+                .orElse(Map.of("status", "NOT_FOUND", "message", "No pending payment with that reference"));
+    }
+
+
     @Transactional(readOnly = true)
     public Map<String, Object> getSubscriptionStatus(Long userId) {
         Optional<Subscription> activeSub = subscriptionRepository.findByUserIdAndStatus(

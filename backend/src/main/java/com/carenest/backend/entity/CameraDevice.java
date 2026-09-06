@@ -55,9 +55,13 @@ public class CameraDevice {
     
     private Instant lastSeenAt;
 
-    
+
     @Builder.Default
     private boolean privacyMode = false;
+
+    /** When a temporary Privacy Mode window auto-expires and monitoring resumes (UC D7). */
+    @Column(name = "privacy_mode_expires_at")
+    private Instant privacyModeExpiresAt;
 
     
     @Column(length = 5)

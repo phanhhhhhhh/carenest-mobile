@@ -4,15 +4,19 @@ import com.carenest.backend.dto.chat.ChatHistoryResponse;
 import com.carenest.backend.dto.chat.ChatRequest;
 import com.carenest.backend.dto.chat.ChatResponse;
 import com.carenest.backend.exception.GeminiApiException;
+import com.carenest.backend.exception.PaymentRequiredException;
 import com.carenest.backend.entity.*;
 import com.carenest.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -33,8 +37,21 @@ public class ChatService {
     private final MedicationRepository medicationRepository;
     private final AppointmentRepository appointmentRepository;
     private final FamilyLinkRepository familyLinkRepository;
+    private final SubscriptionService subscriptionService;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm 'on' EEEE, MMM d");
+    private static final ZoneId ICT = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    /** Free-plan companion-chat allowance per day (UC A5 / G3). */
+    @Value("${carenest.chat.free-daily-limit:5}")
+    private int freeDailyLimit;
+
+    /** Fairly unambiguous emergency phrasings — steer these to SOS, don't chat. */
+    private static final List<String> EMERGENCY_PHRASES = List.of(
+        "cấp cứu", "gọi 115", "khó thở", "đau ngực", "đau tim", "đột quỵ", "tai biến",
+        "bất tỉnh", "ngất xỉu", "chảy máu nhiều", "té ngã", "bị ngã không dậy được",
+        "emergency", "call an ambulance", "can't breathe", "cannot breathe", "chest pain",
+        "i'm dying", "help me now");
 
     
     @Transactional
@@ -46,13 +63,31 @@ public class ChatService {
             ? request.getSessionId()
             : "default-" + userId;
 
-        ChatMessage userMsg = ChatMessage.builder()
-            .user(user)
-            .role(ChatMessage.ChatRole.USER)
-            .content(request.getMessage())
-            .sessionId(sessionId)
-            .build();
-        chatMessageRepository.save(userMsg);
+        boolean premium = subscriptionService.isPremium(userId);
+        Instant startOfDay = LocalDate.now(ICT).atStartOfDay(ICT).toInstant();
+        long usedToday = chatMessageRepository.countByUserIdAndRoleAndCreatedAtAfter(
+            userId, ChatMessage.ChatRole.USER, startOfDay);
+
+        // UC A5 alt-flow: an emergency-sounding message is steered to the dedicated
+        // SOS action rather than answered as ordinary companion chat. It does not
+        // consume the free daily allowance.
+        if (looksLikeEmergency(request.getMessage())) {
+            saveUserMessage(user, request.getMessage(), sessionId);
+            String steer = "Nếu đây là trường hợp khẩn cấp, hãy bấm ngay nút SOS màu đỏ trên màn hình "
+                + "chính để báo cho cả nhà, hoặc gọi 115. Trợ lý AI không thay thế được cấp cứu.";
+            ChatMessage aiMsg = saveAiMessage(user, steer, "EMERGENCY", buildContextData(user), sessionId);
+            return response(aiMsg, steer, "EMERGENCY", sessionId,
+                premium ? null : (int) Math.max(0, freeDailyLimit - usedToday));
+        }
+
+        // UC A5 / G3: the free plan gets ~5 companion messages per day; Family Plus is unlimited.
+        if (!premium && usedToday >= freeDailyLimit) {
+            throw new PaymentRequiredException("Bạn đã dùng hết " + freeDailyLimit
+                + " lượt trò chuyện miễn phí với trợ lý AI hôm nay. Nâng cấp CareNest Family Plus "
+                + "để trò chuyện không giới hạn.");
+        }
+
+        saveUserMessage(user, request.getMessage(), sessionId);
 
         String systemPrompt = buildSystemPrompt(user);
         String conversationHistory = buildConversationContext(userId);
@@ -73,26 +108,52 @@ public class ChatService {
             intent = "ERROR";
         }
 
-        Map<String, Object> contextData = buildContextData(user);
+        ChatMessage aiMsg = saveAiMessage(user, aiResponse, intent, buildContextData(user), sessionId);
 
-        ChatMessage aiMsg = ChatMessage.builder()
+        Integer remaining = premium ? null : (int) Math.max(0, freeDailyLimit - (usedToday + 1));
+        return response(aiMsg, aiResponse, intent, sessionId, remaining);
+    }
+
+    private ChatMessage saveUserMessage(User user, String content, String sessionId) {
+        return chatMessageRepository.save(ChatMessage.builder()
+            .user(user)
+            .role(ChatMessage.ChatRole.USER)
+            .content(content)
+            .sessionId(sessionId)
+            .build());
+    }
+
+    private ChatMessage saveAiMessage(User user, String content, String intent,
+                                      Map<String, Object> contextData, String sessionId) {
+        return chatMessageRepository.save(ChatMessage.builder()
             .user(user)
             .role(ChatMessage.ChatRole.AI)
-            .content(aiResponse)
+            .content(content)
             .intent(intent)
             .contextData(contextData)
             .sessionId(sessionId)
-            .build();
-        chatMessageRepository.save(aiMsg);
+            .build());
+    }
 
+    private ChatResponse response(ChatMessage aiMsg, String content, String intent,
+                                  String sessionId, Integer remainingFreeMessages) {
         return ChatResponse.builder()
             .messageId(aiMsg.getId())
             .role("AI")
-            .content(aiResponse)
+            .content(content)
             .intent(intent)
             .sessionId(sessionId)
             .createdAt(aiMsg.getCreatedAt())
+            .remainingFreeMessages(remainingFreeMessages)
             .build();
+    }
+
+    private static boolean looksLikeEmergency(String message) {
+        if (message == null || message.isBlank()) {
+            return false;
+        }
+        String lower = message.toLowerCase(Locale.ROOT);
+        return EMERGENCY_PHRASES.stream().anyMatch(lower::contains);
     }
 
     

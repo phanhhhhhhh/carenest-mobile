@@ -119,12 +119,16 @@ export function Settings({
   onUpgradePremium,
   onHelpSupport,
   onLogout,
+  onVisitStreak,
+  onDigest,
 }: {
   onEditProfile: () => void;
   onNotificationSettings: () => void;
   onUpgradePremium: () => void;
   onHelpSupport: () => void;
   onLogout: () => void;
+  onVisitStreak?: () => void;
+  onDigest?: () => void;
 }) {
   const items: {
     icon: keyof typeof Ionicons.glyphMap;
@@ -140,6 +144,28 @@ export function Settings({
       bg: '#E6F7F5',
       onPress: onEditProfile,
     },
+    ...(onVisitStreak
+      ? [
+          {
+            icon: 'home-outline' as keyof typeof Ionicons.glyphMap,
+            label: 'Nhắc Về Thăm Nhà',
+            color: '#0EA5E9',
+            bg: '#E0F2FE',
+            onPress: onVisitStreak,
+          },
+        ]
+      : []),
+    ...(onDigest
+      ? [
+          {
+            icon: 'newspaper-outline' as keyof typeof Ionicons.glyphMap,
+            label: 'Bản tin gia đình',
+            color: '#7C3AED',
+            bg: '#EDE9FE',
+            onPress: onDigest,
+          },
+        ]
+      : []),
     {
       icon: 'notifications-outline',
       label: 'Cài đặt thông báo & DND',

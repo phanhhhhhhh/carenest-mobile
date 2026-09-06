@@ -185,13 +185,19 @@ public class EmergencyEventService {
             .map(fl -> fl.getFamily().getId())
             .collect(Collectors.toList());
 
-        // AC2: Check if elderly has secondaryFamilyContact configured
-        Long secondaryUserId = elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(elderly.getId())
-            .map(p -> p.getSecondaryFamilyUser() != null ? p.getSecondaryFamilyUser().getId() : null)
-            .orElse(null);
+        // Secondary Contact fallback is added ONLY at Level 2 (UC C1, Master Spec
+        // v3.5 §4.6): a neighbour or relative outside the family group must not be
+        // paged at the 3-minute Level 1 mark — only once 10 minutes pass with no
+        // acknowledgement and the family is urged to call 115.
+        Long secondaryUserId = null;
+        if (targetLevel >= 2) {
+            secondaryUserId = elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(elderly.getId())
+                .map(p -> p.getSecondaryFamilyUser() != null ? p.getSecondaryFamilyUser().getId() : null)
+                .orElse(null);
 
-        if (secondaryUserId != null && !familyUserIds.contains(secondaryUserId)) {
-            familyUserIds.add(secondaryUserId);
+            if (secondaryUserId != null && !familyUserIds.contains(secondaryUserId)) {
+                familyUserIds.add(secondaryUserId);
+            }
         }
 
         OffsetDateTime now = OffsetDateTime.now();
@@ -204,11 +210,11 @@ public class EmergencyEventService {
             String body;
             String fcmType;
             if (targetLevel == 1) {
-                title = "CẢNH BÁO KHẨN CẤP CẤP ĐỘ 2 (CHƯA PHẢN HỒI)";
+                title = "CẢNH BÁO KHẨN CẤP — CẤP ĐỘ 1 (CHƯA PHẢN HỒI)";
                 body = elderly.getName() + " đã phát tín hiệu SOS cách đây 3 phút nhưng chưa ai xác nhận! Vui lòng kiểm tra ngay!";
                 fcmType = "SOS_ESCALATION_LEVEL_1";
             } else {
-                title = "BÁO ĐỘNG ĐỎ: SOS CHƯA ĐƯỢC XỬ LÝ (10 PHÚT)";
+                title = "BÁO ĐỘNG ĐỎ — CẤP ĐỘ 2: SOS CHƯA ĐƯỢC XỬ LÝ (10 PHÚT)";
                 body = elderly.getName() + " đã gửi SOS hơn 10 phút chưa được xử lý! Bấm để gọi cấp cứu 115 ngay lập tức!";
                 fcmType = "SOS_ESCALATION_LEVEL_2";
             }
@@ -289,26 +295,33 @@ public class EmergencyEventService {
         ).map(this::toResponse).orElse(null);
     }
 
+    /**
+     * "Mark all as read" from the family alerts list. This is a UI dismiss action,
+     * NOT an emergency acknowledgement: it must never resolve an ACTIVE SOS or halt
+     * the server-side escalation chain (UC C1). It only stamps a seen marker on
+     * events that are already resolved or cancelled. A live emergency stays ACTIVE
+     * and keeps escalating until a real per-event {@link #acknowledge} call.
+     */
     @Transactional
     public int acknowledgeAllForUser(Long elderlyId, Long acknowledgedBy) {
-        List<EmergencyEvent> activeEvents = emergencyEventRepository
-            .findByElderlyIdAndStatusOrderByTriggeredAtDesc(elderlyId, EmergencyStatus.ACTIVE);
+        List<EmergencyEvent> events = emergencyEventRepository
+            .findByElderlyIdOrderByTriggeredAtDesc(elderlyId);
 
         OffsetDateTime now = OffsetDateTime.now();
         int count = 0;
-        for (EmergencyEvent event : activeEvents) {
-            if (event.getStatus() == EmergencyStatus.RESOLVED) {
-                continue;
+        for (EmergencyEvent event : events) {
+            if (event.getStatus() == EmergencyStatus.ACTIVE) {
+                continue; // never auto-resolve a live emergency via "mark read"
             }
-            event.setAcknowledgedAt(now);
-            event.setAcknowledgedBy(acknowledgedBy);
-            event.setStatus(EmergencyStatus.RESOLVED);
-            event.setResolvedAt(now);
-            emergencyEventRepository.save(event);
-            count++;
+            if (event.getAcknowledgedAt() == null) {
+                event.setAcknowledgedAt(now);
+                event.setAcknowledgedBy(acknowledgedBy);
+                emergencyEventRepository.save(event);
+                count++;
+            }
         }
 
-        log.info("Acknowledged {} active emergency events for elderlyId={}", count, elderlyId);
+        log.info("Marked {} resolved emergency events as read for elderlyId={}", count, elderlyId);
         return count;
     }
 

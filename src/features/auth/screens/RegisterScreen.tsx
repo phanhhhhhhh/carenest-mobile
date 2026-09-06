@@ -404,8 +404,10 @@ export default function RegisterScreen() {
               {agreedToTerms && <Ionicons name="checkmark" size={14} color={White} />}
             </View>
             <Text style={styles.termsText}>
-              Tôi đồng ý với <Text style={styles.termsLink}>Điều khoản sử dụng</Text> và{' '}
-              <Text style={styles.termsLink}>Chính sách bảo mật</Text>
+              Tôi đồng ý với Điều khoản sử dụng và{' '}
+              <Text style={styles.termsLink} onPress={() => navigation.navigate('PrivacyPolicy')}>
+                Chính sách bảo mật
+              </Text>
             </Text>
           </TouchableOpacity>
           {touched.terms && errors.terms && (

@@ -30,4 +30,7 @@ public class MedicationRequest {
     private OffsetDateTime nextDoseTime;
 
     private String instructions;
+
+    /** Optional URL of a family member's recorded reminder voice (Family Plus). */
+    private String voiceUrl;
 }

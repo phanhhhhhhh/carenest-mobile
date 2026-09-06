@@ -20,6 +20,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
         List<Subscription.PlanType> planTypes
     );
 
-    
+
     Optional<Subscription> findByTransactionId(String transactionId);
+
+    List<Subscription> findByStatusOrderByStartDateDesc(Subscription.SubscriptionStatus status);
 }

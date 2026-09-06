@@ -106,9 +106,16 @@ public class FamilyLinkService {
             .collect(Collectors.toList());
     }
 
-    public FamilyLinkResponse updateStatus(Long id, FamilyLinkStatus status) {
+    public FamilyLinkResponse updateStatus(Long id, FamilyLinkStatus status, Long actingUserId) {
         FamilyLink link = familyLinkRepository.findByIdAndDeletedAtIsNull(id)
             .orElseThrow(() -> new NotFoundException("FamilyLink not found: " + id));
+
+        // UC E4: only the elderly user may accept (activate) a pending link request.
+        if (status == FamilyLinkStatus.ACTIVE
+            && actingUserId != null && !actingUserId.equals(link.getElderly().getId())) {
+            throw new com.carenest.backend.exception.UnauthorizedException(
+                "Only the elderly user can accept a family link request");
+        }
 
         link.setStatus(status);
         return toResponse(familyLinkRepository.save(link));
