@@ -15,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +29,9 @@ public class CheckInService {
 
     /** mood value that means "unwell" — pages the family sequentially (UC A3). */
     private static final short MOOD_UNWELL = 3;
+
+    /** All "today" boundaries are Vietnam local time, not the server's zone. */
+    private static final ZoneId ICT = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final CheckInRepository checkInRepository;
     private final UserRepository userRepository;
@@ -66,8 +71,7 @@ public class CheckInService {
 
     @Transactional(readOnly = true)
     public CheckInResponse getTodayLatest(Long elderlyId) {
-        OffsetDateTime startOfDay = OffsetDateTime.now()
-            .withHour(0).withMinute(0).withSecond(0).withNano(0);
+        OffsetDateTime startOfDay = LocalDate.now(ICT).atStartOfDay(ICT).toOffsetDateTime();
         return checkInRepository
             .findByElderlyIdAndCreatedAtBetweenOrderByCreatedAtDesc(elderlyId, startOfDay, startOfDay.plusDays(1))
             .stream()

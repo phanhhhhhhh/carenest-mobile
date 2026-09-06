@@ -27,6 +27,7 @@ interface MedicationListState {
     elderlyId?: string;
     scheduleTimes?: string[];
     daysOfWeek?: number[];
+    voiceUrl?: string;
   }) => Promise<void>;
   updateMedication: (params: {
     medicationId: string;
@@ -35,6 +36,7 @@ interface MedicationListState {
     instructions?: string;
     scheduleTimes?: string[];
     daysOfWeek?: number[];
+    voiceUrl?: string;
   }) => Promise<void>;
   deleteMedication: (medicationId: string) => Promise<boolean>;
   fetchLogs: (medicationId: string) => Promise<void>;
@@ -51,6 +53,7 @@ function toMedicationItem(m: ReturnType<typeof MedicationSchema.parse>): Medicat
     nextDoseTime: m.nextDoseTime ?? undefined,
     scheduleTimes: m.schedule?.times ?? [],
     daysOfWeek: m.schedule?.daysOfWeek ?? [],
+    voiceUrl: m.voiceUrl ?? undefined,
     // Real taken-today status is filled in by `load()` from today's medication
     // logs — the medication list endpoint itself has no `taken` field.
     taken: false,
@@ -127,7 +130,15 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
     }
   },
 
-  addMedication: async ({ name, dosage, instructions, elderlyId, scheduleTimes, daysOfWeek }) => {
+  addMedication: async ({
+    name,
+    dosage,
+    instructions,
+    elderlyId,
+    scheduleTimes,
+    daysOfWeek,
+    voiceUrl,
+  }) => {
     try {
       const userId = elderlyId ?? get().currentElderlyId ?? (await getUserId());
       if (!userId) return;
@@ -137,6 +148,7 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
         dosage,
         instructions,
       };
+      if (voiceUrl !== undefined) data.voiceUrl = voiceUrl;
       if (scheduleTimes && scheduleTimes.length > 0) {
         data.schedule = {
           times: scheduleTimes,
@@ -157,12 +169,14 @@ export const useMedicationStore = create<MedicationListState>((set, get) => ({
     instructions,
     scheduleTimes,
     daysOfWeek,
+    voiceUrl,
   }) => {
     try {
       const data: Record<string, unknown> = {};
       if (name !== undefined) data.name = name;
       if (dosage !== undefined) data.dosage = dosage;
       if (instructions !== undefined) data.instructions = instructions;
+      if (voiceUrl !== undefined) data.voiceUrl = voiceUrl;
       if (scheduleTimes !== undefined) {
         const schedule: Record<string, unknown> = { times: scheduleTimes };
         if (daysOfWeek !== undefined) schedule.daysOfWeek = daysOfWeek;

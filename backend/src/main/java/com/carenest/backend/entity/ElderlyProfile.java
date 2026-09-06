@@ -69,6 +69,19 @@ public class ElderlyProfile {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    /** Camera consent onboarding (UC D1). */
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "camera_consent_status", nullable = false, length = 12)
+    @Builder.Default
+    private CameraConsentStatus cameraConsentStatus = CameraConsentStatus.PENDING;
+
+    @Column(name = "camera_consent_decided_at")
+    private OffsetDateTime cameraConsentDecidedAt;
+
+    /** When a declined consent becomes eligible for its single 30-day re-ask. */
+    @Column(name = "camera_consent_retry_after")
+    private OffsetDateTime cameraConsentRetryAfter;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

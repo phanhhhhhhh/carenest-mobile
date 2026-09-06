@@ -52,6 +52,13 @@ export function buildProfileMenuItems(navigation: Nav): ProfileMenuItem[] {
       onPress: () => navigation.navigate('ElderlyQRInvite'),
     },
     {
+      icon: 'videocam-outline',
+      label: 'Camera an sinh & quyền riêng tư',
+      color: Colors.primary,
+      bg: 'rgba(46, 125, 154, 0.08)',
+      onPress: () => navigation.navigate('ElderlyCameraConsent'),
+    },
+    {
       icon: 'lock-closed-outline',
       label: 'Đặt mã PIN',
       color: Colors.primary,

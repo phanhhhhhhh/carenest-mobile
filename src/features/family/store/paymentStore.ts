@@ -61,33 +61,42 @@ const DEFAULT_PLANS: PlanData[] = [
     name: 'Gói Miễn phí',
     price: 0,
     features: [
-      'Theo dõi 1 hồ sơ người cao tuổi',
-      'Lịch sử dữ liệu 7 ngày',
-      'Theo dõi sức khỏe cơ bản',
-      'Cảnh báo SOS',
+      '1 hồ sơ cha/mẹ, không giới hạn số con kết nối',
+      'Check-in, thuốc, SOS, camera trực tiếp, Nhắc Về Thăm',
+      'Family Feed lưu 7 ngày',
+      'Trò chuyện với trợ lý AI ~5 tin/ngày',
     ],
   },
   {
     id: 'PREMIUM_MONTHLY',
-    name: 'Premium Hàng tháng',
+    name: 'CareNest Family Plus',
     price: 49000,
     currency: 'VND',
     features: [
-      'Theo dõi nhiều hồ sơ người cao tuổi',
-      'Lịch sử dữ liệu không giới hạn',
-      'Báo cáo tổng kết hàng tuần bằng AI',
-      'Xuất báo cáo sức khỏe dạng PDF',
-      'Hỗ trợ ưu tiên',
+      'Trò chuyện với trợ lý AI không giới hạn',
+      'Bản tin gia đình sâu hơn + tóm tắt tuần',
+      'Giọng nhắc thuốc tuỳ biến của người thân',
+      'Family Feed lưu trữ không giới hạn',
     ],
   },
   {
     id: 'PREMIUM_YEARLY',
-    name: 'Premium Hàng năm',
-    price: 399000,
+    name: 'CareNest Family Plus (năm)',
+    price: 499000,
     currency: 'VND',
-    features: ['Đầy đủ tính năng của gói Premium Hàng tháng', 'Miễn phí 2 tháng (tiết kiệm 17%)'],
+    features: ['Toàn bộ quyền lợi Family Plus', 'Tiết kiệm ~15% so với trả theo tháng'],
   },
 ];
+
+export interface VietQrInfo {
+  qrImageUrl: string;
+  transactionId: string;
+  amount: number;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  transferMemo?: string;
+}
 
 interface PaymentState {
   isLoading: boolean;
@@ -97,12 +106,15 @@ interface PaymentState {
   subscription: SubscriptionData | null;
   paymentUrl: string | null;
   paymentSuccess: string | null;
+  vietqrInfo: VietQrInfo | null;
 
   load: () => Promise<void>;
   createPayment: (planId: string, method?: string) => Promise<string | null>;
+  createVietQr: (planId: string) => Promise<VietQrInfo | null>;
   cancelSubscription: () => Promise<boolean>;
   clearPaymentUrl: () => void;
   clearSuccess: () => void;
+  clearVietQr: () => void;
   currentPlanLabel: () => string;
   isPremium: () => boolean;
 }
@@ -115,6 +127,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   subscription: null,
   paymentUrl: null,
   paymentSuccess: null,
+  vietqrInfo: null,
 
   load: async () => {
     set({ isLoading: true, error: null });
@@ -165,6 +178,30 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return null;
     }
   },
+
+  createVietQr: async (planId) => {
+    set({ isProcessing: true, error: null, vietqrInfo: null });
+    try {
+      const resp = await api.post('/payment/vietqr/create', { planType: planId });
+      const d = resp.data as Record<string, unknown>;
+      const info: VietQrInfo = {
+        qrImageUrl: (d.paymentUrl as string) ?? '',
+        transactionId: (d.transactionId as string) ?? '',
+        amount: d.amount != null ? Number(d.amount) : 0,
+        bankName: (d.bankName as string) ?? undefined,
+        accountNumber: (d.accountNumber as string) ?? undefined,
+        accountName: (d.accountName as string) ?? undefined,
+        transferMemo: (d.transferMemo as string) ?? undefined,
+      };
+      set({ isProcessing: false, vietqrInfo: info });
+      return info;
+    } catch (e) {
+      set({ isProcessing: false, error: `Không tạo được mã VietQR: ${getErrorMessage(e)}` });
+      return null;
+    }
+  },
+
+  clearVietQr: () => set({ vietqrInfo: null }),
 
   cancelSubscription: async () => {
     set({ isProcessing: true });

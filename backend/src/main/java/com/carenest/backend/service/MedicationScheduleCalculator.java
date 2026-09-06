@@ -62,4 +62,41 @@ public final class MedicationScheduleCalculator {
 
         return null;
     }
+
+    /**
+     * The most recent scheduled dose instant strictly before now (looking back up
+     * to 7 days). Used to detect a dose that was never confirmed (UC B2).
+     */
+    public static OffsetDateTime previousDoseTime(MedicationSchedule schedule) {
+        if (schedule == null || schedule.getTimes() == null || schedule.getTimes().isEmpty()) {
+            return null;
+        }
+        ZonedDateTime now = ZonedDateTime.now(VIETNAM);
+
+        List<LocalTime> times = new ArrayList<>();
+        for (String timeStr : schedule.getTimes()) {
+            try {
+                times.add(LocalTime.parse(timeStr));
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+        times.sort(Comparator.reverseOrder());
+
+        List<Integer> daysOfWeek = schedule.getDaysOfWeek();
+
+        for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
+            ZonedDateTime candidateDay = now.minusDays(dayOffset);
+            int dayValue = candidateDay.getDayOfWeek().getValue();
+            if (daysOfWeek != null && !daysOfWeek.isEmpty() && !daysOfWeek.contains(dayValue)) {
+                continue;
+            }
+            for (LocalTime time : times) {
+                ZonedDateTime candidate = candidateDay.with(time);
+                if (candidate.isBefore(now)) {
+                    return candidate.toOffsetDateTime();
+                }
+            }
+        }
+        return null;
+    }
 }

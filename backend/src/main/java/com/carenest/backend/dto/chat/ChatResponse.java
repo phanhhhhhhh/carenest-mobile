@@ -19,4 +19,10 @@ public class ChatResponse {
     private String intent;
     private String sessionId;
     private Instant createdAt;
+
+    /**
+     * Companion messages the free plan has left today (UC A5). Null for Family
+     * Plus (unlimited). Zero means the next message needs an upgrade.
+     */
+    private Integer remainingFreeMessages;
 }

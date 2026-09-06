@@ -51,7 +51,7 @@ public class PaymentController {
         return ResponseEntity.ok(result);
     }
 
-    
+
     @PostMapping("/momo/create")
     @PreAuthorize("hasRole('FAMILY') and #userId == authentication.principal")
     public ResponseEntity<PaymentInitResponse> createMomo(
@@ -61,6 +61,32 @@ public class PaymentController {
         String planType = body.getOrDefault("planType", "PREMIUM_MONTHLY");
         PaymentInitResponse result = paymentService.createMomoPayment(userId, planType);
         return ResponseEntity.ok(result);
+    }
+
+    /** VietQR / NAPAS bank transfer — the spec's primary channel, reconciled manually (UC G3). */
+    @PostMapping("/vietqr/create")
+    @PreAuthorize("hasRole('FAMILY') and #userId == authentication.principal")
+    public ResponseEntity<PaymentInitResponse> createVietQr(
+        @AuthenticationPrincipal Long userId,
+        @RequestBody Map<String, String> body
+    ) {
+        String planType = body.getOrDefault("planType", "PREMIUM_MONTHLY");
+        return ResponseEntity.ok(paymentService.createVietQrPayment(userId, planType));
+    }
+
+    /** Operator list of payments awaiting manual reconciliation (UC G3). */
+    @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Map<String, Object>>> pendingPayments() {
+        return ResponseEntity.ok(paymentService.listPendingPayments());
+    }
+
+    /** Operator confirms a received VietQR transfer and activates Family Plus (UC G3). */
+    @PostMapping("/vietqr/confirm")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> confirmVietQr(@RequestBody Map<String, String> body) {
+        String txnRef = body.get("transactionId");
+        return ResponseEntity.ok(paymentService.confirmManualPayment(txnRef));
     }
 
     
@@ -92,36 +118,35 @@ public class PaymentController {
             "plans", List.of(
                 Map.of(
                     "id", "FREE",
-                    "name", "Free Plan",
+                    "name", "Gói Miễn phí",
                     "price", 0,
                     "features", List.of(
-                        "Monitor 1 elderly profile",
-                        "7-day data history",
-                        "Basic health tracking",
-                        "SOS alerts"
+                        "1 hồ sơ cha/mẹ, không giới hạn số con kết nối",
+                        "Check-in, thuốc, SOS, camera trực tiếp, Nhắc Về Thăm",
+                        "Family Feed lưu 7 ngày",
+                        "Trò chuyện với trợ lý AI ~5 tin/ngày"
                     )
                 ),
                 Map.of(
                     "id", "PREMIUM_MONTHLY",
-                    "name", "Premium Monthly",
+                    "name", "CareNest Family Plus",
                     "price", 49000,
                     "currency", "VND",
                     "features", List.of(
-                        "Monitor multiple elderly profiles",
-                        "Unlimited data history",
-                        "AI Weekly Summary Reports",
-                        "Export health reports as PDF",
-                        "Priority support"
+                        "Trò chuyện với trợ lý AI không giới hạn",
+                        "Bản tin gia đình sâu hơn + tóm tắt tuần",
+                        "Giọng nhắc thuốc tuỳ biến của người thân",
+                        "Family Feed lưu trữ không giới hạn"
                     )
                 ),
                 Map.of(
                     "id", "PREMIUM_YEARLY",
-                    "name", "Premium Yearly",
-                    "price", 399000,
+                    "name", "CareNest Family Plus (năm)",
+                    "price", 499000,
                     "currency", "VND",
                     "features", List.of(
-                        "All Premium Monthly features",
-                        "2 months free (save 17%)"
+                        "Toàn bộ quyền lợi Family Plus",
+                        "Tiết kiệm ~15% so với trả theo tháng"
                     )
                 )
             )

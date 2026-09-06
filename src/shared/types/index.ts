@@ -34,6 +34,8 @@ export interface MedicationItem {
   scheduleTimes: string[];
   daysOfWeek: number[];
   taken: boolean;
+  /** Optional family-recorded reminder voice (Family Plus). */
+  voiceUrl?: string;
 }
 
 export interface MedicationLogEntry {

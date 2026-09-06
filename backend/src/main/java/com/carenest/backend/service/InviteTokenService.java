@@ -92,9 +92,11 @@ public class InviteTokenService {
 
         FamilyLinkResponse response = familyLinkService.create(request);
 
-        // Auto-approve — the elderly intentionally generated this QR so no manual
-        // confirmation step is needed (upgrade PENDING → ACTIVE right away).
-        familyLinkService.updateStatus(response.getId(), com.carenest.backend.entity.FamilyLinkStatus.ACTIVE);
+        // Auto-approve — the elderly intentionally generated this invite so no manual
+        // confirmation step is needed (upgrade PENDING → ACTIVE right away). Acting as
+        // the elderly satisfies the UC E4 "only the elderly accepts" rule.
+        familyLinkService.updateStatus(response.getId(),
+            com.carenest.backend.entity.FamilyLinkStatus.ACTIVE, elderlyId);
 
         // Return a refreshed response with ACTIVE status
         return FamilyLinkResponse.builder()

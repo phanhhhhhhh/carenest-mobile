@@ -95,6 +95,12 @@ public class VoiceController {
                 "createdAt", chatResponse.getCreatedAt()
             ));
 
+        } catch (com.carenest.backend.exception.PaymentRequiredException e) {
+            // Free daily companion allowance exhausted — surface the upgrade prompt.
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of(
+                "error", "Free daily limit reached",
+                "message", e.getMessage()
+            ));
         } catch (Exception e) {
             log.error("Voice chat failed for userId={}: {}", userId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(

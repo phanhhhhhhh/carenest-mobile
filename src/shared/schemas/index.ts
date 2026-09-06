@@ -28,6 +28,7 @@ export const MedicationSchema = z.object({
   instructions: z.string().optional().nullable(),
   nextDoseTime: z.string().optional().nullable(),
   schedule: MedicationScheduleSchema.optional().nullable(),
+  voiceUrl: z.string().optional().nullable(),
 });
 export type MedicationParsed = z.infer<typeof MedicationSchema>;
 

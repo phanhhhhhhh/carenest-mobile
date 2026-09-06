@@ -2,16 +2,20 @@ package com.carenest.backend.service;
 
 import com.carenest.backend.dto.feed.FeedItemResponse;
 import com.carenest.backend.dto.feed.FeedReactionResponse;
+import com.carenest.backend.entity.CameraSnapshot;
 import com.carenest.backend.entity.CheckIn;
 import com.carenest.backend.entity.EmergencyEvent;
+import com.carenest.backend.entity.FamilyVisit;
 import com.carenest.backend.entity.FeedItemType;
 import com.carenest.backend.entity.FeedReaction;
 import com.carenest.backend.entity.MedicationLog;
 import com.carenest.backend.entity.MedicationLogStatus;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.repository.CameraSnapshotRepository;
 import com.carenest.backend.repository.CheckInRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
+import com.carenest.backend.repository.FamilyVisitRepository;
 import com.carenest.backend.repository.FeedReactionRepository;
 import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.UserRepository;
@@ -39,21 +43,27 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FamilyFeedService {
 
-    /** How far back the feed looks. */
-    private static final int WINDOW_DAYS = 21;
+    /** Free plan keeps 7 days of feed (UC A2 / G3); Family Plus is effectively unlimited. */
+    private static final int FREE_WINDOW_DAYS = 7;
+    private static final int PLUS_WINDOW_DAYS = 3650;
     private static final int DEFAULT_LIMIT = 50;
     private static final int MAX_LIMIT = 100;
 
     private final CheckInRepository checkInRepository;
     private final MedicationLogRepository medicationLogRepository;
     private final EmergencyEventRepository emergencyEventRepository;
+    private final FamilyVisitRepository familyVisitRepository;
+    private final CameraSnapshotRepository cameraSnapshotRepository;
     private final NotificationBroadcastService notificationBroadcastService;
     private final FeedReactionRepository feedReactionRepository;
     private final UserRepository userRepository;
+    private final SubscriptionService subscriptionService;
+    private final FcmService fcmService;
 
     public List<FeedItemResponse> getFeed(Long elderlyId, Long viewerId, Integer limit) {
         int cap = limit == null ? DEFAULT_LIMIT : Math.min(Math.max(limit, 1), MAX_LIMIT);
-        OffsetDateTime since = OffsetDateTime.now().minusDays(WINDOW_DAYS);
+        int windowDays = subscriptionService.isPremium(viewerId) ? PLUS_WINDOW_DAYS : FREE_WINDOW_DAYS;
+        OffsetDateTime since = OffsetDateTime.now().minusDays(windowDays);
         OffsetDateTime now = OffsetDateTime.now();
 
         User elderly = userRepository.findById(elderlyId)
@@ -87,6 +97,29 @@ public class FamilyFeedService {
                 "Tín hiệu khẩn cấp (SOS)",
                 e.getAcknowledgedAt() != null ? "Đã có người tiếp nhận" : "Chưa ai xác nhận",
                 e.getAcknowledgedAt() != null));
+        }
+
+        for (FamilyVisit v : familyVisitRepository.findInRange(elderlyId, since, now)) {
+            // A confirmed visit is a positive record, nothing to action — always "handled".
+            drafts.add(new Draft(FeedItemType.VISIT, v.getId(), v.getVisitedAt(),
+                v.getMember().getName() + " đã về thăm nhà",
+                v.getNote() != null && !v.getNote().isBlank()
+                    ? v.getNote() : "Chạm trái tim để cảm ơn",
+                true));
+        }
+
+        // UC D5: scheduled / manual camera check-in snapshots surface in the unified
+        // timeline. Motion events indicate activity only — never a health conclusion.
+        for (CameraSnapshot snap : cameraSnapshotRepository
+                .findByElderlyIdAndCreatedAtAfterOrderByCreatedAtDesc(elderlyId, since.toInstant())) {
+            if (snap.getTrigger() == CameraSnapshot.SnapshotTrigger.SOS) {
+                continue; // SOS snapshots belong to the EMERGENCY item
+            }
+            drafts.add(new Draft(FeedItemType.CAMERA, snap.getId(),
+                snap.getCreatedAt().atOffset(java.time.ZoneOffset.UTC),
+                "Camera an sinh: ảnh mới",
+                snap.isSuccess() ? "Có hoạt động bình thường tại nhà" : "Không lấy được ảnh lúc này",
+                true));
         }
 
         drafts.sort(Comparator.comparing((Draft d) -> d.occurredAt).reversed());
@@ -163,6 +196,7 @@ public class FamilyFeedService {
                 .itemRef(itemRef)
                 .build());
             reacted = true;
+            sendWarmFeedbackToElderly(elderlyId, familyUserId);
         }
         feedReactionRepository.flush();
 
@@ -178,6 +212,22 @@ public class FamilyFeedService {
             .build();
     }
 
+    /**
+     * UC A2: when a family member "thả tim" the elderly device gets a warm bit of
+     * feedback so they know the family saw their update. Best-effort — a delivery
+     * failure must not fail the reaction.
+     */
+    private void sendWarmFeedbackToElderly(Long elderlyId, Long familyUserId) {
+        try {
+            String familyName = userRepository.findById(familyUserId).map(User::getName).orElse("Người thân");
+            fcmService.sendToUser(elderlyId, "Cả nhà đang nghĩ đến ông/bà 💛",
+                familyName + " vừa gửi một trái tim cho ông/bà.",
+                Map.of("type", "FEED_REACTION", "sound", "warm_chime"));
+        } catch (Exception e) {
+            // best-effort only
+        }
+    }
+
     private void validateItemBelongsToElderly(Long elderlyId, FeedItemType itemType, Long itemRef) {
         boolean ok = switch (itemType) {
             case CHECK_IN -> checkInRepository.findById(itemRef)
@@ -186,6 +236,10 @@ public class FamilyFeedService {
                 .map(l -> l.getMedication().getElderly().getId().equals(elderlyId)).orElse(false);
             case EMERGENCY -> emergencyEventRepository.findById(itemRef)
                 .map(e -> e.getElderly().getId().equals(elderlyId)).orElse(false);
+            case VISIT -> familyVisitRepository.findById(itemRef)
+                .map(v -> v.getElderly().getId().equals(elderlyId)).orElse(false);
+            case CAMERA -> cameraSnapshotRepository.findById(itemRef)
+                .map(s -> s.getElderly().getId().equals(elderlyId)).orElse(false);
         };
         if (!ok) {
             throw new NotFoundException("Feed item not found for this elderly: " + itemType + ":" + itemRef);

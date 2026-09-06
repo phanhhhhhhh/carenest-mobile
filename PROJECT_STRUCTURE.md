@@ -46,16 +46,53 @@ Built and current (spec only documents these — do not rebuild):
   `availabilityStore.ts` + `familyDashboard/AvailabilityChip.tsx` (header toggle),
   `broadcastStore.ts` + `familyDashboard/BroadcastBanner.tsx` (dashboard "Tôi lo được").
   Config: `carenest.broadcast.*` in `application.properties`.
-- Flyway is at **V41**; next migration is V42.
+- Flyway is at **V44**; next migration is V45.
 
-Spec'd but **not yet in code** (no files exist for these — build targets):
-- **A7 Visit Streak** — new `family_visits` + `family_visit_settings` tables,
-  scheduler, `visitStreakStore.ts`, manual-confirm screen (no camera auto-detect).
-- **B1** — prescription-photo/OCR **removed** from the UI (`MedicationForm.tsx`) and
-  API (`MedicationRequest`/`MedicationResponse`/`MedicationService`); `medications.photo_url`
-  column and the now-`@Deprecated` `Medication.photoUrl` field are kept but unused.
-  Still to do: add `medications.voice_url` + a voice-to-text entry path for schedules.
-- **D1** camera-consent onboarding + D7 privacy-mode fallback.
+Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
+- **A5 chat quota** — `carenest.chat.free-daily-limit` (default 5) enforced in
+  `ChatService`; over-limit → `PaymentRequiredException` (402), `ChatResponse.remainingFreeMessages`.
+  Emergency-sounding messages short-circuit to an SOS steer (`intent=EMERGENCY`).
+- **A6 AI Family Digest** — `FamilyDigestService` + `FamilyDigestScheduler` (20:00 ICT,
+  `carenest.digest.*`), `FamilyDigestController` (`GET /api/family/digest/latest`,
+  `POST /api/elderly/{id}/digest/generate`). Frontend `familyDigestStore.ts` + `FamilyDigestScreen`.
+- **A7 Visit Streak** — migration `V42` (`family_visits`, `family_visit_settings`),
+  `FamilyVisit`/`FamilyVisitSettings`/`VisitCycleType`, `VisitStreakService`,
+  `VisitStreakScheduler` (streak break + Tết/birthday reminders, `carenest.visit.*`),
+  `VisitStreakController`. Feed gains `FeedItemType.VISIT`. Frontend `visitStreakStore.ts`
+  + `FamilyVisitStreakScreen` (manual "Xác nhận đã về thăm", no camera auto-detect).
+- **D1 camera consent** — migration `V43` (`elderly_profiles.camera_consent_*`),
+  `CameraConsentStatus`, `CameraConsentService` (gates `bindCamera`/live/two-way; SOS
+  snapshot records-but-does-not-block), `CameraConsentScheduler` (single 30-day re-ask).
+  Frontend `cameraConsentStore.ts` + `ElderlyCameraConsentScreen`.
+- **D7 timed Privacy Mode** — `camera_devices.privacy_mode_expires_at`,
+  `CameraService.setPrivacyMode(id, enabled, hours)` + `expirePrivacyWindows()` (60s poll,
+  auto-restore + family notice).
+- **G3** — VietQR/NAPAS + **manual reconciliation** (`PaymentService.createVietQrPayment` /
+  `confirmManualPayment`, `POST /api/payment/vietqr/{create,confirm}`); yearly price
+  fixed 399k → **499k**; `/plans` features rewritten to spec Family Plus benefits, PDF removed.
+  (VNPay/MoMo gateways left in place as secondary.)
+- **B1/B2** — `MedicationScheduleCalculator.previousDoseTime` + `MedicationReminderScheduler.sweepMissedDoses`
+  auto-logs MISSED doses (`carenest.medication.missed-grace-minutes`, default 90).
+  `medications.voice_url` (V44) + `MedicationRequest/Response.voiceUrl`; `MedicationVoiceService` +
+  `POST /api/medications/parse-voice` (multipart audio → transcribe → Gemini extract →
+  `MedicationDraftResponse`, confirm-before-save). Custom reminder voice is put in the
+  reminder FCM payload only when a linked family member is Family Plus.
+- **A2** — feed retention now plan-aware (7 d free / unlimited Plus); heart reaction sends
+  warm FCM feedback to the elderly device.
+- **D5** — `FeedItemType.CAMERA`; scheduled/manual camera snapshots unioned into the Feed
+  (SOS snapshots stay under the EMERGENCY item; motion-window alerts remain notification-only).
+- **E4** — only the elderly may activate a pending family link (`FamilyLinkService.updateStatus` arg).
+- Compliance: `PrivacyPolicyScreen` linked from Register; sensitive-data notes.
+- SOS fixes: `acknowledgeAllForUser` no longer resolves ACTIVE events; secondary contact
+  only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
+- G3 operator: `GET /api/payment/pending` + `POST /api/payment/vietqr/confirm` (both `hasRole('ADMIN')`).
+
+Still to do: front-end mic/recording UI for medication voice entry (needs expo-av +
+Cloudinary unsigned-preset wiring — backend `parse-voice` endpoint is ready);
+remove the QR link flow (still wired: `ElderlyQRInviteScreen`, `FamilyScanQRScreen`,
+`familyScanQR/`, `elderlyQRInvite/`, `InviteController`/`InviteTokenService`,
+`core/api/inviteApi.ts`, entry points in dashboard/profile — ~20 files; deferred to
+avoid a nav regression); a real ADMIN screen for the pending-payments endpoint.
 
 Dropped from roadmap: QR scanner, PDF export, Zalo OA, prescription-photo storage,
 camera-based visit auto-detect.

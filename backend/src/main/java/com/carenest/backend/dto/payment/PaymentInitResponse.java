@@ -13,4 +13,12 @@ public class PaymentInitResponse {
     private BigDecimal amount;
     private String planType;
     private String provider;
+
+    /** VietQR: bank account details + transfer memo for manual reconciliation (UC G3). */
+    private String bankName;
+    private String accountNumber;
+    private String accountName;
+    private String transferMemo;
+    /** How the subscription is activated: "AUTO" for gateways, "MANUAL_REVIEW" for VietQR. */
+    private String activation;
 }
