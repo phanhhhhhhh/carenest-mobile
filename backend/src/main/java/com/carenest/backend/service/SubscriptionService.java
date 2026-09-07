@@ -2,6 +2,7 @@ package com.carenest.backend.service;
 
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.Subscription;
+import com.carenest.backend.exception.PaymentRequiredException;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SubscriptionService {
+
+    public static final String PREMIUM_REQUIRED_MESSAGE =
+        "An active CareNest Premium subscription is required to export PDF health reports.";
 
     private final SubscriptionRepository subscriptionRepository;
     private final FamilyLinkRepository familyLinkRepository;
@@ -81,5 +85,12 @@ public class SubscriptionService {
             .findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
             .map(Subscription::isPremium)
             .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public void requirePremium(Long familyId) {
+        if (!isPremium(familyId)) {
+            throw new PaymentRequiredException(PREMIUM_REQUIRED_MESSAGE);
+        }
     }
 }
