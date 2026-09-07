@@ -46,7 +46,7 @@ Built and current (spec only documents these — do not rebuild):
   `availabilityStore.ts` + `familyDashboard/AvailabilityChip.tsx` (header toggle),
   `broadcastStore.ts` + `familyDashboard/BroadcastBanner.tsx` (dashboard "Tôi lo được").
   Config: `carenest.broadcast.*` in `application.properties`.
-- Flyway is at **V44**; next migration is V45.
+- Flyway is at **V45**; next migration is V46.
 
 Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - **A5 chat quota** — `carenest.chat.free-daily-limit` (default 5) enforced in

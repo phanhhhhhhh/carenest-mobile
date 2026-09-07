@@ -17,15 +17,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.Check;
 
 import java.time.OffsetDateTime;
 
 /**
  * A daily 1-touch mood check-in from an elderly user (UC A1).
- * {@code mood}: 1 = happy, 2 = neutral, 3 = unwell, 4 = emergency.
+ * {@code mood}: 1 = happy, 2 = neutral, 3 = unwell. Emergencies use the
+ * dedicated emergency-events flow and are not check-ins.
  */
 @Entity
 @Table(name = "check_ins")
+@Check(constraints = "mood BETWEEN 1 AND 3")
 @Getter
 @Setter
 @Builder

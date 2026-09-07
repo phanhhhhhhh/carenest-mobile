@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 public class CheckInRequest {
 
     @NotNull(message = "mood is required")
-    @Min(value = 1, message = "mood must be between 1 and 4")
-    @Max(value = 4, message = "mood must be between 1 and 4")
+    @Min(value = 1, message = "mood must be between 1 and 3")
+    @Max(value = 3, message = "mood must be between 1 and 3")
     private Short mood;
 
     private String note;
