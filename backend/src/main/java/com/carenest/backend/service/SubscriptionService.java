@@ -82,7 +82,11 @@ public class SubscriptionService {
             return false;
         }
         return subscriptionRepository
-            .findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
+            .findByUserIdAndStatusAndPlanTypeIn(
+                userId,
+                Subscription.SubscriptionStatus.ACTIVE,
+                List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
+            )
             .map(Subscription::isPremium)
             .orElse(false);
     }

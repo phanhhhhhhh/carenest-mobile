@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -47,29 +48,26 @@ class SubscriptionServiceTest {
 
     @Test
     void freeSubscriptionFails() {
-        stub(Subscription.PlanType.FREE, Subscription.SubscriptionStatus.ACTIVE,
-            Instant.now().plusSeconds(3600));
+        // A FREE plan is excluded by the plan-type filter, so the query returns nothing.
+        stubEmpty();
         assertRejected();
     }
 
     @Test
     void missingSubscriptionFails() {
-        when(subscriptionRepository.findByUserIdAndStatus(7L, Subscription.SubscriptionStatus.ACTIVE))
-            .thenReturn(Optional.empty());
+        stubEmpty();
         assertRejected();
     }
 
     @Test
     void pendingSubscriptionFails() {
-        when(subscriptionRepository.findByUserIdAndStatus(7L, Subscription.SubscriptionStatus.ACTIVE))
-            .thenReturn(Optional.empty());
+        stubEmpty();
         assertRejected();
     }
 
     @Test
     void cancelledSubscriptionFails() {
-        when(subscriptionRepository.findByUserIdAndStatus(7L, Subscription.SubscriptionStatus.ACTIVE))
-            .thenReturn(Optional.empty());
+        stubEmpty();
         assertRejected();
     }
 
@@ -88,8 +86,19 @@ class SubscriptionServiceTest {
             .startDate(Instant.now().minusSeconds(3600))
             .endDate(endDate)
             .build();
-        when(subscriptionRepository.findByUserIdAndStatus(7L, Subscription.SubscriptionStatus.ACTIVE))
+        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+            7L,
+            Subscription.SubscriptionStatus.ACTIVE,
+            List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)))
             .thenReturn(Optional.of(subscription));
+    }
+
+    private void stubEmpty() {
+        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+            7L,
+            Subscription.SubscriptionStatus.ACTIVE,
+            List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)))
+            .thenReturn(Optional.empty());
     }
 
     private void assertRejected() {
