@@ -51,6 +51,18 @@ export const MedicationLogSchema = z.object({
 });
 export type MedicationLogParsed = z.infer<typeof MedicationLogSchema>;
 
+export const MedicationVoiceDraftSchema = z.object({
+  transcript: z.string().optional().nullable(),
+  name: z.string().optional().nullable(),
+  dosage: z.string().optional().nullable(),
+  instructions: z.string().optional().nullable(),
+  times: z.array(z.string()).optional().nullable(),
+  daysOfWeek: z.array(z.number()).optional().nullable(),
+  uncertainFields: z.array(z.string()).optional().nullable(),
+  confident: z.coerce.boolean().optional().default(false),
+});
+export type MedicationVoiceDraftParsed = z.infer<typeof MedicationVoiceDraftSchema>;
+
 export const HealthMetricSchema = z.object({
   id: z.coerce.string(),
   type: z.string(),

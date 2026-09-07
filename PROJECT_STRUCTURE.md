@@ -77,6 +77,14 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   `POST /api/medications/parse-voice` (multipart audio → transcribe → Gemini extract →
   `MedicationDraftResponse`, confirm-before-save). Custom reminder voice is put in the
   reminder FCM payload only when a linked family member is Family Plus.
+  **Front-end voice entry — built (2026-09-07).** `expo-audio` (config plugin +
+  mic permission in `app.json`); `features/medication/hooks/useMedicationVoiceInput.ts`
+  (record `.m4a` → `audio/mp4`, 60 s cap), `features/medication/services/medicationVoiceApi.ts`
+  (`parseMedicationVoice`), `medicationVoiceDraft.ts` (`draftToMedicationPrefill` — shifts
+  ISO day-of-week 1=Mon to the form's 0=Mon index — + `voiceReviewHint`), schema
+  `MedicationVoiceDraftSchema`. UI: `VoiceCaptureRow` "Đọc để điền nhanh" in the family
+  `MedicationForm` (elderly medication screen has no add form). Draft pre-fills every field;
+  family still confirms before save. Unit test `medicationVoiceDraft.test.ts`.
 - **A2** — feed retention now plan-aware (7 d free / unlimited Plus); heart reaction sends
   warm FCM feedback to the elderly device.
 - **D5** — `FeedItemType.CAMERA`; scheduled/manual camera snapshots unioned into the Feed
@@ -87,14 +95,18 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
 - G3 operator: `GET /api/payment/pending` + `POST /api/payment/vietqr/confirm` (both `hasRole('ADMIN')`).
 
-Still to do: front-end mic/recording UI for medication voice entry (needs expo-av +
-Cloudinary unsigned-preset wiring — backend `parse-voice` endpoint is ready);
-remove the QR link flow (still wired: `ElderlyQRInviteScreen`, `FamilyScanQRScreen`,
-`familyScanQR/`, `elderlyQRInvite/`, `InviteController`/`InviteTokenService`,
-`core/api/inviteApi.ts`, entry points in dashboard/profile — ~20 files; deferred to
-avoid a nav regression); a real ADMIN screen for the pending-payments endpoint.
+Still to do: custom recorded reminder-voice clip (record → upload to Cloudinary
+unsigned preset → save `medication.voiceUrl`, Family Plus gated — needs a Cloudinary
+account + preset provisioned first); a real ADMIN screen for the pending-payments endpoint.
 
-Dropped from roadmap: QR scanner, PDF export, Zalo OA, prescription-photo storage,
+QR link flow — **KEPT** (team decision 2026-09-07, overrides the v3.5 "drop QR scanner"
+line). `ElderlyQRInviteScreen`, `FamilyScanQRScreen`, `familyScanQR/`, `elderlyQRInvite/`,
+`InviteController`/`InviteTokenService`, `core/api/inviteApi.ts` and the dashboard/profile
+entry points stay. Linking has two coexisting paths: QR (elderly generates token → family
+scans → link ACTIVE immediately) and phone-number (`POST /api/family-links` → PENDING →
+elderly approves, per E4).
+
+Dropped from roadmap: PDF export, Zalo OA, prescription-photo storage,
 camera-based visit auto-detect.
 
 ## Backend (`backend/src/main/java/com/carenest/backend/`)
