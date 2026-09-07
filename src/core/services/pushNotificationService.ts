@@ -5,6 +5,8 @@ import api from '../api/client';
 import { getUserId } from '../storage/secureStorage';
 import { navigateToTab, navigationRef } from '../navigation/navigationRef';
 import { useAuthStore } from '../../features/auth/store/authStore';
+import { extractVoiceUrl } from '../../features/medication/services/notificationVoiceData';
+import { playReminderVoice } from '../../features/medication/services/reminderVoicePlayer';
 
 const CHANNEL_ID = 'carenest_default';
 
@@ -58,6 +60,16 @@ export async function initializePushNotifications(): Promise<void> {
         }),
       );
     }
+
+    // App in foreground when the reminder fires: play the family's recorded voice
+    // (UC B2) alongside the banner. Background/killed playback of a remote clip
+    // isn't possible without a native module, so this is a foreground-only bonus.
+    subscriptions.push(
+      Notifications.addNotificationReceivedListener((notification) => {
+        const voiceUrl = extractVoiceUrl(notification.request.content.data);
+        if (voiceUrl) playReminderVoice(voiceUrl);
+      }),
+    );
 
     subscriptions.push(
       Notifications.addNotificationResponseReceivedListener((response) => {
@@ -120,8 +132,14 @@ function navigateFromPayload(data: Record<string, unknown>): void {
       break;
     case 'MISSED_MEDICATION':
     case 'MEDICATION_REMINDER':
+    case 'MEDICATION_SNOOZE': {
       navigateToTab('ElderlyShell', 'ElderlyMeds');
+      // Tapping the notification (app was backgrounded) — replay the voice now
+      // that we're foreground, since addNotificationReceivedListener didn't fire.
+      const voiceUrl = extractVoiceUrl(data);
+      if (voiceUrl) playReminderVoice(voiceUrl);
       break;
+    }
     case 'ABNORMAL_VITALS':
     case 'HEALTH_ALERT':
       // FamilyHealth is a root-stack screen, not a FamilyShell tab.

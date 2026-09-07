@@ -21,6 +21,7 @@ import {
   voiceReviewHint,
 } from '../../../medication/services/medicationVoiceDraft';
 import { isCloudinaryConfigured } from '../../../medication/services/cloudinaryUpload';
+import { PlayVoiceReminderButton } from '../../../medication/components/PlayVoiceReminderButton';
 import { usePaymentStore } from '../../store/paymentStore';
 import { DAY_LABELS, HISTORY_DAY_LABELS, TimeValue, pad2 } from './constants';
 import { TimePickerModal } from './TimePickerModal';
@@ -467,16 +468,21 @@ function ReminderVoiceSection({
           </TouchableOpacity>
         </View>
       ) : voiceUrl ? (
-        <View style={styles.voiceRow}>
-          <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
-          <Text style={styles.reminderVoiceDone}>Đã có giọng nhắc</Text>
-          <TouchableOpacity style={styles.reminderVoiceRerecord} onPress={onStart}>
-            <Text style={styles.reminderVoiceRerecordText}>Ghi lại</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.voiceCancelText}>Xoá</Text>
-          </TouchableOpacity>
-        </View>
+        <>
+          <View style={styles.voiceRow}>
+            <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
+            <Text style={styles.reminderVoiceDone}>Đã có giọng nhắc</Text>
+            <TouchableOpacity style={styles.reminderVoiceRerecord} onPress={onStart}>
+              <Text style={styles.reminderVoiceRerecordText}>Ghi lại</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.voiceCancelText}>Xoá</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ marginTop: 8 }}>
+            <PlayVoiceReminderButton url={voiceUrl} />
+          </View>
+        </>
       ) : (
         <TouchableOpacity style={styles.voiceStartBtn} onPress={onStart} activeOpacity={0.8}>
           <Ionicons name="mic-outline" size={18} color={Colors.primary} />
