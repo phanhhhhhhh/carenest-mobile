@@ -1,14 +1,25 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.dto.health.AppointmentReportItem;
+import com.carenest.backend.dto.health.AppointmentReportSummary;
 import com.carenest.backend.dto.health.HealthReportResponse;
+import com.carenest.backend.dto.health.MedicationAdherenceReport;
 import com.carenest.backend.dto.health.MetricDataPoint;
 import com.carenest.backend.dto.health.MetricReport;
 import com.carenest.backend.dto.health.MetricStats;
+import com.carenest.backend.dto.health.WeeklySummarySnapshot;
+import com.carenest.backend.entity.Appointment;
+import com.carenest.backend.entity.AppointmentStatus;
 import com.carenest.backend.entity.HealthMetric;
 import com.carenest.backend.entity.HealthMetricType;
+import com.carenest.backend.entity.MedicationLog;
+import com.carenest.backend.entity.MedicationLogStatus;
+import com.carenest.backend.entity.Notification;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.repository.AppointmentRepository;
 import com.carenest.backend.repository.HealthMetricRepository;
+import com.carenest.backend.repository.MedicationLogRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -30,15 +42,23 @@ import java.util.stream.Collectors;
 public class HealthReportService {
 
     private final HealthMetricRepository healthMetricRepository;
+    private final MedicationLogRepository medicationLogRepository;
+    private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
+    private final WeeklySummaryService weeklySummaryService;
+
+    private static final ZoneId REPORT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
+    public record ReportPeriod(OffsetDateTime from, OffsetDateTime to) {}
 
     public HealthReportResponse generateReport(Long elderlyId, Set<HealthMetricType> types,
                                                 OffsetDateTime from, OffsetDateTime to) {
         User elderly = userRepository.findById(elderlyId)
             .orElseThrow(() -> new NotFoundException("User not found: " + elderlyId));
 
-        if (from == null) from = OffsetDateTime.now().minusWeeks(1);
-        if (to == null) to = OffsetDateTime.now();
+        ReportPeriod period = resolvePeriod(from, to);
+        from = period.from();
+        to = period.to();
         final Set<HealthMetricType> resolvedTypes = (types == null || types.isEmpty())
             ? Set.of(HealthMetricType.values())
             : types;
@@ -76,12 +96,93 @@ public class HealthReportService {
                 .build());
         }
 
+        List<MedicationAdherenceReport> adherence = buildMedicationAdherence(
+            medicationLogRepository.findAllByElderlyIdAndDateRange(elderlyId, from, to));
+        AppointmentReportSummary appointments = buildAppointmentSummary(
+            appointmentRepository.findByElderlyIdAndDatetimeBetweenAndDeletedAtIsNullOrderByDatetimeAsc(
+                elderlyId, from, to));
+        WeeklySummarySnapshot weeklySummary = buildWeeklySummary(weeklySummaryService.getLatestSummary(elderlyId));
+
         return HealthReportResponse.builder()
             .elderlyId(elderlyId)
             .elderlyName(elderly.getName())
             .from(from)
             .to(to)
             .reports(reports)
+            .medicationAdherence(adherence)
+            .appointmentSummary(appointments)
+            .latestWeeklySummary(weeklySummary)
+            .build();
+    }
+
+    public ReportPeriod resolvePeriod(OffsetDateTime from, OffsetDateTime to) {
+        OffsetDateTime now = OffsetDateTime.now(REPORT_ZONE);
+        OffsetDateTime resolvedTo = to == null ? now : to;
+        OffsetDateTime resolvedFrom = from == null ? resolvedTo.minusWeeks(1) : from;
+        if (resolvedFrom.isAfter(resolvedTo)) {
+            throw new IllegalArgumentException("from must be before or equal to to");
+        }
+        return new ReportPeriod(resolvedFrom, resolvedTo);
+    }
+
+    private List<MedicationAdherenceReport> buildMedicationAdherence(List<MedicationLog> logs) {
+        return logs.stream()
+            .collect(Collectors.groupingBy(log -> log.getMedication().getId()))
+            .values().stream()
+            .map(group -> {
+                MedicationLog first = group.get(0);
+                long taken = group.stream().filter(log -> log.getStatus() == MedicationLogStatus.TAKEN).count();
+                long missed = group.stream().filter(log -> log.getStatus() == MedicationLogStatus.MISSED).count();
+                long skipped = group.stream().filter(log -> log.getStatus() == MedicationLogStatus.SKIPPED).count();
+                long assessed = taken + missed;
+                BigDecimal percentage = assessed == 0 ? null : BigDecimal.valueOf(taken)
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(BigDecimal.valueOf(assessed), 1, RoundingMode.HALF_UP);
+                return MedicationAdherenceReport.builder()
+                    .medicationId(first.getMedication().getId())
+                    .medicationName(first.getMedication().getName())
+                    .taken(taken)
+                    .missed(missed)
+                    .skipped(skipped)
+                    .adherencePercentage(percentage)
+                    .build();
+            })
+            .sorted(Comparator.comparing(MedicationAdherenceReport::getMedicationName,
+                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+            .toList();
+    }
+
+    private AppointmentReportSummary buildAppointmentSummary(List<Appointment> appointments) {
+        List<AppointmentReportItem> items = appointments.stream()
+            .map(appointment -> AppointmentReportItem.builder()
+                .datetime(appointment.getDatetime())
+                .doctor(appointment.getDoctor())
+                .specialty(appointment.getSpecialty())
+                .location(appointment.getLocation())
+                .status(appointment.getStatus().name())
+                .notes(appointment.getNotes())
+                .build())
+            .toList();
+        return AppointmentReportSummary.builder()
+            .total(appointments.size())
+            .scheduled(countAppointments(appointments, AppointmentStatus.SCHEDULED))
+            .completed(countAppointments(appointments, AppointmentStatus.COMPLETED))
+            .cancelled(countAppointments(appointments, AppointmentStatus.CANCELLED))
+            .missed(countAppointments(appointments, AppointmentStatus.MISSED))
+            .appointments(items)
+            .build();
+    }
+
+    private long countAppointments(List<Appointment> appointments, AppointmentStatus status) {
+        return appointments.stream().filter(appointment -> appointment.getStatus() == status).count();
+    }
+
+    private WeeklySummarySnapshot buildWeeklySummary(Notification summary) {
+        if (summary == null) return null;
+        return WeeklySummarySnapshot.builder()
+            .title(summary.getTitle())
+            .body(summary.getBody())
+            .createdAt(summary.getCreatedAt())
             .build();
     }
 

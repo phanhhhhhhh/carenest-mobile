@@ -46,7 +46,7 @@ Built and current (spec only documents these — do not rebuild):
   `availabilityStore.ts` + `familyDashboard/AvailabilityChip.tsx` (header toggle),
   `broadcastStore.ts` + `familyDashboard/BroadcastBanner.tsx` (dashboard "Tôi lo được").
   Config: `carenest.broadcast.*` in `application.properties`.
-- Flyway is at **V44**; next migration is V45.
+- Flyway is at **V45**; next migration is V46.
 
 Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - **A5 chat quota** — `carenest.chat.free-daily-limit` (default 5) enforced in
@@ -69,14 +69,41 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   auto-restore + family notice).
 - **G3** — VietQR/NAPAS + **manual reconciliation** (`PaymentService.createVietQrPayment` /
   `confirmManualPayment`, `POST /api/payment/vietqr/{create,confirm}`); yearly price
-  fixed 399k → **499k**; `/plans` features rewritten to spec Family Plus benefits, PDF removed.
+  fixed 399k → **499k**; `/plans` features list the current Family Plus benefits.
   (VNPay/MoMo gateways left in place as secondary.)
 - **B1/B2** — `MedicationScheduleCalculator.previousDoseTime` + `MedicationReminderScheduler.sweepMissedDoses`
   auto-logs MISSED doses (`carenest.medication.missed-grace-minutes`, default 90).
   `medications.voice_url` (V44) + `MedicationRequest/Response.voiceUrl`; `MedicationVoiceService` +
   `POST /api/medications/parse-voice` (multipart audio → transcribe → Gemini extract →
   `MedicationDraftResponse`, confirm-before-save). Custom reminder voice is put in the
-  reminder FCM payload only when a linked family member is Family Plus.
+  reminder FCM payload only when a linked family member is Family Plus
+  (`MedicationReminderScheduler` checks `voiceUrl` non-blank + `hasPremiumFamily`).
+  **Front-end voice — built (2026-09-07).** Shared recorder `features/medication/hooks/
+  useVoiceClipRecorder.ts` (record `.m4a` → `audio/mp4`, permission + audio-mode + cap +
+  unmount cleanup). Two features on top:
+  · **Voice entry (B1)** — `useMedicationVoiceInput` → `medicationVoiceApi.parseMedicationVoice`
+    → `medicationVoiceDraft.draftToMedicationPrefill` (shifts ISO day-of-week 1=Mon to the
+    form's 0=Mon index) + `voiceReviewHint`; schema `MedicationVoiceDraftSchema`. UI:
+    `VoiceCaptureRow` "Đọc để điền nhanh".
+  · **Custom reminder voice (B2)** — record: `useReminderVoiceRecorder` →
+    `cloudinaryUpload.uploadVoiceClip` (unsigned preset, `EXPO_PUBLIC_CLOUDINARY_*`,
+    `AppConfig.cloudinary`) → stores the `secure_url` as `medication.voiceUrl`. UI:
+    `ReminderVoiceSection` in the family `MedicationForm` — hidden unless Cloudinary is
+    configured, locked with a "Family Plus" note unless `subscription.isPremium`
+    (`usePaymentStore`), record / re-record / remove / preview.
+    Playback: `reminderVoicePlayer` (imperative one-shot) plays the clip when a
+    `MEDICATION_REMINDER`/`MEDICATION_SNOOZE` notification carrying `voiceUrl` is received
+    in the foreground or tapped (`pushNotificationService`); `medicationReminderService`
+    now copies `med.voiceUrl` into the local scheduled-reminder `data`.
+    `PlayVoiceReminderButton` ("Nghe lời nhắc", `useAudioPlayer`) on the elderly
+    `DueBanner` + `MedRow` for manual replay. `notificationVoiceData.extractVoiceUrl` is the
+    pure payload parser (kept expo-audio-free so it's unit-testable).
+  Voice entry + `ReminderVoiceSection` are in the **family** `MedicationForm` only (elderly
+  med screen has no add form). Tests: `medicationVoiceDraft.test.ts`, `cloudinaryUpload.test.ts`,
+  `notificationVoiceData.test.ts`.
+  Known limit: background/killed playback of a remote clip needs a native module, so the
+  auto-play is foreground-only; the elderly's own med list carries `voiceUrl` regardless of
+  premium (gate is on record + on FCM), so a post-downgrade clip still plays locally.
 - **A2** — feed retention now plan-aware (7 d free / unlimited Plus); heart reaction sends
   warm FCM feedback to the elderly device.
 - **D5** — `FeedItemType.CAMERA`; scheduled/manual camera snapshots unioned into the Feed
@@ -86,15 +113,25 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - SOS fixes: `acknowledgeAllForUser` no longer resolves ACTIVE events; secondary contact
   only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
 - G3 operator: `GET /api/payment/pending` + `POST /api/payment/vietqr/confirm` (both `hasRole('ADMIN')`).
+- **Premium PDF health-report export** — `HealthReportExportController`
+  (`GET /api/elderly/{id}/health-report.pdf`) requires an active linked Family member and
+  an active monthly/yearly Premium subscription. `HealthReportService` provides the shared
+  aggregate; `HealthReportPdfService` renders an on-demand, Unicode PDF without server-side
+  file storage. Frontend: `family/services/healthReportExportService.ts` and the accessible
+  “Xuất PDF” action on `FamilyHealthScreen` (7-day/30-day period, native share sheet).
 
-Still to do: front-end mic/recording UI for medication voice entry (needs expo-av +
-Cloudinary unsigned-preset wiring — backend `parse-voice` endpoint is ready);
-remove the QR link flow (still wired: `ElderlyQRInviteScreen`, `FamilyScanQRScreen`,
-`familyScanQR/`, `elderlyQRInvite/`, `InviteController`/`InviteTokenService`,
-`core/api/inviteApi.ts`, entry points in dashboard/profile — ~20 files; deferred to
-avoid a nav regression); a real ADMIN screen for the pending-payments endpoint.
+Still to do: a real ADMIN screen for the pending-payments endpoint; optionally,
+background/killed playback of `medication.voiceUrl` (needs a native module — foreground
+auto-play + manual replay are built, see B2 note above).
 
-Dropped from roadmap: QR scanner, PDF export, Zalo OA, prescription-photo storage,
+QR link flow — **KEPT** (team decision 2026-09-07, overrides the v3.5 "drop QR scanner"
+line). `ElderlyQRInviteScreen`, `FamilyScanQRScreen`, `familyScanQR/`, `elderlyQRInvite/`,
+`InviteController`/`InviteTokenService`, `core/api/inviteApi.ts` and the dashboard/profile
+entry points stay. Linking has two coexisting paths: QR (elderly generates token → family
+scans → link ACTIVE immediately) and phone-number (`POST /api/family-links` → PENDING →
+elderly approves, per E4).
+
+Dropped from roadmap: Zalo OA, prescription-photo storage,
 camera-based visit auto-detect.
 
 ## Backend (`backend/src/main/java/com/carenest/backend/`)
@@ -114,7 +151,7 @@ Standard layered Spring Boot structure: `controller` → `service` → `reposito
 | Emergency / SOS | `EmergencyEventController` | `EmergencyEventService` | `EmergencyEvent`, `EmergencyStatus` |
 | Daily check-in (A1) | `CheckInController` | `CheckInService` | `CheckIn`, `CheckInSource` |
 | Family Care Feed (A2) | `FamilyFeedController` | `FamilyFeedService` | `FeedReaction`, `FeedItemType` (feed items are aggregated, not stored) |
-| Health metrics | `HealthMetricController`, `HealthMetricThresholdController` | `HealthMetricService`, `HealthMetricThresholdService`, `HealthReportService`, `HealthSyncService`, `AnomalyDetectionService` | `HealthMetric`, `HealthMetricType`, `HealthMetricThreshold` |
+| Health metrics + Premium PDF export | `HealthMetricController`, `HealthMetricThresholdController`, `HealthReportExportController` | `HealthMetricService`, `HealthMetricThresholdService`, `HealthReportService`, `HealthReportPdfService`, `HealthSyncService`, `AnomalyDetectionService` | `HealthMetric`, `HealthMetricType`, `HealthMetricThreshold` |
 | Google Fit integration | `GoogleFitController` | `GoogleFitService` | `GoogleFitToken` |
 | Medication | `MedicationController`, `MedicationCatalogController`, `MedicationLogController` | `MedicationService`, `MedicationCatalogService`, `MedicationLogService`, `MedicationScheduleCalculator` | `Medication`, `MedicationCatalogItem`, `MedicationLog`, `MedicationLogStatus`, `MedicationSchedule` |
 | Reminders | `ReminderController` | `ReminderService`, `SchedulerStateService` | `Reminder`, `RepeatRule`, `SchedulerState` |
@@ -172,7 +209,7 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 |---|---|---|---|
 | **auth** | GetStarted, Welcome, WelcomeBack, Phone, Register (+Success), OtpVerify, VerificationChoice, VerifyEmail (+Prompt), Forgot/NewPassword, PasswordResetSuccess, PinSetup, PinVerify | `authStore.ts` | `screens/phone/validators.ts`, `screens/register/validators.ts` |
 | **elderly** | Home, Appointments, Camera, Chat, EditProfile, EmergencyContacts, Health, HealthReport, Medication, MedicationHistory, Profile, QRInvite | `elderlyStore`, `chatStore`, `checkinStore`, `googleFitStore`, `healthMetricStore`, `healthReportStore`, `medicationStore` | `components/ProactiveReminderCard.tsx`; `screens/elderlyHome/CheckinPanel.tsx` |
-| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health, Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
+| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health (Premium PDF export), Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `services/healthReportExportService.ts`; `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
 | **medication** | — (screens live under `elderly` / `family`) | — | `services/medicationCatalogApi.ts`, `medicationReminderService.ts` |
 | **notifications** | NotificationsScreen, NotificationSettingsScreen | `notificationStore`, `notificationSettingsStore` | — |
 

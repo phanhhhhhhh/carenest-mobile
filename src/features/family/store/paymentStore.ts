@@ -77,6 +77,7 @@ const DEFAULT_PLANS: PlanData[] = [
       'Bản tin gia đình sâu hơn + tóm tắt tuần',
       'Giọng nhắc thuốc tuỳ biến của người thân',
       'Family Feed lưu trữ không giới hạn',
+      'Xuất báo cáo sức khỏe PDF',
     ],
   },
   {

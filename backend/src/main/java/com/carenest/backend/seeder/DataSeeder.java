@@ -420,7 +420,7 @@ public class DataSeeder implements CommandLineRunner {
         User e2 = elderlyUsers.get(1);
         OffsetDateTime reference = OffsetDateTime.now();
 
-        // mood cycle: mostly good, an occasional "unwell" day — never 4 (that path fires SOS)
+        // Mood cycle: mostly good, with an occasional unwell check-in (moods are 1-3).
         short[] e1Moods = {1, 1, 2, 1, 1, 3, 1, 2, 1, 1, 1, 2, 1, 1};
         short[] e2Moods = {1, 2, 1, 1, 2, 1, 1, 1, 3, 1, 2, 1, 1, 1};
 

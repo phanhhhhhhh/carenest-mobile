@@ -258,8 +258,7 @@ public class FamilyDigestService {
             case 1 -> "khỏe mạnh";
             case 2 -> "bình thường";
             case 3 -> "thấy mệt";
-            case 4 -> "cần giúp gấp";
-            default -> "bình thường";
+            default -> "không xác định";
         };
     }
 }
