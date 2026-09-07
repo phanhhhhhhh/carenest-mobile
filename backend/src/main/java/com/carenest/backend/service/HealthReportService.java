@@ -49,17 +49,16 @@ public class HealthReportService {
 
     private static final ZoneId REPORT_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
+    public record ReportPeriod(OffsetDateTime from, OffsetDateTime to) {}
+
     public HealthReportResponse generateReport(Long elderlyId, Set<HealthMetricType> types,
                                                 OffsetDateTime from, OffsetDateTime to) {
         User elderly = userRepository.findById(elderlyId)
             .orElseThrow(() -> new NotFoundException("User not found: " + elderlyId));
 
-        OffsetDateTime now = OffsetDateTime.now(REPORT_ZONE);
-        if (from == null) from = now.minusWeeks(1);
-        if (to == null) to = now;
-        if (from.isAfter(to)) {
-            throw new IllegalArgumentException("from must be before or equal to to");
-        }
+        ReportPeriod period = resolvePeriod(from, to);
+        from = period.from();
+        to = period.to();
         final Set<HealthMetricType> resolvedTypes = (types == null || types.isEmpty())
             ? Set.of(HealthMetricType.values())
             : types;
@@ -114,6 +113,16 @@ public class HealthReportService {
             .appointmentSummary(appointments)
             .latestWeeklySummary(weeklySummary)
             .build();
+    }
+
+    public ReportPeriod resolvePeriod(OffsetDateTime from, OffsetDateTime to) {
+        OffsetDateTime now = OffsetDateTime.now(REPORT_ZONE);
+        OffsetDateTime resolvedTo = to == null ? now : to;
+        OffsetDateTime resolvedFrom = from == null ? resolvedTo.minusWeeks(1) : from;
+        if (resolvedFrom.isAfter(resolvedTo)) {
+            throw new IllegalArgumentException("from must be before or equal to to");
+        }
+        return new ReportPeriod(resolvedFrom, resolvedTo);
     }
 
     private List<MedicationAdherenceReport> buildMedicationAdherence(List<MedicationLog> logs) {
