@@ -113,12 +113,24 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - SOS fixes: `acknowledgeAllForUser` no longer resolves ACTIVE events; secondary contact
   only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
 - G3 operator: `GET /api/payment/pending` + `POST /api/payment/vietqr/confirm` (both `hasRole('ADMIN')`).
-- **Premium PDF health-report export** — `HealthReportExportController`
-  (`GET /api/elderly/{id}/health-report.pdf`) requires an active linked Family member and
-  an active monthly/yearly Premium subscription. `HealthReportService` provides the shared
-  aggregate; `HealthReportPdfService` renders an on-demand, Unicode PDF without server-side
-  file storage. Frontend: `family/services/healthReportExportService.ts` and the accessible
-  “Xuất PDF” action on `FamilyHealthScreen` (7-day/30-day period, native share sheet).
+- **Premium PDF health-report export** (kept — team decision 2026-09-07, overrides the
+  v3.5 "drop PDF export" line; released to `main` in merge `6f10b55`).
+  `HealthReportExportController` (`GET /api/elderly/{id}/health-report.pdf`,
+  `hasRole('FAMILY')` + `@authz.isOwnerOrLinkedFamily`). `SubscriptionService.requirePremium`
+  throws `PaymentRequiredException` → **402** for non-premium callers; range is capped at
+  365 days. `HealthReportService.generateReport` builds the shared aggregate (metrics +
+  medication adherence + appointment summary + latest stored weekly summary);
+  `HealthReportPdfService` renders it on demand with **openpdf 3.0.5** and an embedded
+  `NotoSans-Regular.ttf` (Vietnamese glyphs), 2 000-row detail cap with an in-PDF disclosure,
+  medical disclaimer — no server-side file storage. `SubscriptionService.isPremium` filters
+  on `PlanType IN (PREMIUM_MONTHLY, PREMIUM_YEARLY)`. Tests: `HealthReportExportControllerTest`,
+  `HealthReportPdfServiceTest`, `SubscriptionServiceTest`.
+  Frontend: `family/services/healthReportExportService.ts` (DI-based; validates the `%PDF`
+  magic bytes + content-type, writes to the cache dir, opens the native share sheet;
+  maps 401→session-expire, 402→premium prompt, 403→forbidden) and
+  `family/screens/familyHealth/exportFlow.ts` (client-side premium gate + 7-day/30-day range).
+  The accessible “Xuất PDF” action sits in the `FamilyHealthScreen` app bar. Deps:
+  `expo-file-system`, `expo-sharing`.
 
 Still to do: a real ADMIN screen for the pending-payments endpoint; optionally,
 background/killed playback of `medication.voiceUrl` (needs a native module — foreground
@@ -209,7 +221,7 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 |---|---|---|---|
 | **auth** | GetStarted, Welcome, WelcomeBack, Phone, Register (+Success), OtpVerify, VerificationChoice, VerifyEmail (+Prompt), Forgot/NewPassword, PasswordResetSuccess, PinSetup, PinVerify | `authStore.ts` | `screens/phone/validators.ts`, `screens/register/validators.ts` |
 | **elderly** | Home, Appointments, Camera, Chat, EditProfile, EmergencyContacts, Health, HealthReport, Medication, MedicationHistory, Profile, QRInvite | `elderlyStore`, `chatStore`, `checkinStore`, `googleFitStore`, `healthMetricStore`, `healthReportStore`, `medicationStore` | `components/ProactiveReminderCard.tsx`; `screens/elderlyHome/CheckinPanel.tsx` |
-| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health (Premium PDF export), Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `services/healthReportExportService.ts`; `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
+| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health (Premium PDF export), Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `services/healthReportExportService.ts`, `screens/familyHealth/exportFlow.ts`; `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
 | **medication** | — (screens live under `elderly` / `family`) | — | `services/medicationCatalogApi.ts`, `medicationReminderService.ts` |
 | **notifications** | NotificationsScreen, NotificationSettingsScreen | `notificationStore`, `notificationSettingsStore` | — |
 
