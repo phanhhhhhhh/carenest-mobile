@@ -31,6 +31,12 @@
         {
           "cameraPermission": "CareNest cần dùng camera để quét mã QR kết nối tài khoản."
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "CareNest cần dùng micro để bạn đọc thông tin thuốc và nhập nhanh bằng giọng nói."
+        }
       ]
     ]
   }
