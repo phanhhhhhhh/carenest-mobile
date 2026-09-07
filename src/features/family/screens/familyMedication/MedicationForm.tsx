@@ -15,10 +15,13 @@ import { searchMedicationCatalog } from '../../../medication/services/medication
 import { isCancelled } from '../../../../core/api/errors';
 import type { MedicationCatalogParsed } from '../../../../shared/schemas';
 import { useMedicationVoiceInput } from '../../../medication/hooks/useMedicationVoiceInput';
+import { useReminderVoiceRecorder } from '../../../medication/hooks/useReminderVoiceRecorder';
 import {
   draftToMedicationPrefill,
   voiceReviewHint,
 } from '../../../medication/services/medicationVoiceDraft';
+import { isCloudinaryConfigured } from '../../../medication/services/cloudinaryUpload';
+import { usePaymentStore } from '../../store/paymentStore';
 import { DAY_LABELS, HISTORY_DAY_LABELS, TimeValue, pad2 } from './constants';
 import { TimePickerModal } from './TimePickerModal';
 
@@ -60,6 +63,25 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
 
   const voice = useMedicationVoiceInput();
   const [voiceHint, setVoiceHint] = useState<string | null>(null);
+
+  // Custom reminder voice (UC B2) — recorded by family, hosted on Cloudinary,
+  // stored as `medication.voiceUrl`. Backend only plays it on Family Plus.
+  const reminderVoice = useReminderVoiceRecorder();
+  const [voiceUrl, setVoiceUrl] = useState<string | undefined>(editing?.voiceUrl ?? undefined);
+  const originalVoiceUrl = editing?.voiceUrl ?? undefined;
+  const subscription = usePaymentStore((s) => s.subscription);
+  const loadSubscription = usePaymentStore((s) => s.load);
+  const isPremium = subscription?.isPremium ?? false;
+  const showReminderVoice = isCloudinaryConfigured();
+
+  useEffect(() => {
+    if (showReminderVoice && !subscription) loadSubscription();
+  }, [showReminderVoice, subscription, loadSubscription]);
+
+  const handleReminderVoiceStop = async () => {
+    const url = await reminderVoice.stopAndUpload();
+    if (url) setVoiceUrl(url);
+  };
 
   const handleVoiceStop = async () => {
     const draft = await voice.stopAndParse();
@@ -136,6 +158,8 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
         instructions: instructions.trim() ? instructions.trim() : undefined,
         scheduleTimes: timeStrings.length ? timeStrings : undefined,
         daysOfWeek: dayList.length ? dayList : undefined,
+        // Send only when it changed; '' tells the backend to clear a removed clip.
+        voiceUrl: voiceUrl !== originalVoiceUrl ? (voiceUrl ?? '') : undefined,
       });
     } else {
       await addMedication({
@@ -145,6 +169,7 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
         elderlyId: currentElderlyId ?? undefined,
         scheduleTimes: timeStrings.length ? timeStrings : undefined,
         daysOfWeek: dayList.length ? dayList : undefined,
+        voiceUrl,
       });
     }
     onClose();
@@ -289,6 +314,20 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
         />
       )}
 
+      {showReminderVoice && (
+        <ReminderVoiceSection
+          isPremium={isPremium}
+          voiceUrl={voiceUrl}
+          status={reminderVoice.status}
+          durationMillis={reminderVoice.durationMillis}
+          error={reminderVoice.error}
+          onStart={reminderVoice.start}
+          onStop={handleReminderVoiceStop}
+          onCancel={reminderVoice.cancel}
+          onRemove={() => setVoiceUrl(undefined)}
+        />
+      )}
+
       <TouchableOpacity
         style={[styles.saveBlackBtn, !canSubmit && styles.submitBtnDisabled]}
         onPress={handleSubmit}
@@ -368,6 +407,85 @@ function VoiceCaptureRow({
       <Ionicons name="mic-outline" size={18} color={Colors.primary} />
       <Text style={styles.voiceStartBtnText}>Đọc để điền nhanh</Text>
     </TouchableOpacity>
+  );
+}
+
+/**
+ * Custom medication-reminder voice (UC B2). Family records a short prompt; it is
+ * uploaded to Cloudinary and stored as `medication.voiceUrl`. Family Plus only —
+ * the backend simply won't attach the clip to reminders otherwise.
+ */
+function ReminderVoiceSection({
+  isPremium,
+  voiceUrl,
+  status,
+  durationMillis,
+  error,
+  onStart,
+  onStop,
+  onCancel,
+  onRemove,
+}: {
+  isPremium: boolean;
+  voiceUrl?: string;
+  status: 'idle' | 'recording' | 'uploading';
+  durationMillis: number;
+  error: string | null;
+  onStart: () => void;
+  onStop: () => void;
+  onCancel: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <View style={styles.reminderVoiceCard}>
+      <View style={styles.reminderVoiceHead}>
+        <Ionicons name="mic-circle-outline" size={17} color={Colors.textSecondary} />
+        <Text style={styles.reminderVoiceTitle}>Giọng nhắc của người thân</Text>
+        {!isPremium && <Text style={styles.reminderVoiceBadge}>Family Plus</Text>}
+      </View>
+
+      {!isPremium ? (
+        <Text style={styles.reminderVoiceLocked}>
+          Ghi âm lời nhắc bằng giọng của bạn để phát khi tới giờ uống thuốc. Cần gói Family Plus để
+          bật tính năng này.
+        </Text>
+      ) : status === 'uploading' ? (
+        <View style={styles.voiceRow}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+          <Text style={styles.voiceProcessingText}>Đang tải giọng nhắc lên…</Text>
+        </View>
+      ) : status === 'recording' ? (
+        <View style={styles.voiceRow}>
+          <View style={styles.voiceRecDot} />
+          <Text style={styles.voiceRecTimer}>{formatDuration(durationMillis)}</Text>
+          <TouchableOpacity style={styles.voiceStopBtn} onPress={onStop}>
+            <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+            <Text style={styles.voiceStopBtnText}>Xong</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.voiceCancelText}>Huỷ</Text>
+          </TouchableOpacity>
+        </View>
+      ) : voiceUrl ? (
+        <View style={styles.voiceRow}>
+          <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
+          <Text style={styles.reminderVoiceDone}>Đã có giọng nhắc</Text>
+          <TouchableOpacity style={styles.reminderVoiceRerecord} onPress={onStart}>
+            <Text style={styles.reminderVoiceRerecordText}>Ghi lại</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.voiceCancelText}>Xoá</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.voiceStartBtn} onPress={onStart} activeOpacity={0.8}>
+          <Ionicons name="mic-outline" size={18} color={Colors.primary} />
+          <Text style={styles.voiceStartBtnText}>Ghi âm lời nhắc</Text>
+        </TouchableOpacity>
+      )}
+
+      {!!error && <Text style={styles.voiceError}>{error}</Text>}
+    </View>
   );
 }
 
@@ -452,6 +570,38 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   voiceError: { marginTop: 8, fontSize: 12.5, color: Colors.error, fontWeight: '600' },
+  reminderVoiceCard: {
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    backgroundColor: Colors.surface,
+  },
+  reminderVoiceHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  reminderVoiceTitle: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
+  reminderVoiceBadge: {
+    marginLeft: 'auto',
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: Colors.primary,
+    backgroundColor: 'rgba(46,125,154,0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 9999,
+    overflow: 'hidden',
+  },
+  reminderVoiceLocked: { fontSize: 12.5, lineHeight: 18, color: Colors.textHint },
+  reminderVoiceDone: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
+  reminderVoiceRerecord: {
+    marginLeft: 'auto',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(46,125,154,0.35)',
+  },
+  reminderVoiceRerecordText: { color: Colors.primary, fontSize: 12.5, fontWeight: '700' },
   plainInput: {
     borderWidth: 1,
     borderColor: Colors.borderLight,
