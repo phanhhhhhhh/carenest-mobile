@@ -80,6 +80,20 @@ class HealthReportPdfServiceTest {
         }
     }
 
+    @Test
+    void rowLimitIsDisclosedInsideThePdf() throws Exception {
+        List<MetricDataPoint> points = new ArrayList<>();
+        for (int i = 0; i < HealthReportPdfService.MAX_DETAIL_ROWS + 1; i++) {
+            points.add(MetricDataPoint.builder()
+                .recordedAt(at(1).plusMinutes(i))
+                .value(BigDecimal.valueOf(70))
+                .build());
+        }
+
+        byte[] bytes = service.generate(representativeReport(List.of(metric("HEART_RATE", "bpm", points)))).bytes();
+        assertTrue(extractAll(bytes).contains("Detail limit reached"));
+    }
+
     private HealthReportResponse representativeReport(List<MetricReport> metrics) {
         return HealthReportResponse.builder()
             .elderlyId(11L)

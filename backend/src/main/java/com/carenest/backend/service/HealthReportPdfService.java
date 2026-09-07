@@ -125,8 +125,9 @@ public class HealthReportPdfService {
             addEmpty(document, "No detailed readings are available.", body);
             return;
         }
-        outer:
+        boolean limitReached = false;
         for (MetricReport metric : report.getReports()) {
+            if (rendered >= MAX_DETAIL_ROWS) break;
             Paragraph metricHeading = new Paragraph(metricName(metric.getType()), bold);
             metricHeading.setSpacingBefore(7);
             metricHeading.setSpacingAfter(4);
@@ -134,7 +135,10 @@ public class HealthReportPdfService {
             PdfPTable table = table(4, new float[]{1.7f, 1.1f, 1.1f, 3.1f});
             header(table, bold, "Timestamp", "Primary", "Secondary", "Notes");
             for (MetricDataPoint point : safe(metric.getDataPoints())) {
-                if (rendered >= MAX_DETAIL_ROWS) break outer;
+                if (rendered >= MAX_DETAIL_ROWS) {
+                    limitReached = true;
+                    break;
+                }
                 cell(table, format(point.getRecordedAt(), DATE_TIME), body);
                 cell(table, number(point.getValue()), body);
                 cell(table, number(point.getValueSecondary()), body);
@@ -142,6 +146,7 @@ public class HealthReportPdfService {
                 rendered++;
             }
             document.add(table);
+            if (limitReached) break;
         }
         if (rendered < total) {
             Paragraph note = new Paragraph("Detail limit reached: showing " + rendered + " of " + total
