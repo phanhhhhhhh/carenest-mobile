@@ -136,7 +136,8 @@ public class PaymentController {
                         "Trò chuyện với trợ lý AI không giới hạn",
                         "Bản tin gia đình sâu hơn + tóm tắt tuần",
                         "Giọng nhắc thuốc tuỳ biến của người thân",
-                        "Family Feed lưu trữ không giới hạn"
+                        "Family Feed lưu trữ không giới hạn",
+                        "Xuất báo cáo sức khỏe PDF"
                     )
                 ),
                 Map.of(

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -23,17 +23,27 @@ import { METRIC_ORDER, type Status } from './familyHealth/metricConfig';
 import { MetricSection } from './familyHealth/MetricSection';
 import { PeriodChip } from './familyHealth/widgets';
 import { useMountEffect } from '../../../shared/hooks/useMountEffect';
+import { usePaymentStore } from '../store/paymentStore';
+import { exportHealthReportPdf } from '../services/healthReportExportService';
+import { getHealthExportRange, startHealthReportExport } from './familyHealth/exportFlow';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
+import { useToastStore } from '../../../shared/components/toastStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FamilyHealthScreen() {
   const navigation = useNavigation<Nav>();
   const [period, setPeriod] = useState<'week' | 'month'>('week');
+  const [isExporting, setIsExporting] = useState(false);
+  const exportInFlight = useRef(false);
 
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
   const elderlyId = useFamilyDashboardStore((s) => s.elderlyId());
   const elderlyName = useFamilyDashboardStore((s) => s.elderlyName()) ?? 'Người thân';
+  const subscription = usePaymentStore((s) => s.subscription);
+  const paymentIsLoading = usePaymentStore((s) => s.isLoading);
+  const loadPayment = usePaymentStore((s) => s.load);
 
   useMountEffect(() => {
     if (dashboardData) return;
@@ -41,6 +51,63 @@ export default function FamilyHealthScreen() {
     loadDashboard(controller.signal);
     return () => controller.abort();
   });
+
+  useMountEffect(() => {
+    if (usePaymentStore.getState().subscription == null) void loadPayment();
+  });
+
+  const showPremiumPrompt = () => {
+    Alert.alert(
+      'Tính năng Premium',
+      'Xuất báo cáo sức khỏe PDF dành cho thành viên CareNest Premium đang hoạt động.',
+      [
+        { text: 'Để sau', style: 'cancel' },
+        { text: 'Xem gói Premium', onPress: () => navigation.navigate('PremiumPlans') },
+      ],
+    );
+  };
+
+  const handleExport = async () => {
+    if (elderlyId == null || exportInFlight.current) return;
+    exportInFlight.current = true;
+    setIsExporting(true);
+    try {
+      if (subscription == null) await loadPayment();
+      const range = getHealthExportRange(period);
+      const result = await startHealthReportExport(
+        usePaymentStore.getState().isPremium(),
+        { elderlyId, ...range },
+        exportHealthReportPdf,
+      );
+
+      switch (result.kind) {
+        case 'shared':
+          useToastStore.getState().show('Đã mở bảng chia sẻ báo cáo PDF.', 'success');
+          break;
+        case 'premium_required':
+          showPremiumPrompt();
+          break;
+        case 'forbidden':
+          Alert.alert('Không có quyền truy cập', 'Bạn không còn được liên kết với hồ sơ này.');
+          break;
+        case 'unsupported':
+          Alert.alert(
+            'Không hỗ trợ chia sẻ',
+            'Thiết bị hoặc trình duyệt này chưa hỗ trợ chia sẻ tệp PDF. Vui lòng dùng ứng dụng CareNest trên Android hoặc iOS.',
+          );
+          break;
+        case 'error':
+          Alert.alert('Không thể xuất PDF', 'Vui lòng kiểm tra kết nối và thử lại.');
+          break;
+        case 'busy':
+        case 'unauthorized':
+          break;
+      }
+    } finally {
+      exportInFlight.current = false;
+      setIsExporting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -58,14 +125,35 @@ export default function FamilyHealthScreen() {
             <Text style={styles.appBarSubtitle}>Người thân: {elderlyName}</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.thresholdBtn}
-          onPress={() => navigation.navigate('HealthThreshold')}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="options" size={18} color={Colors.primary} />
-          <Text style={styles.thresholdBtnText}>Cài ngưỡng</Text>
-        </TouchableOpacity>
+        <View style={styles.appBarActions}>
+          {elderlyId != null && (
+            <TouchableOpacity
+              style={[styles.exportBtn, (isExporting || paymentIsLoading) && styles.disabledBtn]}
+              onPress={handleExport}
+              disabled={isExporting || paymentIsLoading}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Xuất báo cáo sức khỏe PDF"
+              accessibilityState={{ disabled: isExporting || paymentIsLoading, busy: isExporting }}
+            >
+              {isExporting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="document-text-outline" size={17} color="#FFFFFF" />
+              )}
+              <Text style={styles.exportBtnText}>{isExporting ? 'Đang tạo...' : 'Xuất PDF'}</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.thresholdBtn}
+            onPress={() => navigation.navigate('HealthThreshold')}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Cài đặt ngưỡng sức khỏe"
+          >
+            <Ionicons name="options" size={18} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {elderlyId == null ? (
@@ -260,12 +348,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#E6F7F5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
     borderRadius: 14,
     gap: 6,
   },
-  thresholdBtnText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
+  appBarActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  exportBtn: {
+    height: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  exportBtnText: { color: '#FFFFFF', fontSize: 12.5, fontWeight: '800' },
+  disabledBtn: { opacity: 0.65 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyText: { color: '#0F172A', fontSize: 16.5, fontWeight: '800', textAlign: 'center' },
   emptySub: { color: '#64748B', fontSize: 13.5, textAlign: 'center', marginTop: 4, lineHeight: 20 },
