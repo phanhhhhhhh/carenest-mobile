@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
 import { Shadows } from '../../../../core/theme/spacing';
 import type { MedicationItem } from '../../../../shared/types';
+import { PlayVoiceReminderButton } from '../../../medication/components/PlayVoiceReminderButton';
 import { pad2 } from './utils';
 
 export function MedRow({ item, onPress }: { item: MedicationItem; onPress: () => void }) {
@@ -38,6 +39,11 @@ export function MedRow({ item, onPress }: { item: MedicationItem; onPress: () =>
             {item.dosage || 'Theo chỉ định'}
           </Text>
         </Text>
+        {!!item.voiceUrl && (
+          <View style={{ marginTop: 6 }}>
+            <PlayVoiceReminderButton url={item.voiceUrl} />
+          </View>
+        )}
       </View>
       <View style={[styles.statusPill, { backgroundColor: item.taken ? '#DCFCE7' : '#FEF3C7' }]}>
         <Ionicons

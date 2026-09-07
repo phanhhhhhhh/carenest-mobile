@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
 import { Shadows } from '../../../../core/theme/spacing';
 import type { MedicationItem } from '../../../../shared/types';
+import { PlayVoiceReminderButton } from '../../../medication/components/PlayVoiceReminderButton';
 
 export function DueBanner({
   med,
@@ -56,6 +57,13 @@ export function DueBanner({
           )}
         </View>
       </View>
+
+      {!!med.voiceUrl && (
+        <>
+          <View style={{ height: 14 }} />
+          <PlayVoiceReminderButton url={med.voiceUrl} big />
+        </>
+      )}
 
       <View style={{ height: 18 }} />
 

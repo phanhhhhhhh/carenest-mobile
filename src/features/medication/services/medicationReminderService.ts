@@ -68,7 +68,12 @@ async function scheduleOne(med: MedicationItem, slot: number): Promise<void> {
         title: `💊 Đến giờ uống ${med.name}`,
         body: reminderBody(med),
         sound: 'default',
-        data: { type: 'MEDICATION_REMINDER', medicationId: med.id },
+        data: {
+          type: 'MEDICATION_REMINDER',
+          medicationId: med.id,
+          // Carried so the foreground handler can play the family's recorded voice (UC B2).
+          ...(med.voiceUrl ? { voiceUrl: med.voiceUrl } : {}),
+        },
         ...(Platform.OS === 'android' ? { channelId: CHANNEL_ID } : {}),
       },
       trigger: {
@@ -98,7 +103,11 @@ export async function snoozeOneOff(med: MedicationItem, minutes = 10): Promise<b
         title: `💊 Nhắc lại: ${med.name}`,
         body: `${reminderBody(med)} · đã hoãn ${minutes} phút`,
         sound: 'default',
-        data: { type: 'MEDICATION_SNOOZE', medicationId: med.id },
+        data: {
+          type: 'MEDICATION_SNOOZE',
+          medicationId: med.id,
+          ...(med.voiceUrl ? { voiceUrl: med.voiceUrl } : {}),
+        },
         ...(Platform.OS === 'android' ? { channelId: SNOOZE_CHANNEL_ID } : {}),
       },
       trigger: {

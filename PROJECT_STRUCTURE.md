@@ -76,15 +76,34 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   `medications.voice_url` (V44) + `MedicationRequest/Response.voiceUrl`; `MedicationVoiceService` +
   `POST /api/medications/parse-voice` (multipart audio → transcribe → Gemini extract →
   `MedicationDraftResponse`, confirm-before-save). Custom reminder voice is put in the
-  reminder FCM payload only when a linked family member is Family Plus.
-  **Front-end voice entry — built (2026-09-07).** `expo-audio` (config plugin +
-  mic permission in `app.json`); `features/medication/hooks/useMedicationVoiceInput.ts`
-  (record `.m4a` → `audio/mp4`, 60 s cap), `features/medication/services/medicationVoiceApi.ts`
-  (`parseMedicationVoice`), `medicationVoiceDraft.ts` (`draftToMedicationPrefill` — shifts
-  ISO day-of-week 1=Mon to the form's 0=Mon index — + `voiceReviewHint`), schema
-  `MedicationVoiceDraftSchema`. UI: `VoiceCaptureRow` "Đọc để điền nhanh" in the family
-  `MedicationForm` (elderly medication screen has no add form). Draft pre-fills every field;
-  family still confirms before save. Unit test `medicationVoiceDraft.test.ts`.
+  reminder FCM payload only when a linked family member is Family Plus
+  (`MedicationReminderScheduler` checks `voiceUrl` non-blank + `hasPremiumFamily`).
+  **Front-end voice — built (2026-09-07).** Shared recorder `features/medication/hooks/
+  useVoiceClipRecorder.ts` (record `.m4a` → `audio/mp4`, permission + audio-mode + cap +
+  unmount cleanup). Two features on top:
+  · **Voice entry (B1)** — `useMedicationVoiceInput` → `medicationVoiceApi.parseMedicationVoice`
+    → `medicationVoiceDraft.draftToMedicationPrefill` (shifts ISO day-of-week 1=Mon to the
+    form's 0=Mon index) + `voiceReviewHint`; schema `MedicationVoiceDraftSchema`. UI:
+    `VoiceCaptureRow` "Đọc để điền nhanh".
+  · **Custom reminder voice (B2)** — record: `useReminderVoiceRecorder` →
+    `cloudinaryUpload.uploadVoiceClip` (unsigned preset, `EXPO_PUBLIC_CLOUDINARY_*`,
+    `AppConfig.cloudinary`) → stores the `secure_url` as `medication.voiceUrl`. UI:
+    `ReminderVoiceSection` in the family `MedicationForm` — hidden unless Cloudinary is
+    configured, locked with a "Family Plus" note unless `subscription.isPremium`
+    (`usePaymentStore`), record / re-record / remove / preview.
+    Playback: `reminderVoicePlayer` (imperative one-shot) plays the clip when a
+    `MEDICATION_REMINDER`/`MEDICATION_SNOOZE` notification carrying `voiceUrl` is received
+    in the foreground or tapped (`pushNotificationService`); `medicationReminderService`
+    now copies `med.voiceUrl` into the local scheduled-reminder `data`.
+    `PlayVoiceReminderButton` ("Nghe lời nhắc", `useAudioPlayer`) on the elderly
+    `DueBanner` + `MedRow` for manual replay. `notificationVoiceData.extractVoiceUrl` is the
+    pure payload parser (kept expo-audio-free so it's unit-testable).
+  Voice entry + `ReminderVoiceSection` are in the **family** `MedicationForm` only (elderly
+  med screen has no add form). Tests: `medicationVoiceDraft.test.ts`, `cloudinaryUpload.test.ts`,
+  `notificationVoiceData.test.ts`.
+  Known limit: background/killed playback of a remote clip needs a native module, so the
+  auto-play is foreground-only; the elderly's own med list carries `voiceUrl` regardless of
+  premium (gate is on record + on FCM), so a post-downgrade clip still plays locally.
 - **A2** — feed retention now plan-aware (7 d free / unlimited Plus); heart reaction sends
   warm FCM feedback to the elderly device.
 - **D5** — `FeedItemType.CAMERA`; scheduled/manual camera snapshots unioned into the Feed
@@ -101,9 +120,9 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   file storage. Frontend: `family/services/healthReportExportService.ts` and the accessible
   “Xuất PDF” action on `FamilyHealthScreen` (7-day/30-day period, native share sheet).
 
-Still to do: custom recorded reminder-voice clip (record → upload to Cloudinary
-unsigned preset → save `medication.voiceUrl`, Family Plus gated — needs a Cloudinary
-account + preset provisioned first); a real ADMIN screen for the pending-payments endpoint.
+Still to do: a real ADMIN screen for the pending-payments endpoint; optionally,
+background/killed playback of `medication.voiceUrl` (needs a native module — foreground
+auto-play + manual replay are built, see B2 note above).
 
 QR link flow — **KEPT** (team decision 2026-09-07, overrides the v3.5 "drop QR scanner"
 line). `ElderlyQRInviteScreen`, `FamilyScanQRScreen`, `familyScanQR/`, `elderlyQRInvite/`,
