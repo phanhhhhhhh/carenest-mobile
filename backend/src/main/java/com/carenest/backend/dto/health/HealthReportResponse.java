@@ -14,4 +14,7 @@ public class HealthReportResponse {
     private OffsetDateTime from;
     private OffsetDateTime to;
     private List<MetricReport> reports;
+    private List<MedicationAdherenceReport> medicationAdherence;
+    private AppointmentReportSummary appointmentSummary;
+    private WeeklySummarySnapshot latestWeeklySummary;
 }
