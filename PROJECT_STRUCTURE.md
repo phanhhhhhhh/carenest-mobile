@@ -69,7 +69,7 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   auto-restore + family notice).
 - **G3** — VietQR/NAPAS + **manual reconciliation** (`PaymentService.createVietQrPayment` /
   `confirmManualPayment`, `POST /api/payment/vietqr/{create,confirm}`); yearly price
-  fixed 399k → **499k**; `/plans` features rewritten to spec Family Plus benefits, PDF removed.
+  fixed 399k → **499k**; `/plans` features list the current Family Plus benefits.
   (VNPay/MoMo gateways left in place as secondary.)
 - **B1/B2** — `MedicationScheduleCalculator.previousDoseTime` + `MedicationReminderScheduler.sweepMissedDoses`
   auto-logs MISSED doses (`carenest.medication.missed-grace-minutes`, default 90).
@@ -86,6 +86,12 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - SOS fixes: `acknowledgeAllForUser` no longer resolves ACTIVE events; secondary contact
   only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
 - G3 operator: `GET /api/payment/pending` + `POST /api/payment/vietqr/confirm` (both `hasRole('ADMIN')`).
+- **Premium PDF health-report export** — `HealthReportExportController`
+  (`GET /api/elderly/{id}/health-report.pdf`) requires an active linked Family member and
+  an active monthly/yearly Premium subscription. `HealthReportService` provides the shared
+  aggregate; `HealthReportPdfService` renders an on-demand, Unicode PDF without server-side
+  file storage. Frontend: `family/services/healthReportExportService.ts` and the accessible
+  “Xuất PDF” action on `FamilyHealthScreen` (7-day/30-day period, native share sheet).
 
 Still to do: front-end mic/recording UI for medication voice entry (needs expo-av +
 Cloudinary unsigned-preset wiring — backend `parse-voice` endpoint is ready);
@@ -94,7 +100,7 @@ remove the QR link flow (still wired: `ElderlyQRInviteScreen`, `FamilyScanQRScre
 `core/api/inviteApi.ts`, entry points in dashboard/profile — ~20 files; deferred to
 avoid a nav regression); a real ADMIN screen for the pending-payments endpoint.
 
-Dropped from roadmap: QR scanner, PDF export, Zalo OA, prescription-photo storage,
+Dropped from roadmap: QR scanner, Zalo OA, prescription-photo storage,
 camera-based visit auto-detect.
 
 ## Backend (`backend/src/main/java/com/carenest/backend/`)
@@ -114,7 +120,7 @@ Standard layered Spring Boot structure: `controller` → `service` → `reposito
 | Emergency / SOS | `EmergencyEventController` | `EmergencyEventService` | `EmergencyEvent`, `EmergencyStatus` |
 | Daily check-in (A1) | `CheckInController` | `CheckInService` | `CheckIn`, `CheckInSource` |
 | Family Care Feed (A2) | `FamilyFeedController` | `FamilyFeedService` | `FeedReaction`, `FeedItemType` (feed items are aggregated, not stored) |
-| Health metrics | `HealthMetricController`, `HealthMetricThresholdController` | `HealthMetricService`, `HealthMetricThresholdService`, `HealthReportService`, `HealthSyncService`, `AnomalyDetectionService` | `HealthMetric`, `HealthMetricType`, `HealthMetricThreshold` |
+| Health metrics + Premium PDF export | `HealthMetricController`, `HealthMetricThresholdController`, `HealthReportExportController` | `HealthMetricService`, `HealthMetricThresholdService`, `HealthReportService`, `HealthReportPdfService`, `HealthSyncService`, `AnomalyDetectionService` | `HealthMetric`, `HealthMetricType`, `HealthMetricThreshold` |
 | Google Fit integration | `GoogleFitController` | `GoogleFitService` | `GoogleFitToken` |
 | Medication | `MedicationController`, `MedicationCatalogController`, `MedicationLogController` | `MedicationService`, `MedicationCatalogService`, `MedicationLogService`, `MedicationScheduleCalculator` | `Medication`, `MedicationCatalogItem`, `MedicationLog`, `MedicationLogStatus`, `MedicationSchedule` |
 | Reminders | `ReminderController` | `ReminderService`, `SchedulerStateService` | `Reminder`, `RepeatRule`, `SchedulerState` |
@@ -172,7 +178,7 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 |---|---|---|---|
 | **auth** | GetStarted, Welcome, WelcomeBack, Phone, Register (+Success), OtpVerify, VerificationChoice, VerifyEmail (+Prompt), Forgot/NewPassword, PasswordResetSuccess, PinSetup, PinVerify | `authStore.ts` | `screens/phone/validators.ts`, `screens/register/validators.ts` |
 | **elderly** | Home, Appointments, Camera, Chat, EditProfile, EmergencyContacts, Health, HealthReport, Medication, MedicationHistory, Profile, QRInvite | `elderlyStore`, `chatStore`, `checkinStore`, `googleFitStore`, `healthMetricStore`, `healthReportStore`, `medicationStore` | `components/ProactiveReminderCard.tsx`; `screens/elderlyHome/CheckinPanel.tsx` |
-| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health, Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
+| **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health (Premium PDF export), Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `services/healthReportExportService.ts`; `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
 | **medication** | — (screens live under `elderly` / `family`) | — | `services/medicationCatalogApi.ts`, `medicationReminderService.ts` |
 | **notifications** | NotificationsScreen, NotificationSettingsScreen | `notificationStore`, `notificationSettingsStore` | — |
 
