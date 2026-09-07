@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class CheckInRepositoryTest extends BaseRepositoryTest {
@@ -77,11 +78,19 @@ class CheckInRepositoryTest extends BaseRepositoryTest {
         OffsetDateTime base = OffsetDateTime.now();
 
         createCheckIn(a, 1, base.minusHours(2));
-        createCheckIn(b, 4, base.minusHours(1));
+        createCheckIn(b, 2, base.minusHours(1));
 
         List<CheckIn> result = checkInRepository.findByElderlyIdOrderByCreatedAtDesc(a.getId());
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getElderly().getId()).isEqualTo(a.getId());
+    }
+
+    @Test
+    void saveAndFlush_rejectsMoodFourAtDatabaseConstraint() {
+        User elderly = createElderlyUser("0904000005");
+
+        assertThatThrownBy(() -> createCheckIn(elderly, 4, OffsetDateTime.now()))
+            .hasMessageContaining("mood");
     }
 }

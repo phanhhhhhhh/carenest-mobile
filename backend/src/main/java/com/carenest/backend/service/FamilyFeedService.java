@@ -254,17 +254,13 @@ public class FamilyFeedService {
             case 1 -> "khỏe mạnh 😊";
             case 2 -> "bình thường 😐";
             case 3 -> "thấy mệt 😣";
-            case 4 -> "cần giúp gấp 🆘";
-            default -> "bình thường";
+            default -> "không xác định";
         };
     }
 
     private static String moodSubtitle(Short mood) {
         if (mood != null && mood.intValue() == 3) {
             return "Nên hỏi thăm ông/bà một chút";
-        }
-        if (mood != null && mood.intValue() == 4) {
-            return "Đã kích hoạt cảnh báo khẩn cấp";
         }
         return "Chạm trái tim để ông/bà biết cả nhà đã đọc";
     }
