@@ -46,7 +46,26 @@ Built and current (spec only documents these — do not rebuild):
   `availabilityStore.ts` + `familyDashboard/AvailabilityChip.tsx` (header toggle),
   `broadcastStore.ts` + `familyDashboard/BroadcastBanner.tsx` (dashboard "Tôi lo được").
   Config: `carenest.broadcast.*` in `application.properties`.
-- Flyway is at **V45**; next migration is V46.
+- Flyway is at **V46**; next migration is V47.
+
+Premium-plan rework (2026-09-08, on `develop` — commits `0b03d99` / `4e1d1cc`, not yet on `main`):
+- Plan limits are **count-based** (`SubscriptionService` constants): FREE = 1 elderly + 1
+  family account; PREMIUM = 4 elderly + 6 family. `canAddElderly` / `canAddFamilyMember`
+  enforce; `FamilyLinkService.create` throws `PaymentRequiredException` (Vietnamese copy)
+  when either cap is hit.
+- `SubscriptionService.isPremium(userId)` is now **group-shared**: true if the user has a
+  direct PREMIUM_* subscription **or** any family co-linked to one of their linked elderly
+  has one (`findByUserIdInAndStatusAndPlanTypeIn`). Callers: `ChatService`,
+  `FamilyFeedService`, `MedicationReminderScheduler`, `PaymentService`, `HealthReportExportController`.
+- Yearly price 499k → **490k**; plan names "Premium Hàng tháng / năm" (was "CareNest Family Plus").
+- **PRO tier**: migration `V46` widens `plan_type` to allow `PRO_MONTHLY` / `PRO_YEARLY`,
+  but `isPro()` / `isPro` are hard-`false` on BE and FE — scaffolding only.
+- `FamilyLinkService.create` now saves the link as **`ACTIVE` immediately** (was `PENDING`);
+  `FamilyLinkController` `@PreAuthorize` widened so an already-linked family can add another
+  family for the same elderly (`@authz.isOwnerOrLinkedFamily`). ⚠ This bypasses the
+  elderly-approval step described for UC **E4** below — flagged, not yet reconciled.
+- Backend tests green offline: `SubscriptionServiceTest` (13), `FamilyLinkServiceTest` (3),
+  `FamilyLinkRepositoryTest` (7). `AuthIntegrationTest` still needs a running Postgres.
 
 Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - **A5 chat quota** — `carenest.chat.free-daily-limit` (default 5) enforced in
@@ -69,7 +88,8 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   auto-restore + family notice).
 - **G3** — VietQR/NAPAS + **manual reconciliation** (`PaymentService.createVietQrPayment` /
   `confirmManualPayment`, `POST /api/payment/vietqr/{create,confirm}`); yearly price
-  fixed 399k → **499k**; `/plans` features list the current Family Plus benefits.
+  fixed 399k → 499k (later **490k** in the 2026-09-08 rework); `/plans` features list the
+  current premium benefits.
   (VNPay/MoMo gateways left in place as secondary.)
 - **B1/B2** — `MedicationScheduleCalculator.previousDoseTime` + `MedicationReminderScheduler.sweepMissedDoses`
   auto-logs MISSED doses (`carenest.medication.missed-grace-minutes`, default 90).
@@ -108,7 +128,10 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   warm FCM feedback to the elderly device.
 - **D5** — `FeedItemType.CAMERA`; scheduled/manual camera snapshots unioned into the Feed
   (SOS snapshots stay under the EMERGENCY item; motion-window alerts remain notification-only).
-- **E4** — only the elderly may activate a pending family link (`FamilyLinkService.updateStatus` arg).
+- **E4** — only the elderly may activate a *pending* family link (`FamilyLinkService.updateStatus` arg).
+  ⚠ Superseded in practice by the 2026-09-08 rework: `FamilyLinkService.create` now writes
+  `ACTIVE` directly, so the phone-number path no longer produces a PENDING link for the
+  elderly to approve. Unresolved — see the premium-plan rework note above.
 - Compliance: `PrivacyPolicyScreen` linked from Register; sensitive-data notes.
 - SOS fixes: `acknowledgeAllForUser` no longer resolves ACTIVE events; secondary contact
   only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
@@ -140,8 +163,9 @@ QR link flow — **KEPT** (team decision 2026-09-07, overrides the v3.5 "drop QR
 line). `ElderlyQRInviteScreen`, `FamilyScanQRScreen`, `familyScanQR/`, `elderlyQRInvite/`,
 `InviteController`/`InviteTokenService`, `core/api/inviteApi.ts` and the dashboard/profile
 entry points stay. Linking has two coexisting paths: QR (elderly generates token → family
-scans → link ACTIVE immediately) and phone-number (`POST /api/family-links` → PENDING →
-elderly approves, per E4).
+scans → link ACTIVE immediately) and phone-number (`POST /api/family-links`). As of the
+2026-09-08 rework the phone-number path also creates the link **ACTIVE** on the spot — the
+old PENDING → elderly-approves (UC E4) flow is currently bypassed (flagged above).
 
 Dropped from roadmap: Zalo OA, prescription-photo storage,
 camera-based visit auto-detect.

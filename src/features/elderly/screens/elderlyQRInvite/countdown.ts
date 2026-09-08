@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export const QR_SIZE = 220;
 
-function secondsUntil(expiresAt: string | null): number {
+export function secondsUntil(expiresAt: string | null): number {
   if (!expiresAt) return 0;
   return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
 }
