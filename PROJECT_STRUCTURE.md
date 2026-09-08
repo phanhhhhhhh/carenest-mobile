@@ -6,7 +6,8 @@
 > Status: backend map confirmed from repo listing (Sept 2026); frontend map
 > confirmed against `src/` on 2026-09-02. Keep this file in sync when modules move.
 > This repo is a **monorepo**: React Native / Expo app at the root (`src/`), Spring
-> Boot backend under `backend/`.
+> Boot backend under `backend/`, and a small Vite/React operator console under
+> `admin-web/` (see "Admin web panel" near the end).
 
 ## Canonical spec: Master Spec v3.5 (2026-09-06)
 
@@ -274,6 +275,22 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 - No `api/services` folder per backend-feature (e.g. no dedicated `authApi.ts`) except `medication/services/`. Most feature stores call `core/api/client.ts` directly — verify the actual call pattern in a store file before assuming a convention.
 - App entry point: root `App.tsx` / `index.ts` (not under `src/`).
 - Demo accounts (seed profile only): elderly `+84912345001`, family `+84918111001`, password `Demo@1234` for all. Full list in `README.md` → "Demo Data".
+
+## Admin web panel (`admin-web/`)
+
+Standalone operator console for VietQR payment reconciliation (UC G3) — a normal
+web app, **not** part of the Expo app. Vite + React 19 + TypeScript, no UI framework.
+
+- `src/api.ts` — `fetch` wrapper; JWT from `POST /api/auth/login` kept in `localStorage`
+  (`carenest_admin_token`); 401 clears the session.
+- `src/App.tsx` — login view (rejects non-`ADMIN` client-side) ↔ authed shell.
+- `src/PaymentsView.tsx` — pending-list table with per-row **Xác nhận** /
+  **Từ chối** → `POST /api/payment/vietqr/{confirm,reject}`; row drops on a handled status.
+- `src/format.ts` — plan label / VND / datetime helpers.
+- Dev: `npm install && npm run dev` (`:5174`), proxies `/api` → `:8082` (`VITE_API_TARGET`
+  to override). Build: `npm run build` → `dist/`. A different deploy origin needs adding to
+  the backend `cors.allowed-origins`. Login: seeded ADMIN `+84900000001` / `Demo@1234`.
+- See `admin-web/README.md`.
 
 ## General notes
 
