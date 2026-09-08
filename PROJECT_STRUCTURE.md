@@ -47,7 +47,9 @@ Built and current (spec only documents these — do not rebuild):
   `availabilityStore.ts` + `familyDashboard/AvailabilityChip.tsx` (header toggle),
   `broadcastStore.ts` + `familyDashboard/BroadcastBanner.tsx` (dashboard "Tôi lo được").
   Config: `carenest.broadcast.*` in `application.properties`.
-- Flyway is at **V46**; next migration is V47.
+- Flyway is at **V47**; next migration is V48. (`V47` relaxes the `payment_provider`
+  CHECK to allow `'VIETQR'` — `PaymentService.createVietQrPayment` persists it and the
+  original `V20` constraint rejected it, so VietQR payment creation was broken.)
 
 Premium-plan rework (2026-09-08, on `develop` — commits `0b03d99` / `4e1d1cc`, not yet on `main`):
 - Plan limits are **count-based** (`SubscriptionService` constants): FREE = 1 elderly + 1
