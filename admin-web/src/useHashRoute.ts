@@ -1,8 +1,35 @@
 import { useEffect, useState } from 'react';
 
-export type Route = 'overview' | 'users' | 'subscriptions' | 'payments';
+export type Route =
+  | 'overview'
+  | 'users'
+  | 'elderly'
+  | 'family-links'
+  | 'emergencies'
+  | 'check-ins'
+  | 'medications'
+  | 'health-metrics'
+  | 'cameras'
+  | 'notifications'
+  | 'appointments'
+  | 'subscriptions'
+  | 'payments';
 
-const ROUTES: Route[] = ['overview', 'users', 'subscriptions', 'payments'];
+const ROUTES: Route[] = [
+  'overview',
+  'users',
+  'elderly',
+  'family-links',
+  'emergencies',
+  'check-ins',
+  'medications',
+  'health-metrics',
+  'cameras',
+  'notifications',
+  'appointments',
+  'subscriptions',
+  'payments',
+];
 
 function parse(): Route {
   const h = window.location.hash.replace(/^#\/?/, '');

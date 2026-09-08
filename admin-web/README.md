@@ -3,14 +3,23 @@
 Operator/admin console for CareNest. A normal web app (Vite + React 19 + TypeScript,
 no UI framework) — **not** part of the mobile app.
 
-Pages:
+Pages (all backed by `GET /api/admin/*`, `hasRole('ADMIN')`, paginated Spring `Page`):
 
-| Page | Backend | What it shows |
+| Page | Endpoint | Notes |
 |---|---|---|
-| **Tổng quan** | `GET /api/admin/overview` | user / elderly / link / subscription counts, revenue, check-ins today, open SOS |
-| **Người dùng** | `GET /api/admin/users?role=&query=&page=` | every user, filter by role + text search, paginated |
-| **Gói đăng ký** | `GET /api/admin/subscriptions?status=&page=` | every subscription, filter by status, paginated |
-| **Duyệt thanh toán** | `GET /api/payment/pending` + `POST /api/payment/vietqr/{confirm,reject}` | PENDING VietQR transfers, confirm → activate / reject → cancel |
+| **Tổng quan** | `/overview` | ~18 counts: users by role, elderly, links, subs by plan, revenue, check-ins today, open SOS, meds, appts, cameras online, health metrics 7d, chat msgs today, notifications 7d |
+| **Người dùng** | `/users?role=&query=&page=` + `/users/{id}` | role filter + text search; row → detail drawer (profile, active sub, group-premium, links) |
+| **Người cao tuổi** | `/elderly` | health conditions, blood type, camera consent |
+| **Liên kết gia đình** | `/family-links?status=` | PENDING = E4 approval queue (sidebar badge) |
+| **Sự cố SOS** | `/emergencies?status=` | escalation level, ack/call/resolve times (sidebar badge for ACTIVE) |
+| **Check-in** | `/check-ins` | mood, source, note |
+| **Thuốc** | `/medications` | dosage, voice-reminder flag, next dose |
+| **Chỉ số sức khỏe** | `/health-metrics?type=` | value(s) + unit, recorded time |
+| **Camera** | `/cameras` | status, privacy mode, motion detection, last seen |
+| **Lịch hẹn** | `/appointments?status=` | doctor, specialty, location, datetime |
+| **Thông báo** | `/notifications?type=` | recipient, type, read flag |
+| **Gói đăng ký** | `/subscriptions?status=` | every subscription |
+| **Duyệt thanh toán** | `/payment/pending` + `/payment/vietqr/{confirm,reject}` | PENDING VietQR queue |
 
 All admin endpoints are `@PreAuthorize("hasRole('ADMIN')")`. Auth is a JWT from
 `POST /api/auth/login`, kept in `localStorage`; a 401/403 on any call drops the

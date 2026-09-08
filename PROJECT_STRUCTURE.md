@@ -280,19 +280,35 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 
 ## Admin web panel (`admin-web/`)
 
-Standalone operator console for VietQR payment reconciliation (UC G3) — a normal
-web app, **not** part of the Expo app. Vite + React 19 + TypeScript, no UI framework.
+Full operator console — a normal web app, **not** part of the Expo app. Vite + React 19
++ TypeScript, no UI framework. Excluded from root eslint / tsc / prettier.
 
-- `src/api.ts` — `fetch` wrapper; JWT from `POST /api/auth/login` kept in `localStorage`
-  (`carenest_admin_token`); 401 clears the session.
-- `src/App.tsx` — login view (rejects non-`ADMIN` client-side) ↔ authed shell.
-- `src/PaymentsView.tsx` — pending-list table with per-row **Xác nhận** /
-  **Từ chối** → `POST /api/payment/vietqr/{confirm,reject}`; row drops on a handled status.
-- `src/format.ts` — plan label / VND / datetime helpers.
-- Dev: `npm install && npm run dev` (`:5174`), proxies `/api` → `:8082` (`VITE_API_TARGET`
-  to override). Build: `npm run build` → `dist/`. A different deploy origin needs adding to
-  the backend `cors.allowed-origins`. Login: seeded ADMIN `+84900000001` / `Demo@1234`.
-- See `admin-web/README.md`.
+Backend: `AdminController` (`/api/admin/**`, all `@PreAuthorize("hasRole('ADMIN')")`) →
+`AdminService` + `dto/admin/Admin*Response` records. Read-only, paginated (Spring `Page`),
+filter via query params. Endpoints: `/overview`, `/users` (+ `/users/{id}` detail),
+`/subscriptions`, `/elderly`, `/family-links`, `/emergencies`, `/check-ins`, `/medications`,
+`/health-metrics`, `/cameras`, `/notifications`, `/appointments`. Repos gained `count*` and
+`findForAdmin(...)` `@Query` methods (JOIN FETCH to avoid N+1). Tests: `AdminServiceTest`.
+
+Frontend:
+- `src/api.ts` — `fetch` wrapper; JWT from `POST /api/auth/login` in `localStorage`
+  (`carenest_admin_token`); `/auth/login` is sent `anonymous` (no stale token); 401/403 on
+  an authed call clears the session.
+- `src/App.tsx` — login ↔ shell; owns the `/overview` fetch (sidebar badges + Overview page).
+- `src/Layout.tsx` + `src/useHashRoute.ts` — sidebar, `#/…` routing, PENDING-links /
+  active-SOS badges.
+- `src/ResourceListPage.tsx` — generic filtered+paginated table; each `pages/resources.tsx`
+  page is just columns + filters + a fetcher.
+- `src/pages/` — `OverviewPage`, `UsersPage` (+ detail drawer), `SubscriptionsPage`,
+  `PaymentsPage` (confirm/reject), and the `resources.tsx` bundle (elderly, family-links,
+  emergencies, check-ins, medications, health-metrics, cameras, notifications, appointments).
+- `src/components.tsx` (`PageHeader`/`StatCard`/`StateBlock`/`Pagination`/`Badge`), `src/format.ts`.
+- Dev: `npm install && npm run dev` (`:5174`); the proxy forwards `/api` → `:8082`
+  **without `changeOrigin`** (keeps it same-origin — with it, the backend rejects POSTs as
+  "Invalid CORS request"). `VITE_API_TARGET` overrides the backend URL. Build → `dist/`
+  (static); a different deploy origin needs adding to `cors.allowed-origins`.
+- Login: seeded ADMIN `+84900000001` / `Demo@1234` (dev/local; `DataSeeder` also seeds 2
+  PENDING VietQR subs). See `admin-web/README.md`.
 
 ## General notes
 

@@ -1,6 +1,16 @@
 import type {
   ActionResult,
+  AdminAppointmentRow,
+  AdminCameraRow,
+  AdminCheckInRow,
+  AdminElderlyRow,
+  AdminEmergencyRow,
+  AdminFamilyLinkRow,
+  AdminHealthMetricRow,
+  AdminMedicationRow,
+  AdminNotificationRow,
   AdminSubscriptionRow,
+  AdminUserDetail,
   AdminUserRow,
   AuthResponse,
   Overview,
@@ -118,16 +128,76 @@ export function getUsers(params: {
   return request<Page<AdminUserRow>>(`/admin/users?${q}`);
 }
 
-export function getSubscriptions(params: {
+/** Shared query builder for the paginated admin list endpoints. */
+function listQuery(params: Record<string, string | number | undefined>): string {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') q.set(k, String(v));
+  }
+  if (!q.has('page')) q.set('page', '0');
+  return q.toString();
+}
+
+export function getSubscriptions(p: {
   status?: string;
   page?: number;
-  size?: number;
 }): Promise<Page<AdminSubscriptionRow>> {
-  const q = new URLSearchParams();
-  if (params.status) q.set('status', params.status);
-  q.set('page', String(params.page ?? 0));
-  q.set('size', String(params.size ?? 25));
-  return request<Page<AdminSubscriptionRow>>(`/admin/subscriptions?${q}`);
+  return request(`/admin/subscriptions?${listQuery(p)}`);
+}
+
+export function getElderly(p: { page?: number }): Promise<Page<AdminElderlyRow>> {
+  return request(`/admin/elderly?${listQuery(p)}`);
+}
+
+export function getFamilyLinks(p: {
+  status?: string;
+  page?: number;
+}): Promise<Page<AdminFamilyLinkRow>> {
+  return request(`/admin/family-links?${listQuery(p)}`);
+}
+
+export function getEmergencies(p: {
+  status?: string;
+  page?: number;
+}): Promise<Page<AdminEmergencyRow>> {
+  return request(`/admin/emergencies?${listQuery(p)}`);
+}
+
+export function getCheckIns(p: { page?: number }): Promise<Page<AdminCheckInRow>> {
+  return request(`/admin/check-ins?${listQuery(p)}`);
+}
+
+export function getMedications(p: { page?: number }): Promise<Page<AdminMedicationRow>> {
+  return request(`/admin/medications?${listQuery(p)}`);
+}
+
+export function getHealthMetrics(p: {
+  type?: string;
+  page?: number;
+}): Promise<Page<AdminHealthMetricRow>> {
+  return request(`/admin/health-metrics?${listQuery(p)}`);
+}
+
+export function getCameras(p: { page?: number }): Promise<Page<AdminCameraRow>> {
+  return request(`/admin/cameras?${listQuery(p)}`);
+}
+
+export function getNotifications(p: {
+  type?: string;
+  page?: number;
+}): Promise<Page<AdminNotificationRow>> {
+  return request(`/admin/notifications?${listQuery(p)}`);
+}
+
+export function getAppointments(p: {
+  status?: string;
+  page?: number;
+}): Promise<Page<AdminAppointmentRow>> {
+  return request(`/admin/appointments?${listQuery(p)}`);
+}
+
+export function getUserDetail(id: number): Promise<AdminUserDetail> {
+  return request(`/admin/users/${id}`);
 }
 
 export function getPendingPayments(): Promise<PendingPayment[]> {

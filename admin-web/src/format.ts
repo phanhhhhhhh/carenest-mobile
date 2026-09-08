@@ -19,8 +19,68 @@ const STATUS_LABELS: Record<string, string> = {
   EXPIRED: 'Hết hạn',
 };
 
+const METRIC_LABELS: Record<string, string> = {
+  BLOOD_PRESSURE: 'Huyết áp',
+  HEART_RATE: 'Nhịp tim',
+  BLOOD_GLUCOSE: 'Đường huyết',
+  WEIGHT: 'Cân nặng',
+  TEMPERATURE: 'Nhiệt độ',
+  SPO2: 'SpO₂',
+};
+
+const NOTIF_LABELS: Record<string, string> = {
+  MEDICATION_REMINDER: 'Nhắc thuốc',
+  HEALTH_ALERT: 'Cảnh báo sức khỏe',
+  EMERGENCY: 'Khẩn cấp',
+  APPOINTMENT_REMINDER: 'Nhắc lịch hẹn',
+  FAMILY_UPDATE: 'Cập nhật gia đình',
+  FAMILY_LINK_REQUEST: 'Yêu cầu kết nối',
+  WEEKLY_SUMMARY: 'Tổng kết tuần',
+};
+
+const APPT_LABELS: Record<string, string> = {
+  SCHEDULED: 'Đã lên lịch',
+  COMPLETED: 'Hoàn thành',
+  CANCELLED: 'Đã huỷ',
+  MISSED: 'Bỏ lỡ',
+};
+
+const EMERGENCY_LABELS: Record<string, string> = {
+  ACTIVE: 'Đang mở',
+  RESOLVED: 'Đã xử lý',
+  FALSE_ALARM: 'Báo nhầm',
+  CANCELLED: 'Đã huỷ',
+};
+
+const CONSENT_LABELS: Record<string, string> = {
+  PENDING: 'Chưa quyết định',
+  ACCEPTED: 'Đồng ý',
+  DECLINED: 'Từ chối',
+};
+
+const MOOD = ['', '😊 Vui', '😐 Bình thường', '😟 Không khỏe'];
+
 export function planLabel(planType: string): string {
   return PLAN_LABELS[planType] ?? planType;
+}
+
+export function metricLabel(t: string | null): string {
+  return t ? (METRIC_LABELS[t] ?? t) : '—';
+}
+export function notifLabel(t: string | null): string {
+  return t ? (NOTIF_LABELS[t] ?? t) : '—';
+}
+export function apptLabel(s: string | null): string {
+  return s ? (APPT_LABELS[s] ?? s) : '—';
+}
+export function emergencyLabel(s: string | null): string {
+  return s ? (EMERGENCY_LABELS[s] ?? s) : '—';
+}
+export function consentLabel(s: string | null): string {
+  return s ? (CONSENT_LABELS[s] ?? s) : '—';
+}
+export function moodLabel(m: number | null): string {
+  return m != null && m >= 1 && m <= 3 ? MOOD[m] : '—';
 }
 
 export function roleLabel(role: string): string {
