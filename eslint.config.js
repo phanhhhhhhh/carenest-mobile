@@ -14,6 +14,7 @@ module.exports = defineConfig([
     },
   },
   {
-    ignores: ['dist/*', 'node_modules/*', 'backend/*'],
+    // admin-web/ is a separate Vite/React app with its own tooling.
+    ignores: ['dist/*', 'node_modules/*', 'backend/*', 'admin-web/*'],
   },
 ]);

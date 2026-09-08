@@ -106,10 +106,7 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
   // catalog. Skipped right after a suggestion is picked so selecting doesn't
   // immediately reopen its own dropdown.
   useEffect(() => {
-    if (name.trim() === catalogPickedName) {
-      setCatalogSuggestions([]);
-      return;
-    }
+    if (name.trim() === catalogPickedName) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       searchMedicationCatalog(name, controller.signal)
@@ -123,6 +120,10 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
       controller.abort();
     };
   }, [name, catalogPickedName]);
+
+  // Hide the dropdown as soon as the field matches a just-picked suggestion,
+  // without having to clear the fetched list from an effect.
+  const visibleCatalogSuggestions = name.trim() === catalogPickedName ? [] : catalogSuggestions;
 
   const pickCatalogSuggestion = (item: MedicationCatalogParsed) => {
     setName(item.name);
@@ -208,9 +209,9 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
           setCatalogPickedName(null);
         }}
       />
-      {catalogSuggestions.length > 0 && (
+      {visibleCatalogSuggestions.length > 0 && (
         <View style={styles.suggestionBox}>
-          {catalogSuggestions.map((item) => (
+          {visibleCatalogSuggestions.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={styles.suggestionRow}

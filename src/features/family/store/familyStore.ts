@@ -182,13 +182,19 @@ export const useFamilyDashboardStore = create<FamilyDashboardState>((set, get) =
   },
 }));
 
+export interface UserLookupResult {
+  id: string;
+  name: string;
+  role: string;
+}
+
 interface FamilyLinkState {
   isLoading: boolean;
   error: string | null;
   success: boolean;
 
-  sendLinkRequest: (elderlyId: string) => Promise<boolean>;
-  lookupUserByPhone: (phone: string) => Promise<string | null>;
+  sendLinkRequest: (elderlyId: string, customFamilyId?: string) => Promise<boolean>;
+  lookupUserByPhone: (phone: string) => Promise<UserLookupResult | null>;
 }
 
 export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
@@ -196,14 +202,15 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
   error: null,
   success: false,
 
-  sendLinkRequest: async (elderlyId) => {
+  sendLinkRequest: async (elderlyId, customFamilyId) => {
     set({ isLoading: true, error: null, success: false });
     try {
-      const familyId = await storage.getUserId();
-      if (!familyId) {
+      const currentUserId = await storage.getUserId();
+      if (!currentUserId) {
         set({ isLoading: false, error: 'Chưa đăng nhập' });
         return false;
       }
+      const familyId = customFamilyId ?? currentUserId;
       await api.post('/family-links', {
         familyId: Number.parseInt(familyId, 10),
         elderlyId: Number.parseInt(elderlyId, 10),
@@ -226,8 +233,14 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
   lookupUserByPhone: async (phone) => {
     try {
       const resp = await api.get(`/users/by-phone/${phone}`);
-      const id = resp.data?.id != null ? String(resp.data.id) : null;
-      return id;
+      if (resp.data && resp.data.id != null) {
+        return {
+          id: String(resp.data.id),
+          name: String(resp.data.name ?? ''),
+          role: String(resp.data.role ?? 'ELDERLY'),
+        };
+      }
+      return null;
     } catch {
       return null;
     }
@@ -238,13 +251,17 @@ export interface LinkedFamilyMember {
   id: string;
   name: string;
   phone: string;
+  relationship?: string;
+  status?: string;
 }
 
 function toLinkedFamilyMember(l: ReturnType<typeof FamilyLinkSchema.parse>): LinkedFamilyMember {
   return {
     id: l.id ?? l.linkId ?? '',
     name: l.familyName ?? '',
-    phone: '',
+    phone: l.familyPhone ?? '',
+    relationship: l.relationship ?? undefined,
+    status: l.status ?? undefined,
   };
 }
 
@@ -253,7 +270,7 @@ interface LinkedFamilyState {
   error: string | null;
   members: LinkedFamilyMember[];
 
-  load: () => Promise<void>;
+  load: (elderlyIdOverride?: string) => Promise<void>;
 }
 
 export const useLinkedFamilyStore = create<LinkedFamilyState>((set) => ({
@@ -261,15 +278,15 @@ export const useLinkedFamilyStore = create<LinkedFamilyState>((set) => ({
   error: null,
   members: [],
 
-  load: async () => {
+  load: async (elderlyIdOverride?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const userId = await storage.getUserId();
-      if (!userId) {
+      const targetId = elderlyIdOverride ?? (await storage.getUserId());
+      if (!targetId) {
         set({ isLoading: false });
         return;
       }
-      const resp = await api.get(`/elderly/${userId}/family`);
+      const resp = await api.get(`/elderly/${targetId}/family`);
       const members = safeParseList(FamilyLinkSchema, resp.data, 'LinkedFamilyList').map(
         toLinkedFamilyMember,
       );

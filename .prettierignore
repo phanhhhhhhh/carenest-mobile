@@ -3,5 +3,6 @@ dist/
 web-build/
 .expo/
 backend/
+admin-web/
 *.md
 package-lock.json

@@ -42,9 +42,18 @@ public class FamilyLinkService {
             int current = subscriptionService.getActiveElderlyCount(request.getFamilyId());
             int max = subscriptionService.getMaxElderlyProfiles(request.getFamilyId());
             throw new PaymentRequiredException(
-                "Free tier limit reached: you can monitor " + max + " elderly profile(s). "
-                    + "You currently have " + current + ". Upgrade to Premium to add more.");
+                "Giới hạn gói cước: Bạn chỉ có thể theo dõi tối đa " + max + " người cao tuổi (hiện tại: " + current + "). "
+                    + "Vui lòng nâng cấp lên gói Premium để theo dõi tối đa 4 người cao tuổi.");
         }
+
+        if (!subscriptionService.canAddFamilyMember(request.getElderlyId(), request.getFamilyId())) {
+            int current = subscriptionService.getActiveFamilyCount(request.getElderlyId());
+            int max = subscriptionService.getMaxFamilyAccountsForElderly(request.getElderlyId(), request.getFamilyId());
+            throw new PaymentRequiredException(
+                "Giới hạn gói cước: Người cao tuổi đã đạt giới hạn " + max + " tài khoản người thân kết nối (hiện tại: " + current + "). "
+                    + "Vui lòng nâng cấp lên gói Premium để thêm tối đa 6 người thân cùng chăm sóc.");
+        }
+
         User elderly = userRepository.findById(request.getElderlyId())
             .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
@@ -64,6 +73,9 @@ public class FamilyLinkService {
             throw new ConflictException("Link between elderly and family already exists");
         }
 
+        // UC E4: the phone-number path opens a PENDING request the elderly must accept
+        // (via the FAMILY_LINK_REQUEST notification). The QR path activates immediately
+        // because the elderly initiates it there.
         FamilyLink link = FamilyLink.builder()
             .elderly(elderly)
             .family(family)
@@ -117,6 +129,24 @@ public class FamilyLinkService {
                 "Only the elderly user can accept a family link request");
         }
 
+        // Re-check plan caps at acceptance: the creation-time check only counts ACTIVE
+        // links, so several PENDING requests could each pass it individually and then
+        // all be accepted past the limit.
+        if (status == FamilyLinkStatus.ACTIVE && link.getStatus() != FamilyLinkStatus.ACTIVE) {
+            Long elderlyId = link.getElderly().getId();
+            Long familyId = link.getFamily().getId();
+            if (!subscriptionService.canAddElderly(familyId)) {
+                throw new PaymentRequiredException(
+                    "Giới hạn gói cước: Người thân này đã đạt giới hạn số người cao tuổi có thể theo dõi. "
+                        + "Vui lòng nâng cấp lên gói Premium.");
+            }
+            if (!subscriptionService.canAddFamilyMember(elderlyId, familyId)) {
+                throw new PaymentRequiredException(
+                    "Giới hạn gói cước: Người cao tuổi đã đạt giới hạn số tài khoản người thân kết nối. "
+                        + "Vui lòng nâng cấp lên gói Premium.");
+            }
+        }
+
         link.setStatus(status);
         return toResponse(familyLinkRepository.save(link));
     }
@@ -158,6 +188,7 @@ public class FamilyLinkService {
             .elderlyName(fl.getElderly().getName())
             .familyId(fl.getFamily().getId())
             .familyName(fl.getFamily().getName())
+            .familyPhone(fl.getFamily().getPhone())
             .relationship(fl.getRelationship())
             .status(fl.getStatus())
             .availabilityStatus(fl.getAvailabilityStatus())

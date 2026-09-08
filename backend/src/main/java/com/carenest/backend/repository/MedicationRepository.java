@@ -1,6 +1,8 @@
 package com.carenest.backend.repository;
 
 import com.carenest.backend.entity.Medication;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +35,9 @@ public interface MedicationRepository extends JpaRepository<Medication, Long> {
 
     @Query("SELECT COUNT(ml) > 0 FROM MedicationLog ml WHERE ml.medication.id = :medicationId AND ml.takenAt BETWEEN :from AND :to")
     boolean existsLogForMedicationInWindow(@Param("medicationId") Long medicationId, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    long countByDeletedAtIsNull();
+
+    @Query("SELECT m FROM Medication m LEFT JOIN FETCH m.elderly WHERE m.deletedAt IS NULL ORDER BY m.id DESC")
+    Page<Medication> findForAdmin(Pageable pageable);
 }

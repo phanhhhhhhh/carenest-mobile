@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   qrExpired: { opacity: 0.4 },
   expiredOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(15, 23, 42, 0.75)',
     borderRadius: 18,
     alignItems: 'center',

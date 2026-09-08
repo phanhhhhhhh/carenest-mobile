@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
@@ -15,7 +15,9 @@ export function MedCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const now = Date.now();
+  // Snapshot "now" at mount so render stays pure; a med card is short-lived and
+  // re-mounts whenever the list refetches.
+  const [now] = useState(() => Date.now());
   const isMissed =
     !item.taken && !!item.nextDoseTime && new Date(item.nextDoseTime).getTime() < now;
   const statusLabel = item.taken ? 'Đã uống' : isMissed ? 'Bỏ lỡ' : 'Chưa uống';

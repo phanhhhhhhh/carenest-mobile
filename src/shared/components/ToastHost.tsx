@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,8 +15,8 @@ const VARIANT_CONFIG: Record<ToastVariant, { bg: string; icon: keyof typeof Ioni
 const AUTO_DISMISS_MS = 4000;
 
 function ToastItem({ toast, onDismiss }: { toast: ToastEntry; onDismiss: (id: number) => void }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(-10)).current;
+  const [opacity] = useState(() => new Animated.Value(0));
+  const [translateY] = useState(() => new Animated.Value(-10));
   const config = VARIANT_CONFIG[toast.variant];
 
   useEffect(() => {

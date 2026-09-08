@@ -29,7 +29,7 @@ public class FamilyLinkController {
     private final FamilyLinkService familyLinkService;
 
     @PostMapping("/family-links")
-    @PreAuthorize("hasRole('FAMILY') and #request.familyId == authentication.principal")
+    @PreAuthorize("hasRole('FAMILY') and (#request.familyId == authentication.principal or @authz.isOwnerOrLinkedFamily(authentication.principal, #request.elderlyId))")
     public ResponseEntity<FamilyLinkResponse> create(
         @Valid @RequestBody FamilyLinkRequest request
     ) {

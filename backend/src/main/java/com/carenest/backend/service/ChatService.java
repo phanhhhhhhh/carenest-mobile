@@ -63,7 +63,9 @@ public class ChatService {
             ? request.getSessionId()
             : "default-" + userId;
 
-        boolean premium = subscriptionService.isPremium(userId);
+        // The chat quota is an elderly-facing gate; resolve premium from the elderly's
+        // care group so a paying family member lifts the limit for them too.
+        boolean premium = subscriptionService.isPremiumForElderly(userId);
         Instant startOfDay = LocalDate.now(ICT).atStartOfDay(ICT).toInstant();
         long usedToday = chatMessageRepository.countByUserIdAndRoleAndCreatedAtAfter(
             userId, ChatMessage.ChatRole.USER, startOfDay);

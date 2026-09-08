@@ -153,6 +153,7 @@ export const FamilyLinkSchema = z.object({
   elderlyName: z.string().optional(),
   familyId: z.coerce.string().optional(),
   familyName: z.string().optional(),
+  familyPhone: z.string().optional().nullable(),
   relationship: z.string().optional().nullable(),
   status: z.string().optional(),
   healthConditions: z.array(z.string()).optional(),
@@ -292,7 +293,10 @@ export type GoogleFitStatusParsed = z.infer<typeof GoogleFitStatusSchema>;
 
 export const SubscriptionStatusSchema = z.object({
   isPremium: z.boolean(),
-  planType: z.enum(['FREE', 'PREMIUM_MONTHLY', 'PREMIUM_YEARLY']),
+  isPro: z.boolean().optional(),
+  planType: z
+    .enum(['FREE', 'PREMIUM_MONTHLY', 'PREMIUM_YEARLY', 'PRO_MONTHLY', 'PRO_YEARLY'])
+    .or(z.string()),
   expiresAt: z.string().nullable().optional(),
 });
 export type SubscriptionStatusParsed = z.infer<typeof SubscriptionStatusSchema>;

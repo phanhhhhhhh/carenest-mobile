@@ -16,6 +16,7 @@ public class FamilyLinkResponse {
     private String elderlyName;
     private Long familyId;
     private String familyName;
+    private String familyPhone;
     private String relationship;
     private FamilyLinkStatus status;
     private AvailabilityStatus availabilityStatus;

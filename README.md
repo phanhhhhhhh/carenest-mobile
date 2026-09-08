@@ -4,7 +4,7 @@
 
 **CareNest** is a learning project built with React Native (Expo) and Spring Boot for EXE101 @ FPT University.
 
-**Tech:** React Native (Expo SDK 54) · TypeScript · Zustand · Spring Boot 3.2 · Java 21 · PostgreSQL
+**Tech:** React Native (Expo SDK 57, RN 0.86, React 19) · TypeScript · Zustand · Spring Boot 3.2 · Java 21 · PostgreSQL · plus a standalone `admin-web/` (Vite + React 19)
 
 ---
 
@@ -81,7 +81,7 @@ CareNest is a mobile platform connecting elderly users with their families throu
 
 | Technology | Purpose |
 |------------|---------|
-| **React Native** 0.81 + **Expo** SDK 54 | Cross-platform framework |
+| **React Native** 0.86 + **Expo** SDK 57 (React 19.2) | Cross-platform framework |
 | **TypeScript** 5.9 | Type-safe development |
 | **Zustand** 5.0 | Lightweight state management |
 | **React Navigation** 7 | Stack + bottom-tab routing, auth guards, role-based redirect |
@@ -103,7 +103,7 @@ CareNest is a mobile platform connecting elderly users with their families throu
 | **Java** 21 (virtual threads enabled) | Programming language |
 | **Spring Data JPA** + Hibernate | ORM & data access |
 | **PostgreSQL** 16 (Docker) | Database |
-| **Flyway** | Database migrations (V1–V35) |
+| **Flyway** | Database migrations (V1–V47) |
 | **JJWT** 0.12.5 | JWT authentication (HMAC-SHA256) |
 | **Firebase Admin SDK** 9.2.0 | FCM push notifications |
 | **Spring Security** | Role-based access control |
@@ -361,12 +361,13 @@ The `dev` Spring profile enables the `DataSeeder` which creates:
 |--------|-------|---------|
 | Elderly users | 5 | With profiles, health conditions, emergency contacts |
 | Family users | 10 | Pre-linked to elderly via ACTIVE family links |
+| Admin user | 1 | `CareNest Admin` — for the `admin-web/` console |
 | Medications | 8 | With schedules (daily, twice-daily, as-needed) |
 | Medication logs | ~540 | 30 days of TAKEN/MISSED/SKIPPED entries |
 | Health metrics | ~240 | 30 days, twice daily (BP, HR, glucose) |
 | Appointments | 15 | 3 per elderly (upcoming) |
 | Chat messages | 8 | 4 user-AI conversation pairs |
-| Subscriptions | 1 | Premium monthly |
+| Subscriptions | 3 | 1 ACTIVE premium monthly + 2 PENDING VietQR (for the admin payments queue) |
 | Camera devices | 1 | Demo Imou device |
 | Emergency events | 1 | Resolved SOS from 4 days ago, with linked camera snapshot |
 
@@ -378,6 +379,7 @@ The `dev` Spring profile enables the `DataSeeder` which creates:
 | Elderly | `+84912345002` | `Demo@1234` | Jane Thompson |
 | Family | `+84918111001` | `Demo@1234` | Linda Nguyen |
 | Family | `+84918111002` | `Demo@1234` | Michael Tran |
+| **Admin** | `+84900000001` | `Demo@1234` | CareNest Admin (`admin-web/`) |
 
 ---
 

@@ -147,7 +147,9 @@ export default function FamilyDashboardScreen() {
   const lastUpdatedLabel = lastMetricTime
     ? formatRelative(new Date(lastMetricTime).toISOString())
     : null;
-  const isRecentlyActive = lastMetricTime ? Date.now() - lastMetricTime < 30 * 60 * 1000 : false;
+  // Snapshot "now" at mount; the dashboard re-mounts / refetches on focus and pull-to-refresh.
+  const [now] = useState(() => Date.now());
+  const isRecentlyActive = lastMetricTime ? now - lastMetricTime < 30 * 60 * 1000 : false;
 
   const cam = cameras.length > 0 ? cameras[0] : null;
 

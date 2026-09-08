@@ -1,16 +1,17 @@
 # Where things live
 
-See `PROJECT_STRUCTURE.md` for the feature → file map (backend controllers/services/entities
-and frontend screens/stores). Read it before hunting for where a feature is implemented.
-Read `PROJECT_CONTEXT.md` only when the task involves product requirements,
-business analysis, use cases, Jira tickets, or product strategy.
+See `PROJECT_STRUCTURE.md` for the feature → file map (backend controllers/services/entities,
+frontend screens/stores, and the standalone `admin-web/` operator console). Read it before
+hunting for where a feature is implemented. There is no `PROJECT_CONTEXT.md` in this repo;
+the product/BA context lives in the canonical Master Spec (see `PROJECT_STRUCTURE.md`).
 
 # Expo HAS CHANGED
 
-Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing any code.
+Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
 
-Frontend: React Native (Expo SDK 54) — TypeScript, Zustand 5,
-React Navigation 7, Axios, expo-secure-store, expo-notifications
+Frontend: React Native (Expo SDK 57, RN 0.86, React 19.2) — TypeScript, Zustand 5,
+React Navigation 7, Axios, expo-secure-store, expo-notifications.
+Separate `admin-web/` app: Vite + React 19 (not Expo — its own toolchain).
 # Git safety
 
 - Never commit, push, open a pull request, merge, rebase, or modify remote
@@ -32,7 +33,7 @@ CareNest is an AI-powered elderly health monitoring platform connecting elderly 
 
 Status: Milestone project (no longer tied to the FShark – Startup Innovation Arena 2026 competition).
 Architecture: Dual-portal — Elderly Portal and Family/Caregiver Portal.
-Product direction: Pivoted from AI-centered to camera-based monitoring (using a third-party camera API, e.g. IMOU Open Platform), with AI reserved for specific features (e.g. fall detection) rather than being the core focus. Strong emphasis on the emotional/UX aspect of the product, not just the technical one.
+Product direction: repositioned again in Master Spec v3.5 (2026-09) to a **daily family-connection app** — check-in, care feed, broadcast/escalation are the core; medication, SOS, and camera are safety layers, not the focus. (Earlier pivots: AI-centered → camera-based monitoring → family-connection.) Strong emphasis on the emotional/UX aspect. See `PROJECT_STRUCTURE.md` for the current built state.
 Business model: Hardware-enabled SaaS — uses third-party camera hardware (IMOU) rather than building in-house hardware.
 2. Core Features
 AI health monitoring

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -22,4 +23,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     @Query(value = "SELECT DISTINCT ON (user_id) * FROM notifications WHERE user_id IN :userIds ORDER BY user_id, created_at DESC", nativeQuery = true)
     List<Notification> findLatestPerUser(@Param("userIds") List<Long> userIds);
+
+    long countByCreatedAtAfter(OffsetDateTime since);
+
+    @Query("SELECT n FROM Notification n LEFT JOIN FETCH n.user "
+        + "WHERE (:type IS NULL OR n.type = :type) "
+        + "ORDER BY n.createdAt DESC, n.id DESC")
+    Page<Notification> findForAdmin(@Param("type") NotificationType type, Pageable pageable);
 }

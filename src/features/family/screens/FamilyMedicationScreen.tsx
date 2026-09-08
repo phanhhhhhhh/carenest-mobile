@@ -37,6 +37,7 @@ export default function FamilyMedicationScreen() {
 
   const dashData = useFamilyDashboardStore((s) => s.data);
   const dashLoad = useFamilyDashboardStore((s) => s.load);
+  const selectElderly = useFamilyDashboardStore((s) => s.selectElderly);
 
   const currentElderly = useMemo(() => {
     if (!dashData || dashData.linkedElderly.length === 0) return null;
@@ -155,6 +156,61 @@ export default function FamilyMedicationScreen() {
           <Text style={styles.addTopBtnText}>Thêm thuốc</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Multi-Elderly Switcher Tabs */}
+      {dashData && dashData.linkedElderly.length > 0 && (
+        <View
+          style={{
+            backgroundColor: '#FFFFFF',
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: '#F1F5F9',
+          }}
+        >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {dashData.linkedElderly.map((e, i) => {
+              const isSelected = i === dashData.selectedIndex;
+              return (
+                <TouchableOpacity
+                  key={e.elderlyId}
+                  style={[
+                    {
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      paddingHorizontal: 14,
+                      paddingVertical: 6,
+                      borderRadius: 9999,
+                      backgroundColor: '#E6F7F5',
+                      marginRight: 8,
+                      borderWidth: 1,
+                      borderColor: '#99E6E0',
+                    },
+                    isSelected && { backgroundColor: Colors.primary, borderColor: Colors.primary },
+                  ]}
+                  onPress={() => selectElderly(i)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="person"
+                    size={14}
+                    color={isSelected ? '#FFFFFF' : Colors.primary}
+                  />
+                  <Text
+                    style={[
+                      { fontSize: 13, fontWeight: '700', color: Colors.primary },
+                      isSelected && { color: '#FFFFFF' },
+                    ]}
+                  >
+                    {e.elderlyName}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Segment Tabs */}
       <View style={styles.tabRow}>

@@ -1,7 +1,10 @@
 package com.carenest.backend.repository;
 
 import com.carenest.backend.entity.CheckIn;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
@@ -17,4 +20,11 @@ public interface CheckInRepository extends JpaRepository<CheckIn, Long> {
 
     List<CheckIn> findByElderlyIdAndCreatedAtBetweenOrderByCreatedAtDesc(
         Long elderlyId, OffsetDateTime from, OffsetDateTime to);
+
+    long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+
+    @Query("SELECT c FROM CheckIn c LEFT JOIN FETCH c.elderly ORDER BY c.createdAt DESC, c.id DESC")
+    Page<CheckIn> findForAdmin(Pageable pageable);
+
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(OffsetDateTime from, OffsetDateTime to);
 }

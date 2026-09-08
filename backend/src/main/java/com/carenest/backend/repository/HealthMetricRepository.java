@@ -2,6 +2,8 @@ package com.carenest.backend.repository;
 
 import com.carenest.backend.entity.HealthMetric;
 import com.carenest.backend.entity.HealthMetricType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +35,11 @@ public interface HealthMetricRepository extends JpaRepository<HealthMetric, Long
     List<HealthMetric> findByElderlyIdAndDeletedAtIsNullOrderByRecordedAtDesc(Long elderlyId);
 
     List<HealthMetric> findByRecordedAtAfterAndDeletedAtIsNullOrderByRecordedAtDesc(OffsetDateTime since);
+
+    long countByRecordedAtAfterAndDeletedAtIsNull(OffsetDateTime since);
+
+    @Query("SELECT hm FROM HealthMetric hm LEFT JOIN FETCH hm.elderly "
+        + "WHERE hm.deletedAt IS NULL AND (:type IS NULL OR hm.type = :type) "
+        + "ORDER BY hm.recordedAt DESC, hm.id DESC")
+    Page<HealthMetric> findForAdmin(@Param("type") HealthMetricType type, Pageable pageable);
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -35,24 +35,21 @@ export default function WelcomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [showSplash, setShowSplash] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const currentIndexRef = useRef(0);
   const flatListRef = useRef<FlatList<SlideData>>(null);
 
   const updateIndex = useCallback((offsetX: number) => {
     const idx = Math.max(0, Math.min(slides.length - 1, Math.round(offsetX / width)));
-    if (idx !== currentIndexRef.current) {
-      currentIndexRef.current = idx;
-      setCurrentIndex(idx);
-    }
+    // Functional update dedupes: React bails out of the re-render when idx is unchanged.
+    setCurrentIndex((prev) => (prev === idx ? prev : idx));
   }, []);
 
-  const splashOpacity = useRef(new Animated.Value(1)).current;
-  const splashScale = useRef(new Animated.Value(1)).current;
-  const mascotBounce = useRef(new Animated.Value(0)).current;
-  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const [splashOpacity] = useState(() => new Animated.Value(1));
+  const [splashScale] = useState(() => new Animated.Value(1));
+  const [mascotBounce] = useState(() => new Animated.Value(0));
+  const [contentOpacity] = useState(() => new Animated.Value(0));
 
   // Tracks horizontal scroll offset so dots & buttons animate while dragging
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const [scrollX] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.loop(
@@ -80,14 +77,18 @@ export default function WelcomeScreen() {
     return () => clearTimeout(timer);
   }, [splashOpacity, splashScale, mascotBounce, contentOpacity]);
 
-  const onScroll = Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-    useNativeDriver: false,
-    // onMomentumScrollEnd never fires on react-native-web, so the current
-    // index is derived here -- onScroll works everywhere.
-    listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      updateIndex(e.nativeEvent.contentOffset.x);
-    },
-  });
+  const onScroll = useMemo(
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+        useNativeDriver: false,
+        // onMomentumScrollEnd never fires on react-native-web, so the current
+        // index is derived here -- onScroll works everywhere.
+        listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+          updateIndex(e.nativeEvent.contentOffset.x);
+        },
+      }),
+    [scrollX, updateIndex],
+  );
 
   // Kept as a native fallback; harmless duplicate of the onScroll listener.
   const onMomentumScrollEnd = useCallback(
@@ -100,7 +101,6 @@ export default function WelcomeScreen() {
   const handleSkip = useCallback(() => {
     // Update state immediately: programmatic scrolls don't reliably fire
     // scroll events on every platform before the animation settles.
-    currentIndexRef.current = slides.length - 1;
     setCurrentIndex(slides.length - 1);
     flatListRef.current?.scrollToIndex({ index: slides.length - 1, animated: true });
   }, []);

@@ -67,12 +67,14 @@ export const useBroadcastStore = create<BroadcastState>((set, get) => ({
   },
 }));
 
+const EMPTY_BROADCASTS: FamilyBroadcast[] = [];
+
 export function selectActiveBroadcast(
   state: BroadcastState,
   elderlyId: string | null,
 ): FamilyBroadcast | undefined {
   if (!elderlyId) return undefined;
-  return (state.byElderly[elderlyId] ?? []).find(
+  return (state.byElderly[elderlyId] ?? EMPTY_BROADCASTS).find(
     (b) => b.status === 'ACTIVE' || b.status === 'ESCALATED',
   );
 }

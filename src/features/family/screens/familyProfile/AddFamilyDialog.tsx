@@ -26,7 +26,7 @@ export function AddFamilyDialog({
           <Text style={styles.dialogTitle}>Thêm thành viên gia đình</Text>
           <View style={{ height: 16 }} />
           <Text style={styles.dialogBody}>
-            Nhập số điện thoại của người cao tuổi để gửi yêu cầu kết nối.
+            Nhập số điện thoại của người cao tuổi hoặc người thân cùng chăm sóc để kết nối.
           </Text>
           <View style={{ height: 16 }} />
           <View style={styles.inputWrap}>

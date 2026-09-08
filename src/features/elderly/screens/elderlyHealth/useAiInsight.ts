@@ -77,6 +77,9 @@ export function useAiInsight({ latestByType, getStatus }: Params) {
 
   useEffect(() => {
     if (!aiLoading && aiInsight == null && Object.keys(latestByType).length > 0) {
+      // One-shot generation once metrics exist. reload() sets the loading flag
+      // then awaits the AI call — the guard above stops it re-entering.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       reload();
     }
     // Re-run only when the metric set changes; `reload` closes over fresh state each render.
