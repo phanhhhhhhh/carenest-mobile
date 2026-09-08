@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -69,6 +70,32 @@ public class SubscriptionService {
         return !subscriptionRepository
             .findByUserIdInAndStatusAndPlanTypeIn(
                 familyIdsInGroup,
+                Subscription.SubscriptionStatus.ACTIVE,
+                List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
+            )
+            .isEmpty();
+    }
+
+    /**
+     * Premium status from an <em>elderly</em> user's point of view: true when the elderly
+     * has a direct Premium plan, or any family member actively linked to them does
+     * (group-shared premium). Used for elderly-facing gates such as the AI chat quota,
+     * where {@link #isPremium(Long)} — which resolves the group family-&gt;elderly — would
+     * always see an elderly id as uncovered.
+     */
+    @Transactional(readOnly = true)
+    public boolean isPremiumForElderly(Long elderlyId) {
+        if (elderlyId == null) return false;
+
+        List<Long> groupUserIds = new ArrayList<>();
+        groupUserIds.add(elderlyId);
+        familyLinkRepository
+            .findAllFamilyByElderlyIdAndStatus(elderlyId, FamilyLinkStatus.ACTIVE)
+            .forEach(fl -> groupUserIds.add(fl.getFamily().getId()));
+
+        return !subscriptionRepository
+            .findByUserIdInAndStatusAndPlanTypeIn(
+                groupUserIds,
                 Subscription.SubscriptionStatus.ACTIVE,
                 List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
             )

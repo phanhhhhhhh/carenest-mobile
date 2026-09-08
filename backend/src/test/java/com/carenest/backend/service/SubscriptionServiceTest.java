@@ -171,6 +171,35 @@ class SubscriptionServiceTest {
         assertTrue(service.canAddFamilyMember(200L, 100L));
     }
 
+    @Test
+    void isPremiumForElderly_trueWhenALinkedFamilyMemberIsPremium() {
+        FamilyLink link = FamilyLink.builder().id(1L).elderly(elderlyUser).family(familyUser).status(FamilyLinkStatus.ACTIVE).build();
+        when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(200L, FamilyLinkStatus.ACTIVE))
+            .thenReturn(List.of(link));
+        when(subscriptionRepository.findByUserIdInAndStatusAndPlanTypeIn(
+            eq(List.of(200L, 100L)), eq(Subscription.SubscriptionStatus.ACTIVE), any()
+        )).thenReturn(List.of(createActiveSub(familyUser, Subscription.PlanType.PREMIUM_MONTHLY)));
+
+        assertTrue(service.isPremiumForElderly(200L));
+    }
+
+    @Test
+    void isPremiumForElderly_falseWhenNobodyInTheGroupIsPremium() {
+        FamilyLink link = FamilyLink.builder().id(1L).elderly(elderlyUser).family(familyUser).status(FamilyLinkStatus.ACTIVE).build();
+        when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(200L, FamilyLinkStatus.ACTIVE))
+            .thenReturn(List.of(link));
+        when(subscriptionRepository.findByUserIdInAndStatusAndPlanTypeIn(
+            eq(List.of(200L, 100L)), eq(Subscription.SubscriptionStatus.ACTIVE), any()
+        )).thenReturn(List.of());
+
+        assertFalse(service.isPremiumForElderly(200L));
+    }
+
+    @Test
+    void isPremiumForElderly_nullIdIsFalse() {
+        assertFalse(service.isPremiumForElderly(null));
+    }
+
     private Subscription createActiveSub(User user, Subscription.PlanType planType) {
         return Subscription.builder()
             .id(1L)
