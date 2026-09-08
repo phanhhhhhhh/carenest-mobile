@@ -211,29 +211,32 @@ Standard layered Spring Boot structure: `controller` → `service` → `reposito
 | Dashboard (family view) | `DashboardController` | `DashboardService` | — (aggregates other entities) |
 | Notifications (push/SMS/email) | `NotificationController` | `NotificationService`, `FcmService`, `SmsService`, `EmailService`, `FirebaseService` | `Notification`, `NotificationType` |
 | Payments / subscription | `PaymentController` | `PaymentService`, `SubscriptionService` | `Subscription` |
+| Admin console (read-only, ROLE_ADMIN) | `AdminController` | `AdminService` | — (aggregates; `dto/admin/Admin*Response`). Serves the standalone `admin-web/` app — see section below. |
 
 ### Cross-cutting
 
-- `config/` — `FirebaseConfig`, `SecurityConfig`
+- `config/` — `FirebaseConfig`, `SecurityConfig`, `WebMvcConfig` + `AdminAuditInterceptor` (one `ADMIN_AUDIT` log line per admin-console / payment-operator request)
 - `security/` — `JwtAuthenticationFilter`, `RateLimitFilter`, `AuthorizationService`
-- `scheduler/` — `AppointmentReminderScheduler`, `MedicationReminderScheduler`, `ReminderScheduler`, `HealthCheckScheduler`, `WeeklySummaryScheduler`
-- `exception/` — `GlobalExceptionHandler` + `ConflictException`, `NotFoundException`, `UnauthorizedException`, `PaymentRequiredException`, `RateLimitExceededException`, `GeminiApiException`
-- `seeder/` — `DataSeeder` (runs only when `carenest.seed.enabled=true`, i.e. `dev` / `local` profile; skips if `users` table is non-empty)
-- `dto/` — grouped by feature subpackage (`auth`, `camera`, `chat`, `dashboard`, `elderly`, `emergency`, `family`, `googlefit`, `health`, `medication`, `notification`, `payment`, `reminder`, `appointment`, `user`)
+- `scheduler/` — `AppointmentReminderScheduler`, `MedicationReminderScheduler`, `ReminderScheduler`, `HealthCheckScheduler`, `WeeklySummaryScheduler`, `BroadcastEscalationScheduler`, `EmergencyEscalationScheduler`, `VisitStreakScheduler`, `FamilyDigestScheduler`, `CameraConsentScheduler` (no subscription-expiry job — `Subscription` rows never move to `EXPIRED`; `endDate` is the real gate and `SubscriptionService` filters on `Subscription.isPremium()`)
+- `exception/` — `GlobalExceptionHandler` + `ConflictException`, `NotFoundException`, `UnauthorizedException`, `PaymentRequiredException`, `RateLimitExceededException`, `GeminiApiException` (`IllegalArgumentException` → 400)
+- `seeder/` — `DataSeeder` — `@Profile({"local","dev"})` **and** `carenest.seed.enabled=true` (both required); skips if `users` table is non-empty. Seeds 5 elderly + 10 family + **1 ADMIN** (`+84900000001` / `admin@carenest.test`, password `Demo@1234`) + demo data incl. 1 ACTIVE + 2 PENDING VietQR subscriptions.
+- `dto/` — grouped by feature subpackage (`auth`, `camera`, `chat`, `dashboard`, `elderly`, `emergency`, `family`, `googlefit`, `health`, `medication`, `notification`, `payment`, `reminder`, `appointment`, `user`, **`admin`**)
 
 ### Config / run
 
-- `application.properties` — base config, no `server.port` (defaults to 8080)
-- `application-dev.properties` — `server.port=8082`, `carenest.seed.enabled=true`, verbose SQL/Flyway logging. **This is the profile the mobile `.env` expects** (`EXPO_PUBLIC_API_BASE_URL` → `:8082/api`).
-- `application-local.properties` — seed enabled, port stays 8080
+- `application.properties` — base config: `server.port=8082`, `jwt.secret=${JWT_SECRET}` (no default — must be set), `cors.allowed-origins` default `http://localhost:8082`, `spring.data.web.pageable.max-page-size=100`.
+- `application-dev.properties` — `carenest.seed.enabled=true`, verbose SQL/Flyway logging, a **dev-only `jwt.secret` fallback**. **This is the profile the mobile `.env` expects** (`EXPO_PUBLIC_API_BASE_URL` → `:8082/api`). Port inherited from base = **8082**.
+- `application-local.properties` — seed enabled; no port override, so also **8082**.
 - DB: PostgreSQL on `localhost:5433` (via `docker-compose.yml`, which runs Postgres only — not the backend). Default creds `carenest` / `carenest`.
-- Actuator health: `GET /actuator/health` (NOT under `/api`; unauthenticated). Everything under `/api/**` needs a JWT except `/api/auth/**`.
+- Actuator health: `GET /actuator/health` (NOT under `/api`; unauthenticated). Everything under `/api/**` needs a JWT except `/api/auth/**`; `/api/admin/**` additionally requires `ROLE_ADMIN` (URL rule + class-level `@PreAuthorize`).
 - Run: `java -jar backend/target/carenest-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev`
 
-### Tests (`backend/src/test/java/com/carenest/backend/`)
+### Tests (`backend/src/test/java/com/carenest/backend/`) — ~152 tests, `mvn -o test`
 
-- `controller/` — `AuthIntegrationTest`, `AppointmentIntegrationTest`, `NotificationIntegrationTest`
-- `repository/` — `BaseRepositoryTest` + repo tests for `Appointment`, `FamilyLink`, `HealthMetric`, `Medication`, `User`
+- `controller/` — `AdminControllerSecurityTest` (`@WebMvcTest`, ADMIN gate), `CheckInControllerTest`, `HealthReportExportControllerTest`, `AuthIntegrationTest` / `AppointmentIntegrationTest` / `NotificationIntegrationTest` (need a running Postgres — the only red tests offline)
+- `service/` — `AdminServiceTest`, `SubscriptionServiceTest`, `FamilyLinkServiceTest`, `PaymentServiceTest`, `NotificationBroadcastServiceTest`, `VisitStreakServiceTest`, `EmergencyEscalationServiceTest`, `CameraTokenRefreshServiceTest`, `CameraTokenUpdaterTest`
+- `repository/` — `BaseRepositoryTest` + repo tests for `Appointment`, `FamilyLink`, `HealthMetric`, `Medication`, `User`, `CheckIn`
+- `config/` — `ImouPropertiesTest`
 
 ## Frontend (React Native / Expo — repo root, `src/`)
 
