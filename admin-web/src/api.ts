@@ -1,4 +1,12 @@
-import type { ActionResult, AuthResponse, PendingPayment } from './types';
+import type {
+  ActionResult,
+  AdminSubscriptionRow,
+  AdminUserRow,
+  AuthResponse,
+  Overview,
+  Page,
+  PendingPayment,
+} from './types';
 
 const TOKEN_KEY = 'carenest_admin_token';
 const USER_KEY = 'carenest_admin_user';
@@ -90,6 +98,36 @@ export async function login(phone: string, password: string): Promise<AuthRespon
   localStorage.setItem(TOKEN_KEY, res.accessToken);
   localStorage.setItem(USER_KEY, JSON.stringify(res.user));
   return res;
+}
+
+export function getOverview(): Promise<Overview> {
+  return request<Overview>('/admin/overview');
+}
+
+export function getUsers(params: {
+  role?: string;
+  query?: string;
+  page?: number;
+  size?: number;
+}): Promise<Page<AdminUserRow>> {
+  const q = new URLSearchParams();
+  if (params.role) q.set('role', params.role);
+  if (params.query) q.set('query', params.query);
+  q.set('page', String(params.page ?? 0));
+  q.set('size', String(params.size ?? 25));
+  return request<Page<AdminUserRow>>(`/admin/users?${q}`);
+}
+
+export function getSubscriptions(params: {
+  status?: string;
+  page?: number;
+  size?: number;
+}): Promise<Page<AdminSubscriptionRow>> {
+  const q = new URLSearchParams();
+  if (params.status) q.set('status', params.status);
+  q.set('page', String(params.page ?? 0));
+  q.set('size', String(params.size ?? 25));
+  return request<Page<AdminSubscriptionRow>>(`/admin/subscriptions?${q}`);
 }
 
 export function getPendingPayments(): Promise<PendingPayment[]> {

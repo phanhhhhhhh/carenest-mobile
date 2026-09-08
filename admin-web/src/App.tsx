@@ -1,18 +1,23 @@
 import { type FormEvent, useCallback, useState } from 'react';
 import { ApiError, clearSession, getStoredUser, getToken, login } from './api';
-import { PaymentsView } from './PaymentsView';
+import { Layout } from './Layout';
+import { useHashRoute } from './useHashRoute';
+import { OverviewPage } from './pages/OverviewPage';
+import { UsersPage } from './pages/UsersPage';
+import { SubscriptionsPage } from './pages/SubscriptionsPage';
+import { PaymentsPage } from './pages/PaymentsPage';
 
 function restoreSession() {
   const token = getToken();
   const user = getStoredUser();
   if (token && user) return user;
-  // Half-written session (e.g. cleared storage, old build) — start clean.
   clearSession();
   return null;
 }
 
 export default function App() {
   const [user, setUser] = useState(restoreSession);
+  const [route, navigate] = useHashRoute();
 
   const handleLogout = useCallback(() => {
     clearSession();
@@ -24,23 +29,12 @@ export default function App() {
   }
 
   return (
-    <div className="page">
-      <header className="topbar">
-        <div>
-          <h1>CareNest · Duyệt thanh toán</h1>
-          <p className="muted">VietQR reconciliation · UC G3</p>
-        </div>
-        <div className="topbar-right">
-          <span className="muted">{user.name}</span>
-          <button className="btn btn-ghost" onClick={handleLogout}>
-            Đăng xuất
-          </button>
-        </div>
-      </header>
-      <main className="content">
-        <PaymentsView onSessionExpired={handleLogout} />
-      </main>
-    </div>
+    <Layout user={user} route={route} onNavigate={navigate} onLogout={handleLogout}>
+      {route === 'overview' && <OverviewPage onSessionExpired={handleLogout} />}
+      {route === 'users' && <UsersPage onSessionExpired={handleLogout} />}
+      {route === 'subscriptions' && <SubscriptionsPage onSessionExpired={handleLogout} />}
+      {route === 'payments' && <PaymentsPage onSessionExpired={handleLogout} />}
+    </Layout>
   );
 }
 
@@ -67,8 +61,10 @@ function LoginView({ onSignedIn }: { onSignedIn: () => void }) {
   return (
     <div className="login-wrap">
       <form className="card login-card" onSubmit={submit}>
-        <h1>CareNest Admin</h1>
-        <p className="muted">Đăng nhập bằng tài khoản ADMIN để duyệt thanh toán.</p>
+        <div className="brand brand-lg">
+          CareNest<span className="brand-sub">Admin</span>
+        </div>
+        <p className="muted">Đăng nhập bằng tài khoản quản trị.</p>
 
         <label>
           Số điện thoại
