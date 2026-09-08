@@ -2,6 +2,8 @@ package com.carenest.backend.repository;
 
 import com.carenest.backend.entity.FamilyLink;
 import com.carenest.backend.entity.FamilyLinkStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,4 +33,13 @@ public interface FamilyLinkRepository extends JpaRepository<FamilyLink, Long> {
     Optional<FamilyLink> findByIdAndDeletedAtIsNull(Long id);
 
     long countByStatusAndDeletedAtIsNull(FamilyLinkStatus status);
+
+    @Query("SELECT fl FROM FamilyLink fl JOIN FETCH fl.elderly JOIN FETCH fl.family "
+        + "WHERE fl.deletedAt IS NULL AND (:status IS NULL OR fl.status = :status) "
+        + "ORDER BY fl.createdAt DESC")
+    Page<FamilyLink> findForAdmin(@Param("status") FamilyLinkStatus status, Pageable pageable);
+
+    @Query("SELECT fl FROM FamilyLink fl JOIN FETCH fl.family "
+        + "WHERE fl.elderly.id = :elderlyId AND fl.deletedAt IS NULL")
+    List<FamilyLink> findAllForElderly(@Param("elderlyId") Long elderlyId);
 }

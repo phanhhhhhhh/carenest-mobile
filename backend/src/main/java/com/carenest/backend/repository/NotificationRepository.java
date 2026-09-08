@@ -22,4 +22,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     @Query(value = "SELECT DISTINCT ON (user_id) * FROM notifications WHERE user_id IN :userIds ORDER BY user_id, created_at DESC", nativeQuery = true)
     List<Notification> findLatestPerUser(@Param("userIds") List<Long> userIds);
+
+    long countByCreatedAtAfter(java.time.OffsetDateTime since);
+
+    @Query("SELECT n FROM Notification n JOIN FETCH n.user "
+        + "WHERE (:type IS NULL OR n.type = :type) "
+        + "ORDER BY n.createdAt DESC")
+    Page<Notification> findForAdmin(@Param("type") NotificationType type, Pageable pageable);
 }

@@ -16,5 +16,12 @@ public record AdminOverviewResponse(
     Map<String, Long> subscriptionsByPlan,
     BigDecimal activeSubscriptionRevenue,
     long checkInsToday,
-    long activeEmergencies
+    long activeEmergencies,
+    long medications,
+    long appointments,
+    long camerasTotal,
+    long camerasOnline,
+    long healthMetrics7d,
+    long chatMessagesToday,
+    long notifications7d
 ) {}

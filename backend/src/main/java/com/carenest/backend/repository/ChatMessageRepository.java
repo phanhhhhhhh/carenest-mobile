@@ -28,4 +28,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     long countByUserId(Long userId);
 
     long countByUserIdAndRoleAndCreatedAtAfter(Long userId, ChatMessage.ChatRole role, Instant after);
+
+    long countByCreatedAtAfter(Instant after);
 }

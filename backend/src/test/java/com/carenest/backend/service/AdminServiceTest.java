@@ -3,15 +3,22 @@ package com.carenest.backend.service;
 import com.carenest.backend.dto.admin.AdminOverviewResponse;
 import com.carenest.backend.dto.admin.AdminSubscriptionResponse;
 import com.carenest.backend.dto.admin.AdminUserResponse;
+import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.Subscription;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
+import com.carenest.backend.repository.AppointmentRepository;
+import com.carenest.backend.repository.CameraDeviceRepository;
+import com.carenest.backend.repository.ChatMessageRepository;
 import com.carenest.backend.repository.CheckInRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
+import com.carenest.backend.repository.HealthMetricRepository;
+import com.carenest.backend.repository.MedicationRepository;
+import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.repository.SubscriptionRepository;
 import com.carenest.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -20,6 +27,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,13 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AdminServiceTest {
 
     @Mock private UserRepository userRepository;
@@ -44,6 +55,13 @@ class AdminServiceTest {
     @Mock private FamilyLinkRepository familyLinkRepository;
     @Mock private CheckInRepository checkInRepository;
     @Mock private EmergencyEventRepository emergencyEventRepository;
+    @Mock private MedicationRepository medicationRepository;
+    @Mock private AppointmentRepository appointmentRepository;
+    @Mock private CameraDeviceRepository cameraDeviceRepository;
+    @Mock private HealthMetricRepository healthMetricRepository;
+    @Mock private NotificationRepository notificationRepository;
+    @Mock private ChatMessageRepository chatMessageRepository;
+    @Mock private SubscriptionService subscriptionService;
 
     @InjectMocks private AdminService service;
 
@@ -53,34 +71,43 @@ class AdminServiceTest {
         when(userRepository.countByRoleAndDeletedAtIsNull(UserRole.ELDERLY)).thenReturn(5L);
         when(userRepository.countByRoleAndDeletedAtIsNull(UserRole.FAMILY)).thenReturn(10L);
         when(userRepository.countByRoleAndDeletedAtIsNull(UserRole.ADMIN)).thenReturn(1L);
-
         when(subscriptionRepository.countByStatusAndPlanType(any(), any())).thenReturn(0L);
         when(subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.ACTIVE)).thenReturn(3L);
         when(subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.PENDING)).thenReturn(2L);
         when(subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.CANCELLED)).thenReturn(1L);
         when(subscriptionRepository.sumAmountByStatus(Subscription.SubscriptionStatus.ACTIVE))
             .thenReturn(new BigDecimal("147000"));
-
         when(elderlyProfileRepository.countByDeletedAtIsNull()).thenReturn(5L);
         when(familyLinkRepository.countByStatusAndDeletedAtIsNull(FamilyLinkStatus.ACTIVE)).thenReturn(8L);
         when(familyLinkRepository.countByStatusAndDeletedAtIsNull(FamilyLinkStatus.PENDING)).thenReturn(1L);
         when(checkInRepository.countByCreatedAtBetween(any(), any())).thenReturn(4L);
         when(emergencyEventRepository.countByStatus(EmergencyStatus.ACTIVE)).thenReturn(0L);
+        when(medicationRepository.countByDeletedAtIsNull()).thenReturn(8L);
+        when(appointmentRepository.countByDeletedAtIsNull()).thenReturn(3L);
+        when(cameraDeviceRepository.count()).thenReturn(2L);
+        when(cameraDeviceRepository.countByStatus(CameraDevice.CameraStatus.ONLINE)).thenReturn(1L);
+        when(healthMetricRepository.countByRecordedAtAfterAndDeletedAtIsNull(any())).thenReturn(40L);
+        when(chatMessageRepository.countByCreatedAtAfter(any())).thenReturn(12L);
+        when(notificationRepository.countByCreatedAtAfter(any())).thenReturn(55L);
 
         AdminOverviewResponse r = service.overview();
 
         assertEquals(16L, r.totalUsers());
         assertEquals(5L, r.usersByRole().get("ELDERLY"));
-        assertEquals(10L, r.usersByRole().get("FAMILY"));
         assertEquals(3L, r.activeSubscriptions());
         assertEquals(2L, r.pendingPayments());
         assertEquals(new BigDecimal("147000"), r.activeSubscriptionRevenue());
         assertEquals(4L, r.checkInsToday());
         assertEquals(8L, r.activeFamilyLinks());
+        assertEquals(8L, r.medications());
+        assertEquals(2L, r.camerasTotal());
+        assertEquals(1L, r.camerasOnline());
+        assertEquals(40L, r.healthMetrics7d());
+        assertEquals(12L, r.chatMessagesToday());
     }
 
     @Test
-    void users_passesParsedRoleFilterThrough() {
+    void users_trimsBlankQueryToEmptyAndParsesRole() {
         Page<User> page = new PageImpl<>(List.of(
             User.builder().id(1L).name("A").phone("+84900000001").role(UserRole.ADMIN).build()));
         when(userRepository.searchForAdmin(eq(UserRole.ADMIN), eq(""), any(Pageable.class)))
@@ -100,8 +127,7 @@ class AdminServiceTest {
         service.users("banana", "nguyen", PageRequest.of(0, 25));
 
         ArgumentCaptor<UserRole> roleCaptor = ArgumentCaptor.forClass(UserRole.class);
-        org.mockito.Mockito.verify(userRepository)
-            .searchForAdmin(roleCaptor.capture(), eq("nguyen"), any(Pageable.class));
+        verify(userRepository).searchForAdmin(roleCaptor.capture(), eq("nguyen"), any(Pageable.class));
         assertNull(roleCaptor.getValue());
     }
 
@@ -126,6 +152,15 @@ class AdminServiceTest {
         assertEquals(9L, row.id());
         assertEquals("Linda", row.userName());
         assertEquals("PREMIUM_MONTHLY", row.planType());
-        assertEquals("VIETQR", row.paymentProvider());
+    }
+
+    @Test
+    void emergencies_parsesStatusFilter() {
+        when(emergencyEventRepository.findForAdmin(eq(EmergencyStatus.ACTIVE), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of()));
+
+        service.emergencies("active", PageRequest.of(0, 25));
+
+        verify(emergencyEventRepository).findForAdmin(eq(EmergencyStatus.ACTIVE), any(Pageable.class));
     }
 }

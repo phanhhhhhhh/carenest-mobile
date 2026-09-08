@@ -1,16 +1,37 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.dto.admin.AdminAppointmentResponse;
+import com.carenest.backend.dto.admin.AdminCameraResponse;
+import com.carenest.backend.dto.admin.AdminCheckInResponse;
+import com.carenest.backend.dto.admin.AdminElderlyResponse;
+import com.carenest.backend.dto.admin.AdminEmergencyResponse;
+import com.carenest.backend.dto.admin.AdminFamilyLinkResponse;
+import com.carenest.backend.dto.admin.AdminHealthMetricResponse;
+import com.carenest.backend.dto.admin.AdminMedicationResponse;
+import com.carenest.backend.dto.admin.AdminNotificationResponse;
 import com.carenest.backend.dto.admin.AdminOverviewResponse;
 import com.carenest.backend.dto.admin.AdminSubscriptionResponse;
+import com.carenest.backend.dto.admin.AdminUserDetailResponse;
 import com.carenest.backend.dto.admin.AdminUserResponse;
+import com.carenest.backend.entity.AppointmentStatus;
+import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.EmergencyStatus;
 import com.carenest.backend.entity.FamilyLinkStatus;
+import com.carenest.backend.entity.HealthMetricType;
+import com.carenest.backend.entity.NotificationType;
 import com.carenest.backend.entity.Subscription;
 import com.carenest.backend.entity.UserRole;
+import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.repository.AppointmentRepository;
+import com.carenest.backend.repository.CameraDeviceRepository;
+import com.carenest.backend.repository.ChatMessageRepository;
 import com.carenest.backend.repository.CheckInRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.EmergencyEventRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
+import com.carenest.backend.repository.HealthMetricRepository;
+import com.carenest.backend.repository.MedicationRepository;
+import com.carenest.backend.repository.NotificationRepository;
 import com.carenest.backend.repository.SubscriptionRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +40,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -37,6 +60,13 @@ public class AdminService {
     private final FamilyLinkRepository familyLinkRepository;
     private final CheckInRepository checkInRepository;
     private final EmergencyEventRepository emergencyEventRepository;
+    private final MedicationRepository medicationRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final CameraDeviceRepository cameraDeviceRepository;
+    private final HealthMetricRepository healthMetricRepository;
+    private final NotificationRepository notificationRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final SubscriptionService subscriptionService;
 
     public AdminOverviewResponse overview() {
         Map<String, Long> usersByRole = new LinkedHashMap<>();
@@ -53,6 +83,8 @@ public class AdminService {
 
         OffsetDateTime startOfDay = OffsetDateTime.now(ICT).toLocalDate().atStartOfDay(ICT).toOffsetDateTime();
         OffsetDateTime endOfDay = startOfDay.plusDays(1);
+        OffsetDateTime weekAgo = OffsetDateTime.now(ICT).minusDays(7);
+        Instant startOfDayInstant = startOfDay.toInstant();
 
         return new AdminOverviewResponse(
             userRepository.countByDeletedAtIsNull(),
@@ -66,35 +98,108 @@ public class AdminService {
             subsByPlan,
             subscriptionRepository.sumAmountByStatus(Subscription.SubscriptionStatus.ACTIVE),
             checkInRepository.countByCreatedAtBetween(startOfDay, endOfDay),
-            emergencyEventRepository.countByStatus(EmergencyStatus.ACTIVE)
+            emergencyEventRepository.countByStatus(EmergencyStatus.ACTIVE),
+            medicationRepository.countByDeletedAtIsNull(),
+            appointmentRepository.countByDeletedAtIsNull(),
+            cameraDeviceRepository.count(),
+            cameraDeviceRepository.countByStatus(CameraDevice.CameraStatus.ONLINE),
+            healthMetricRepository.countByRecordedAtAfterAndDeletedAtIsNull(weekAgo),
+            chatMessageRepository.countByCreatedAtAfter(startOfDayInstant),
+            notificationRepository.countByCreatedAtAfter(weekAgo)
         );
     }
 
     public Page<AdminUserResponse> users(String role, String query, Pageable pageable) {
-        UserRole roleFilter = parseRole(role);
+        UserRole roleFilter = parseEnum(UserRole.class, role);
         String q = (query == null) ? "" : query.trim();
         return userRepository.searchForAdmin(roleFilter, q, pageable).map(AdminUserResponse::from);
     }
 
+    public AdminUserDetailResponse userDetail(Long userId) {
+        var user = userRepository.findById(userId)
+            .filter(u -> u.getDeletedAt() == null)
+            .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+
+        AdminElderlyResponse profile = elderlyProfileRepository
+            .findByUserIdAndDeletedAtIsNull(userId)
+            .map(AdminElderlyResponse::from)
+            .orElse(null);
+
+        AdminSubscriptionResponse activeSub = subscriptionRepository
+            .findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
+            .map(AdminSubscriptionResponse::from)
+            .orElse(null);
+
+        boolean groupPremium = user.getRole() == UserRole.ELDERLY
+            ? subscriptionService.isPremiumForElderly(userId)
+            : subscriptionService.isPremium(userId);
+
+        List<AdminFamilyLinkResponse> links = (user.getRole() == UserRole.ELDERLY)
+            ? familyLinkRepository.findAllForElderly(userId).stream()
+                .map(AdminFamilyLinkResponse::from).toList()
+            : familyLinkRepository.findAllElderlyByFamilyIdAndStatus(userId, FamilyLinkStatus.ACTIVE).stream()
+                .map(AdminFamilyLinkResponse::from).toList();
+
+        return new AdminUserDetailResponse(
+            AdminUserResponse.from(user), profile, activeSub, groupPremium, links);
+    }
+
     public Page<AdminSubscriptionResponse> subscriptions(String status, Pageable pageable) {
-        Subscription.SubscriptionStatus statusFilter = parseSubStatus(status);
-        return subscriptionRepository.findForAdmin(statusFilter, pageable)
+        return subscriptionRepository
+            .findForAdmin(parseEnum(Subscription.SubscriptionStatus.class, status), pageable)
             .map(AdminSubscriptionResponse::from);
     }
 
-    private static UserRole parseRole(String role) {
-        if (role == null || role.isBlank()) return null;
-        try {
-            return UserRole.valueOf(role.trim().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+    public Page<AdminElderlyResponse> elderly(Pageable pageable) {
+        return elderlyProfileRepository.findForAdmin(pageable).map(AdminElderlyResponse::from);
     }
 
-    private static Subscription.SubscriptionStatus parseSubStatus(String status) {
-        if (status == null || status.isBlank()) return null;
+    public Page<AdminFamilyLinkResponse> familyLinks(String status, Pageable pageable) {
+        return familyLinkRepository
+            .findForAdmin(parseEnum(FamilyLinkStatus.class, status), pageable)
+            .map(AdminFamilyLinkResponse::from);
+    }
+
+    public Page<AdminEmergencyResponse> emergencies(String status, Pageable pageable) {
+        return emergencyEventRepository
+            .findForAdmin(parseEnum(EmergencyStatus.class, status), pageable)
+            .map(AdminEmergencyResponse::from);
+    }
+
+    public Page<AdminCheckInResponse> checkIns(Pageable pageable) {
+        return checkInRepository.findForAdmin(pageable).map(AdminCheckInResponse::from);
+    }
+
+    public Page<AdminMedicationResponse> medications(Pageable pageable) {
+        return medicationRepository.findForAdmin(pageable).map(AdminMedicationResponse::from);
+    }
+
+    public Page<AdminHealthMetricResponse> healthMetrics(String type, Pageable pageable) {
+        return healthMetricRepository
+            .findForAdmin(parseEnum(HealthMetricType.class, type), pageable)
+            .map(AdminHealthMetricResponse::from);
+    }
+
+    public Page<AdminCameraResponse> cameras(Pageable pageable) {
+        return cameraDeviceRepository.findForAdmin(pageable).map(AdminCameraResponse::from);
+    }
+
+    public Page<AdminNotificationResponse> notifications(String type, Pageable pageable) {
+        return notificationRepository
+            .findForAdmin(parseEnum(NotificationType.class, type), pageable)
+            .map(AdminNotificationResponse::from);
+    }
+
+    public Page<AdminAppointmentResponse> appointments(String status, Pageable pageable) {
+        return appointmentRepository
+            .findForAdmin(parseEnum(AppointmentStatus.class, status), pageable)
+            .map(AdminAppointmentResponse::from);
+    }
+
+    private static <E extends Enum<E>> E parseEnum(Class<E> type, String raw) {
+        if (raw == null || raw.isBlank()) return null;
         try {
-            return Subscription.SubscriptionStatus.valueOf(status.trim().toUpperCase());
+            return Enum.valueOf(type, raw.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
         }

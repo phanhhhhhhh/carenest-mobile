@@ -1,6 +1,8 @@
 package com.carenest.backend.repository;
 
 import com.carenest.backend.entity.CameraDevice;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -21,4 +23,9 @@ public interface CameraDeviceRepository extends JpaRepository<CameraDevice, Long
 
     @Query("select camera.id from CameraDevice camera where camera.accessToken is not null")
     List<Long> findIdsWithAccessToken();
+
+    long countByStatus(CameraDevice.CameraStatus status);
+
+    @Query("SELECT c FROM CameraDevice c JOIN FETCH c.elderly ORDER BY c.id DESC")
+    Page<CameraDevice> findForAdmin(Pageable pageable);
 }

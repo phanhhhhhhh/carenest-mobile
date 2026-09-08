@@ -2,6 +2,8 @@ package com.carenest.backend.repository;
 
 import com.carenest.backend.entity.Appointment;
 import com.carenest.backend.entity.AppointmentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,4 +39,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         ORDER BY a.datetime ASC
         """)
     List<Appointment> findUpcomingForFamilyMember(@Param("familyId") Long familyId, @Param("from") OffsetDateTime from);
+
+    long countByDeletedAtIsNull();
+
+    @Query("SELECT a FROM Appointment a JOIN FETCH a.elderly "
+        + "WHERE a.deletedAt IS NULL AND (:status IS NULL OR a.status = :status) "
+        + "ORDER BY a.datetime DESC")
+    Page<Appointment> findForAdmin(@Param("status") AppointmentStatus status, Pageable pageable);
 }
