@@ -117,7 +117,7 @@ function LoginView({ onSignedIn }: { onSignedIn: () => void }) {
           <input
             type="tel"
             autoComplete="username"
-            placeholder="+84900000001"
+            placeholder="+84…"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required

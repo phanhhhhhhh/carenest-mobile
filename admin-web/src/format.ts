@@ -35,7 +35,6 @@ const NOTIF_LABELS: Record<string, string> = {
   APPOINTMENT_REMINDER: 'Nhắc lịch hẹn',
   FAMILY_UPDATE: 'Cập nhật gia đình',
   FAMILY_LINK_REQUEST: 'Yêu cầu kết nối',
-  WEEKLY_SUMMARY: 'Tổng kết tuần',
 };
 
 const APPT_LABELS: Record<string, string> = {

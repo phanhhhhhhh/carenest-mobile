@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export type Route =
   | 'overview'
@@ -45,9 +45,9 @@ export function useHashRoute(): [Route, (r: Route) => void] {
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
 
-  const navigate = (r: Route) => {
+  const navigate = useCallback((r: Route) => {
     window.location.hash = `#/${r}`;
-  };
+  }, []);
 
   return [route, navigate];
 }

@@ -1,4 +1,11 @@
-import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from 'react';
+import {
+  type FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { ApiError } from './api';
 import { PageHeader, Pagination, StateBlock } from './components';
 import type { Page } from './types';
@@ -52,18 +59,24 @@ export function ResourceListPage<T>({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Consumers pass an inline arrow for `fetcher`, so its identity changes every
+  // render. Hold it in a ref so `load` stays stable and the effect below fires
+  // only on real input changes (page / query / filters), not on every parent render.
+  const fetcherRef = useRef(fetcher);
+  fetcherRef.current = fetcher;
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setData(await fetcher({ page, query, filters: filterValues }));
+      setData(await fetcherRef.current({ page, query, filters: filterValues }));
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) return onSessionExpired();
       setError(e instanceof ApiError ? e.message : 'Không tải được dữ liệu.');
     } finally {
       setLoading(false);
     }
-  }, [fetcher, page, query, filterValues, onSessionExpired]);
+  }, [page, query, filterValues, onSessionExpired]);
 
   useEffect(() => {
     void load();

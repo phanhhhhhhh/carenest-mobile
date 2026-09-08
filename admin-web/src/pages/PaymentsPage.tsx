@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, confirmPayment, getPendingPayments, rejectPayment } from '../api';
 import { PageHeader, StateBlock } from '../components';
 import { formatDateTime, formatVnd, planLabel } from '../format';
 import type { PendingPayment } from '../types';
 
 type Toast = { kind: 'ok' | 'err'; text: string };
-const HANDLED = new Set(['ACTIVATED', 'ALREADY_ACTIVE', 'REJECTED', 'NOT_PENDING']);
+// Only these actually changed the row. ALREADY_ACTIVE / NOT_PENDING are the server's
+// *refusal* codes — fall through to the error branch so the console doesn't claim
+// success and desync from the database.
+const HANDLED = new Set(['ACTIVATED', 'REJECTED']);
 
 export function PaymentsPage({ onSessionExpired }: { onSessionExpired: () => void }) {
   const [rows, setRows] = useState<PendingPayment[] | null>(null);
@@ -13,11 +16,15 @@ export function PaymentsPage({ onSessionExpired }: { onSessionExpired: () => voi
   const [error, setError] = useState<string | null>(null);
   const [actingId, setActingId] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
 
   const flash = useCallback((t: Toast) => {
     setToast(t);
-    window.setTimeout(() => setToast(null), 4000);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 4000);
   }, []);
+
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   const load = useCallback(async () => {
     setLoading(true);
