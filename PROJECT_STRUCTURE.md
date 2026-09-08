@@ -53,19 +53,25 @@ Premium-plan rework (2026-09-08, on `develop` — commits `0b03d99` / `4e1d1cc`,
   family account; PREMIUM = 4 elderly + 6 family. `canAddElderly` / `canAddFamilyMember`
   enforce; `FamilyLinkService.create` throws `PaymentRequiredException` (Vietnamese copy)
   when either cap is hit.
-- `SubscriptionService.isPremium(userId)` is now **group-shared**: true if the user has a
+- `SubscriptionService.isPremium(familyId)` is **group-shared**: true if the user has a
   direct PREMIUM_* subscription **or** any family co-linked to one of their linked elderly
-  has one (`findByUserIdInAndStatusAndPlanTypeIn`). Callers: `ChatService`,
+  has one (`findByUserIdInAndStatusAndPlanTypeIn`). It resolves the group family→elderly, so
+  it only makes sense for a **family** id. `isPremiumForElderly(elderlyId)` (added 2026-09-08)
+  is the elderly-facing counterpart — direct plan OR any actively-linked family has Premium —
+  and is what `ChatService` uses for the AI-chat quota. Callers of `isPremium`:
   `FamilyFeedService`, `MedicationReminderScheduler`, `PaymentService`, `HealthReportExportController`.
 - Yearly price 499k → **490k**; plan names "Premium Hàng tháng / năm" (was "CareNest Family Plus").
 - **PRO tier**: migration `V46` widens `plan_type` to allow `PRO_MONTHLY` / `PRO_YEARLY`,
   but `isPro()` / `isPro` are hard-`false` on BE and FE — scaffolding only.
-- `FamilyLinkService.create` now saves the link as **`ACTIVE` immediately** (was `PENDING`);
-  `FamilyLinkController` `@PreAuthorize` widened so an already-linked family can add another
-  family for the same elderly (`@authz.isOwnerOrLinkedFamily`). ⚠ This bypasses the
-  elderly-approval step described for UC **E4** below — flagged, not yet reconciled.
-- Backend tests green offline: `SubscriptionServiceTest` (13), `FamilyLinkServiceTest` (3),
-  `FamilyLinkRepositoryTest` (7). `AuthIntegrationTest` still needs a running Postgres.
+- `FamilyLinkController` `@PreAuthorize` widened so an already-linked family can create a link
+  request for the same elderly (`@authz.isOwnerOrLinkedFamily`). `FamilyLinkService.create`
+  keeps writing **`PENDING`** (E4): the phone-number path opens a request the elderly accepts
+  via the `FAMILY_LINK_REQUEST` notification (`PATCH /family-links/{id}/status`). The QR path
+  still links `ACTIVE` on scan because the elderly initiates it. (The rework briefly made
+  `create` write `ACTIVE`; restored to `PENDING` on 2026-09-08.)
+- Backend tests green offline: `SubscriptionServiceTest` (15), `FamilyLinkServiceTest` (3),
+  `PaymentServiceTest` (5), `FamilyLinkRepositoryTest` (7). `AuthIntegrationTest` still needs
+  a running Postgres.
 
 Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - **A5 chat quota** — `carenest.chat.free-daily-limit` (default 5) enforced in
@@ -128,10 +134,10 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   warm FCM feedback to the elderly device.
 - **D5** — `FeedItemType.CAMERA`; scheduled/manual camera snapshots unioned into the Feed
   (SOS snapshots stay under the EMERGENCY item; motion-window alerts remain notification-only).
-- **E4** — only the elderly may activate a *pending* family link (`FamilyLinkService.updateStatus` arg).
-  ⚠ Superseded in practice by the 2026-09-08 rework: `FamilyLinkService.create` now writes
-  `ACTIVE` directly, so the phone-number path no longer produces a PENDING link for the
-  elderly to approve. Unresolved — see the premium-plan rework note above.
+- **E4** — only the elderly may activate a pending family link (`FamilyLinkService.updateStatus`
+  guards `actingUserId == link.elderly.id`). The phone-number path (`POST /api/family-links`)
+  creates the link `PENDING`; the elderly accepts/declines from the `FAMILY_LINK_REQUEST`
+  notification (`respondToFamilyLinkRequest` → `PATCH /family-links/{id}/status`).
 - Compliance: `PrivacyPolicyScreen` linked from Register; sensitive-data notes.
 - SOS fixes: `acknowledgeAllForUser` no longer resolves ACTIVE events; secondary contact
   only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
@@ -170,9 +176,9 @@ QR link flow — **KEPT** (team decision 2026-09-07, overrides the v3.5 "drop QR
 line). `ElderlyQRInviteScreen`, `FamilyScanQRScreen`, `familyScanQR/`, `elderlyQRInvite/`,
 `InviteController`/`InviteTokenService`, `core/api/inviteApi.ts` and the dashboard/profile
 entry points stay. Linking has two coexisting paths: QR (elderly generates token → family
-scans → link ACTIVE immediately) and phone-number (`POST /api/family-links`). As of the
-2026-09-08 rework the phone-number path also creates the link **ACTIVE** on the spot — the
-old PENDING → elderly-approves (UC E4) flow is currently bypassed (flagged above).
+scans → link `ACTIVE` immediately, since the elderly initiated it) and phone-number
+(`POST /api/family-links` → `PENDING` → elderly accepts via the `FAMILY_LINK_REQUEST`
+notification, per UC E4).
 
 Dropped from roadmap: Zalo OA, prescription-photo storage,
 camera-based visit auto-detect.

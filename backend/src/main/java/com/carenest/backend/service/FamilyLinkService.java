@@ -73,11 +73,14 @@ public class FamilyLinkService {
             throw new ConflictException("Link between elderly and family already exists");
         }
 
+        // UC E4: the phone-number path opens a PENDING request the elderly must accept
+        // (via the FAMILY_LINK_REQUEST notification). The QR path activates immediately
+        // because the elderly initiates it there.
         FamilyLink link = FamilyLink.builder()
             .elderly(elderly)
             .family(family)
             .relationship(request.getRelationship())
-            .status(FamilyLinkStatus.ACTIVE)
+            .status(FamilyLinkStatus.PENDING)
             .build();
 
         FamilyLink saved = familyLinkRepository.save(link);
