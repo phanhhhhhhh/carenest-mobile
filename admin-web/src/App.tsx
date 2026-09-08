@@ -2,8 +2,17 @@ import { type FormEvent, useCallback, useState } from 'react';
 import { ApiError, clearSession, getStoredUser, getToken, login } from './api';
 import { PaymentsView } from './PaymentsView';
 
+function restoreSession() {
+  const token = getToken();
+  const user = getStoredUser();
+  if (token && user) return user;
+  // Half-written session (e.g. cleared storage, old build) — start clean.
+  clearSession();
+  return null;
+}
+
 export default function App() {
-  const [user, setUser] = useState(() => (getToken() ? getStoredUser() : null));
+  const [user, setUser] = useState(restoreSession);
 
   const handleLogout = useCallback(() => {
     clearSession();
