@@ -17,4 +17,6 @@ public interface CheckInRepository extends JpaRepository<CheckIn, Long> {
 
     List<CheckIn> findByElderlyIdAndCreatedAtBetweenOrderByCreatedAtDesc(
         Long elderlyId, OffsetDateTime from, OffsetDateTime to);
+
+    long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

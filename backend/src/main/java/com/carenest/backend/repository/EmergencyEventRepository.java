@@ -23,4 +23,6 @@ public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, 
     List<EmergencyEvent> findByStatusAndAcknowledgedAtIsNullOrderByTriggeredAtAsc(EmergencyStatus status);
 
     Optional<EmergencyEvent> findById(Long id);
+
+    long countByStatus(EmergencyStatus status);
 }

@@ -18,4 +18,6 @@ public interface ElderlyProfileRepository extends JpaRepository<ElderlyProfile, 
 
     List<ElderlyProfile> findByCameraConsentStatusAndCameraConsentRetryAfterLessThanEqualAndDeletedAtIsNull(
         CameraConsentStatus status, OffsetDateTime cutoff);
+
+    long countByDeletedAtIsNull();
 }
