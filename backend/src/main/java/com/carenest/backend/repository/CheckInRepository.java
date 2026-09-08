@@ -23,6 +23,8 @@ public interface CheckInRepository extends JpaRepository<CheckIn, Long> {
 
     long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 
-    @Query("SELECT c FROM CheckIn c JOIN FETCH c.elderly ORDER BY c.createdAt DESC")
+    @Query("SELECT c FROM CheckIn c LEFT JOIN FETCH c.elderly ORDER BY c.createdAt DESC, c.id DESC")
     Page<CheckIn> findForAdmin(Pageable pageable);
+
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(OffsetDateTime from, OffsetDateTime to);
 }

@@ -69,16 +69,20 @@ public class AdminService {
     private final SubscriptionService subscriptionService;
 
     public AdminOverviewResponse overview() {
+        var ACTIVE = Subscription.SubscriptionStatus.ACTIVE;
+        Instant now = Instant.now();
+
         Map<String, Long> usersByRole = new LinkedHashMap<>();
         for (UserRole role : UserRole.values()) {
             usersByRole.put(role.name(), userRepository.countByRoleAndDeletedAtIsNull(role));
         }
 
+        // "Active" here means a live, unexpired plan — status ACTIVE alone would count
+        // lapsed rows because nothing currently transitions them to EXPIRED.
         Map<String, Long> subsByPlan = new LinkedHashMap<>();
         for (Subscription.PlanType plan : Subscription.PlanType.values()) {
             subsByPlan.put(plan.name(),
-                subscriptionRepository.countByStatusAndPlanType(
-                    Subscription.SubscriptionStatus.ACTIVE, plan));
+                subscriptionRepository.countByStatusAndPlanTypeAndEndDateAfter(ACTIVE, plan, now));
         }
 
         OffsetDateTime startOfDay = OffsetDateTime.now(ICT).toLocalDate().atStartOfDay(ICT).toOffsetDateTime();
@@ -92,12 +96,12 @@ public class AdminService {
             elderlyProfileRepository.countByDeletedAtIsNull(),
             familyLinkRepository.countByStatusAndDeletedAtIsNull(FamilyLinkStatus.ACTIVE),
             familyLinkRepository.countByStatusAndDeletedAtIsNull(FamilyLinkStatus.PENDING),
-            subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.ACTIVE),
+            subscriptionRepository.countByStatusAndEndDateAfter(ACTIVE, now),
             subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.PENDING),
             subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.CANCELLED),
             subsByPlan,
-            subscriptionRepository.sumAmountByStatus(Subscription.SubscriptionStatus.ACTIVE),
-            checkInRepository.countByCreatedAtBetween(startOfDay, endOfDay),
+            subscriptionRepository.sumAmountByStatusAndNotExpired(ACTIVE, now),
+            checkInRepository.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(startOfDay, endOfDay),
             emergencyEventRepository.countByStatus(EmergencyStatus.ACTIVE),
             medicationRepository.countByDeletedAtIsNull(),
             appointmentRepository.countByDeletedAtIsNull(),
@@ -134,11 +138,14 @@ public class AdminService {
             ? subscriptionService.isPremiumForElderly(userId)
             : subscriptionService.isPremium(userId);
 
-        List<AdminFamilyLinkResponse> links = (user.getRole() == UserRole.ELDERLY)
-            ? familyLinkRepository.findAllForElderly(userId).stream()
-                .map(AdminFamilyLinkResponse::from).toList()
-            : familyLinkRepository.findAllElderlyByFamilyIdAndStatus(userId, FamilyLinkStatus.ACTIVE).stream()
-                .map(AdminFamilyLinkResponse::from).toList();
+        // All statuses (incl. PENDING) for whichever side the user is on, both
+        // associations fetched so the mapper never touches a lazy proxy.
+        List<AdminFamilyLinkResponse> links = (user.getRole() == UserRole.ELDERLY
+            ? familyLinkRepository.findAllForElderlyAdmin(userId)
+            : familyLinkRepository.findAllForFamilyAdmin(userId))
+            .stream()
+            .map(AdminFamilyLinkResponse::from)
+            .toList();
 
         return new AdminUserDetailResponse(
             AdminUserResponse.from(user), profile, activeSub, groupPremium, links);
@@ -196,12 +203,17 @@ public class AdminService {
             .map(AdminAppointmentResponse::from);
     }
 
+    /**
+     * null/blank -> {@code null} (no filter). A non-blank value that isn't a valid
+     * constant -> 400, rather than silently falling back to "match everything" which
+     * would let a typo'd filter return the full table with a 200.
+     */
     private static <E extends Enum<E>> E parseEnum(Class<E> type, String raw) {
         if (raw == null || raw.isBlank()) return null;
         try {
             return Enum.valueOf(type, raw.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            return null;
+            throw new IllegalArgumentException("Giá trị lọc không hợp lệ: " + raw);
         }
     }
 }

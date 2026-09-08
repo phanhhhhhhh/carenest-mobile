@@ -24,6 +24,6 @@ public interface ElderlyProfileRepository extends JpaRepository<ElderlyProfile, 
 
     long countByDeletedAtIsNull();
 
-    @Query("SELECT p FROM ElderlyProfile p JOIN FETCH p.user WHERE p.deletedAt IS NULL ORDER BY p.id DESC")
+    @Query("SELECT p FROM ElderlyProfile p LEFT JOIN FETCH p.user WHERE p.deletedAt IS NULL ORDER BY p.id DESC")
     Page<ElderlyProfile> findForAdmin(Pageable pageable);
 }

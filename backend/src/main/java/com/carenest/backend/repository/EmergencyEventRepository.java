@@ -30,8 +30,8 @@ public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, 
 
     long countByStatus(EmergencyStatus status);
 
-    @Query("SELECT e FROM EmergencyEvent e JOIN FETCH e.elderly "
+    @Query("SELECT e FROM EmergencyEvent e LEFT JOIN FETCH e.elderly "
         + "WHERE (:status IS NULL OR e.status = :status) "
-        + "ORDER BY e.triggeredAt DESC")
+        + "ORDER BY e.triggeredAt DESC, e.id DESC")
     Page<EmergencyEvent> findForAdmin(@Param("status") EmergencyStatus status, Pageable pageable);
 }

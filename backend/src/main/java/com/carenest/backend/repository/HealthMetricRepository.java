@@ -38,8 +38,8 @@ public interface HealthMetricRepository extends JpaRepository<HealthMetric, Long
 
     long countByRecordedAtAfterAndDeletedAtIsNull(OffsetDateTime since);
 
-    @Query("SELECT hm FROM HealthMetric hm JOIN FETCH hm.elderly "
+    @Query("SELECT hm FROM HealthMetric hm LEFT JOIN FETCH hm.elderly "
         + "WHERE hm.deletedAt IS NULL AND (:type IS NULL OR hm.type = :type) "
-        + "ORDER BY hm.recordedAt DESC")
+        + "ORDER BY hm.recordedAt DESC, hm.id DESC")
     Page<HealthMetric> findForAdmin(@Param("type") HealthMetricType type, Pageable pageable);
 }

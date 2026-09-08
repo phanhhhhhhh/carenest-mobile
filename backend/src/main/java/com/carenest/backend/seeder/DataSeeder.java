@@ -58,10 +58,17 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.context.annotation.Profile;
+
 @Slf4j
 @Component
+@Profile({"local", "dev"})
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
+
+    // Hard stop: the bean does not exist outside dev/local, so demo accounts —
+    // including the seeded ADMIN — can never be created by a prod profile even if
+    // carenest.seed.enabled is set by mistake.
 
     @Value("${carenest.seed.enabled:false}")
     private boolean seedEnabled;

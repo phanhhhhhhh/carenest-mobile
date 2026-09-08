@@ -124,4 +124,33 @@ class FamilyLinkServiceTest {
         verify(familyLinkRepository).save(linkCaptor.capture());
         assertEquals(FamilyLinkStatus.PENDING, linkCaptor.getValue().getStatus());
     }
+
+    @Test
+    void updateStatus_reChecksElderlyCapBeforeActivating() {
+        FamilyLink pending = FamilyLink.builder()
+            .id(5L).elderly(elderlyUser).family(familyUser)
+            .status(FamilyLinkStatus.PENDING).build();
+        when(familyLinkRepository.findByIdAndDeletedAtIsNull(5L)).thenReturn(Optional.of(pending));
+        when(subscriptionService.canAddElderly(100L)).thenReturn(false);
+
+        PaymentRequiredException ex = assertThrows(PaymentRequiredException.class,
+            () -> familyLinkService.updateStatus(5L, FamilyLinkStatus.ACTIVE, 200L));
+        assertTrue(ex.getMessage().contains("Giới hạn"));
+        verify(familyLinkRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void updateStatus_activatesWhenWithinCaps() {
+        FamilyLink pending = FamilyLink.builder()
+            .id(5L).elderly(elderlyUser).family(familyUser)
+            .status(FamilyLinkStatus.PENDING).relationship("Con").build();
+        when(familyLinkRepository.findByIdAndDeletedAtIsNull(5L)).thenReturn(Optional.of(pending));
+        when(subscriptionService.canAddElderly(100L)).thenReturn(true);
+        when(subscriptionService.canAddFamilyMember(200L, 100L)).thenReturn(true);
+        when(familyLinkRepository.save(any(FamilyLink.class))).thenAnswer(i -> i.getArgument(0));
+
+        familyLinkService.updateStatus(5L, FamilyLinkStatus.ACTIVE, 200L);
+
+        assertEquals(FamilyLinkStatus.ACTIVE, pending.getStatus());
+    }
 }

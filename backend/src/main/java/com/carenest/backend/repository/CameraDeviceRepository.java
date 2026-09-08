@@ -26,6 +26,6 @@ public interface CameraDeviceRepository extends JpaRepository<CameraDevice, Long
 
     long countByStatus(CameraDevice.CameraStatus status);
 
-    @Query("SELECT c FROM CameraDevice c JOIN FETCH c.elderly ORDER BY c.id DESC")
+    @Query("SELECT c FROM CameraDevice c LEFT JOIN FETCH c.elderly ORDER BY c.id DESC")
     Page<CameraDevice> findForAdmin(Pageable pageable);
 }

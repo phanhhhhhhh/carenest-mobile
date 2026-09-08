@@ -23,7 +23,6 @@ import com.carenest.backend.repository.SubscriptionRepository;
 import com.carenest.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -38,7 +37,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -71,16 +70,17 @@ class AdminServiceTest {
         when(userRepository.countByRoleAndDeletedAtIsNull(UserRole.ELDERLY)).thenReturn(5L);
         when(userRepository.countByRoleAndDeletedAtIsNull(UserRole.FAMILY)).thenReturn(10L);
         when(userRepository.countByRoleAndDeletedAtIsNull(UserRole.ADMIN)).thenReturn(1L);
-        when(subscriptionRepository.countByStatusAndPlanType(any(), any())).thenReturn(0L);
-        when(subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.ACTIVE)).thenReturn(3L);
+        when(subscriptionRepository.countByStatusAndPlanTypeAndEndDateAfter(any(), any(), any())).thenReturn(0L);
+        when(subscriptionRepository.countByStatusAndEndDateAfter(
+            eq(Subscription.SubscriptionStatus.ACTIVE), any())).thenReturn(3L);
         when(subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.PENDING)).thenReturn(2L);
         when(subscriptionRepository.countByStatus(Subscription.SubscriptionStatus.CANCELLED)).thenReturn(1L);
-        when(subscriptionRepository.sumAmountByStatus(Subscription.SubscriptionStatus.ACTIVE))
-            .thenReturn(new BigDecimal("147000"));
+        when(subscriptionRepository.sumAmountByStatusAndNotExpired(
+            eq(Subscription.SubscriptionStatus.ACTIVE), any())).thenReturn(new BigDecimal("147000"));
         when(elderlyProfileRepository.countByDeletedAtIsNull()).thenReturn(5L);
         when(familyLinkRepository.countByStatusAndDeletedAtIsNull(FamilyLinkStatus.ACTIVE)).thenReturn(8L);
         when(familyLinkRepository.countByStatusAndDeletedAtIsNull(FamilyLinkStatus.PENDING)).thenReturn(1L);
-        when(checkInRepository.countByCreatedAtBetween(any(), any())).thenReturn(4L);
+        when(checkInRepository.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(any(), any())).thenReturn(4L);
         when(emergencyEventRepository.countByStatus(EmergencyStatus.ACTIVE)).thenReturn(0L);
         when(medicationRepository.countByDeletedAtIsNull()).thenReturn(8L);
         when(appointmentRepository.countByDeletedAtIsNull()).thenReturn(3L);
@@ -120,15 +120,19 @@ class AdminServiceTest {
     }
 
     @Test
-    void users_unknownRoleBecomesNoFilter() {
+    void users_blankRoleMeansNoFilter() {
         when(userRepository.searchForAdmin(isNull(), eq("nguyen"), any(Pageable.class)))
             .thenReturn(new PageImpl<>(List.<User>of()));
 
-        service.users("banana", "nguyen", PageRequest.of(0, 25));
+        service.users("  ", "nguyen", PageRequest.of(0, 25));
 
-        ArgumentCaptor<UserRole> roleCaptor = ArgumentCaptor.forClass(UserRole.class);
-        verify(userRepository).searchForAdmin(roleCaptor.capture(), eq("nguyen"), any(Pageable.class));
-        assertNull(roleCaptor.getValue());
+        verify(userRepository).searchForAdmin(isNull(), eq("nguyen"), any(Pageable.class));
+    }
+
+    @Test
+    void users_unknownRoleIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+            () -> service.users("banana", "x", PageRequest.of(0, 25)));
     }
 
     @Test

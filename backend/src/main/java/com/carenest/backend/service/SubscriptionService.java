@@ -26,6 +26,25 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final FamilyLinkRepository familyLinkRepository;
 
+    private static final List<Subscription.PlanType> PREMIUM_PLANS =
+        List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY);
+
+    /**
+     * True when any of {@code userIds} has a Premium subscription that is still valid —
+     * i.e. row status ACTIVE <em>and</em> {@link Subscription#isPremium()} (which also
+     * checks {@code endDate}). A bare status filter is not enough: nothing in the app
+     * currently transitions a lapsed subscription to EXPIRED, so {@code endDate} is the
+     * real expiry gate.
+     */
+    private boolean anyActivePremium(List<Long> userIds) {
+        if (userIds.isEmpty()) return false;
+        return subscriptionRepository
+            .findByUserIdInAndStatusAndPlanTypeIn(
+                userIds, Subscription.SubscriptionStatus.ACTIVE, PREMIUM_PLANS)
+            .stream()
+            .anyMatch(Subscription::isPremium);
+    }
+
     public static final int FREE_MAX_ELDERLY = 1;
     public static final int PREMIUM_MAX_ELDERLY = 4;
 
@@ -39,13 +58,7 @@ public class SubscriptionService {
 
         boolean direct = subscriptionRepository
             .findByUserIdAndStatusAndPlanTypeIn(
-                userId,
-                Subscription.SubscriptionStatus.ACTIVE,
-                List.of(
-                    Subscription.PlanType.PREMIUM_MONTHLY,
-                    Subscription.PlanType.PREMIUM_YEARLY
-                )
-            )
+                userId, Subscription.SubscriptionStatus.ACTIVE, PREMIUM_PLANS)
             .map(Subscription::isPremium)
             .orElse(false);
 
@@ -65,15 +78,7 @@ public class SubscriptionService {
             .map(fl -> fl.getFamily().getId())
             .collect(Collectors.toList());
 
-        if (familyIdsInGroup.isEmpty()) return false;
-
-        return !subscriptionRepository
-            .findByUserIdInAndStatusAndPlanTypeIn(
-                familyIdsInGroup,
-                Subscription.SubscriptionStatus.ACTIVE,
-                List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
-            )
-            .isEmpty();
+        return anyActivePremium(familyIdsInGroup);
     }
 
     /**
@@ -93,13 +98,7 @@ public class SubscriptionService {
             .findAllFamilyByElderlyIdAndStatus(elderlyId, FamilyLinkStatus.ACTIVE)
             .forEach(fl -> groupUserIds.add(fl.getFamily().getId()));
 
-        return !subscriptionRepository
-            .findByUserIdInAndStatusAndPlanTypeIn(
-                groupUserIds,
-                Subscription.SubscriptionStatus.ACTIVE,
-                List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
-            )
-            .isEmpty();
+        return anyActivePremium(groupUserIds);
     }
 
     @Transactional(readOnly = true)
@@ -158,21 +157,7 @@ public class SubscriptionService {
             .map(fl -> fl.getFamily().getId())
             .collect(Collectors.toList());
 
-        if (!linkedFamilyIds.isEmpty()) {
-            boolean anyPremium = !subscriptionRepository
-                .findByUserIdInAndStatusAndPlanTypeIn(
-                    linkedFamilyIds,
-                    Subscription.SubscriptionStatus.ACTIVE,
-                    List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)
-                )
-                .isEmpty();
-
-            if (anyPremium) {
-                return PREMIUM_MAX_FAMILY;
-            }
-        }
-
-        return FREE_MAX_FAMILY;
+        return anyActivePremium(linkedFamilyIds) ? PREMIUM_MAX_FAMILY : FREE_MAX_FAMILY;
     }
 
     @Transactional(readOnly = true)

@@ -200,6 +200,25 @@ class SubscriptionServiceTest {
         assertFalse(service.isPremiumForElderly(null));
     }
 
+    @Test
+    void isPremiumForElderly_falseWhenGroupPremiumRowIsExpired() {
+        // status ACTIVE but endDate in the past -> Subscription.isPremium() is false.
+        Subscription expired = Subscription.builder()
+            .id(1L).user(familyUser).planType(Subscription.PlanType.PREMIUM_MONTHLY)
+            .status(Subscription.SubscriptionStatus.ACTIVE)
+            .startDate(Instant.now().minus(60, ChronoUnit.DAYS))
+            .endDate(Instant.now().minus(1, ChronoUnit.DAYS))
+            .build();
+        FamilyLink link = FamilyLink.builder().id(1L).elderly(elderlyUser).family(familyUser).status(FamilyLinkStatus.ACTIVE).build();
+        when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(200L, FamilyLinkStatus.ACTIVE))
+            .thenReturn(List.of(link));
+        when(subscriptionRepository.findByUserIdInAndStatusAndPlanTypeIn(
+            eq(List.of(200L, 100L)), eq(Subscription.SubscriptionStatus.ACTIVE), any()
+        )).thenReturn(List.of(expired));
+
+        assertFalse(service.isPremiumForElderly(200L));
+    }
+
     private Subscription createActiveSub(User user, Subscription.PlanType planType) {
         return Subscription.builder()
             .id(1L)

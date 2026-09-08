@@ -34,12 +34,16 @@ public interface FamilyLinkRepository extends JpaRepository<FamilyLink, Long> {
 
     long countByStatusAndDeletedAtIsNull(FamilyLinkStatus status);
 
-    @Query("SELECT fl FROM FamilyLink fl JOIN FETCH fl.elderly JOIN FETCH fl.family "
+    @Query("SELECT fl FROM FamilyLink fl LEFT JOIN FETCH fl.elderly LEFT JOIN FETCH fl.family "
         + "WHERE fl.deletedAt IS NULL AND (:status IS NULL OR fl.status = :status) "
-        + "ORDER BY fl.createdAt DESC")
+        + "ORDER BY fl.createdAt DESC, fl.id DESC")
     Page<FamilyLink> findForAdmin(@Param("status") FamilyLinkStatus status, Pageable pageable);
 
-    @Query("SELECT fl FROM FamilyLink fl JOIN FETCH fl.family "
-        + "WHERE fl.elderly.id = :elderlyId AND fl.deletedAt IS NULL")
-    List<FamilyLink> findAllForElderly(@Param("elderlyId") Long elderlyId);
+    @Query("SELECT fl FROM FamilyLink fl LEFT JOIN FETCH fl.elderly LEFT JOIN FETCH fl.family "
+        + "WHERE fl.elderly.id = :elderlyId AND fl.deletedAt IS NULL ORDER BY fl.createdAt DESC")
+    List<FamilyLink> findAllForElderlyAdmin(@Param("elderlyId") Long elderlyId);
+
+    @Query("SELECT fl FROM FamilyLink fl LEFT JOIN FETCH fl.elderly LEFT JOIN FETCH fl.family "
+        + "WHERE fl.family.id = :familyId AND fl.deletedAt IS NULL ORDER BY fl.createdAt DESC")
+    List<FamilyLink> findAllForFamilyAdmin(@Param("familyId") Long familyId);
 }

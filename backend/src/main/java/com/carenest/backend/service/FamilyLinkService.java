@@ -129,6 +129,24 @@ public class FamilyLinkService {
                 "Only the elderly user can accept a family link request");
         }
 
+        // Re-check plan caps at acceptance: the creation-time check only counts ACTIVE
+        // links, so several PENDING requests could each pass it individually and then
+        // all be accepted past the limit.
+        if (status == FamilyLinkStatus.ACTIVE && link.getStatus() != FamilyLinkStatus.ACTIVE) {
+            Long elderlyId = link.getElderly().getId();
+            Long familyId = link.getFamily().getId();
+            if (!subscriptionService.canAddElderly(familyId)) {
+                throw new PaymentRequiredException(
+                    "Giới hạn gói cước: Người thân này đã đạt giới hạn số người cao tuổi có thể theo dõi. "
+                        + "Vui lòng nâng cấp lên gói Premium.");
+            }
+            if (!subscriptionService.canAddFamilyMember(elderlyId, familyId)) {
+                throw new PaymentRequiredException(
+                    "Giới hạn gói cước: Người cao tuổi đã đạt giới hạn số tài khoản người thân kết nối. "
+                        + "Vui lòng nâng cấp lên gói Premium.");
+            }
+        }
+
         link.setStatus(status);
         return toResponse(familyLinkRepository.save(link));
     }

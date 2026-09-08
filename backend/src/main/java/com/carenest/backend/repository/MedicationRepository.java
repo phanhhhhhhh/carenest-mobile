@@ -38,6 +38,6 @@ public interface MedicationRepository extends JpaRepository<Medication, Long> {
 
     long countByDeletedAtIsNull();
 
-    @Query("SELECT m FROM Medication m JOIN FETCH m.elderly WHERE m.deletedAt IS NULL ORDER BY m.id DESC")
+    @Query("SELECT m FROM Medication m LEFT JOIN FETCH m.elderly WHERE m.deletedAt IS NULL ORDER BY m.id DESC")
     Page<Medication> findForAdmin(Pageable pageable);
 }

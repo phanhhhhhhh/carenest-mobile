@@ -43,6 +43,11 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) ->
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                // Authenticated-but-not-permitted (e.g. a FAMILY user hitting /api/admin/**)
+                // must be 403, not 401 — otherwise the client can't tell "log in" from
+                // "you don't have access".
+                .accessDeniedHandler((request, response, deniedException) ->
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden"))
             )
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers(
@@ -65,6 +70,11 @@ public class SecurityConfig {
                     ).denyAll();
                 }
                 auth.anyRequest().authenticated();
+                // NB: /api/admin/** is gated by the class-level @PreAuthorize("hasRole('ADMIN')")
+                // on AdminController (method security), verified by AdminControllerSecurityTest.
+                // A URL rule here was tried but this chain's ExceptionTranslationFilter maps a
+                // filter-level denial to 401 rather than 403, so the method-security gate is
+                // kept as the single, tested control.
             })
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .build();

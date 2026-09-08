@@ -42,8 +42,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     long countByDeletedAtIsNull();
 
-    @Query("SELECT a FROM Appointment a JOIN FETCH a.elderly "
+    @Query("SELECT a FROM Appointment a LEFT JOIN FETCH a.elderly "
         + "WHERE a.deletedAt IS NULL AND (:status IS NULL OR a.status = :status) "
-        + "ORDER BY a.datetime DESC")
+        + "ORDER BY a.datetime DESC, a.id DESC")
     Page<Appointment> findForAdmin(@Param("status") AppointmentStatus status, Pageable pageable);
 }
