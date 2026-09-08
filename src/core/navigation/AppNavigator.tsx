@@ -28,7 +28,6 @@ import PinVerifyScreen from '../../features/auth/screens/PinVerifyScreen';
 import VerifyEmailScreen from '../../features/auth/screens/VerifyEmailScreen';
 import ElderlyShell from './ElderlyShell';
 import FamilyShell from './FamilyShell';
-import AdminPaymentsScreen from '../../features/admin/screens/AdminPaymentsScreen';
 import ElderlyEditProfileScreen from '../../features/elderly/screens/ElderlyEditProfileScreen';
 import ElderlyEmergencyContactsScreen from '../../features/elderly/screens/ElderlyEmergencyContactsScreen';
 import ElderlyMedicationHistoryScreen from '../../features/elderly/screens/ElderlyMedicationHistoryScreen';
@@ -70,7 +69,6 @@ export type RootStackParamList = {
   VerifyEmail: { token: string };
   ElderlyShell: NavigatorScreenParams<ElderlyTabParamList> | undefined;
   FamilyShell: NavigatorScreenParams<FamilyTabParamList> | undefined;
-  AdminShell: undefined;
   FamilyHealth: undefined;
   FamilyAlerts: undefined;
   FamilyFeed: undefined;
@@ -144,8 +142,6 @@ export default function AppNavigator() {
           <>
             {user?.role === 'ELDERLY' ? (
               <Stack.Screen name="ElderlyShell" component={ElderlyShell} />
-            ) : user?.role === 'ADMIN' ? (
-              <Stack.Screen name="AdminShell" component={AdminPaymentsScreen} />
             ) : (
               <Stack.Screen name="FamilyShell" component={FamilyShell} />
             )}

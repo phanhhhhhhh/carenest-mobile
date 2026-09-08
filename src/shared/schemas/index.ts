@@ -301,18 +301,6 @@ export const SubscriptionStatusSchema = z.object({
 });
 export type SubscriptionStatusParsed = z.infer<typeof SubscriptionStatusSchema>;
 
-/** A transfer awaiting manual reconciliation, as returned by `GET /payment/pending` (ADMIN). */
-export const PendingPaymentSchema = z.object({
-  transactionId: z.string(),
-  userId: z.number().nullable().optional(),
-  userName: z.string().nullable().optional(),
-  planType: z.string(),
-  amount: z.coerce.number().nullable().optional(),
-  provider: z.string().nullable().optional(),
-  createdAt: z.string().nullable().optional(),
-});
-export type PendingPaymentParsed = z.infer<typeof PendingPaymentSchema>;
-
 const DashboardLatestMetricSchema = z.object({
   value: z.union([z.string(), z.number()]),
   valueSecondary: z.union([z.string(), z.number()]).nullable().optional(),
