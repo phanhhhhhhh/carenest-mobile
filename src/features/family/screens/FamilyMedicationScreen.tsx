@@ -159,7 +159,15 @@ export default function FamilyMedicationScreen() {
 
       {/* Multi-Elderly Switcher Tabs */}
       {dashData && dashData.linkedElderly.length > 0 && (
-        <View style={{ backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+        <View
+          style={{
+            backgroundColor: '#FFFFFF',
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: '#F1F5F9',
+          }}
+        >
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {dashData.linkedElderly.map((e, i) => {
               const isSelected = i === dashData.selectedIndex;

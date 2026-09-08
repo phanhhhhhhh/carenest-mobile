@@ -93,10 +93,7 @@ const DEFAULT_PLANS: PlanData[] = [
     name: 'Premium Hàng năm',
     price: 490000,
     currency: 'VND',
-    features: [
-      'Đầy đủ tính năng gói Premium Hàng tháng',
-      'Tiết kiệm 17% (tặng 2 tháng sử dụng)',
-    ],
+    features: ['Đầy đủ tính năng gói Premium Hàng tháng', 'Tiết kiệm 17% (tặng 2 tháng sử dụng)'],
   },
 ];
 

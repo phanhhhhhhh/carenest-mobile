@@ -156,7 +156,10 @@ export default function FamilyProfileScreen() {
                         borderWidth: 1,
                         borderColor: '#99E6E0',
                       },
-                      isSelected && { backgroundColor: Colors.primary, borderColor: Colors.primary },
+                      isSelected && {
+                        backgroundColor: Colors.primary,
+                        borderColor: Colors.primary,
+                      },
                     ]}
                     onPress={() => selectElderly(i)}
                     activeOpacity={0.8}
