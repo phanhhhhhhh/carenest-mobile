@@ -135,7 +135,14 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
 - Compliance: `PrivacyPolicyScreen` linked from Register; sensitive-data notes.
 - SOS fixes: `acknowledgeAllForUser` no longer resolves ACTIVE events; secondary contact
   only added at escalation Level 2; escalation titles say "CẤP ĐỘ 1" / "CẤP ĐỘ 2" matching level.
-- G3 operator: `GET /api/payment/pending` + `POST /api/payment/vietqr/confirm` (both `hasRole('ADMIN')`).
+- G3 operator: `GET /api/payment/pending` + `POST /api/payment/vietqr/{confirm,reject}` (all
+  `hasRole('ADMIN')`). `reject` sets the PENDING subscription to `CANCELLED`. **ADMIN screen
+  built 2026-09-08** (`develop`): `features/admin/` — `AdminPaymentsScreen` (the ADMIN root
+  in `AppNavigator`, no tab shell), `adminPaymentStore` (`load` / `confirm` / `reject`,
+  optimistic row removal), `adminPayments/format.ts` (plan label / VND / time-ago).
+  `PendingPaymentSchema` in `shared/schemas`; `UserRole` gains `'ADMIN'`. `DataSeeder` seeds
+  one admin (`+84900000001` / `admin@carenest.test` / `Demo@1234`) + 2 PENDING subscriptions.
+  Tests: `PaymentServiceTest` (5, offline), `adminPaymentStore.test.ts`, `format.test.ts`.
 - **Premium PDF health-report export** (kept — team decision 2026-09-07, overrides the
   v3.5 "drop PDF export" line; released to `main` in merge `6f10b55`).
   `HealthReportExportController` (`GET /api/elderly/{id}/health-report.pdf`,
@@ -155,9 +162,9 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   The accessible “Xuất PDF” action sits in the `FamilyHealthScreen` app bar. Deps:
   `expo-file-system`, `expo-sharing`.
 
-Still to do: a real ADMIN screen for the pending-payments endpoint; optionally,
-background/killed playback of `medication.voiceUrl` (needs a native module — foreground
-auto-play + manual replay are built, see B2 note above).
+Still to do: optionally, background/killed playback of `medication.voiceUrl` (needs a native
+module — foreground auto-play + manual replay are built, see B2 note above). The ADMIN
+pending-payments screen is now built (see the G3 operator note above).
 
 QR link flow — **KEPT** (team decision 2026-09-07, overrides the v3.5 "drop QR scanner"
 line). `ElderlyQRInviteScreen`, `FamilyScanQRScreen`, `familyScanQR/`, `elderlyQRInvite/`,
@@ -248,6 +255,7 @@ Screen files are prefixed with the domain (`Elderly*` / `Family*`); the table li
 | **family** | Camera, Alerts, Appointments, Dashboard, Feed, Health (Premium PDF export), Medication, Profile, HealthThreshold, PremiumPlans, WeeklySummary, ScanQR | `appointmentStore`, `availabilityStore`, `broadcastStore`, `cameraStore`, `emergencyEventStore`, `familyStore`, `feedStore`, `healthThresholdStore`, `paymentStore`, `weeklySummaryStore` | `services/healthReportExportService.ts`, `screens/familyHealth/exportFlow.ts`; `components/SosAlertOverlay.tsx`; `screens/familyFeed/FeedRow.tsx`; `screens/familyDashboard/{AvailabilityChip,BroadcastBanner}.tsx` |
 | **medication** | — (screens live under `elderly` / `family`) | — | `services/medicationCatalogApi.ts`, `medicationReminderService.ts` |
 | **notifications** | NotificationsScreen, NotificationSettingsScreen | `notificationStore`, `notificationSettingsStore` | — |
+| **admin** | AdminPayments (ADMIN root, no prefix) | `adminPaymentStore` | `screens/adminPayments/format.ts` |
 
 ### `shared/` — cross-feature primitives
 

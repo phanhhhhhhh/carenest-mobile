@@ -89,6 +89,14 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.confirmManualPayment(txnRef));
     }
 
+    /** Operator rejects a VietQR transfer that never arrived (UC G3). */
+    @PostMapping("/vietqr/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> rejectVietQr(@RequestBody Map<String, String> body) {
+        String txnRef = body.get("transactionId");
+        return ResponseEntity.ok(paymentService.rejectManualPayment(txnRef));
+    }
+
     
     @PostMapping("/momo/return")
     public ResponseEntity<Map<String, String>> momoReturn(@RequestBody Map<String, String> body) {

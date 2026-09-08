@@ -329,6 +329,26 @@ public class PaymentService {
                 .orElse(Map.of("status", "NOT_FOUND", "message", "No pending payment with that reference"));
     }
 
+    /** Operator rejects a VietQR transfer that never arrived / could not be matched (UC G3). */
+    @Transactional
+    public Map<String, String> rejectManualPayment(String txnRef) {
+        return subscriptionRepository.findByTransactionId(txnRef)
+                .map(sub -> {
+                    if (sub.getStatus() == Subscription.SubscriptionStatus.ACTIVE) {
+                        return Map.of("status", "ALREADY_ACTIVE", "message", "Subscription is already active");
+                    }
+                    if (sub.getStatus() != Subscription.SubscriptionStatus.PENDING) {
+                        return Map.of("status", "NOT_PENDING", "message", "Payment is not awaiting review");
+                    }
+                    sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                    sub.setCancelledAt(Instant.now());
+                    subscriptionRepository.save(sub);
+                    log.info("Manual payment rejected: txnRef={}", txnRef);
+                    return Map.of("status", "REJECTED", "message", "Payment marked as not received");
+                })
+                .orElse(Map.of("status", "NOT_FOUND", "message", "No pending payment with that reference"));
+    }
+
 
     @Transactional(readOnly = true)
     public Map<String, Object> getSubscriptionStatus(Long userId) {

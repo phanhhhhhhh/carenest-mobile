@@ -184,7 +184,9 @@ public class DataSeeder implements CommandLineRunner {
         setAvailability(e1, f7, AvailabilityStatus.BUSY);
         setAvailability(e1, f8, AvailabilityStatus.BUSY);
 
-        log.info("Seeded {} elderly + {} family users.", elderlyUsers.size(), familyUsers.size());
+        saveUser("CareNest Admin", "+84900000001", "admin@carenest.test", null, UserRole.ADMIN);
+
+        log.info("Seeded {} elderly + {} family users + 1 admin.", elderlyUsers.size(), familyUsers.size());
     }
 
     private User saveUser(String name, String phone, String email, LocalDate dob, UserRole role) {
@@ -589,7 +591,28 @@ public class DataSeeder implements CommandLineRunner {
             .endDate(Instant.now().plus(25, ChronoUnit.DAYS))
             .build();
         subscriptionRepository.save(sub);
-        log.info("Subscription seeded (1 premium user).");
+
+        // Two transfers awaiting manual reconciliation — populates the ADMIN payments screen (UC G3).
+        subscriptionRepository.save(Subscription.builder()
+            .user(familyUsers.get(1))
+            .planType(Subscription.PlanType.PREMIUM_MONTHLY)
+            .status(Subscription.SubscriptionStatus.PENDING)
+            .paymentProvider("VIETQR")
+            .transactionId("CARENEST-DEMO-PENDING-1")
+            .amount(new BigDecimal("49000"))
+            .startDate(Instant.now().minus(2, ChronoUnit.HOURS))
+            .build());
+        subscriptionRepository.save(Subscription.builder()
+            .user(familyUsers.get(2))
+            .planType(Subscription.PlanType.PREMIUM_YEARLY)
+            .status(Subscription.SubscriptionStatus.PENDING)
+            .paymentProvider("VIETQR")
+            .transactionId("CARENEST-DEMO-PENDING-2")
+            .amount(new BigDecimal("490000"))
+            .startDate(Instant.now().minus(30, ChronoUnit.MINUTES))
+            .build());
+
+        log.info("Subscription seeded (1 active premium + 2 pending).");
     }
 
 
