@@ -121,33 +121,35 @@ public class PaymentController {
                     "name", "Gói Miễn phí",
                     "price", 0,
                     "features", List.of(
-                        "1 hồ sơ cha/mẹ, không giới hạn số con kết nối",
-                        "Check-in, thuốc, SOS, camera trực tiếp, Nhắc Về Thăm",
-                        "Family Feed lưu 7 ngày",
-                        "Trò chuyện với trợ lý AI ~5 tin/ngày"
+                        "Theo dõi 1 hồ sơ người cao tuổi",
+                        "Kết nối 1 tài khoản người thân",
+                        "Lịch sử dữ liệu 7 ngày",
+                        "Theo dõi sức khỏe cơ bản",
+                        "Cảnh báo SOS khẩn cấp"
                     )
                 ),
                 Map.of(
                     "id", "PREMIUM_MONTHLY",
-                    "name", "CareNest Family Plus",
+                    "name", "Premium Hàng tháng",
                     "price", 49000,
                     "currency", "VND",
                     "features", List.of(
-                        "Trò chuyện với trợ lý AI không giới hạn",
-                        "Bản tin gia đình sâu hơn + tóm tắt tuần",
-                        "Giọng nhắc thuốc tuỳ biến của người thân",
-                        "Family Feed lưu trữ không giới hạn",
-                        "Xuất báo cáo sức khỏe PDF"
+                        "Theo dõi tối đa 4 người cao tuổi",
+                        "Kết nối tối đa 6 tài khoản người thân",
+                        "Lịch sử dữ liệu không giới hạn",
+                        "Báo cáo tổng kết hàng tuần bằng AI",
+                        "Xuất báo cáo sức khỏe dạng PDF",
+                        "Hỗ trợ ưu tiên"
                     )
                 ),
                 Map.of(
                     "id", "PREMIUM_YEARLY",
-                    "name", "CareNest Family Plus (năm)",
-                    "price", 499000,
+                    "name", "Premium Hàng năm",
+                    "price", 490000,
                     "currency", "VND",
                     "features", List.of(
-                        "Toàn bộ quyền lợi Family Plus",
-                        "Tiết kiệm ~15% so với trả theo tháng"
+                        "Đầy đủ tính năng gói Premium Hàng tháng",
+                        "Tiết kiệm 17% (tặng 2 tháng sử dụng)"
                     )
                 )
             )

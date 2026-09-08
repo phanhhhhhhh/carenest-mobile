@@ -29,6 +29,7 @@ public class PaymentService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
+    private final SubscriptionService subscriptionService;
 
     @Value("${payment.vnpay.tmn-code:}")
     private String vnpayTmnCode;
@@ -56,7 +57,12 @@ public class PaymentService {
 
     // CareNest Family Plus pricing (Master Spec v3.5 §8 / UC G3).
     private static final BigDecimal PREMIUM_MONTHLY_PRICE = new BigDecimal("49000");
-    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("499000");
+    private static final BigDecimal PREMIUM_YEARLY_PRICE = new BigDecimal("490000");
+
+    public BigDecimal getPlanPrice(Subscription.PlanType plan) {
+        if (plan == Subscription.PlanType.PREMIUM_YEARLY) return PREMIUM_YEARLY_PRICE;
+        return PREMIUM_MONTHLY_PRICE;
+    }
 
     // VietQR / NAPAS bank transfer — the spec's primary payment channel, reconciled
     // manually. Configure per deployment; blank values disable the VietQR option.
@@ -79,9 +85,7 @@ public class PaymentService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         Subscription.PlanType plan = Subscription.PlanType.valueOf(planType);
-        BigDecimal amount = plan == Subscription.PlanType.PREMIUM_YEARLY
-                ? PREMIUM_YEARLY_PRICE
-                : PREMIUM_MONTHLY_PRICE;
+        BigDecimal amount = getPlanPrice(plan);
 
         String txnRef = generateTxnRef(userId);
         Subscription sub = Subscription.builder()
@@ -130,7 +134,7 @@ public class PaymentService {
         if ("00".equals(responseCode) && "00".equals(txnStatus)) {
             activateSubscription(txnRef, "VNPAY");
             log.info("VNPay payment success: txnRef={}", txnRef);
-            return Map.of("status", "SUCCESS", "message", "Payment successful — Premium activated!");
+            return Map.of("status", "SUCCESS", "message", "Payment successful — Subscription activated!");
         } else {
             log.info("VNPay payment failed/cancelled: txnRef={} code={}", txnRef, responseCode);
             subscriptionRepository.findByTransactionId(txnRef).ifPresent(sub -> {
@@ -154,9 +158,7 @@ public class PaymentService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         Subscription.PlanType plan = Subscription.PlanType.valueOf(planType);
-        BigDecimal amount = plan == Subscription.PlanType.PREMIUM_YEARLY
-                ? PREMIUM_YEARLY_PRICE
-                : PREMIUM_MONTHLY_PRICE;
+        BigDecimal amount = getPlanPrice(plan);
 
         String orderId = generateTxnRef(userId);
         String requestId = UUID.randomUUID().toString();
@@ -207,7 +209,7 @@ public class PaymentService {
         if ("0".equals(resultCode)) {
             activateSubscription(orderId, "MOMO");
             log.info("MoMo payment success: orderId={}", orderId);
-            return Map.of("status", "SUCCESS", "message", "Payment successful — Premium activated!");
+            return Map.of("status", "SUCCESS", "message", "Payment successful — Subscription activated!");
         } else {
             log.info("MoMo payment failed: orderId={} resultCode={} message={}", orderId, resultCode, message);
             subscriptionRepository.findByTransactionId(orderId).ifPresent(sub -> {
@@ -330,15 +332,17 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getSubscriptionStatus(Long userId) {
+        boolean isPremium = subscriptionService.isPremium(userId);
         Optional<Subscription> activeSub = subscriptionRepository.findByUserIdAndStatus(
                 userId, Subscription.SubscriptionStatus.ACTIVE);
 
-        boolean isPremium = activeSub.isPresent() && activeSub.get().isPremium();
+        boolean isPro = false;
 
         Map<String, Object> status = new HashMap<>();
         status.put("isPremium", isPremium);
-        status.put("planType", activeSub.map(s -> s.getPlanType().name()).orElse("FREE"));
-        status.put("expiresAt", activeSub.map(s -> s.getEndDate()).orElse(null));
+        status.put("isPro", isPro);
+        status.put("planType", activeSub.map(s -> s.getPlanType().name()).orElse(isPremium ? "PREMIUM_SHARED" : "FREE"));
+        status.put("expiresAt", activeSub.map(Subscription::getEndDate).orElse(null));
         return status;
     }
 
@@ -358,7 +362,8 @@ public class PaymentService {
         subscriptionRepository.findByTransactionId(txnRef).ifPresent(sub -> {
             sub.setStatus(Subscription.SubscriptionStatus.ACTIVE);
             sub.setPaymentProvider(provider);
-            int months = sub.getPlanType() == Subscription.PlanType.PREMIUM_YEARLY ? 12 : 1;
+            boolean isYearly = sub.getPlanType() == Subscription.PlanType.PREMIUM_YEARLY;
+            int months = isYearly ? 12 : 1;
             sub.setEndDate(Instant.now().plus(30L * months, ChronoUnit.DAYS));
             subscriptionRepository.save(sub);
         });

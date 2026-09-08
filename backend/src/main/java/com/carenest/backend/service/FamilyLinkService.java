@@ -42,9 +42,18 @@ public class FamilyLinkService {
             int current = subscriptionService.getActiveElderlyCount(request.getFamilyId());
             int max = subscriptionService.getMaxElderlyProfiles(request.getFamilyId());
             throw new PaymentRequiredException(
-                "Free tier limit reached: you can monitor " + max + " elderly profile(s). "
-                    + "You currently have " + current + ". Upgrade to Premium to add more.");
+                "Giới hạn gói cước: Bạn chỉ có thể theo dõi tối đa " + max + " người cao tuổi (hiện tại: " + current + "). "
+                    + "Vui lòng nâng cấp lên gói Premium để theo dõi tối đa 4 người cao tuổi.");
         }
+
+        if (!subscriptionService.canAddFamilyMember(request.getElderlyId(), request.getFamilyId())) {
+            int current = subscriptionService.getActiveFamilyCount(request.getElderlyId());
+            int max = subscriptionService.getMaxFamilyAccountsForElderly(request.getElderlyId(), request.getFamilyId());
+            throw new PaymentRequiredException(
+                "Giới hạn gói cước: Người cao tuổi đã đạt giới hạn " + max + " tài khoản người thân kết nối (hiện tại: " + current + "). "
+                    + "Vui lòng nâng cấp lên gói Premium để thêm tối đa 6 người thân cùng chăm sóc.");
+        }
+
         User elderly = userRepository.findById(request.getElderlyId())
             .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + request.getElderlyId()));
 
@@ -68,7 +77,7 @@ public class FamilyLinkService {
             .elderly(elderly)
             .family(family)
             .relationship(request.getRelationship())
-            .status(FamilyLinkStatus.PENDING)
+            .status(FamilyLinkStatus.ACTIVE)
             .build();
 
         FamilyLink saved = familyLinkRepository.save(link);
@@ -158,6 +167,7 @@ public class FamilyLinkService {
             .elderlyName(fl.getElderly().getName())
             .familyId(fl.getFamily().getId())
             .familyName(fl.getFamily().getName())
+            .familyPhone(fl.getFamily().getPhone())
             .relationship(fl.getRelationship())
             .status(fl.getStatus())
             .availabilityStatus(fl.getAvailabilityStatus())

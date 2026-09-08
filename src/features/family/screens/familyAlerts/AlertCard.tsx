@@ -100,7 +100,9 @@ export function AlertCard({
             </Text>
           </View>
           {isActive && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 'auto' }}
+            >
               {isLevel2 && onCallEmergencyServices && (
                 <TouchableOpacity
                   style={styles.call115Button}

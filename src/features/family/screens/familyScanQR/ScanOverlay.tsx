@@ -28,7 +28,7 @@ export function ScanOverlay() {
 }
 
 const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject },
+  overlay: { ...StyleSheet.absoluteFill },
   overlayTop: { flex: 1, backgroundColor: OVERLAY_COLOR },
   overlayMiddle: { height: FRAME_SIZE, flexDirection: 'row' },
   overlaySide: { flex: 1, backgroundColor: OVERLAY_COLOR },

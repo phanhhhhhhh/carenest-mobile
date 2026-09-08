@@ -10,16 +10,19 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
 
-    
     Optional<Subscription> findByUserIdAndStatus(Long userId, Subscription.SubscriptionStatus status);
 
-    
     Optional<Subscription> findByUserIdAndStatusAndPlanTypeIn(
         Long userId,
         Subscription.SubscriptionStatus status,
         List<Subscription.PlanType> planTypes
     );
 
+    List<Subscription> findByUserIdInAndStatusAndPlanTypeIn(
+        List<Long> userIds,
+        Subscription.SubscriptionStatus status,
+        List<Subscription.PlanType> planTypes
+    );
 
     Optional<Subscription> findByTransactionId(String transactionId);
 

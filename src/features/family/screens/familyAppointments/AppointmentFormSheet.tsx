@@ -243,7 +243,7 @@ export function AppointmentFormSheet({ visible, editing, currentElderlyId, onClo
 
 const styles = StyleSheet.create({
   sheetOverlay: { flex: 1, justifyContent: 'flex-end' },
-  sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheetBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 20,

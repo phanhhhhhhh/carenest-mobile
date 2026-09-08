@@ -19,6 +19,9 @@ public interface FamilyLinkRepository extends JpaRepository<FamilyLink, Long> {
     @Query("SELECT fl FROM FamilyLink fl JOIN FETCH fl.elderly WHERE fl.family.id = :familyId AND fl.status = :status AND fl.deletedAt IS NULL")
     List<FamilyLink> findAllElderlyByFamilyIdAndStatus(@Param("familyId") Long familyId, @Param("status") FamilyLinkStatus status);
 
+    @Query("SELECT fl FROM FamilyLink fl JOIN FETCH fl.family WHERE fl.elderly.id IN :elderlyIds AND fl.status = :status AND fl.deletedAt IS NULL")
+    List<FamilyLink> findAllFamilyByElderlyIdInAndStatus(@Param("elderlyIds") List<Long> elderlyIds, @Param("status") FamilyLinkStatus status);
+
     Optional<FamilyLink> findByElderlyIdAndFamilyIdAndDeletedAtIsNull(Long elderlyId, Long familyId);
 
     boolean existsByElderlyIdAndFamilyIdAndStatusAndDeletedAtIsNull(Long elderlyId, Long familyId, FamilyLinkStatus status);

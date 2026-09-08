@@ -38,6 +38,7 @@ export function getPeriodLabel(p: PlanData): string | null {
 export interface SubscriptionData {
   planType: string;
   isPremium: boolean;
+  isPro?: boolean;
   expiresAt?: string;
 }
 
@@ -47,6 +48,7 @@ function parseSubscriptionData(raw: unknown): SubscriptionData | null {
   return {
     planType: parsed.planType,
     isPremium: parsed.isPremium,
+    isPro: parsed.isPro,
     expiresAt: parsed.expiresAt ?? undefined,
   };
 }
@@ -55,16 +57,21 @@ export function isPremiumSubscription(s: SubscriptionData): boolean {
   return s.isPremium;
 }
 
+export function isProSubscription(_s: SubscriptionData): boolean {
+  return false;
+}
+
 const DEFAULT_PLANS: PlanData[] = [
   {
     id: 'FREE',
     name: 'Gói Miễn phí',
     price: 0,
     features: [
-      '1 hồ sơ cha/mẹ, không giới hạn số con kết nối',
-      'Check-in, thuốc, SOS, camera trực tiếp, Nhắc Về Thăm',
-      'Family Feed lưu 7 ngày',
-      'Trò chuyện với trợ lý AI ~5 tin/ngày',
+      'Theo dõi 1 hồ sơ người cao tuổi',
+      'Kết nối 1 tài khoản người thân',
+      'Lịch sử dữ liệu 7 ngày',
+      'Theo dõi sức khỏe cơ bản',
+      'Cảnh báo SOS khẩn cấp',
     ],
   },
   {
@@ -73,19 +80,23 @@ const DEFAULT_PLANS: PlanData[] = [
     price: 49000,
     currency: 'VND',
     features: [
-      'Trò chuyện với trợ lý AI không giới hạn',
-      'Bản tin gia đình sâu hơn + tóm tắt tuần',
-      'Giọng nhắc thuốc tuỳ biến của người thân',
-      'Family Feed lưu trữ không giới hạn',
-      'Xuất báo cáo sức khỏe PDF',
+      'Theo dõi tối đa 4 người cao tuổi',
+      'Kết nối tối đa 6 tài khoản người thân',
+      'Lịch sử dữ liệu không giới hạn',
+      'Báo cáo tổng kết hàng tuần bằng AI',
+      'Xuất báo cáo sức khỏe dạng PDF',
+      'Hỗ trợ ưu tiên',
     ],
   },
   {
     id: 'PREMIUM_YEARLY',
-    name: 'CareNest Family Plus (năm)',
-    price: 499000,
+    name: 'Premium Hàng năm',
+    price: 490000,
     currency: 'VND',
-    features: ['Toàn bộ quyền lợi Family Plus', 'Tiết kiệm ~15% so với trả theo tháng'],
+    features: [
+      'Đầy đủ tính năng gói Premium Hàng tháng',
+      'Tiết kiệm 17% (tặng 2 tháng sử dụng)',
+    ],
   },
 ];
 
@@ -118,6 +129,7 @@ interface PaymentState {
   clearVietQr: () => void;
   currentPlanLabel: () => string;
   isPremium: () => boolean;
+  isPro: () => boolean;
 }
 
 export const usePaymentStore = create<PaymentState>((set, get) => ({
@@ -237,4 +249,6 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     const sub = get().subscription;
     return sub != null && isPremiumSubscription(sub);
   },
+
+  isPro: () => false,
 }));

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
 import { Shadows } from '../../../../core/theme/spacing';
-import { getPeriodLabel, getPriceLabel, type PlanData } from '../../store/paymentStore';
+import { getPeriodLabel, getPriceLabel, isFreePlan, type PlanData } from '../../store/paymentStore';
 import { formatDate } from './utils';
 
 export function CurrentPlanBanner({
@@ -40,24 +40,54 @@ export function CurrentPlanBanner({
   );
 }
 
-export function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boolean }) {
-  const isRecommended = plan.id === 'PREMIUM_YEARLY';
+export function PlanCard({
+  plan,
+  isCurrent,
+  isSelected,
+  onSelect,
+}: {
+  plan: PlanData;
+  isCurrent: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
+}) {
+  const isBestValue = plan.id === 'PREMIUM_YEARLY';
+  const isPopular = plan.id === 'PREMIUM_MONTHLY';
   const priceLabel = getPriceLabel(plan);
   const periodLabel = getPeriodLabel(plan);
+  const isFree = isFreePlan(plan);
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={isFree || isCurrent ? 1 : 0.85}
+      onPress={() => {
+        if (!isFree && !isCurrent && onSelect) {
+          onSelect();
+        }
+      }}
       style={[
         styles.planCard,
-        isCurrent ? styles.planCardCurrent : isRecommended ? styles.planCardRecommended : null,
+        isCurrent
+          ? styles.planCardCurrent
+          : isSelected
+            ? styles.planCardSelected
+            : isBestValue
+              ? styles.planCardRecommended
+              : null,
       ]}
     >
       <View style={styles.planCardHeaderRow}>
         <Text style={styles.planName}>{plan.name}</Text>
-        {isRecommended && (
+        {isBestValue && !isCurrent && (
           <View style={styles.recommendedBadge}>
             <Ionicons name="sparkles" size={12} color="#FFFFFF" />
             <Text style={styles.recommendedBadgeText}>TIẾT KIỆM NHẤT</Text>
+          </View>
+        )}
+        {isPopular && !isCurrent && (
+          <View style={styles.popularBadge}>
+            <Ionicons name="flame" size={12} color="#FFFFFF" />
+            <Text style={styles.recommendedBadgeText}>PHỔ BIẾN</Text>
           </View>
         )}
         {isCurrent && (
@@ -86,7 +116,7 @@ export function PlanCard({ plan, isCurrent }: { plan: PlanData; isCurrent: boole
           <Text style={styles.featureText}>{f}</Text>
         </View>
       ))}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -162,6 +192,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
   },
+  planCardSelected: {
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    backgroundColor: '#F0FDF4',
+  },
   planCardRecommended: {
     borderWidth: 2,
     borderColor: '#F59E0B',
@@ -173,6 +208,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: '#F59E0B',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  popularBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.primary,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,

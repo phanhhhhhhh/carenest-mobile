@@ -58,7 +58,7 @@ public class Subscription {
     private Instant createdAt;
 
     public enum PlanType {
-        FREE, PREMIUM_MONTHLY, PREMIUM_YEARLY
+        FREE, PREMIUM_MONTHLY, PREMIUM_YEARLY, PRO_MONTHLY, PRO_YEARLY
     }
 
     public enum SubscriptionStatus {
@@ -75,6 +75,14 @@ public class Subscription {
     
     public boolean isPremium() {
         return isActive()
-            && (planType == PlanType.PREMIUM_MONTHLY || planType == PlanType.PREMIUM_YEARLY);
+            && (planType == PlanType.PREMIUM_MONTHLY
+                || planType == PlanType.PREMIUM_YEARLY
+                || planType == PlanType.PRO_MONTHLY
+                || planType == PlanType.PRO_YEARLY);
+    }
+
+    public boolean isPro() {
+        return isActive()
+            && (planType == PlanType.PRO_MONTHLY || planType == PlanType.PRO_YEARLY);
     }
 }

@@ -40,10 +40,14 @@ export function ConnectedElderly({
   name,
   conditions,
   totalMeds,
+  elderlyCount,
+  maxElderly,
 }: {
   name: string;
   conditions: string[];
   totalMeds: number;
+  elderlyCount?: number;
+  maxElderly?: number;
 }) {
   return (
     <View style={styles.card}>
@@ -53,7 +57,11 @@ export function ConnectedElderly({
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.cardHeaderTitle}>Người thân đang theo dõi</Text>
-          <Text style={styles.cardHeaderSub}>Đang đồng bộ dữ liệu sức khỏe</Text>
+          <Text style={styles.cardHeaderSub}>
+            {elderlyCount != null && maxElderly != null
+              ? `${elderlyCount}/${maxElderly} người cao tuổi kết nối`
+              : 'Đang đồng bộ dữ liệu sức khỏe'}
+          </Text>
         </View>
       </View>
       <View style={styles.divider} />
@@ -75,6 +83,83 @@ export function ConnectedElderly({
         </View>
         <View style={styles.statusDot} />
       </View>
+    </View>
+  );
+}
+
+export function ConnectedFamilyMembers({
+  members,
+  maxMembers,
+  isLoading,
+  onUpgradePress,
+}: {
+  members: { id: string; name: string; phone: string; relationship?: string; status?: string }[];
+  maxMembers: number;
+  isLoading: boolean;
+  onUpgradePress?: () => void;
+}) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeaderRow}>
+        <View style={[styles.headerIconCircle, { backgroundColor: '#EDE9FE' }]}>
+          <Ionicons name="people-circle" size={20} color="#7C3AED" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardHeaderTitle}>Thành viên cùng chăm sóc</Text>
+          <Text style={styles.cardHeaderSub}>
+            {members.length}/{maxMembers} người thân kết nối
+          </Text>
+        </View>
+        {maxMembers <= 1 && onUpgradePress && (
+          <TouchableOpacity
+            style={styles.proUpgradeBadge}
+            onPress={onUpgradePress}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="sparkles" size={12} color="#7C3AED" />
+            <Text style={styles.proUpgradeBadgeText}>Mở rộng với Premium</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      <View style={styles.divider} />
+
+      {isLoading ? (
+        <View style={styles.memberEmptyWrap}>
+          <Text style={styles.memberEmptyText}>Đang tải danh sách thành viên...</Text>
+        </View>
+      ) : members.length === 0 ? (
+        <View style={styles.memberEmptyWrap}>
+          <Text style={styles.memberEmptyText}>Chưa có người thân nào khác cùng liên kết.</Text>
+        </View>
+      ) : (
+        members.map((m, idx) => (
+          <View key={m.id || idx}>
+            <View style={styles.familyMemberRow}>
+              <View style={styles.familyMemberAvatar}>
+                <Text style={styles.familyMemberAvatarText}>
+                  {m.name.length > 0 ? m.name.charAt(0).toUpperCase() : 'F'}
+                </Text>
+              </View>
+              <View style={styles.familyMemberInfo}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.familyMemberName}>{m.name || 'Người thân'}</Text>
+                  {m.relationship ? (
+                    <View style={styles.relationPill}>
+                      <Text style={styles.relationPillText}>{m.relationship}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                {m.phone.length > 0 && <Text style={styles.familyMemberPhone}>{m.phone}</Text>}
+              </View>
+              <View style={styles.activePill}>
+                <View style={styles.statusDot} />
+                <Text style={styles.activePillText}>Đã kết nối</Text>
+              </View>
+            </View>
+            {idx < members.length - 1 && <View style={styles.memberDivider} />}
+          </View>
+        ))
+      )}
     </View>
   );
 }

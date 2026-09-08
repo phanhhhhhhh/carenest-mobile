@@ -33,19 +33,23 @@ export default function PremiumPlansScreen() {
   const isPremium = usePaymentStore((s) => s.isPremium());
 
   const [selectedMethod, setSelectedMethod] = useState<'vnpay' | 'momo'>('vnpay');
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('PREMIUM_MONTHLY');
 
   useMountEffect(() => {
     load();
   });
 
+  const activePlanToBuy =
+    plans.find((p) => p.id === selectedPlanId && !isFreePlan(p)) ??
+    plans.find((p) => !isFreePlan(p));
+
   const handleSubscribe = async () => {
-    const premiumPlan = plans.find((p) => !isFreePlan(p));
-    if (!premiumPlan) {
-      Alert.alert('Thông báo', 'Không có gói Premium nào khả dụng');
+    if (!activePlanToBuy) {
+      Alert.alert('Thông báo', 'Vui lòng chọn một gói cước khả dụng');
       return;
     }
 
-    const url = await createPayment(premiumPlan.id, selectedMethod);
+    const url = await createPayment(activePlanToBuy.id, selectedMethod);
 
     if (url && url.length > 0) {
       const canOpen = await Linking.canOpenURL(url);
@@ -66,8 +70,8 @@ export default function PremiumPlansScreen() {
 
   const confirmCancel = () => {
     Alert.alert(
-      'Hủy Premium?',
-      'Bạn sẽ mất quyền truy cập các tính năng Premium khi kết thúc chu kỳ thanh toán hiện tại.',
+      'Hủy gói thành viên?',
+      'Bạn sẽ mất quyền truy cập các tính năng nâng cao khi kết thúc chu kỳ thanh toán hiện tại.',
       [
         { text: 'Giữ gói hiện tại', style: 'cancel' },
         {
@@ -92,7 +96,7 @@ export default function PremiumPlansScreen() {
         >
           <Ionicons name="arrow-back" size={22} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.appBarTitle}>Gói Hội Viên CareNest Premium</Text>
+        <Text style={styles.appBarTitle}>Gói Hội Viên CareNest</Text>
       </View>
 
       {isLoading ? (
@@ -128,7 +132,8 @@ export default function PremiumPlansScreen() {
 
           <Text style={styles.sectionTitle}>Các gói dịch vụ chăm sóc</Text>
           <Text style={styles.sectionSubtitle}>
-            Nâng cấp để mở khóa chăm sóc đa người thân và báo cáo AI chuyên sâu
+            Nâng cấp Premium để mở rộng tới 4 người cao tuổi, 6 tài khoản người thân và toàn bộ tính
+            năng AI & báo cáo nâng cao
           </Text>
           <View style={{ height: 16 }} />
 
@@ -137,6 +142,8 @@ export default function PremiumPlansScreen() {
               key={plan.id}
               plan={plan}
               isCurrent={subscription != null && subscription.planType === plan.id}
+              isSelected={activePlanToBuy?.id === plan.id}
+              onSelect={() => setSelectedPlanId(plan.id)}
             />
           ))}
 
@@ -181,7 +188,7 @@ export default function PremiumPlansScreen() {
               {isProcessing ? (
                 <ActivityIndicator size="small" color="#EF4444" />
               ) : (
-                <Text style={styles.manageBtnText}>Hủy gia hạn gói Premium</Text>
+                <Text style={styles.manageBtnText}>Hủy gói đăng ký hiện tại</Text>
               )}
             </TouchableOpacity>
           ) : (
@@ -194,7 +201,9 @@ export default function PremiumPlansScreen() {
               {isProcessing ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.subscribeBtnText}>Đăng ký CareNest Premium ngay</Text>
+                <Text style={styles.subscribeBtnText}>
+                  Đăng ký {activePlanToBuy?.name || 'CareNest'} ngay
+                </Text>
               )}
             </TouchableOpacity>
           )}

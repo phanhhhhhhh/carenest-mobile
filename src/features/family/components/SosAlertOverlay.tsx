@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  ActivityIndicator,
+  Linking,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../../core/api/client';
 import { useFamilyDashboardStore } from '../store/familyStore';
@@ -78,7 +86,9 @@ export default function SosAlertOverlay() {
     setCalling(true);
     try {
       await logEmergencyCall(alert.elderlyId, alert.id);
-      setAlert((prev) => (prev ? { ...prev, emergencyCallLoggedAt: new Date().toISOString() } : null));
+      setAlert((prev) =>
+        prev ? { ...prev, emergencyCallLoggedAt: new Date().toISOString() } : null,
+      );
       await Linking.openURL('tel:115');
     } catch (e) {
       console.warn('[SosAlertOverlay.handleCallEmergencyServices]', e);
@@ -96,7 +106,12 @@ export default function SosAlertOverlay() {
     <Modal visible transparent animationType="fade" statusBarTranslucent>
       <View style={styles.overlay}>
         <View style={[styles.card, isLevel2 && styles.cardLevel2, isLevel1 && styles.cardLevel1]}>
-          <View style={[styles.iconCircle, isLevel2 ? styles.iconCircleLevel2 : isLevel1 ? styles.iconCircleLevel1 : null]}>
+          <View
+            style={[
+              styles.iconCircle,
+              isLevel2 ? styles.iconCircleLevel2 : isLevel1 ? styles.iconCircleLevel1 : null,
+            ]}
+          >
             <Ionicons
               name={isLevel2 ? 'alert-circle' : isLevel1 ? 'warning' : 'notifications'}
               size={40}
@@ -115,7 +130,11 @@ export default function SosAlertOverlay() {
           ) : null}
 
           <Text style={[styles.title, isLevel2 && styles.titleLevel2]}>
-            {isLevel2 ? 'Báo động đỏ chưa xử lý!' : isLevel1 ? 'Nhắc nhở khẩn cấp!' : 'Cảnh báo khẩn cấp!'}
+            {isLevel2
+              ? 'Báo động đỏ chưa xử lý!'
+              : isLevel1
+                ? 'Nhắc nhở khẩn cấp!'
+                : 'Cảnh báo khẩn cấp!'}
           </Text>
 
           <Text style={styles.subtitle}>
