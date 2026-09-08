@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -55,16 +55,19 @@ export default function ElderlyEditProfileScreen() {
     return () => controller.abort();
   });
 
-  useEffect(() => {
-    if (profile) {
-      setNotes(profile.notes ?? '');
-      setConditions(profile.healthConditions ?? []);
-      setAllergies(profile.allergies ?? []);
-      setWeight(profile.weight != null ? String(profile.weight) : '');
-      setHeight(profile.height != null ? String(profile.height) : '');
-      setBloodType(profile.bloodType);
-    }
-  }, [profile]);
+  // Hydrate the editable fields whenever the store hands us a new profile object
+  // (initial load, or a refresh after save). Adjust-state-while-rendering avoids
+  // the extra render pass an effect would add.
+  const [hydratedProfile, setHydratedProfile] = useState(profile);
+  if (profile && profile !== hydratedProfile) {
+    setHydratedProfile(profile);
+    setNotes(profile.notes ?? '');
+    setConditions(profile.healthConditions ?? []);
+    setAllergies(profile.allergies ?? []);
+    setWeight(profile.weight != null ? String(profile.weight) : '');
+    setHeight(profile.height != null ? String(profile.height) : '');
+    setBloodType(profile.bloodType);
+  }
 
   const addCondition = () => {
     const text = conditionInput.trim();

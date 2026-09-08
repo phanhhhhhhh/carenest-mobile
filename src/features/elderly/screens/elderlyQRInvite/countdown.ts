@@ -2,20 +2,25 @@ import { useEffect, useState } from 'react';
 
 export const QR_SIZE = 220;
 
+function secondsUntil(expiresAt: string | null): number {
+  if (!expiresAt) return 0;
+  return Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+}
+
 export function useCountdown(expiresAt: string | null): number {
-  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(() => secondsUntil(expiresAt));
+
+  // Resync immediately when the target time changes (adjust-state-while-rendering)
+  // so the display never lags a tick behind a freshly issued token.
+  const [tracked, setTracked] = useState(expiresAt);
+  if (tracked !== expiresAt) {
+    setTracked(expiresAt);
+    setSecondsLeft(secondsUntil(expiresAt));
+  }
 
   useEffect(() => {
-    if (!expiresAt) {
-      setSecondsLeft(0);
-      return;
-    }
-    const tick = () => {
-      const diff = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
-      setSecondsLeft(diff);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
+    if (!expiresAt) return;
+    const id = setInterval(() => setSecondsLeft(secondsUntil(expiresAt)), 1000);
     return () => clearInterval(id);
   }, [expiresAt]);
 

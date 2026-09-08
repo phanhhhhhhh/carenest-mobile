@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { Colors } from '../../../../core/theme/colors';
 import { MONTHS, daysInMonth, withAlpha } from './utils';
@@ -50,15 +50,18 @@ export function DatePickerModal({
   const [month, setMonth] = useState(value.getMonth());
   const [day, setDay] = useState(value.getDate());
 
-  useEffect(() => {
+  // Re-seed the columns from `value` each time the modal opens (adjust-state-while-
+  // rendering pattern — `value` may be a fresh Date object on every parent render,
+  // so we key off the visible transition instead).
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setYear(value.getFullYear());
       setMonth(value.getMonth());
       setDay(value.getDate());
     }
-    // Sync only when the modal is (re)opened; `value` may be a fresh Date each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }
 
   const years = Array.from({ length: 2 }, (_, i) => today.getFullYear() + i);
   const months = MONTHS.map((m, i) => ({ label: m, value: i }));
@@ -119,13 +122,15 @@ export function TimePickerModal({
   const [h, setH] = useState(hour);
   const [m, setM] = useState(minute);
 
-  useEffect(() => {
+  // Re-seed from props each time the modal opens (adjust-state-while-rendering).
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setH(hour);
       setM(minute);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = Array.from({ length: 60 }, (_, i) => i);

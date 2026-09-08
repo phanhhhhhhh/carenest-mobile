@@ -65,6 +65,8 @@ export default function SosAlertOverlay() {
   }, [linkedElderly]);
 
   useEffect(() => {
+    // Prime the poll, then repeat. poll() awaits the network before any setState.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     poll();
     const interval = setInterval(poll, POLL_INTERVAL_MS);
     return () => clearInterval(interval);

@@ -47,6 +47,9 @@ export default function HealthReportScreen() {
   }, [load]);
 
   useEffect(() => {
+    // Initial load. doLoad() awaits getUserId() before touching state, so every
+    // setState here runs after the first paint.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     doLoad();
   }, [doLoad]);
 

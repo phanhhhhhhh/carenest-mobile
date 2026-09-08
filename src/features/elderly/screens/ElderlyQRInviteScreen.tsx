@@ -35,6 +35,9 @@ export default function ElderlyQRInviteScreen() {
   }, []);
 
   useEffect(() => {
+    // Initial token fetch. fetchToken() flips the loading flag then awaits the
+    // network call, so the state updates settle after paint — not a cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchToken();
   }, [fetchToken]);
 
