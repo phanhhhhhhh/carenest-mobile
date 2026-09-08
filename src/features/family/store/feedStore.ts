@@ -87,7 +87,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 }));
 
+const EMPTY_FEED: FeedItem[] = [];
+
 export function selectFeed(state: FeedState, elderlyId: string | null): FeedItem[] {
-  if (!elderlyId) return [];
-  return state.itemsByElderly[elderlyId] ?? [];
+  if (!elderlyId) return EMPTY_FEED;
+  return state.itemsByElderly[elderlyId] ?? EMPTY_FEED;
 }
