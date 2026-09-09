@@ -370,6 +370,20 @@ class CameraServiceTest {
     }
 
     @Test
+    void invalidSigningCredentialsDoNotTriggerTokenRefresh() {
+        CameraDevice camera = liveCamera();
+        when(cameraRepository.findById(42L)).thenReturn(Optional.of(camera));
+        allowLiveAccess();
+        when(imou.deviceOnline("ABC123", "At_token")).thenThrow(new ImouApiException(
+            ImouApiException.Kind.INVALID_CREDENTIALS, "SN1003", "invalid signature"));
+
+        assertLiveCode("IMOU_INVALID_CREDENTIALS");
+
+        verify(imou, never()).getAccessToken();
+        assertThat(camera.getAccessToken()).isEqualTo("At_token");
+    }
+
+    @Test
     void providerFailureDuringStreamRetrievalDoesNotMarkCameraOffline() {
         CameraDevice camera = liveCamera();
         when(cameraRepository.findById(42L)).thenReturn(Optional.of(camera));

@@ -349,7 +349,10 @@ public class CameraService {
         try {
             return operation.apply(device.getAccessToken());
         } catch (ImouApiException first) {
-            if (first.getKind() != ImouApiException.Kind.INVALID_CREDENTIALS) throw first;
+            if (first.getKind() != ImouApiException.Kind.INVALID_CREDENTIALS
+                    || !"TK1002".equals(first.getProviderCode())) {
+                throw first;
+            }
             String refreshedToken = imouApiService.getAccessToken();
             if (refreshedToken == null || refreshedToken.isBlank()) throw first;
             device.setAccessToken(refreshedToken);
