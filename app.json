@@ -37,7 +37,8 @@
         {
           "microphonePermission": "CareNest cần dùng micro để bạn đọc thông tin thuốc và nhập nhanh bằng giọng nói."
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }

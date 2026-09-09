@@ -34,6 +34,8 @@ beforeEach(() => {
     },
     cameras: [],
     timeline: [],
+    liveStreamUrl: null,
+    liveView: { phase: 'idle', message: null, stream: null, lastSeenAt: null },
   });
   jest.clearAllMocks();
 });
@@ -117,5 +119,92 @@ describe('bindCamera', () => {
 
     rejectFirst({ response: { status: 503, data: { code: 'IMOU_UNAVAILABLE' } } });
     await first;
+  });
+});
+
+describe('D3 live view', () => {
+  const liveResponse = {
+    cameraId: 42,
+    label: 'Phòng khách',
+    status: 'ONLINE',
+    confirmedAt: '2026-09-09T10:00:00Z',
+    lastSeenAt: '2026-09-09T10:00:00Z',
+    playbackProtocol: 'HLS',
+    contentType: 'application/vnd.apple.mpegurl',
+    streamId: 0,
+    streamUrl: 'https://video.example/fresh.m3u8?proto=https',
+  };
+
+  it('stores an ephemeral HLS stream only after a successful response', async () => {
+    mockApi.get.mockResolvedValue({ data: liveResponse });
+
+    const stream = await useCameraStore.getState().getLiveStream(42);
+
+    expect(stream?.streamUrl).toBe(liveResponse.streamUrl);
+    expect(useCameraStore.getState().liveView.phase).toBe('ready');
+    expect(useCameraStore.getState().liveStreamUrl).toBe(liveResponse.streamUrl);
+  });
+
+  it('prevents duplicate requests while one is pending', async () => {
+    let resolve!: (value: unknown) => void;
+    mockApi.get.mockImplementation(() => new Promise((done) => { resolve = done; }));
+
+    const first = useCameraStore.getState().getLiveStream(42);
+    const second = await useCameraStore.getState().getLiveStream(42);
+
+    expect(second).toBeNull();
+    expect(mockApi.get).toHaveBeenCalledTimes(1);
+    resolve({ data: liveResponse });
+    await first;
+  });
+
+  it.each([
+    ['CAMERA_OFFLINE', 'offline'],
+    ['CAMERA_PRIVACY_ACTIVE', 'privacy'],
+    ['CAMERA_CONSENT_REQUIRED', 'consent'],
+    ['IMOU_PROVIDER_UNAVAILABLE', 'providerError'],
+    ['CAMERA_STREAM_EXPIRED', 'expired'],
+    ['CAMERA_UNSUPPORTED_STREAM', 'unsupported'],
+  ])('maps %s to a specific Vietnamese state', async (code, phase) => {
+    mockApi.get.mockRejectedValue({ response: { data: { code, lastSeenAt: '2026-09-09T09:00:00Z' } } });
+
+    await useCameraStore.getState().getLiveStream(42);
+
+    expect(useCameraStore.getState().liveView.phase).toBe(phase);
+    expect(useCameraStore.getState().liveView.message).toBeTruthy();
+    expect(useCameraStore.getState().liveStreamUrl).toBeNull();
+  });
+
+  it('retry requests a fresh URL and clear removes it from memory', async () => {
+    mockApi.get
+      .mockRejectedValueOnce({ response: { data: { code: 'CAMERA_STREAM_EXPIRED' } } })
+      .mockResolvedValueOnce({ data: liveResponse });
+
+    await useCameraStore.getState().getLiveStream(42);
+    await useCameraStore.getState().getLiveStream(42);
+    expect(mockApi.get).toHaveBeenCalledTimes(2);
+    expect(useCameraStore.getState().liveStreamUrl).toBe(liveResponse.streamUrl);
+
+    useCameraStore.getState().clearLiveStream();
+    expect(useCameraStore.getState().liveStreamUrl).toBeNull();
+    expect(useCameraStore.getState().liveView.phase).toBe('idle');
+  });
+
+  it('clears the URL and exposes a retryable state when native playback fails', () => {
+    useCameraStore.setState({
+      liveStreamUrl: liveResponse.streamUrl,
+      liveView: {
+        phase: 'ready', message: null, stream: {
+          cameraId: 42, label: 'Room', streamUrl: liveResponse.streamUrl,
+          confirmedAt: liveResponse.confirmedAt, lastSeenAt: null,
+        }, lastSeenAt: null,
+      },
+    });
+
+    useCameraStore.getState().failLivePlayback();
+
+    expect(useCameraStore.getState().liveStreamUrl).toBeNull();
+    expect(useCameraStore.getState().liveView.phase).toBe('streamError');
+    expect(JSON.stringify(useCameraStore.getState())).not.toContain(liveResponse.streamUrl);
   });
 });

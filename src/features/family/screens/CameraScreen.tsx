@@ -17,7 +17,6 @@ import {
   BindCameraModal,
   ConfirmUnbindModal,
   CameraMenuModal,
-  PtzControlModal,
 } from './familyCamera/CameraModals';
 import { CameraAppBar, CameraStatusBar, CameraTabBar } from './familyCamera/chrome';
 import { useCameraActions } from './familyCamera/useCameraActions';
@@ -38,7 +37,6 @@ export default function CameraScreen() {
   const status = useCameraStore((s) => s.status);
   const cameras = useCameraStore((s) => s.cameras);
   const timeline = useCameraStore((s) => s.timeline);
-  const voiceActive = useCameraStore((s) => s.voiceActive);
   const load = useCameraStore((s) => s.load);
   const consent = useCameraConsentStore((s) => (elderlyId ? s.byElderly[elderlyId] : undefined));
   const consentLoading = useCameraConsentStore((s) => s.isLoading);
@@ -125,10 +123,11 @@ export default function CameraScreen() {
           {cameras.length > 0 && (
             <LiveHero
               cam={cameras[0]}
-              voiceActive={voiceActive}
-              onSnapshot={actions.handleSnapshot}
-              onVoiceToggle={() => actions.handleVoiceToggle(cameras[0].id, voiceActive)}
-              onOpenPtz={() => actions.setPtzDeviceId(cameras[0].id)}
+              onLiveView={() => navigation.navigate('FamilyLiveCamera', {
+                cameraId: cameras[0].id,
+                label: cameras[0].label,
+                elderlyId,
+              })}
             />
           )}
           <CameraTabBar
@@ -143,15 +142,19 @@ export default function CameraScreen() {
             ) : (
               <CameraList
                 cameras={cameras}
-                voiceActive={voiceActive}
                 refreshing={actions.refreshing}
                 onRefresh={actions.onRefreshDevices}
                 onBind={actions.showBindDialog}
                 linkDisabled={!linkAvailability.allowed}
                 linkDisabledReason={linkReason}
-                onLiveView={actions.handleLiveView}
-                onSnapshot={actions.handleSnapshot}
-                onVoiceToggle={(id) => actions.handleVoiceToggle(id, voiceActive)}
+                onLiveView={(cameraId) => {
+                  const camera = cameras.find((item) => item.id === cameraId);
+                  navigation.navigate('FamilyLiveCamera', {
+                    cameraId,
+                    label: camera?.label ?? 'Camera',
+                    elderlyId,
+                  });
+                }}
                 onPrivacyToggle={actions.handlePrivacyToggle}
                 onMotionToggle={actions.handleMotionToggle}
                 onMenu={actions.setMenuDeviceId}
@@ -198,11 +201,6 @@ export default function CameraScreen() {
         }}
       />
 
-      <PtzControlModal
-        visible={actions.ptzDeviceId != null}
-        onMove={(dir) => actions.sendPtz(dir)}
-        onClose={actions.closePtz}
-      />
     </SafeAreaView>
   );
 }

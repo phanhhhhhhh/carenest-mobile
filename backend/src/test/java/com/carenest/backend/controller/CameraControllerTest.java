@@ -2,6 +2,7 @@ package com.carenest.backend.controller;
 
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.User;
+import com.carenest.backend.dto.camera.CameraLiveStreamResponse;
 import com.carenest.backend.exception.CameraLinkException;
 import com.carenest.backend.exception.GlobalExceptionHandler;
 import com.carenest.backend.security.AuthorizationService;
@@ -28,6 +29,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.time.Instant;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -142,6 +145,32 @@ class CameraControllerTest {
                     """))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("IMOU_BOUND_TO_ANOTHER_ACCOUNT"));
+    }
+
+    @Test
+    void liveViewRequiresFamilyAccessAndReturnsTypedNoStoreResponse() throws Exception {
+        when(authorizationService.canAccessCamera(7L, 42L)).thenReturn(true);
+        when(cameraService.getLiveStream(42L, 7L)).thenReturn(new CameraLiveStreamResponse(
+            42L, "Living room", "ONLINE", Instant.parse("2026-09-09T10:00:00Z"),
+            Instant.parse("2026-09-09T10:00:00Z"), "HLS", "application/vnd.apple.mpegurl",
+            0, "https://video.example/live.m3u8"));
+
+        mockMvc.perform(get("/api/cameras/42/live").with(authentication(family())))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                .string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
+            .andExpect(jsonPath("$.cameraId").value(42))
+            .andExpect(jsonPath("$.label").value("Living room"))
+            .andExpect(jsonPath("$.playbackProtocol").value("HLS"))
+            .andExpect(jsonPath("$.streamUrl").value("https://video.example/live.m3u8"));
+    }
+
+    @Test
+    void liveViewRejectsNonFamilyBeforeService() throws Exception {
+        when(authorizationService.canAccessCamera(10L, 42L)).thenReturn(true);
+        mockMvc.perform(get("/api/cameras/42/live").with(authentication(elderly())))
+            .andExpect(status().isForbidden());
+        verify(cameraService, never()).getLiveStream(42L, 10L);
     }
 
     private Authentication family() {

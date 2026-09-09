@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Linking } from 'react-native';
 import { Alert } from '../../../../shared/utils/crossPlatformAlert';
 import { useCameraStore } from '../../store/cameraStore';
 import { validateCameraLinkInput } from '../../services/cameraLinking';
@@ -15,14 +14,12 @@ export function useCameraActions(
 ) {
   const bindCamera = useCameraStore((s) => s.bindCamera);
   const unbindCamera = useCameraStore((s) => s.unbindCamera);
-  const getLiveStream = useCameraStore((s) => s.getLiveStream);
   const captureSosSnapshot = useCameraStore((s) => s.captureSosSnapshot);
   const startVoiceCall = useCameraStore((s) => s.startVoiceCall);
   const stopVoiceCall = useCameraStore((s) => s.stopVoiceCall);
   const setPrivacyMode = useCameraStore((s) => s.setPrivacyMode);
   const toggleMotionDetection = useCameraStore((s) => s.toggleMotionDetection);
   const controlPtz = useCameraStore((s) => s.controlPtz);
-  const clearLiveStream = useCameraStore((s) => s.clearLiveStream);
   const load = useCameraStore((s) => s.load);
   const isProcessing = useCameraStore((s) => s.isProcessing);
   const linkError = useCameraStore((s) => s.linkError);
@@ -111,26 +108,6 @@ export function useCameraActions(
     }
   };
 
-  const handleLiveView = async (deviceId: number) => {
-    if (!elderlyId) return;
-    const url = await getLiveStream(deviceId);
-    if (url) {
-      try {
-        const supported = await Linking.canOpenURL(url);
-        if (supported) {
-          await Linking.openURL(url);
-        } else {
-          Alert.alert('', `Đường dẫn xem trực tiếp: ${url}`);
-        }
-      } catch {
-        Alert.alert('', `Đường dẫn xem trực tiếp: ${url}`);
-      }
-    } else {
-      Alert.alert('', 'Không có luồng xem trực tiếp');
-    }
-    clearLiveStream();
-  };
-
   const handleSnapshot = async () => {
     if (!elderlyId) return;
     const url = await captureSosSnapshot(elderlyId);
@@ -212,7 +189,6 @@ export function useCameraActions(
     confirmBind,
     cancelBind,
     doUnbind,
-    handleLiveView,
     handleSnapshot,
     handleVoiceToggle,
     handlePrivacyToggle,

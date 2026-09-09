@@ -16,6 +16,9 @@ public final class ImouModels {
     public record BindingState(boolean isBind, boolean isMine) {}
     public record OnlineChannel(String channelId, String onLine) {}
     public record DeviceOnlineData(String deviceId, String onLine, List<OnlineChannel> channels) {}
+    public record LiveStreamParams(String token, String deviceId, String channelId) {}
+    public record LiveStream(String hls, Integer streamId, String status, String liveToken) {}
+    public record LiveStreamData(List<LiveStream> streams) {}
     public record AbilityDeviceRequest(String deviceId, String channelList) {}
     public record DeviceAbilityParams(String token, List<AbilityDeviceRequest> deviceList) {}
     public record AbilityChannel(String channelId, String channelAbility) {}
