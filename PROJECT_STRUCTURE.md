@@ -47,7 +47,7 @@ Built and current (spec only documents these — do not rebuild):
   `availabilityStore.ts` + `familyDashboard/AvailabilityChip.tsx` (header toggle),
   `broadcastStore.ts` + `familyDashboard/BroadcastBanner.tsx` (dashboard "Tôi lo được").
   Config: `carenest.broadcast.*` in `application.properties`.
-- Flyway is at **V47**; next migration is V48. (`V47` relaxes the `payment_provider`
+- Flyway is at **V48**; next migration is V49. (`V47` relaxes the `payment_provider`
   CHECK to allow `'VIETQR'` — `PaymentService.createVietQrPayment` persists it and the
   original `V20` constraint rejected it, so VietQR payment creation was broken.)
 
@@ -92,6 +92,12 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   `CameraConsentStatus`, `CameraConsentService` (gates `bindCamera`/live/two-way; SOS
   snapshot records-but-does-not-block), `CameraConsentScheduler` (single 30-day re-ask).
   Frontend `cameraConsentStore.ts` + `ElderlyCameraConsentScreen`.
+- **D2 Link Camera** — signed regional IMOU `/openapi/{method}` transport; binding ownership
+  verification, idempotent developer-account handling, confirmed online/offline state,
+  `listDeviceAbility`, migration `V48` capability persistence, stable provider errors, and a
+  consent-aware Family linking modal with ephemeral verification-code handling. Physical-camera
+  verification and native setup for newer SDK-only devices remain explicitly pending; see
+  `CAMERA_D2_SETUP.md`.
 - **D7 timed Privacy Mode** — `camera_devices.privacy_mode_expires_at`,
   `CameraService.setPrivacyMode(id, enabled, hours)` + `expirePrivacyWindows()` (60s poll,
   auto-restore + family notice).
