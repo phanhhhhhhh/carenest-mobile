@@ -15,15 +15,12 @@ import { CameraCard } from './CameraCard';
 
 interface Props {
   cameras: CameraDeviceData[];
-  voiceActive: boolean;
   refreshing: boolean;
   onRefresh: () => void;
   onBind: () => void;
   linkDisabled: boolean;
   linkDisabledReason: string | null;
   onLiveView: (id: number) => void;
-  onSnapshot: () => void;
-  onVoiceToggle: (id: number) => void;
   onPrivacyToggle: (id: number, current: boolean) => void;
   onMotionToggle: (id: number, v: boolean) => void;
   onMenu: (id: number) => void;
@@ -31,15 +28,12 @@ interface Props {
 
 export function CameraList({
   cameras,
-  voiceActive,
   refreshing,
   onRefresh,
   onBind,
   linkDisabled,
   linkDisabledReason,
   onLiveView,
-  onSnapshot,
-  onVoiceToggle,
   onPrivacyToggle,
   onMotionToggle,
   onMenu,
@@ -86,10 +80,7 @@ export function CameraList({
         <CameraCard
           key={cam.id}
           cam={cam}
-          voiceActive={voiceActive}
           onLiveView={() => onLiveView(cam.id)}
-          onSnapshot={onSnapshot}
-          onVoiceToggle={() => onVoiceToggle(cam.id)}
           onPrivacyToggle={() => onPrivacyToggle(cam.id, cam.privacyMode)}
           onMotionToggle={(v) => onMotionToggle(cam.id, v)}
           onMenu={() => onMenu(cam.id)}

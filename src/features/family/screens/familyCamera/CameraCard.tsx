@@ -7,19 +7,13 @@ import { ActionBtn } from './ActionBtn';
 
 export function CameraCard({
   cam,
-  voiceActive,
   onLiveView,
-  onSnapshot,
-  onVoiceToggle,
   onPrivacyToggle,
   onMotionToggle,
   onMenu,
 }: {
   cam: CameraDeviceData;
-  voiceActive: boolean;
   onLiveView: () => void;
-  onSnapshot: () => void;
-  onVoiceToggle: () => void;
   onPrivacyToggle: () => void;
   onMotionToggle: (v: boolean) => void;
   onMenu: () => void;
@@ -77,13 +71,6 @@ export function CameraCard({
           label="Xem trực tiếp"
           color={Colors.primary}
           onPress={onLiveView}
-        />
-        <ActionBtn icon="camera" label="Ảnh chụp" color={Colors.secondary} onPress={onSnapshot} />
-        <ActionBtn
-          icon={voiceActive ? 'mic-off' : 'mic'}
-          label={voiceActive ? 'Kết thúc' : 'Gọi thoại'}
-          color={voiceActive ? Colors.error : Colors.warning}
-          onPress={onVoiceToggle}
         />
         <ActionBtn
           icon={privacy ? 'eye' : 'eye-off'}

@@ -198,6 +198,19 @@ export const CameraDeviceSchema = z.object({
 });
 export type CameraDeviceParsed = z.infer<typeof CameraDeviceSchema>;
 
+export const CameraLiveStreamSchema = z.object({
+  cameraId: z.coerce.number(),
+  label: z.string(),
+  status: z.literal('ONLINE'),
+  confirmedAt: z.string(),
+  lastSeenAt: z.string().nullable().optional(),
+  playbackProtocol: z.literal('HLS'),
+  contentType: z.literal('application/vnd.apple.mpegurl'),
+  streamId: z.number().nullable().optional(),
+  streamUrl: z.string().url().startsWith('https://'),
+});
+export type CameraLiveStreamParsed = z.infer<typeof CameraLiveStreamSchema>;
+
 export const CameraStatusSchema = z.object({
   hasCamera: z.boolean(),
   cameraCount: z.number().optional(),

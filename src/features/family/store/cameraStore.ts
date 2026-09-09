@@ -10,6 +10,7 @@ import {
   CameraDeviceSchema,
   CameraStatusSchema,
   CameraSnapshotSchema,
+  CameraLiveStreamSchema,
   safeParseOne,
   safeParseList,
 } from '../../../shared/schemas';
@@ -76,6 +77,55 @@ export interface CameraSnapshotData {
   createdAt: string;
 }
 
+export type LiveViewPhase = 'idle' | 'loading' | 'ready' | 'offline' | 'privacy'
+  | 'consent' | 'unsupported' | 'expired' | 'providerError' | 'streamError';
+
+export interface CameraLiveStreamData {
+  cameraId: number;
+  label: string;
+  streamUrl: string;
+  confirmedAt: string;
+  lastSeenAt: string | null;
+}
+
+export interface LiveViewState {
+  phase: LiveViewPhase;
+  message: string | null;
+  stream: CameraLiveStreamData | null;
+  lastSeenAt: string | null;
+}
+
+const EMPTY_LIVE_VIEW: LiveViewState = {
+  phase: 'idle', message: null, stream: null, lastSeenAt: null,
+};
+
+export function cameraLiveFailure(error: unknown): Omit<LiveViewState, 'stream'> {
+  const response = error && typeof error === 'object' && 'response' in error
+    ? (error as { response?: { data?: Record<string, unknown> } }).response : undefined;
+  const data = response?.data;
+  const code = typeof data?.code === 'string' ? data.code : '';
+  const lastSeenAt = typeof data?.lastSeenAt === 'string' ? data.lastSeenAt : null;
+  switch (code) {
+    case 'CAMERA_OFFLINE':
+      return { phase: 'offline', message: 'Camera đang ngoại tuyến.', lastSeenAt };
+    case 'CAMERA_PRIVACY_ACTIVE':
+      return { phase: 'privacy', message: 'Người thân đang bật Chế độ riêng tư.', lastSeenAt };
+    case 'CAMERA_CONSENT_REQUIRED':
+      return { phase: 'consent', message: 'Cần sự đồng ý của người thân để xem camera.', lastSeenAt };
+    case 'CAMERA_UNSUPPORTED_STREAM':
+    case 'CAMERA_UNSUPPORTED_DEVICE':
+      return { phase: 'unsupported', message: 'Thiết bị này chưa hỗ trợ phát video trong CareNest.', lastSeenAt };
+    case 'CAMERA_STREAM_EXPIRED':
+      return { phase: 'expired', message: 'Luồng xem đã hết hạn. Hãy thử lại để lấy luồng mới.', lastSeenAt };
+    case 'IMOU_PROVIDER_UNAVAILABLE':
+    case 'CAMERA_STATUS_PROVIDER_UNAVAILABLE':
+    case 'IMOU_INVALID_CREDENTIALS':
+      return { phase: 'providerError', message: 'Dịch vụ camera đang tạm gián đoạn. Hãy thử lại.', lastSeenAt };
+    default:
+      return { phase: 'streamError', message: 'Không thể mở luồng trực tiếp. Hãy thử lại.', lastSeenAt };
+  }
+}
+
 function toCameraSnapshotData(
   s: ReturnType<typeof CameraSnapshotSchema.parse>,
 ): CameraSnapshotData {
@@ -97,6 +147,7 @@ interface CameraState {
   cameras: CameraDeviceData[];
   timeline: CameraSnapshotData[];
   liveStreamUrl: string | null;
+  liveView: LiveViewState;
   voiceActive: boolean;
 
   load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
@@ -108,7 +159,7 @@ interface CameraState {
   ) => Promise<CameraLinkResult>;
   clearLinkError: () => void;
   unbindCamera: (elderlyId: string, deviceId: number) => Promise<boolean>;
-  getLiveStream: (deviceId: number) => Promise<string | null>;
+  getLiveStream: (deviceId: number) => Promise<CameraLiveStreamData | null>;
   captureSosSnapshot: (elderlyId: string, emergencyEventId?: number) => Promise<string | null>;
   startVoiceCall: (deviceId: number) => Promise<boolean>;
   stopVoiceCall: (deviceId: number) => Promise<boolean>;
@@ -132,6 +183,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
   cameras: [],
   timeline: [],
   liveStreamUrl: null,
+  liveView: EMPTY_LIVE_VIEW,
   voiceActive: false,
 
   load: async (elderlyId, signal) => {
@@ -211,16 +263,36 @@ export const useCameraStore = create<CameraState>((set, get) => ({
   },
 
   getLiveStream: async (deviceId) => {
-    set({ isProcessing: true });
+    if (get().liveView.phase === 'loading') return null;
+    set({
+      isProcessing: true,
+      liveStreamUrl: null,
+      liveView: { ...EMPTY_LIVE_VIEW, phase: 'loading' },
+    });
     try {
       const resp = await api.get(`/cameras/${deviceId}/live`);
-      const data = resp.data as Record<string, unknown>;
-      const url =
-        (data.streamUrl as string) || (data.rtspUrl as string) || (data.hlsUrl as string) || '';
-      set({ isProcessing: false, liveStreamUrl: url });
-      return url.length > 0 ? url : null;
+      const data = safeParseOne(CameraLiveStreamSchema, resp.data, 'CameraLiveStream');
+      if (!data) throw new Error('Invalid live-stream response');
+      const stream: CameraLiveStreamData = {
+        cameraId: data.cameraId,
+        label: data.label,
+        streamUrl: data.streamUrl,
+        confirmedAt: data.confirmedAt,
+        lastSeenAt: data.lastSeenAt ?? null,
+      };
+      set({
+        isProcessing: false,
+        liveStreamUrl: stream.streamUrl,
+        liveView: { phase: 'ready', message: null, stream, lastSeenAt: stream.lastSeenAt },
+      });
+      return stream;
     } catch (e) {
-      set({ isProcessing: false, error: `Không thể lấy luồng video: ${getErrorMessage(e)}` });
+      const failure = cameraLiveFailure(e);
+      set({
+        isProcessing: false,
+        liveStreamUrl: null,
+        liveView: { ...failure, stream: null },
+      });
       return null;
     }
   },
@@ -301,7 +373,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
     }
   },
 
-  clearLiveStream: () => set({ liveStreamUrl: null }),
+  clearLiveStream: () => set({ liveStreamUrl: null, liveView: EMPTY_LIVE_VIEW }),
 
   refresh: (elderlyId) => {
     get().load(elderlyId);
