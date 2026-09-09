@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { Linking } from 'react-native';
 import { Alert } from '../../../../shared/utils/crossPlatformAlert';
 import { useCameraStore } from '../../store/cameraStore';
+import { validateCameraLinkInput } from '../../services/cameraLinking';
 
 /**
  * All the imperative camera interactions (bind/unbind, live view, snapshot, voice,
  * privacy, motion, PTZ) plus the local modal state they drive. Kept out of the
  * screen so it stays a thin render layer.
  */
-export function useCameraActions(elderlyId: string | null) {
+export function useCameraActions(
+  elderlyId: string | null,
+  linkAccess: { allowed: boolean; reason: string | null },
+) {
   const bindCamera = useCameraStore((s) => s.bindCamera);
   const unbindCamera = useCameraStore((s) => s.unbindCamera);
   const getLiveStream = useCameraStore((s) => s.getLiveStream);
@@ -20,36 +24,68 @@ export function useCameraActions(elderlyId: string | null) {
   const controlPtz = useCameraStore((s) => s.controlPtz);
   const clearLiveStream = useCameraStore((s) => s.clearLiveStream);
   const load = useCameraStore((s) => s.load);
+  const isProcessing = useCameraStore((s) => s.isProcessing);
+  const linkError = useCameraStore((s) => s.linkError);
+  const clearLinkError = useCameraStore((s) => s.clearLinkError);
 
   const [refreshing, setRefreshing] = useState(false);
 
   const [bindVisible, setBindVisible] = useState(false);
   const [snValue, setSnValue] = useState('');
   const [labelValue, setLabelValue] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [unbindTarget, setUnbindTarget] = useState<number | null>(null);
   const [menuDeviceId, setMenuDeviceId] = useState<number | null>(null);
   const [ptzDeviceId, setPtzDeviceId] = useState<number | null>(null);
 
   const showBindDialog = () => {
     if (!elderlyId) return;
+    if (!linkAccess.allowed) {
+      Alert.alert('Chưa thể liên kết camera', linkAccess.reason ?? undefined);
+      return;
+    }
     setSnValue('');
     setLabelValue('');
+    setValidationError(null);
+    clearLinkError();
     setBindVisible(true);
   };
 
   const confirmBind = async () => {
-    if (!elderlyId) return;
-    const sn = snValue.trim();
-    if (!sn) return;
-    setBindVisible(false);
-    const ok = await bindCamera(
-      elderlyId,
-      sn,
-      labelValue.trim().length > 0 ? labelValue.trim() : 'Camera',
-    );
-    if (!ok) {
-      Alert.alert('', 'Không thể liên kết camera. Vui lòng kiểm tra lại số seri.');
+    if (!elderlyId || isProcessing) return;
+    const error = validateCameraLinkInput({ deviceSn: snValue, label: labelValue });
+    if (error) {
+      setValidationError(error);
+      return;
     }
+    setValidationError(null);
+    clearLinkError();
+    const result = await bindCamera(elderlyId, snValue, labelValue);
+    if (result.ok) {
+      setBindVisible(false);
+      setSnValue('');
+      setLabelValue('');
+      Alert.alert('Đã liên kết camera', 'Camera đã được thêm và trạng thái mới nhất đã được tải.');
+    }
+  };
+
+  const cancelBind = () => {
+    if (isProcessing) return;
+    setBindVisible(false);
+    setValidationError(null);
+    clearLinkError();
+  };
+
+  const changeSn = (value: string) => {
+    setSnValue(value);
+    setValidationError(null);
+    clearLinkError();
+  };
+
+  const changeLabel = (value: string) => {
+    setLabelValue(value);
+    setValidationError(null);
+    clearLinkError();
   };
 
   const doUnbind = async () => {
@@ -147,17 +183,19 @@ export function useCameraActions(elderlyId: string | null) {
     bindVisible,
     snValue,
     labelValue,
+    bindError: validationError ?? linkError?.message ?? null,
+    isBinding: isProcessing,
     unbindTarget,
     menuDeviceId,
     ptzDeviceId,
-    setSnValue,
-    setLabelValue,
-    setBindVisible,
+    setSnValue: changeSn,
+    setLabelValue: changeLabel,
     setUnbindTarget,
     setMenuDeviceId,
     setPtzDeviceId,
     showBindDialog,
     confirmBind,
+    cancelBind,
     doUnbind,
     handleLiveView,
     handleSnapshot,

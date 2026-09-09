@@ -194,6 +194,7 @@ export const CameraDeviceSchema = z.object({
   privacyMode: z.boolean().optional(),
   motionDetectionEnabled: z.boolean().optional(),
   snapshotSchedule: z.string().optional().nullable(),
+  capabilities: z.array(z.string()).optional(),
 });
 export type CameraDeviceParsed = z.infer<typeof CameraDeviceSchema>;
 
