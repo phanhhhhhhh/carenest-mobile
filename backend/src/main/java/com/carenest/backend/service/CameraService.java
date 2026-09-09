@@ -1,13 +1,17 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.dto.camera.ImouModels;
 import com.carenest.backend.entity.*;
-import com.carenest.backend.exception.ConflictException;
+import com.carenest.backend.exception.CameraLinkException;
+import com.carenest.backend.exception.ImouApiException;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +40,18 @@ public class CameraService {
 
     @Transactional
     public CameraDevice bindCamera(Long elderlyId, String deviceSn, String label) {
+        return bindCamera(elderlyId, deviceSn, label, "");
+    }
+
+    @Transactional
+    public CameraDevice bindCamera(
+        Long elderlyId,
+        String rawDeviceSn,
+        String rawLabel,
+        String verificationCode
+    ) {
+        String deviceSn = normalizeDeviceSn(rawDeviceSn);
+        String label = normalizeLabel(rawLabel);
         User elderly = userRepository.findById(elderlyId)
             .orElseThrow(() -> new NotFoundException("User not found"));
 
@@ -43,34 +59,152 @@ public class CameraService {
         cameraConsentService.requireConsent(elderlyId);
 
         if (cameraDeviceRepository.existsByDeviceSn(deviceSn)) {
-            throw new ConflictException("Device " + deviceSn + " is already bound to another account");
+            throw new CameraLinkException(
+                "CAMERA_ALREADY_LINKED",
+                HttpStatus.CONFLICT,
+                "This camera is already linked to a CareNest profile");
         }
 
-        String accessToken = imouApiService.getAccessToken();
-        if (accessToken == null) {
-            throw new IllegalStateException("Imou API not configured — cannot bind device");
+        try {
+            String accessToken = imouApiService.getAccessToken();
+            if (accessToken == null || accessToken.isBlank()) {
+                throw new CameraLinkException(
+                    "IMOU_UNAVAILABLE",
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "IMOU integration is unavailable");
+            }
+
+            ImouModels.BindingState binding = imouApiService.checkDeviceBinding(deviceSn, accessToken);
+            if (binding.isBind() && !binding.isMine()) {
+                throw new CameraLinkException(
+                    "IMOU_BOUND_TO_ANOTHER_ACCOUNT",
+                    HttpStatus.CONFLICT,
+                    "This camera is bound to another IMOU account");
+            }
+
+            if (!binding.isBind()) {
+                try {
+                    imouApiService.bindDevice(
+                        deviceSn,
+                        verificationCode == null ? "" : verificationCode.trim(),
+                        accessToken);
+                } catch (ImouApiException ex) {
+                    if (ex.getKind() != ImouApiException.Kind.ALREADY_OWNED) {
+                        throw ex;
+                    }
+                }
+                binding = imouApiService.checkDeviceBinding(deviceSn, accessToken);
+                if (!binding.isBind() || !binding.isMine()) {
+                    throw new CameraLinkException(
+                        "IMOU_BINDING_NOT_CONFIRMED",
+                        HttpStatus.BAD_GATEWAY,
+                        "IMOU did not confirm camera ownership after binding");
+                }
+            }
+
+            ImouModels.DeviceOnlineData online = imouApiService.deviceOnline(deviceSn, accessToken);
+            boolean isOnline = "1".equals(online.onLine());
+            String capabilities = loadCapabilities(deviceSn, accessToken);
+            Instant boundAt = Instant.now();
+            CameraDevice device = CameraDevice.builder()
+                .elderly(elderly)
+                .label(label)
+                .deviceSn(deviceSn)
+                .deviceId(online.deviceId() == null || online.deviceId().isBlank()
+                    ? deviceSn : online.deviceId())
+                .accessToken(accessToken)
+                .tokenRefreshedAt(boundAt)
+                .status(isOnline ? CameraDevice.CameraStatus.ONLINE : CameraDevice.CameraStatus.OFFLINE)
+                .lastSeenAt(isOnline ? boundAt : null)
+                .capabilities(capabilities)
+                .build();
+            try {
+                device = cameraDeviceRepository.saveAndFlush(device);
+            } catch (DataIntegrityViolationException ex) {
+                throw new CameraLinkException(
+                    "CAMERA_ALREADY_LINKED",
+                    HttpStatus.CONFLICT,
+                    "This camera is already linked to a CareNest profile");
+            }
+
+            log.info("Camera linked: elderlyId={} deviceSn={} status={}",
+                elderlyId, deviceSn, device.getStatus());
+            return device;
+        } catch (CameraLinkException ex) {
+            throw ex;
+        } catch (ImouApiException ex) {
+            throw mapProviderFailure(ex);
         }
+    }
 
-        Map<String, Object> result = imouApiService.bindDevice(deviceSn, accessToken);
-        if (result.containsKey("error")) {
-            throw new RuntimeException("Failed to bind device: " + result.get("error"));
+    private String loadCapabilities(String deviceSn, String accessToken) {
+        try {
+            ImouModels.DeviceAbilityData data = imouApiService.listDeviceAbility(deviceSn, accessToken);
+            if (data == null || data.deviceList() == null) return "";
+            LinkedHashSet<String> values = new LinkedHashSet<>();
+            data.deviceList().stream()
+                .filter(device -> deviceSn.equalsIgnoreCase(device.deviceId()))
+                .forEach(device -> {
+                    addCapabilities(values, device.ability());
+                    if (device.channels() != null) {
+                        device.channels().forEach(channel ->
+                            addCapabilities(values, channel.channelAbility()));
+                    }
+                });
+            return String.join(",", values);
+        } catch (ImouApiException ex) {
+            if (ex.getKind() == ImouApiException.Kind.UNSUPPORTED_DEVICE) return "";
+            throw ex;
         }
+    }
 
-        Instant boundAt = Instant.now();
-        CameraDevice device = CameraDevice.builder()
-            .elderly(elderly)
-            .label(label)
-            .deviceSn(deviceSn)
-            .deviceId((String) result.getOrDefault("deviceId", deviceSn))
-            .accessToken(accessToken)
-            .tokenRefreshedAt(boundAt)
-            .status(CameraDevice.CameraStatus.ONLINE)
-            .lastSeenAt(boundAt)
-            .build();
-        device = cameraDeviceRepository.save(device);
+    private void addCapabilities(Set<String> target, String value) {
+        if (value == null || value.isBlank()) return;
+        Arrays.stream(value.split(","))
+            .map(String::trim)
+            .filter(item -> !item.isEmpty())
+            .forEach(target::add);
+    }
 
-        log.info("Camera bound: elderlyId={} deviceSn={} label={}", elderlyId, deviceSn, label);
-        return device;
+    private String normalizeDeviceSn(String value) {
+        if (value == null) throw new IllegalArgumentException("Device serial number is required");
+        String normalized = value.trim().toUpperCase(Locale.ROOT);
+        if (normalized.isEmpty() || normalized.length() > 64 || !normalized.matches("[A-Z0-9_-]+")) {
+            throw new IllegalArgumentException("Device serial number is invalid");
+        }
+        return normalized;
+    }
+
+    private String normalizeLabel(String value) {
+        if (value == null) throw new IllegalArgumentException("Room label is required");
+        String normalized = value.trim().replaceAll("\\s+", " ");
+        if (normalized.isEmpty() || normalized.length() > 100) {
+            throw new IllegalArgumentException("Room label must contain 1 to 100 characters");
+        }
+        return normalized;
+    }
+
+    private CameraLinkException mapProviderFailure(ImouApiException ex) {
+        return switch (ex.getKind()) {
+            case INVALID_CREDENTIALS -> new CameraLinkException(
+                "IMOU_INVALID_CREDENTIALS", HttpStatus.BAD_GATEWAY,
+                "IMOU credentials are invalid");
+            case BOUND_TO_ANOTHER_ACCOUNT -> new CameraLinkException(
+                "IMOU_BOUND_TO_ANOTHER_ACCOUNT", HttpStatus.CONFLICT,
+                "This camera is bound to another IMOU account");
+            case INVALID_DEVICE_CODE -> new CameraLinkException(
+                "IMOU_INVALID_DEVICE_CODE", HttpStatus.UNPROCESSABLE_ENTITY,
+                "The camera verification code or password is invalid");
+            case UNSUPPORTED_DEVICE -> new CameraLinkException(
+                "IMOU_UNSUPPORTED_BINDING_FLOW", HttpStatus.UNPROCESSABLE_ENTITY,
+                "This camera requires an IMOU-supported local setup flow");
+            case PROVIDER_UNAVAILABLE -> new CameraLinkException(
+                "IMOU_UNAVAILABLE", HttpStatus.SERVICE_UNAVAILABLE,
+                "IMOU service is temporarily unavailable");
+            case ALREADY_OWNED, PROVIDER_REJECTED -> new CameraLinkException(
+                "IMOU_PROVIDER_REJECTED", HttpStatus.BAD_GATEWAY,
+                "IMOU rejected the camera request");
+        };
     }
 
     @Transactional

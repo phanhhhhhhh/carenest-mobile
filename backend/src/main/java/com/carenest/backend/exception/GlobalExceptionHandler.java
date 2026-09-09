@@ -38,6 +38,16 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(CameraLinkException.class)
+    public ResponseEntity<Map<String, Object>> handleCameraLink(CameraLinkException ex) {
+        return ResponseEntity.status(ex.getStatus()).body(Map.of(
+            "status", ex.getStatus().value(),
+            "code", ex.getCode(),
+            "error", ex.getMessage(),
+            "timestamp", OffsetDateTime.now().toString()
+        ));
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation: {}", ex.getMessage());
