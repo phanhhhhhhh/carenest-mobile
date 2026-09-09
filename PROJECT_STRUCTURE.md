@@ -98,6 +98,13 @@ Built in the 2026-09 v3.5 catch-up pass (spec-compliance work):
   consent-aware Family linking modal with ephemeral verification-code handling. Physical-camera
   verification and native setup for newer SDK-only devices remain explicitly pending; see
   `CAMERA_D2_SETUP.md`.
+- **Camera authz hardening (2026-09-09, on `develop`)** — every device-scoped
+  `CameraController` endpoint (`unbind`, `live`, `motion-detection`, `voice/start|stop`,
+  `ptz`, `privacy`, `status` — 8 total) dropped its `or hasRole('ADMIN')` clause; they are
+  now `@authz.canAccessCamera(...)` only (owner elderly + ACTIVE-linked family). The old
+  override was dead — the `admin-web/` console only calls `/api/admin/**` + payment — and
+  contradicted D1 consent. No tests touched this path. Resolves the "ADMIN camera
+  super-user" flag.
 - **D7 timed Privacy Mode** — `camera_devices.privacy_mode_expires_at`,
   `CameraService.setPrivacyMode(id, enabled, hours)` + `expirePrivacyWindows()` (60s poll,
   auto-restore + family notice).
