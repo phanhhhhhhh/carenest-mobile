@@ -15,8 +15,10 @@ export function BindCameraModal({
   visible,
   sn,
   label,
+  verificationCode,
   onChangeSn,
   onChangeLabel,
+  onChangeVerificationCode,
   onCancel,
   onConfirm,
   error,
@@ -25,8 +27,10 @@ export function BindCameraModal({
   visible: boolean;
   sn: string;
   label: string;
+  verificationCode: string;
   onChangeSn: (v: string) => void;
   onChangeLabel: (v: string) => void;
+  onChangeVerificationCode: (v: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
   error: string | null;
@@ -59,6 +63,25 @@ export function BindCameraModal({
               editable={!submitting}
             />
           </View>
+          <View style={{ height: 12 }} />
+          <View style={styles.inputWrap}>
+            <Ionicons name="key-outline" size={18} color={Colors.primary} />
+            <TextInput
+              style={styles.input}
+              placeholder="Mã bảo mật (nếu có trên nhãn camera)"
+              placeholderTextColor={Colors.textHint}
+              value={verificationCode}
+              onChangeText={onChangeVerificationCode}
+              maxLength={128}
+              editable={!submitting}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          <Text style={styles.securityHint}>
+            Mã chỉ được dùng cho lần liên kết này và không được lưu trên điện thoại.
+          </Text>
           <View style={{ height: 12 }} />
           <View style={styles.inputWrap}>
             <Ionicons name="pricetag-outline" size={18} color={Colors.primary} />
@@ -237,6 +260,7 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, paddingVertical: 12, fontSize: 14, color: Colors.textPrimary },
   inputError: { color: Colors.error, fontSize: 13, lineHeight: 18, marginTop: 10 },
+  securityHint: { color: Colors.textSecondary, fontSize: 11.5, lineHeight: 16, marginTop: 6 },
   disabledBtn: { opacity: 0.6 },
   menuOverlay: {
     flex: 1,

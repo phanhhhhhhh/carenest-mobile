@@ -33,6 +33,7 @@ export function useCameraActions(
   const [bindVisible, setBindVisible] = useState(false);
   const [snValue, setSnValue] = useState('');
   const [labelValue, setLabelValue] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [unbindTarget, setUnbindTarget] = useState<number | null>(null);
   const [menuDeviceId, setMenuDeviceId] = useState<number | null>(null);
@@ -46,6 +47,7 @@ export function useCameraActions(
     }
     setSnValue('');
     setLabelValue('');
+    setVerificationCode('');
     setValidationError(null);
     clearLinkError();
     setBindVisible(true);
@@ -53,18 +55,23 @@ export function useCameraActions(
 
   const confirmBind = async () => {
     if (!elderlyId || isProcessing) return;
-    const error = validateCameraLinkInput({ deviceSn: snValue, label: labelValue });
+    const error = validateCameraLinkInput({
+      deviceSn: snValue,
+      label: labelValue,
+      verificationCode,
+    });
     if (error) {
       setValidationError(error);
       return;
     }
     setValidationError(null);
     clearLinkError();
-    const result = await bindCamera(elderlyId, snValue, labelValue);
+    const result = await bindCamera(elderlyId, snValue, labelValue, verificationCode);
     if (result.ok) {
       setBindVisible(false);
       setSnValue('');
       setLabelValue('');
+      setVerificationCode('');
       Alert.alert('Đã liên kết camera', 'Camera đã được thêm và trạng thái mới nhất đã được tải.');
     }
   };
@@ -84,6 +91,12 @@ export function useCameraActions(
 
   const changeLabel = (value: string) => {
     setLabelValue(value);
+    setValidationError(null);
+    clearLinkError();
+  };
+
+  const changeVerificationCode = (value: string) => {
+    setVerificationCode(value);
     setValidationError(null);
     clearLinkError();
   };
@@ -183,6 +196,7 @@ export function useCameraActions(
     bindVisible,
     snValue,
     labelValue,
+    verificationCode,
     bindError: validationError ?? linkError?.message ?? null,
     isBinding: isProcessing,
     unbindTarget,
@@ -190,6 +204,7 @@ export function useCameraActions(
     ptzDeviceId,
     setSnValue: changeSn,
     setLabelValue: changeLabel,
+    setVerificationCode: changeVerificationCode,
     setUnbindTarget,
     setMenuDeviceId,
     setPtzDeviceId,

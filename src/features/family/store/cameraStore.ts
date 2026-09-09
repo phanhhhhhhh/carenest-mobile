@@ -100,7 +100,12 @@ interface CameraState {
   voiceActive: boolean;
 
   load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
-  bindCamera: (elderlyId: string, deviceSn: string, label: string) => Promise<CameraLinkResult>;
+  bindCamera: (
+    elderlyId: string,
+    deviceSn: string,
+    label: string,
+    verificationCode?: string,
+  ) => Promise<CameraLinkResult>;
   clearLinkError: () => void;
   unbindCamera: (elderlyId: string, deviceId: number) => Promise<boolean>;
   getLiveStream: (deviceId: number) => Promise<string | null>;
@@ -161,7 +166,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
     }
   },
 
-  bindCamera: async (elderlyId, deviceSn, label) => {
+  bindCamera: async (elderlyId, deviceSn, label, verificationCode) => {
     if (get().isProcessing) {
       return {
         ok: false,
@@ -169,7 +174,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
         message: 'Yêu cầu liên kết đang được xử lý.',
       };
     }
-    const input = normalizeCameraLinkInput({ deviceSn, label });
+    const input = normalizeCameraLinkInput({ deviceSn, label, verificationCode });
     set({ isProcessing: true, linkError: null });
     try {
       const response = await api.post(`/elderly/${elderlyId}/cameras`, input);

@@ -16,10 +16,13 @@ const consent = (status: CameraConsent['status'], canLinkCamera: boolean): Camer
 
 describe('camera link input', () => {
   it('normalizes the serial and room label', () => {
-    expect(normalizeCameraLinkInput({ deviceSn: ' ab-c_12 ', label: '  Phòng   khách ' })).toEqual({
-      deviceSn: 'AB-C_12',
-      label: 'Phòng khách',
-    });
+    expect(
+      normalizeCameraLinkInput({
+        deviceSn: ' ab-c_12 ',
+        label: '  Phòng   khách ',
+        verificationCode: ' SC1234 ',
+      }),
+    ).toEqual({ deviceSn: 'AB-C_12', label: 'Phòng khách', verificationCode: 'SC1234' });
   });
 
   it.each([
@@ -27,6 +30,7 @@ describe('camera link input', () => {
     [{ deviceSn: 'AB C', label: 'Phòng khách' }, 'chữ, số'],
     [{ deviceSn: 'ABC123', label: '' }, 'tên phòng'],
     [{ deviceSn: 'ABC123', label: 'x'.repeat(101) }, '100'],
+    [{ deviceSn: 'ABC123', label: 'Room', verificationCode: 'x'.repeat(129) }, '128'],
   ])('rejects invalid input %#', (input, expected) => {
     expect(validateCameraLinkInput(input)).toContain(expected);
   });

@@ -165,8 +165,10 @@ export default function CameraScreen() {
         visible={actions.bindVisible}
         sn={actions.snValue}
         label={actions.labelValue}
+        verificationCode={actions.verificationCode}
         onChangeSn={actions.setSnValue}
         onChangeLabel={actions.setLabelValue}
+        onChangeVerificationCode={actions.setVerificationCode}
         onConfirm={actions.confirmBind}
         onCancel={actions.cancelBind}
         error={actions.bindError}

@@ -85,6 +85,21 @@ describe('bindCamera', () => {
     expect(useCameraStore.getState().error).toBeNull();
   });
 
+  it('sends a trimmed verification code without retaining it in store state', async () => {
+    mockApi.post.mockRejectedValue({
+      response: { status: 422, data: { code: 'IMOU_INVALID_DEVICE_CODE' } },
+    });
+
+    await useCameraStore.getState().bindCamera('7', 'ABC123', 'Room', ' SC1234 ');
+
+    expect(mockApi.post).toHaveBeenCalledWith('/elderly/7/cameras', {
+      deviceSn: 'ABC123',
+      label: 'Room',
+      verificationCode: 'SC1234',
+    });
+    expect(JSON.stringify(useCameraStore.getState())).not.toContain('SC1234');
+  });
+
   it('prevents a second submission while the first request is pending', async () => {
     let rejectFirst!: (reason: unknown) => void;
     mockApi.post.mockImplementation(

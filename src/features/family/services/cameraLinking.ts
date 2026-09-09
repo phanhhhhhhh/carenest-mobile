@@ -21,6 +21,7 @@ export type CameraLinkResult =
 export interface CameraLinkInput {
   deviceSn: string;
   label: string;
+  verificationCode?: string;
 }
 
 const ERROR_MESSAGES: Partial<Record<CameraLinkFailureCode, string>> = {
@@ -40,9 +41,11 @@ const ERROR_MESSAGES: Partial<Record<CameraLinkFailureCode, string>> = {
 };
 
 export function normalizeCameraLinkInput(input: CameraLinkInput): CameraLinkInput {
+  const verificationCode = input.verificationCode?.trim();
   return {
     deviceSn: input.deviceSn.trim().toUpperCase(),
     label: input.label.trim().replace(/\s+/g, ' '),
+    ...(verificationCode ? { verificationCode } : {}),
   };
 }
 
@@ -54,6 +57,9 @@ export function validateCameraLinkInput(input: CameraLinkInput): string | null {
   }
   if (!normalized.label) return 'Vui lòng nhập tên phòng đặt camera.';
   if (normalized.label.length > 100) return 'Tên phòng không được vượt quá 100 ký tự.';
+  if (normalized.verificationCode && normalized.verificationCode.length > 128) {
+    return 'Mã bảo mật không được vượt quá 128 ký tự.';
+  }
   return null;
 }
 
