@@ -240,10 +240,16 @@ public class CameraService {
             );
         }
 
-        Map<String, Object> result = imouApiService.getLiveStreamUrl(device.getDeviceSn(), device.getAccessToken());
+        ImouModels.LiveStreamData result =
+            imouApiService.getLiveStreamInfo(device.getDeviceSn(), device.getAccessToken());
+        String streamUrl = result.streams() == null ? "" : result.streams().stream()
+            .map(ImouModels.LiveStream::hls)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse("");
         return Map.of(
             "status", "ONLINE",
-            "streamUrl", result.getOrDefault("url", ""),
+            "streamUrl", streamUrl,
             "deviceId", device.getId(),
             "label", device.getLabel()
         );

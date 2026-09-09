@@ -102,11 +102,11 @@ public class ImouApiService {
             "unBindDevice", Map.of("deviceId", deviceSn, "token", accessToken));
     }
 
-    public Map<String, Object> getLiveStreamUrl(String deviceSn, String accessToken) {
-        return callLegacyImouApi("getLiveStreamInfo", withToken(Map.of(
-            "deviceId", deviceSn,
-            "channelId", "0",
-            "streamType", "0"), accessToken));
+    public ImouModels.LiveStreamData getLiveStreamInfo(String deviceSn, String accessToken) {
+        return callImouApi(
+            "getLiveStreamInfo",
+            new ImouModels.LiveStreamParams(accessToken, deviceSn, "0"),
+            ImouModels.LiveStreamData.class);
     }
 
     public Map<String, Object> captureSnapshot(String deviceSn, String accessToken) {

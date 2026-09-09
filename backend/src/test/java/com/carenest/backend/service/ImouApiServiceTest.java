@@ -120,6 +120,29 @@ class ImouApiServiceTest {
     }
 
     @Test
+    void liveStreamUsesOfficialPathEnvelopeAndParsesTypedHlsStreams() throws Exception {
+        responseBody.set("""
+            {"result":{"code":"0","data":{"streams":[
+              {"streamId":1,"liveToken":"live-token","hls":"https://video.example/live.m3u8?proto=https","status":"0"},
+              {"streamId":0,"liveToken":"live-token","hls":"http://video.example/live.m3u8","status":"0"}
+            ]}},"id":"id"}
+            """);
+
+        ImouModels.LiveStreamData data = service.getLiveStreamInfo("ABC123", "At_token");
+
+        assertThat(requestPath.get()).isEqualTo("/openapi/getLiveStreamInfo");
+        JsonNode params = objectMapper.readTree(requestBody.get()).path("params");
+        assertThat(params.path("token").asText()).isEqualTo("At_token");
+        assertThat(params.path("deviceId").asText()).isEqualTo("ABC123");
+        assertThat(params.path("channelId").asText()).isEqualTo("0");
+        assertThat(params.has("streamType")).isFalse();
+        assertThat(data.streams()).hasSize(2);
+        assertThat(data.streams().get(0).streamId()).isEqualTo(1);
+        assertThat(data.streams().get(0).hls()).startsWith("https://");
+        assertThat(data.streams().get(0).liveToken()).isEqualTo("live-token");
+    }
+
+    @Test
     void providerCredentialErrorIsTypedAndDoesNotExposeProviderMessage() {
         responseBody.set("""
             {"result":{"code":"SN1004","msg":"secret diagnostic"},"id":"id"}
