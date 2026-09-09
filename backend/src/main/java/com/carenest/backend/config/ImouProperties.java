@@ -15,7 +15,7 @@ import java.time.Duration;
 public class ImouProperties {
 
     private boolean enabled;
-    private String baseUrl = "https://openapi.imoulife.com";
+    private String baseUrl = "https://openapi-sg.easy4ip.com:443";
     private String appId = "";
     private String appSecret = "";
     private Duration connectionTimeout = Duration.ofSeconds(10);

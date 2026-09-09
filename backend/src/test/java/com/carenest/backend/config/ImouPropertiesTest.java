@@ -30,7 +30,7 @@ class ImouPropertiesTest {
             assertThat(properties.isEnabled()).isFalse();
             assertThat(properties.getAppId()).isEmpty();
             assertThat(properties.getAppSecret()).isEmpty();
-            assertThat(properties.getBaseUrl()).isEqualTo("https://openapi.imoulife.com");
+            assertThat(properties.getBaseUrl()).isEqualTo("https://openapi-sg.easy4ip.com:443");
             assertThat(properties.getConnectionTimeout()).isEqualTo(Duration.ofSeconds(10));
             assertThat(properties.getReadTimeout()).isEqualTo(Duration.ofSeconds(30));
         });
