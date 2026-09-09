@@ -40,12 +40,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CameraLinkException.class)
     public ResponseEntity<Map<String, Object>> handleCameraLink(CameraLinkException ex) {
-        return ResponseEntity.status(ex.getStatus()).body(Map.of(
-            "status", ex.getStatus().value(),
-            "code", ex.getCode(),
-            "error", ex.getMessage(),
-            "timestamp", OffsetDateTime.now().toString()
-        ));
+        Map<String, Object> body = new HashMap<>(ex.getDetails());
+        body.put("status", ex.getStatus().value());
+        body.put("code", ex.getCode());
+        body.put("error", ex.getMessage());
+        body.put("timestamp", OffsetDateTime.now().toString());
+        return ResponseEntity.status(ex.getStatus()).body(body);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

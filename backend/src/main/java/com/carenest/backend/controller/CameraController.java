@@ -4,6 +4,7 @@ import com.carenest.backend.dto.camera.CameraConsentResponse;
 import com.carenest.backend.dto.camera.CameraStatusResponse;
 import com.carenest.backend.dto.camera.CameraDeviceResponse;
 import com.carenest.backend.dto.camera.LinkCameraRequest;
+import com.carenest.backend.dto.camera.CameraLiveStreamResponse;
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.CameraSnapshot;
 import com.carenest.backend.service.CameraConsentService;
@@ -70,9 +71,13 @@ public class CameraController {
     }
 
     @GetMapping("/cameras/{deviceId}/live")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> getLiveStream(@PathVariable Long deviceId) {
-        return ResponseEntity.ok(cameraService.getLiveStreamUrl(deviceId));
+    @PreAuthorize("hasRole('FAMILY') and @authz.canAccessCamera(authentication.principal, #deviceId)")
+    public ResponseEntity<CameraLiveStreamResponse> getLiveStream(
+            @PathVariable Long deviceId,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal Long familyId) {
+        return ResponseEntity.ok()
+            .cacheControl(org.springframework.http.CacheControl.noStore())
+            .body(cameraService.getLiveStream(deviceId, familyId));
     }
 
     @PostMapping("/elderly/{elderlyId}/cameras/snapshot")

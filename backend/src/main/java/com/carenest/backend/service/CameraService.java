@@ -1,6 +1,7 @@
 package com.carenest.backend.service;
 
 import com.carenest.backend.dto.camera.ImouModels;
+import com.carenest.backend.dto.camera.CameraLiveStreamResponse;
 import com.carenest.backend.entity.*;
 import com.carenest.backend.exception.CameraLinkException;
 import com.carenest.backend.exception.ImouApiException;
@@ -20,6 +21,8 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.net.URI;
+import java.util.function.Function;
 
 @Slf4j
 @Service
@@ -220,39 +223,144 @@ public class CameraService {
         return cameraDeviceRepository.findByElderlyId(elderlyId);
     }
 
-    public Map<String, Object> getLiveStreamUrl(Long deviceId) {
+    @Transactional
+    public CameraLiveStreamResponse getLiveStream(Long deviceId, Long familyId) {
         CameraDevice device = cameraDeviceRepository.findById(deviceId)
             .orElseThrow(() -> new NotFoundException("Camera not found"));
+        Long elderlyId = device.getElderly().getId();
 
-        if (!cameraConsentService.hasConsent(device.getElderly().getId())) {
-            return Map.of("status", "CONSENT_REQUIRED",
-                "message", "Camera monitoring is turned off — the elderly person has not consented");
+        boolean activeLink = familyId != null && familyLinkRepository
+            .existsByElderlyIdAndFamilyIdAndStatusAndDeletedAtIsNull(
+                elderlyId, familyId, FamilyLinkStatus.ACTIVE);
+        if (!activeLink) {
+            throw liveError("CAMERA_ACCESS_DENIED", HttpStatus.FORBIDDEN,
+                "An active Family link is required to view this camera");
         }
+        if (!cameraConsentService.hasConsent(elderlyId)) {
+            throw liveError("CAMERA_CONSENT_REQUIRED", HttpStatus.CONFLICT,
+                "Camera consent is required");
+        }
+
+        expirePrivacyForLiveView(device);
         if (device.isPrivacyMode()) {
-            return Map.of("status", "PRIVACY",
-                "message", "Người thân đang tạm tắt camera để riêng tư");
-        }
-        if (!device.isOnline()) {
-            return Map.of(
-                "status", "OFFLINE",
-                "message", "Camera is currently unavailable",
-                "lastSeenAt", device.getLastSeenAt() != null ? device.getLastSeenAt().toString() : "unknown"
-            );
+            throw liveError("CAMERA_PRIVACY_ACTIVE", HttpStatus.LOCKED,
+                "Privacy Mode is active");
         }
 
-        ImouModels.LiveStreamData result =
-            imouApiService.getLiveStreamInfo(device.getDeviceSn(), device.getAccessToken());
-        String streamUrl = result.streams() == null ? "" : result.streams().stream()
-            .map(ImouModels.LiveStream::hls)
+        ImouModels.DeviceOnlineData online;
+        try {
+            online = callWithSingleTokenRefresh(device,
+                token -> imouApiService.deviceOnline(device.getDeviceSn(), token));
+        } catch (ImouApiException ex) {
+            throw mapLiveProviderError(ex, "CAMERA_STATUS_PROVIDER_UNAVAILABLE");
+        }
+
+        Instant confirmedAt = Instant.now();
+        boolean currentlyOnline = "1".equals(online.onLine());
+        device.setStatus(currentlyOnline
+            ? CameraDevice.CameraStatus.ONLINE : CameraDevice.CameraStatus.OFFLINE);
+        if (currentlyOnline) device.setLastSeenAt(confirmedAt);
+        cameraDeviceRepository.save(device);
+
+        if (!currentlyOnline) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("cameraId", device.getId());
+            details.put("label", device.getLabel());
+            details.put("confirmedStatus", "OFFLINE");
+            details.put("confirmedAt", confirmedAt.toString());
+            if (device.getLastSeenAt() != null) {
+                details.put("lastSeenAt", device.getLastSeenAt().toString());
+            }
+            throw new CameraLinkException("CAMERA_OFFLINE", HttpStatus.CONFLICT,
+                "Camera is offline", details);
+        }
+
+        ImouModels.LiveStreamData data;
+        try {
+            data = callWithSingleTokenRefresh(device,
+                token -> imouApiService.getLiveStreamInfo(device.getDeviceSn(), token));
+        } catch (ImouApiException ex) {
+            throw mapLiveProviderError(ex, "CAMERA_STREAM_UNAVAILABLE");
+        }
+
+        ImouModels.LiveStream stream = selectSupportedStream(data);
+        return new CameraLiveStreamResponse(
+            device.getId(), device.getLabel(), "ONLINE", confirmedAt, device.getLastSeenAt(),
+            "HLS", "application/vnd.apple.mpegurl", stream.streamId(), stream.hls());
+    }
+
+    private void expirePrivacyForLiveView(CameraDevice device) {
+        Instant expiresAt = device.getPrivacyModeExpiresAt();
+        if (device.isPrivacyMode() && expiresAt != null && !expiresAt.isAfter(Instant.now())) {
+            device.setPrivacyMode(false);
+            device.setPrivacyModeExpiresAt(null);
+            device.setStatus(CameraDevice.CameraStatus.ONLINE);
+            cameraDeviceRepository.save(device);
+        }
+    }
+
+    private ImouModels.LiveStream selectSupportedStream(ImouModels.LiveStreamData data) {
+        List<ImouModels.LiveStream> streams = data == null || data.streams() == null
+            ? List.of() : data.streams();
+        boolean hasUrl = streams.stream().anyMatch(s -> s != null && s.hls() != null);
+        boolean hasInactiveHls = streams.stream().anyMatch(s -> s != null
+            && !"0".equals(s.status()) && isSupportedHls(s.hls()));
+        return streams.stream()
             .filter(Objects::nonNull)
+            .filter(s -> "0".equals(s.status()))
+            .filter(s -> isSupportedHls(s.hls()))
+            .sorted(Comparator.comparing(s -> s.streamId() == null ? 2 : s.streamId()))
             .findFirst()
-            .orElse("");
-        return Map.of(
-            "status", "ONLINE",
-            "streamUrl", streamUrl,
-            "deviceId", device.getId(),
-            "label", device.getLabel()
-        );
+            .orElseThrow(() -> liveError(
+                hasInactiveHls ? "CAMERA_STREAM_EXPIRED"
+                    : hasUrl ? "CAMERA_UNSUPPORTED_STREAM" : "CAMERA_STREAM_UNAVAILABLE",
+                hasInactiveHls ? HttpStatus.BAD_GATEWAY
+                    : hasUrl ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.BAD_GATEWAY,
+                hasInactiveHls ? "The live stream is no longer active"
+                    : hasUrl ? "No supported HTTPS HLS stream was returned" : "No live stream is available"));
+    }
+
+    private boolean isSupportedHls(String value) {
+        if (value == null || value.isBlank()) return false;
+        try {
+            URI uri = URI.create(value);
+            return "https".equalsIgnoreCase(uri.getScheme())
+                && uri.getPath() != null
+                && uri.getPath().toLowerCase(Locale.ROOT).endsWith(".m3u8");
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private CameraLinkException mapLiveProviderError(ImouApiException ex, String fallbackCode) {
+        return switch (ex.getKind()) {
+            case INVALID_CREDENTIALS -> liveError("IMOU_INVALID_CREDENTIALS", HttpStatus.BAD_GATEWAY,
+                "IMOU credentials are invalid");
+            case UNSUPPORTED_DEVICE -> liveError("CAMERA_UNSUPPORTED_DEVICE",
+                HttpStatus.UNPROCESSABLE_ENTITY, "This camera does not support live viewing");
+            case PROVIDER_UNAVAILABLE -> liveError("IMOU_PROVIDER_UNAVAILABLE",
+                HttpStatus.SERVICE_UNAVAILABLE, "IMOU is temporarily unavailable");
+            default -> liveError(fallbackCode, HttpStatus.BAD_GATEWAY,
+                "The live stream provider could not complete the request");
+        };
+    }
+
+    private <T> T callWithSingleTokenRefresh(CameraDevice device, Function<String, T> operation) {
+        try {
+            return operation.apply(device.getAccessToken());
+        } catch (ImouApiException first) {
+            if (first.getKind() != ImouApiException.Kind.INVALID_CREDENTIALS) throw first;
+            String refreshedToken = imouApiService.getAccessToken();
+            if (refreshedToken == null || refreshedToken.isBlank()) throw first;
+            device.setAccessToken(refreshedToken);
+            device.setTokenRefreshedAt(Instant.now());
+            cameraDeviceRepository.save(device);
+            return operation.apply(refreshedToken);
+        }
+    }
+
+    private CameraLinkException liveError(String code, HttpStatus status, String message) {
+        return new CameraLinkException(code, status, message);
     }
 
     @Transactional
