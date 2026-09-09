@@ -3,6 +3,11 @@ export interface LivePlaybackUi {
   showBuffering: boolean;
 }
 
+export interface LivePlayerControl {
+  pause: () => void;
+  replaceAsync: (source: null) => Promise<void>;
+}
+
 export function getLivePlaybackUi(
   isPlaying: boolean,
   playerStatus: string,
@@ -13,4 +18,10 @@ export function getLivePlaybackUi(
     showBuffering: hasStream && !isPlaying
       && (playerStatus === 'loading' || playerStatus === 'readyToPlay'),
   };
+}
+
+export function stopLivePlayback(player: LivePlayerControl, clearStream: () => void): void {
+  player.pause();
+  void player.replaceAsync(null);
+  clearStream();
 }

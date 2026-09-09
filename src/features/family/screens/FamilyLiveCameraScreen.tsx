@@ -10,7 +10,7 @@ import api from '../../../core/api/client';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useCameraStore } from '../store/cameraStore';
-import { getLivePlaybackUi } from './familyCamera/livePlaybackState';
+import { getLivePlaybackUi, stopLivePlayback } from './familyCamera/livePlaybackState';
 
 type Route = RouteProp<RootStackParamList, 'FamilyLiveCamera'>;
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -29,9 +29,7 @@ export default function FamilyLiveCameraScreen() {
   const [privacyDetected, setPrivacyDetected] = useState(false);
 
   const stopPlayback = useCallback(() => {
-    player.pause();
-    void player.replaceAsync(null);
-    clearLiveStream();
+    stopLivePlayback(player, clearLiveStream);
   }, [clearLiveStream, player]);
 
   const requestFreshStream = useCallback(async () => {
