@@ -19,6 +19,8 @@ interface Props {
   refreshing: boolean;
   onRefresh: () => void;
   onBind: () => void;
+  linkDisabled: boolean;
+  linkDisabledReason: string | null;
   onLiveView: (id: number) => void;
   onSnapshot: () => void;
   onVoiceToggle: (id: number) => void;
@@ -33,6 +35,8 @@ export function CameraList({
   refreshing,
   onRefresh,
   onBind,
+  linkDisabled,
+  linkDisabledReason,
   onLiveView,
   onSnapshot,
   onVoiceToggle,
@@ -54,7 +58,15 @@ export function CameraList({
           <View style={{ height: 6 }} />
           <Text style={styles.emptyDevicesSubtitle}>Liên kết camera Imou để bắt đầu giám sát</Text>
           <View style={{ height: 24 }} />
-          <TouchableOpacity style={styles.linkBtn} onPress={onBind}>
+          {linkDisabled && linkDisabledReason && (
+            <Text style={styles.linkDisabledReason}>{linkDisabledReason}</Text>
+          )}
+          <TouchableOpacity
+            style={[styles.linkBtn, linkDisabled && styles.disabledBtn]}
+            onPress={onBind}
+            disabled={linkDisabled}
+            accessibilityState={{ disabled: linkDisabled }}
+          >
             <Ionicons name="link-outline" size={18} color="#FFFFFF" />
             <Text style={styles.linkBtnText}>Liên kết camera</Text>
           </TouchableOpacity>
@@ -83,7 +95,15 @@ export function CameraList({
           onMenu={() => onMenu(cam.id)}
         />
       ))}
-      <TouchableOpacity style={styles.linkAnotherBtn} onPress={onBind}>
+      {linkDisabled && linkDisabledReason && (
+        <Text style={styles.linkDisabledReason}>{linkDisabledReason}</Text>
+      )}
+      <TouchableOpacity
+        style={[styles.linkAnotherBtn, linkDisabled && styles.disabledBtn]}
+        onPress={onBind}
+        disabled={linkDisabled}
+        accessibilityState={{ disabled: linkDisabled }}
+      >
         <Ionicons name="link-outline" size={18} color={Colors.primary} />
         <Text style={styles.linkAnotherBtnText}>Liên kết camera khác</Text>
       </TouchableOpacity>
@@ -118,4 +138,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   linkAnotherBtnText: { color: Colors.primary, fontSize: 14, fontWeight: '600' },
+  linkDisabledReason: {
+    color: '#92400E',
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  disabledBtn: { opacity: 0.45 },
 });

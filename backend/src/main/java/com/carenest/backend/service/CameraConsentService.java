@@ -6,7 +6,7 @@ import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.ElderlyProfile;
 import com.carenest.backend.entity.FamilyLinkStatus;
 import com.carenest.backend.entity.NotificationType;
-import com.carenest.backend.exception.ConflictException;
+import com.carenest.backend.exception.CameraLinkException;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.CameraDeviceRepository;
 import com.carenest.backend.repository.ElderlyProfileRepository;
@@ -14,6 +14,7 @@ import com.carenest.backend.repository.FamilyLinkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
@@ -71,8 +72,10 @@ public class CameraConsentService {
     public void requireConsent(Long elderlyId) {
         ElderlyProfile profile = elderlyProfileRepository.findByUserIdAndDeletedAtIsNull(elderlyId).orElse(null);
         if (profile == null || profile.getCameraConsentStatus() != CameraConsentStatus.ACCEPTED) {
-            throw new ConflictException(
-                "Camera monitoring has not been consented to for this elderly profile (UC D1)");
+            throw new CameraLinkException(
+                "CAMERA_CONSENT_REQUIRED",
+                HttpStatus.CONFLICT,
+                "The elderly profile must accept camera monitoring before a camera can be linked");
         }
     }
 

@@ -8,6 +8,8 @@ import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useCameraStore } from '../store/cameraStore';
+import { useCameraConsentStore } from '../store/cameraConsentStore';
+import { getCameraLinkAvailability } from '../services/cameraLinking';
 import { LiveHero } from './familyCamera/LiveHero';
 import { Timeline } from './familyCamera/Timeline';
 import { CameraList } from './familyCamera/CameraList';
@@ -38,10 +40,19 @@ export default function CameraScreen() {
   const timeline = useCameraStore((s) => s.timeline);
   const voiceActive = useCameraStore((s) => s.voiceActive);
   const load = useCameraStore((s) => s.load);
+  const consent = useCameraConsentStore((s) => (elderlyId ? s.byElderly[elderlyId] : undefined));
+  const consentLoading = useCameraConsentStore((s) => s.isLoading);
+  const consentError = useCameraConsentStore((s) => s.error);
+  const loadConsent = useCameraConsentStore((s) => s.load);
 
   const [tab, setTab] = useState<0 | 1>(0);
 
-  const actions = useCameraActions(elderlyId);
+  const linkAvailability = getCameraLinkAvailability(consent, consentLoading);
+  const linkReason = consentError ?? linkAvailability.reason;
+  const actions = useCameraActions(elderlyId, {
+    allowed: linkAvailability.allowed,
+    reason: linkReason,
+  });
 
   useMountEffect(() => {
     if (!dashboardData) {
@@ -52,8 +63,9 @@ export default function CameraScreen() {
   useEffect(() => {
     if (elderlyId) {
       load(elderlyId);
+      loadConsent(elderlyId);
     }
-  }, [elderlyId, load]);
+  }, [elderlyId, load, loadConsent]);
 
   const renderError = () => (
     <View style={styles.center}>
@@ -91,6 +103,7 @@ export default function CameraScreen() {
         elderlyName={elderlyName}
         onBack={() => navigation.goBack()}
         onAddCamera={actions.showBindDialog}
+        addCameraDisabled={!linkAvailability.allowed}
       />
 
       {isLoading && cameras.length === 0 ? (
@@ -103,6 +116,12 @@ export default function CameraScreen() {
       ) : (
         <>
           <CameraStatusBar status={status} />
+          {!linkAvailability.allowed && linkReason && (
+            <View style={styles.consentNotice}>
+              <Ionicons name="shield-checkmark-outline" size={18} color="#92400E" />
+              <Text style={styles.consentNoticeText}>{linkReason}</Text>
+            </View>
+          )}
           {cameras.length > 0 && (
             <LiveHero
               cam={cameras[0]}
@@ -128,6 +147,8 @@ export default function CameraScreen() {
                 refreshing={actions.refreshing}
                 onRefresh={actions.onRefreshDevices}
                 onBind={actions.showBindDialog}
+                linkDisabled={!linkAvailability.allowed}
+                linkDisabledReason={linkReason}
                 onLiveView={actions.handleLiveView}
                 onSnapshot={actions.handleSnapshot}
                 onVoiceToggle={(id) => actions.handleVoiceToggle(id, voiceActive)}
@@ -144,10 +165,14 @@ export default function CameraScreen() {
         visible={actions.bindVisible}
         sn={actions.snValue}
         label={actions.labelValue}
+        verificationCode={actions.verificationCode}
         onChangeSn={actions.setSnValue}
         onChangeLabel={actions.setLabelValue}
+        onChangeVerificationCode={actions.setVerificationCode}
         onConfirm={actions.confirmBind}
-        onCancel={() => actions.setBindVisible(false)}
+        onCancel={actions.cancelBind}
+        error={actions.bindError}
+        submitting={actions.isBinding}
       />
 
       <ConfirmUnbindModal
@@ -198,4 +223,13 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   retryBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14.5 },
+  consentNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#FEF3C7',
+  },
+  consentNoticeText: { flex: 1, color: '#92400E', fontSize: 13, lineHeight: 18 },
 });

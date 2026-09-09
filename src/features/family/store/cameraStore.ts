@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import { getStatus, getErrorMessage, isCancelled } from '../../../core/api/errors';
 import {
+  cameraLinkFailure,
+  normalizeCameraLinkInput,
+  type CameraLinkResult,
+} from '../services/cameraLinking';
+import {
   CameraDeviceSchema,
   CameraStatusSchema,
   CameraSnapshotSchema,
@@ -17,6 +22,7 @@ export interface CameraDeviceData {
   privacyMode: boolean;
   motionDetectionEnabled: boolean;
   snapshotSchedule: string;
+  capabilities: string[];
 }
 
 function toCameraDeviceData(c: ReturnType<typeof CameraDeviceSchema.parse>): CameraDeviceData {
@@ -24,10 +30,11 @@ function toCameraDeviceData(c: ReturnType<typeof CameraDeviceSchema.parse>): Cam
     id: c.id,
     label: c.label ?? 'Camera',
     deviceSn: c.deviceSn ?? '',
-    status: c.status ?? 'ONLINE',
+    status: c.status ?? 'OFFLINE',
     privacyMode: c.privacyMode ?? false,
     motionDetectionEnabled: c.motionDetectionEnabled ?? false,
     snapshotSchedule: c.snapshotSchedule ?? '',
+    capabilities: c.capabilities ?? [],
   };
 }
 
@@ -85,6 +92,7 @@ interface CameraState {
   isLoading: boolean;
   error: string | null;
   isProcessing: boolean;
+  linkError: Exclude<CameraLinkResult, { ok: true }> | null;
   status: CameraStatusData;
   cameras: CameraDeviceData[];
   timeline: CameraSnapshotData[];
@@ -92,7 +100,13 @@ interface CameraState {
   voiceActive: boolean;
 
   load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
-  bindCamera: (elderlyId: string, deviceSn: string, label: string) => Promise<boolean>;
+  bindCamera: (
+    elderlyId: string,
+    deviceSn: string,
+    label: string,
+    verificationCode?: string,
+  ) => Promise<CameraLinkResult>;
+  clearLinkError: () => void;
   unbindCamera: (elderlyId: string, deviceId: number) => Promise<boolean>;
   getLiveStream: (deviceId: number) => Promise<string | null>;
   captureSosSnapshot: (elderlyId: string, emergencyEventId?: number) => Promise<string | null>;
@@ -113,6 +127,7 @@ export const useCameraStore = create<CameraState>((set, get) => ({
   isLoading: false,
   error: null,
   isProcessing: false,
+  linkError: null,
   status: DEFAULT_CAMERA_STATUS,
   cameras: [],
   timeline: [],
@@ -151,18 +166,36 @@ export const useCameraStore = create<CameraState>((set, get) => ({
     }
   },
 
-  bindCamera: async (elderlyId, deviceSn, label) => {
-    set({ isProcessing: true });
+  bindCamera: async (elderlyId, deviceSn, label, verificationCode) => {
+    if (get().isProcessing) {
+      return {
+        ok: false,
+        code: 'REQUEST_IN_PROGRESS',
+        message: 'Yêu cầu liên kết đang được xử lý.',
+      };
+    }
+    const input = normalizeCameraLinkInput({ deviceSn, label, verificationCode });
+    set({ isProcessing: true, linkError: null });
     try {
-      await api.post(`/elderly/${elderlyId}/cameras`, { deviceSn, label });
+      const response = await api.post(`/elderly/${elderlyId}/cameras`, input);
+      const parsed = safeParseOne(CameraDeviceSchema, response.data, 'LinkedCamera');
+      if (parsed) {
+        const linked = toCameraDeviceData(parsed);
+        set((state) => ({
+          cameras: [linked, ...state.cameras.filter((camera) => camera.id !== linked.id)],
+        }));
+      }
       await get().load(elderlyId);
-      set({ isProcessing: false });
-      return true;
+      set({ isProcessing: false, linkError: null });
+      return { ok: true };
     } catch (e) {
-      set({ isProcessing: false, error: `Không thể kết nối camera: ${getErrorMessage(e)}` });
-      return false;
+      const failure = cameraLinkFailure(e);
+      set({ isProcessing: false, linkError: failure });
+      return failure;
     }
   },
+
+  clearLinkError: () => set({ linkError: null }),
 
   unbindCamera: async (elderlyId, deviceId) => {
     set({ isProcessing: true });

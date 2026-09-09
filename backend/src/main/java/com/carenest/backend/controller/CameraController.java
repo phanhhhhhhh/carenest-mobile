@@ -2,6 +2,8 @@ package com.carenest.backend.controller;
 
 import com.carenest.backend.dto.camera.CameraConsentResponse;
 import com.carenest.backend.dto.camera.CameraStatusResponse;
+import com.carenest.backend.dto.camera.CameraDeviceResponse;
+import com.carenest.backend.dto.camera.LinkCameraRequest;
 import com.carenest.backend.entity.CameraDevice;
 import com.carenest.backend.entity.CameraSnapshot;
 import com.carenest.backend.service.CameraConsentService;
@@ -12,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -44,17 +47,12 @@ public class CameraController {
 
     @PostMapping("/elderly/{elderlyId}/cameras")
     @PreAuthorize("hasRole('FAMILY') and @authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
-    public ResponseEntity<Map<String, Object>> bindCamera(
+    public ResponseEntity<CameraDeviceResponse> bindCamera(
             @PathVariable Long elderlyId,
-            @RequestBody Map<String, String> body) {
-        String deviceSn = body.get("deviceSn");
-        String label = body.getOrDefault("label", "Camera");
-        CameraDevice device = cameraService.bindCamera(elderlyId, deviceSn, label);
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "id", device.getId(),
-                "deviceSn", device.getDeviceSn(),
-                "label", device.getLabel(),
-                "status", device.getStatus().name()));
+            @Valid @RequestBody LinkCameraRequest body) {
+        CameraDevice device = cameraService.bindCamera(
+            elderlyId, body.deviceSn(), body.label(), body.verificationCode());
+        return ResponseEntity.status(HttpStatus.CREATED).body(CameraDeviceResponse.from(device));
     }
 
     @DeleteMapping("/cameras/{deviceId}")
@@ -66,17 +64,9 @@ public class CameraController {
 
     @GetMapping("/elderly/{elderlyId}/cameras")
     @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
-    public ResponseEntity<List<Map<String, Object>>> listCameras(@PathVariable Long elderlyId) {
+    public ResponseEntity<List<CameraDeviceResponse>> listCameras(@PathVariable Long elderlyId) {
         List<CameraDevice> cameras = cameraService.getCamerasForElderly(elderlyId);
-        return ResponseEntity.ok(cameras.stream().map(c -> Map.<String, Object>of(
-                "id", c.getId(),
-                "label", c.getLabel(),
-                "deviceSn", c.getDeviceSn(),
-                "status", c.getStatus().name(),
-                "privacyMode", c.isPrivacyMode(),
-                "motionDetectionEnabled", c.isMotionDetectionEnabled(),
-                "snapshotSchedule", c.getSnapshotSchedule() != null ? c.getSnapshotSchedule() : ""))
-                .collect(Collectors.toList()));
+        return ResponseEntity.ok(cameras.stream().map(CameraDeviceResponse::from).toList());
     }
 
     @GetMapping("/cameras/{deviceId}/live")

@@ -338,7 +338,9 @@ Full API docs: `http://localhost:8082/swagger-ui.html` (when backend is running)
 | `GOOGLE_FIT_CLIENT_ID` / `GOOGLE_FIT_CLIENT_SECRET` | (empty) | For Google Fit |
 | `VNPAY_TMN_CODE` / `VNPAY_HASH_SECRET` | (empty) | For VNPay payment |
 | `MOMO_PARTNER_CODE` / `MOMO_ACCESS_KEY` / `MOMO_SECRET_KEY` | (empty) | For MoMo payment |
-| `IMOU_APP_ID` / `IMOU_APP_SECRET` | (empty) | For camera features |
+| `IMOU_ENABLED` | `false` | Set `true` to enable IMOU camera linking |
+| `IMOU_API_BASE_URL` | `https://openapi-sg.easy4ip.com:443` | Must match the developer account's IMOU data center |
+| `IMOU_APP_ID` / `IMOU_APP_SECRET` | (empty) | Backend-only IMOU credentials; see [D2 setup and smoke test](CAMERA_D2_SETUP.md) |
 
 ### React Native / Expo (`.env`)
 
