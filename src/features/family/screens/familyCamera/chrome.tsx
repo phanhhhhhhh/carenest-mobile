@@ -8,12 +8,10 @@ export function CameraAppBar({
   elderlyName,
   onBack,
   onAddCamera,
-  addCameraDisabled = false,
 }: {
   elderlyName: string;
   onBack: () => void;
   onAddCamera?: () => void;
-  addCameraDisabled?: boolean;
 }) {
   return (
     <View style={styles.appBar}>
@@ -33,13 +31,7 @@ export function CameraAppBar({
         </View>
       </View>
       {onAddCamera && (
-        <TouchableOpacity
-          style={[styles.addBtn, addCameraDisabled && styles.addBtnDisabled]}
-          onPress={onAddCamera}
-          activeOpacity={0.85}
-          disabled={addCameraDisabled}
-          accessibilityState={{ disabled: addCameraDisabled }}
-        >
+        <TouchableOpacity style={styles.addBtn} onPress={onAddCamera} activeOpacity={0.85}>
           <Ionicons name="add" size={18} color="#FFFFFF" />
           <Text style={styles.addBtnText}>Thêm Camera</Text>
         </TouchableOpacity>
@@ -159,7 +151,6 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   addBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  addBtnDisabled: { opacity: 0.45 },
 
   statusBar: {
     flexDirection: 'row',

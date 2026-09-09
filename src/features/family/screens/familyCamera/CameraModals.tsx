@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../../../core/theme/colors';
 
@@ -15,34 +7,21 @@ export function BindCameraModal({
   visible,
   sn,
   label,
-  verificationCode,
   onChangeSn,
   onChangeLabel,
-  onChangeVerificationCode,
   onCancel,
   onConfirm,
-  error,
-  submitting,
 }: {
   visible: boolean;
   sn: string;
   label: string;
-  verificationCode: string;
   onChangeSn: (v: string) => void;
   onChangeLabel: (v: string) => void;
-  onChangeVerificationCode: (v: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
-  error: string | null;
-  submitting: boolean;
 }) {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={submitting ? undefined : onCancel}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.dialogOverlay}>
         <View style={styles.dialog}>
           <Text style={styles.dialogTitle}>Liên kết camera</Text>
@@ -57,66 +36,27 @@ export function BindCameraModal({
               placeholderTextColor={Colors.textHint}
               value={sn}
               onChangeText={onChangeSn}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={64}
-              editable={!submitting}
             />
           </View>
-          <View style={{ height: 12 }} />
-          <View style={styles.inputWrap}>
-            <Ionicons name="key-outline" size={18} color={Colors.primary} />
-            <TextInput
-              style={styles.input}
-              placeholder="Mã bảo mật (nếu có trên nhãn camera)"
-              placeholderTextColor={Colors.textHint}
-              value={verificationCode}
-              onChangeText={onChangeVerificationCode}
-              maxLength={128}
-              editable={!submitting}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-          <Text style={styles.securityHint}>
-            Mã chỉ được dùng cho lần liên kết này và không được lưu trên điện thoại.
-          </Text>
           <View style={{ height: 12 }} />
           <View style={styles.inputWrap}>
             <Ionicons name="pricetag-outline" size={18} color={Colors.primary} />
             <TextInput
               style={styles.input}
-              placeholder="Tên phòng (VD: Phòng khách)"
+              placeholder="Nhãn (tùy chọn) (VD: Phòng khách)"
               placeholderTextColor={Colors.textHint}
               value={label}
               onChangeText={onChangeLabel}
-              maxLength={100}
-              editable={!submitting}
             />
           </View>
-          {error && <Text style={styles.inputError}>{error}</Text>}
           <View style={{ height: 20 }} />
           <View style={styles.dialogActions}>
-            <TouchableOpacity
-              style={styles.dialogCancelBtn}
-              onPress={onCancel}
-              disabled={submitting}
-            >
+            <TouchableOpacity style={styles.dialogCancelBtn} onPress={onCancel}>
               <Text style={styles.dialogCancelText}>Hủy</Text>
             </TouchableOpacity>
             <View style={{ width: 8 }} />
-            <TouchableOpacity
-              style={[styles.dialogApplyBtn, submitting && styles.disabledBtn]}
-              onPress={onConfirm}
-              disabled={submitting}
-              accessibilityState={{ disabled: submitting, busy: submitting }}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.dialogApplyText}>Liên kết</Text>
-              )}
+            <TouchableOpacity style={styles.dialogApplyBtn} onPress={onConfirm}>
+              <Text style={styles.dialogApplyText}>Liên kết</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -259,9 +199,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   input: { flex: 1, paddingVertical: 12, fontSize: 14, color: Colors.textPrimary },
-  inputError: { color: Colors.error, fontSize: 13, lineHeight: 18, marginTop: 10 },
-  securityHint: { color: Colors.textSecondary, fontSize: 11.5, lineHeight: 16, marginTop: 6 },
-  disabledBtn: { opacity: 0.6 },
   menuOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.15)',

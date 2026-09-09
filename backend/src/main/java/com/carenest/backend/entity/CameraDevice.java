@@ -79,10 +79,6 @@ public class CameraDevice {
     @Column(length = 100)
     private String snapshotSchedule;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    @Builder.Default
-    private String capabilities = "";
-
     @CreationTimestamp
     @Column(updatable = false)
     private Instant createdAt;
