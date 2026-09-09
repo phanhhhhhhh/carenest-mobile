@@ -173,7 +173,7 @@ export function AddFamilyCard({ onPress }: { onPress: () => void }) {
       <View style={styles.addFamilyText}>
         <Text style={styles.addFamilyTitle}>Thêm thành viên gia đình</Text>
         <Text style={styles.addFamilySubtitle}>
-          Kết nối với tài khoản người cao tuổi bằng số điện thoại
+          Gửi yêu cầu bằng số điện thoại — chỉ kết nối sau khi người cao tuổi đồng ý
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
@@ -190,7 +190,7 @@ export function ScanQRCard({ onPress }: { onPress: () => void }) {
       <View style={styles.addFamilyText}>
         <Text style={styles.scanQRTitle}>Quét mã QR kết nối</Text>
         <Text style={styles.addFamilySubtitle}>
-          Quét mã QR từ màn hình điện thoại của người thân
+          Người cao tuổi chủ động tạo mã — kết nối ngay sau khi quét
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color="#059669" />

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
-import { getErrorMessage, getStatus, getResponseData, isCancelled } from '../../../core/api/errors';
+import { getErrorMessage, getStatus, isCancelled } from '../../../core/api/errors';
+import { getLinkingFailure, type LinkingFailureKind } from '../services/linkingError';
 import type { ElderlySummary, HealthMetric, AppointmentItem } from '../../../shared/types';
 import {
   FamilyLinkSchema,
@@ -191,6 +192,7 @@ export interface UserLookupResult {
 interface FamilyLinkState {
   isLoading: boolean;
   error: string | null;
+  errorKind: LinkingFailureKind | null;
   success: boolean;
 
   sendLinkRequest: (elderlyId: string, customFamilyId?: string) => Promise<boolean>;
@@ -200,14 +202,15 @@ interface FamilyLinkState {
 export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
   isLoading: false,
   error: null,
+  errorKind: null,
   success: false,
 
   sendLinkRequest: async (elderlyId, customFamilyId) => {
-    set({ isLoading: true, error: null, success: false });
+    set({ isLoading: true, error: null, errorKind: null, success: false });
     try {
       const currentUserId = await storage.getUserId();
       if (!currentUserId) {
-        set({ isLoading: false, error: 'Chưa đăng nhập' });
+        set({ isLoading: false, error: 'Chưa đăng nhập', errorKind: 'forbidden' });
         return false;
       }
       const familyId = customFamilyId ?? currentUserId;
@@ -219,29 +222,33 @@ export const useFamilyLinkStore = create<FamilyLinkState>((set) => ({
       set({ isLoading: false, success: true });
       return true;
     } catch (e) {
-      const data = getResponseData(e) as Record<string, unknown> | undefined;
-      if (data) {
-        const msg = String(data.error ?? data.message ?? 'Không thể gửi yêu cầu');
-        set({ isLoading: false, error: msg });
-      } else {
-        set({ isLoading: false, error: 'Lỗi kết nối' });
-      }
+      const failure = getLinkingFailure(e, 'request');
+      set({ isLoading: false, error: failure.message, errorKind: failure.kind });
       return false;
     }
   },
 
   lookupUserByPhone: async (phone) => {
+    set({ isLoading: true, error: null, errorKind: null, success: false });
     try {
       const resp = await api.get(`/users/by-phone/${phone}`);
       if (resp.data && resp.data.id != null) {
+        set({ isLoading: false });
         return {
           id: String(resp.data.id),
           name: String(resp.data.name ?? ''),
           role: String(resp.data.role ?? 'ELDERLY'),
         };
       }
+      set({ isLoading: false });
       return null;
-    } catch {
+    } catch (e) {
+      const failure = getLinkingFailure(e, 'lookup');
+      if (failure.kind === 'not_found') {
+        set({ isLoading: false });
+        return null;
+      }
+      set({ isLoading: false, error: failure.message, errorKind: failure.kind });
       return null;
     }
   },

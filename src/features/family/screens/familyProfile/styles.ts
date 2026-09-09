@@ -261,6 +261,16 @@ export const styles = StyleSheet.create({
   },
   dialogTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
   dialogBody: { color: '#64748B', fontSize: 13.5, lineHeight: 20, marginTop: 6 },
+  consentNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 14,
+  },
+  consentNoticeText: { flex: 1, color: '#065F46', fontSize: 13, lineHeight: 19 },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',

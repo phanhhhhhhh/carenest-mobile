@@ -22,6 +22,9 @@ export function ScanOverlay() {
       </View>
       <View style={styles.overlayBottom}>
         <Text style={styles.scanHint}>Đưa mã QR vào khung để quét</Text>
+        <Text style={styles.consentHint}>
+          Chỉ quét mã do người cao tuổi chủ động tạo. Kết nối sẽ được kích hoạt ngay.
+        </Text>
       </View>
     </View>
   );
@@ -35,6 +38,15 @@ const styles = StyleSheet.create({
   overlayBottom: { flex: 1, backgroundColor: OVERLAY_COLOR, alignItems: 'center', paddingTop: 24 },
   scanFrame: { width: FRAME_SIZE, height: FRAME_SIZE, position: 'relative' },
   scanHint: { color: '#FFFFFF', fontSize: 14, fontWeight: '500', opacity: 0.9 },
+  consentHint: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    lineHeight: 18,
+    opacity: 0.8,
+    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 32,
+  },
   corner: {
     position: 'absolute',
     width: CORNER_SIZE,

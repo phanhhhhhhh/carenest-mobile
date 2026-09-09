@@ -99,34 +99,65 @@ export default function FamilyProfileScreen() {
     } else if (!normalized.startsWith('+')) {
       normalized = `+84${normalized}`;
     }
-    const targetUser = await lookupUserByPhone(normalized);
 
-    if (targetUser == null) {
-      Alert.alert('', 'Không tìm thấy người dùng với số điện thoại này');
+    if (!/^\+\d{8,15}$/.test(normalized)) {
+      Alert.alert('', 'Số điện thoại không hợp lệ. Vui lòng kiểm tra và thử lại.');
       return;
     }
 
-    let ok = false;
-    if (targetUser.role === 'FAMILY') {
-      if (!selectedElderly?.elderlyId) {
-        Alert.alert('', 'Vui lòng chọn người cao tuổi muốn kết nối trước');
-        return;
-      }
-      ok = await sendLinkRequest(String(selectedElderly.elderlyId), targetUser.id);
-    } else {
-      ok = await sendLinkRequest(targetUser.id);
+    const targetUser = await lookupUserByPhone(normalized);
+
+    if (targetUser == null) {
+      const lookupError = useFamilyLinkStore.getState().error;
+      Alert.alert('', lookupError || 'Không tìm thấy tài khoản CareNest với số điện thoại này.');
+      return;
     }
 
-    setAddDialogVisible(false);
-    const freshError = useFamilyLinkStore.getState().error;
-    Alert.alert('', ok ? 'Đã gửi yêu cầu kết nối!' : freshError || 'Không thể gửi yêu cầu');
-    if (ok) {
-      loadDashboard();
-      usePaymentStore.getState().load();
-      if (selectedElderly?.elderlyId) {
-        loadFamilyMembers(String(selectedElderly.elderlyId));
-      }
+    const elderlyId = targetUser.role === 'FAMILY' ? selectedElderly?.elderlyId : targetUser.id;
+    if (!elderlyId) {
+      Alert.alert('', 'Vui lòng chọn người cao tuổi muốn kết nối trước.');
+      return;
     }
+
+    Alert.alert(
+      'Gửi yêu cầu kết nối?',
+      `Bạn đang gửi yêu cầu liên kết với ${targetUser.name || normalized}. Người cao tuổi sẽ phải đồng ý trước khi CareNest chia sẻ dữ liệu chăm sóc.`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Gửi yêu cầu',
+          onPress: async () => {
+            const ok = await sendLinkRequest(
+              String(elderlyId),
+              targetUser.role === 'FAMILY' ? targetUser.id : undefined,
+            );
+            const { error, errorKind } = useFamilyLinkStore.getState();
+
+            if (!ok) {
+              Alert.alert(
+                errorKind === 'premium_required' ? 'Đã đạt giới hạn gói' : 'Không thể gửi yêu cầu',
+                error || 'Vui lòng thử lại.',
+                errorKind === 'premium_required'
+                  ? [
+                      { text: 'Để sau', style: 'cancel' },
+                      { text: 'Xem Premium', onPress: () => navigation.navigate('PremiumPlans') },
+                    ]
+                  : undefined,
+              );
+              return;
+            }
+
+            setAddDialogVisible(false);
+            setPhoneInput('');
+            Alert.alert(
+              'Đã gửi yêu cầu',
+              'Kết nối đang chờ người cao tuổi đồng ý. CareNest sẽ chỉ hiển thị dữ liệu sau khi yêu cầu được chấp nhận.',
+            );
+            usePaymentStore.getState().load();
+          },
+        },
+      ],
+    );
   };
 
   return (

@@ -28,6 +28,12 @@ export function AddFamilyDialog({
           <Text style={styles.dialogBody}>
             Nhập số điện thoại của người cao tuổi hoặc người thân cùng chăm sóc để kết nối.
           </Text>
+          <View style={styles.consentNotice}>
+            <Ionicons name="shield-checkmark-outline" size={20} color="#047857" />
+            <Text style={styles.consentNoticeText}>
+              Người cao tuổi sẽ nhận yêu cầu và phải đồng ý trước khi dữ liệu chăm sóc được chia sẻ.
+            </Text>
+          </View>
           <View style={{ height: 16 }} />
           <View style={styles.inputWrap}>
             <Ionicons name="call" size={18} color={Colors.primary} style={styles.inputIcon} />
@@ -36,6 +42,8 @@ export function AddFamilyDialog({
               placeholder="VD: 0912345678"
               placeholderTextColor={Colors.textHint}
               keyboardType="phone-pad"
+              autoComplete="tel"
+              textContentType="telephoneNumber"
               value={phone}
               onChangeText={onChangePhone}
             />
