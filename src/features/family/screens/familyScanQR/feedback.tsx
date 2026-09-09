@@ -50,10 +50,12 @@ export function ErrorView({
   message,
   onRetry,
   onCancel,
+  onUpgrade,
 }: {
   message: string;
   onRetry: () => void;
   onCancel: () => void;
+  onUpgrade?: () => void;
 }) {
   return (
     <View style={styles.feedbackContainer}>
@@ -62,9 +64,9 @@ export function ErrorView({
       </View>
       <Text style={styles.feedbackTitle}>Kết nối thất bại</Text>
       <Text style={styles.feedbackBody}>{message}</Text>
-      <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-        <Ionicons name="refresh" size={18} color="#FFFFFF" />
-        <Text style={styles.retryBtnText}> Thử lại</Text>
+      <TouchableOpacity style={styles.retryBtn} onPress={onUpgrade ?? onRetry}>
+        <Ionicons name={onUpgrade ? 'sparkles' : 'refresh'} size={18} color="#FFFFFF" />
+        <Text style={styles.retryBtnText}>{onUpgrade ? ' Xem gói Premium' : ' Thử lại'}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.cancelLink} onPress={onCancel}>
         <Text style={styles.cancelLinkText}>Hủy</Text>

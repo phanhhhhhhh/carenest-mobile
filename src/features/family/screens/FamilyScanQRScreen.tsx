@@ -2,21 +2,26 @@ import React, { useCallback, useRef, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Colors } from '../../../core/theme/colors';
 import { redeemInviteToken } from '../../../core/api/inviteApi';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+import { getLinkingFailure, type LinkingFailureKind } from '../services/linkingError';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { ScanHeader } from './familyScanQR/ScanHeader';
 import { ScanOverlay } from './familyScanQR/ScanOverlay';
 import { PermissionDenied, LoadingView, SuccessView, ErrorView } from './familyScanQR/feedback';
 
 type ScanState = 'scanning' | 'loading' | 'success' | 'error';
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function FamilyScanQRScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<Nav>();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('scanning');
   const [message, setMessage] = useState('');
+  const [errorKind, setErrorKind] = useState<LinkingFailureKind | null>(null);
   const [linkedName, setLinkedName] = useState('');
   const scannedRef = useRef(false);
 
@@ -38,12 +43,9 @@ export default function FamilyScanQRScreen() {
         // Refresh family dashboard so the new link shows up immediately
         refreshDashboard();
       } catch (e: unknown) {
-        const msg =
-          (e as { response?: { data?: { message?: string; error?: string } } })?.response?.data
-            ?.message ??
-          (e as { response?: { data?: { error?: string } } })?.response?.data?.error ??
-          'Mã QR không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.';
-        setMessage(msg);
+        const failure = getLinkingFailure(e, 'qr');
+        setMessage(failure.message);
+        setErrorKind(failure.kind);
         setScanState('error');
       }
     },
@@ -53,6 +55,7 @@ export default function FamilyScanQRScreen() {
   const reset = () => {
     scannedRef.current = false;
     setMessage('');
+    setErrorKind(null);
     setScanState('scanning');
   };
 
@@ -101,7 +104,16 @@ export default function FamilyScanQRScreen() {
         {scanState === 'success' && <SuccessView linkedName={linkedName} onDone={handleDone} />}
 
         {scanState === 'error' && (
-          <ErrorView message={message} onRetry={reset} onCancel={handleDone} />
+          <ErrorView
+            message={message}
+            onRetry={reset}
+            onCancel={handleDone}
+            onUpgrade={
+              errorKind === 'premium_required'
+                ? () => navigation.navigate('PremiumPlans')
+                : undefined
+            }
+          />
         )}
       </View>
     </SafeAreaView>
