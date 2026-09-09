@@ -189,4 +189,22 @@ describe('D3 live view', () => {
     expect(useCameraStore.getState().liveStreamUrl).toBeNull();
     expect(useCameraStore.getState().liveView.phase).toBe('idle');
   });
+
+  it('clears the URL and exposes a retryable state when native playback fails', () => {
+    useCameraStore.setState({
+      liveStreamUrl: liveResponse.streamUrl,
+      liveView: {
+        phase: 'ready', message: null, stream: {
+          cameraId: 42, label: 'Room', streamUrl: liveResponse.streamUrl,
+          confirmedAt: liveResponse.confirmedAt, lastSeenAt: null,
+        }, lastSeenAt: null,
+      },
+    });
+
+    useCameraStore.getState().failLivePlayback();
+
+    expect(useCameraStore.getState().liveStreamUrl).toBeNull();
+    expect(useCameraStore.getState().liveView.phase).toBe('streamError');
+    expect(JSON.stringify(useCameraStore.getState())).not.toContain(liveResponse.streamUrl);
+  });
 });

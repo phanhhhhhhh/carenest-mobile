@@ -10,6 +10,7 @@ import api from '../../../core/api/client';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { Colors } from '../../../core/theme/colors';
 import { useCameraStore } from '../store/cameraStore';
+import { getLivePlaybackUi } from './familyCamera/livePlaybackState';
 
 type Route = RouteProp<RootStackParamList, 'FamilyLiveCamera'>;
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -20,6 +21,7 @@ export default function FamilyLiveCameraScreen() {
   const liveView = useCameraStore((state) => state.liveView);
   const getLiveStream = useCameraStore((state) => state.getLiveStream);
   const clearLiveStream = useCameraStore((state) => state.clearLiveStream);
+  const failLivePlayback = useCameraStore((state) => state.failLivePlayback);
   const load = useCameraStore((state) => state.load);
   const player = useVideoPlayer(null);
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
@@ -51,8 +53,19 @@ export default function FamilyLiveCameraScreen() {
       uri: stream.streamUrl,
       contentType: 'hls',
       useCaching: false,
-    }).then(() => player.play()).catch(stopPlayback);
-  }, [liveView.stream, player, stopPlayback]);
+    }).then(() => player.play()).catch(() => {
+      player.pause();
+      void player.replaceAsync(null);
+      failLivePlayback();
+    });
+  }, [failLivePlayback, liveView.stream, player]);
+
+  useEffect(() => {
+    if (playerStatus !== 'error') return;
+    player.pause();
+    void player.replaceAsync(null);
+    failLivePlayback();
+  }, [failLivePlayback, player, playerStatus]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -78,8 +91,8 @@ export default function FamilyLiveCameraScreen() {
   }, [cameraId, liveView.stream, stopPlayback]);
 
   const phase = privacyDetected ? 'privacy' : liveView.phase;
-  const buffering = liveView.stream != null && !isPlaying
-    && (playerStatus === 'loading' || playerStatus === 'readyToPlay');
+  const playbackUi = getLivePlaybackUi(isPlaying, playerStatus, liveView.stream != null);
+  const buffering = playbackUi.showBuffering;
   const message = privacyDetected ? 'Người thân đang bật Chế độ riêng tư.' : liveView.message;
 
   return (
@@ -101,7 +114,7 @@ export default function FamilyLiveCameraScreen() {
         {liveView.stream && phase === 'ready' ? (
           <VideoView player={player} style={styles.video} nativeControls={false} />
         ) : null}
-        {isPlaying && (
+        {playbackUi.showLiveBadge && (
           <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
             <Text style={styles.liveText}>TRỰC TIẾP</Text>

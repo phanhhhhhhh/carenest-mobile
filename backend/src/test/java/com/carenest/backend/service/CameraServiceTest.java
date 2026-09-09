@@ -369,6 +369,22 @@ class CameraServiceTest {
         assertThat(camera.getAccessToken()).isEqualTo("At_fresh");
     }
 
+    @Test
+    void providerFailureDuringStreamRetrievalDoesNotMarkCameraOffline() {
+        CameraDevice camera = liveCamera();
+        when(cameraRepository.findById(42L)).thenReturn(Optional.of(camera));
+        allowLiveAccess();
+        when(imou.deviceOnline("ABC123", "At_token"))
+            .thenReturn(new ImouModels.DeviceOnlineData("ABC123", "1", List.of()));
+        when(imou.getLiveStreamInfo("ABC123", "At_token")).thenThrow(new ImouApiException(
+            ImouApiException.Kind.PROVIDER_UNAVAILABLE, "OP1010", "down"));
+
+        assertLiveCode("IMOU_PROVIDER_UNAVAILABLE");
+
+        assertThat(camera.getStatus()).isEqualTo(CameraDevice.CameraStatus.ONLINE);
+        verify(cameraRepository).save(camera);
+    }
+
     private void assertLiveCode(String code) {
         assertThatThrownBy(() -> service.getLiveStream(42L, 7L))
             .isInstanceOfSatisfying(CameraLinkException.class,

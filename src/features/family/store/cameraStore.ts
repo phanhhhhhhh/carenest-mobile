@@ -171,6 +171,7 @@ interface CameraState {
   ) => Promise<boolean>;
   controlPtz: (deviceId: number, direction: string) => Promise<boolean>;
   clearLiveStream: () => void;
+  failLivePlayback: () => void;
   refresh: (elderlyId: string) => void;
 }
 
@@ -374,6 +375,16 @@ export const useCameraStore = create<CameraState>((set, get) => ({
   },
 
   clearLiveStream: () => set({ liveStreamUrl: null, liveView: EMPTY_LIVE_VIEW }),
+
+  failLivePlayback: () => set({
+    liveStreamUrl: null,
+    liveView: {
+      phase: 'streamError',
+      message: 'Luồng video bị gián đoạn. Hãy thử lại để lấy luồng mới.',
+      stream: null,
+      lastSeenAt: null,
+    },
+  }),
 
   refresh: (elderlyId) => {
     get().load(elderlyId);
