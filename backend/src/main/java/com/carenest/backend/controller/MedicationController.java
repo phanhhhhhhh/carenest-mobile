@@ -3,6 +3,9 @@ package com.carenest.backend.controller;
 import com.carenest.backend.dto.medication.MedicationDraftResponse;
 import com.carenest.backend.dto.medication.MedicationRequest;
 import com.carenest.backend.dto.medication.MedicationResponse;
+import com.carenest.backend.dto.medication.VoiceUploadSignatureRequest;
+import com.carenest.backend.dto.medication.VoiceUploadSignatureResponse;
+import com.carenest.backend.service.CloudinarySignatureService;
 import com.carenest.backend.service.MedicationService;
 import com.carenest.backend.service.MedicationVoiceService;
 import jakarta.validation.Valid;
@@ -33,6 +36,7 @@ public class MedicationController {
 
     private final MedicationService medicationService;
     private final MedicationVoiceService medicationVoiceService;
+    private final CloudinarySignatureService cloudinarySignatureService;
 
     private static final long MAX_AUDIO_SIZE = 10 * 1024 * 1024;
 
@@ -84,5 +88,20 @@ public class MedicationController {
         String mime = audio.getContentType() != null ? audio.getContentType() : "audio/webm";
         MedicationDraftResponse draft = medicationVoiceService.parseFromAudio(audio.getBytes(), mime);
         return ResponseEntity.ok(draft);
+    }
+
+    /**
+     * Signs a direct-to-Cloudinary upload of a reminder voice clip (UC B1). The
+     * app posts the audio to Cloudinary itself; this only hands it a signature,
+     * so the Cloudinary api secret stays server-side instead of being bundled
+     * into the APK as an unsigned upload preset.
+     */
+    @PostMapping("/medications/voice-upload-signature")
+    @PreAuthorize("hasRole('FAMILY') and @authz.isOwnerOrLinkedFamily(authentication.principal, #request.elderlyId)")
+    public ResponseEntity<VoiceUploadSignatureResponse> voiceUploadSignature(
+        @Valid @RequestBody VoiceUploadSignatureRequest request
+    ) {
+        return ResponseEntity.ok(
+            cloudinarySignatureService.signVoiceUpload(request.getElderlyId()));
     }
 }

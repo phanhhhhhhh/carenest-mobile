@@ -57,7 +57,7 @@ public class CameraController {
     }
 
     @DeleteMapping("/cameras/{deviceId}")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
+    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Void> unbindCamera(@PathVariable Long deviceId) {
         cameraService.unbindCamera(deviceId);
         return ResponseEntity.noContent().build();
@@ -120,7 +120,7 @@ public class CameraController {
     }
 
     @PutMapping("/cameras/{deviceId}/motion-detection")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
+    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Map<String, Object>> configureMotionDetection(
             @PathVariable Long deviceId,
             @RequestBody Map<String, String> body) {
@@ -136,19 +136,19 @@ public class CameraController {
     }
 
     @PostMapping("/cameras/{deviceId}/voice/start")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
+    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Map<String, Object>> startVoiceCall(@PathVariable Long deviceId) {
         return ResponseEntity.ok(cameraService.startTwoWayAudio(deviceId));
     }
 
     @PostMapping("/cameras/{deviceId}/voice/stop")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
+    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Map<String, Object>> stopVoiceCall(@PathVariable Long deviceId) {
         return ResponseEntity.ok(cameraService.stopTwoWayAudio(deviceId));
     }
 
     @PostMapping("/cameras/{deviceId}/ptz")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
+    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Map<String, Object>> controlPtz(
             @PathVariable Long deviceId,
             @RequestBody Map<String, String> body) {
@@ -156,8 +156,13 @@ public class CameraController {
         return ResponseEntity.ok(cameraService.controlPtz(deviceId, direction));
     }
 
+    /**
+     * Privacy Mode is the elderly person's own control over being watched, so a
+     * linked family member must not be able to switch it off for them — ELDERLY
+     * role required on top of the camera-access check.
+     */
     @PostMapping("/cameras/{deviceId}/privacy")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ELDERLY') and @authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Map<String, Object>> togglePrivacy(
             @PathVariable Long deviceId,
             @RequestBody Map<String, Object> body) {
@@ -168,7 +173,7 @@ public class CameraController {
     }
 
     @GetMapping("/cameras/{deviceId}/status")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId) or hasRole('ADMIN')")
+    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Map<String, Object>> getStatus(@PathVariable Long deviceId) {
         return ResponseEntity.ok(cameraService.getCameraStatus(deviceId));
     }

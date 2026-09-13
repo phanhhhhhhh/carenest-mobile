@@ -94,6 +94,23 @@ export async function initializePushNotifications(): Promise<void> {
   }
 }
 
+/**
+ * Re-binds this device's push token to whoever is signed in now. The token is
+ * registered per user server-side, so it must be re-sent on every login: the
+ * one-time `initializePushNotifications()` at app start runs before a session
+ * exists (no user id yet -> no-op), and after logout -> login as another
+ * account the token would otherwise still point at the previous user.
+ */
+export async function syncPushTokenWithBackend(): Promise<void> {
+  if (Platform.OS === 'web' || !Device.isDevice) return;
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return;
+    const { data: token } = await Notifications.getDevicePushTokenAsync();
+    await registerTokenWithBackend(token);
+  } catch {}
+}
+
 async function registerTokenWithBackend(token: string): Promise<void> {
   try {
     const userId = await getUserId();

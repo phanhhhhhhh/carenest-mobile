@@ -15,9 +15,15 @@ import java.util.Optional;
 @Repository
 public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
 
-    Optional<Subscription> findByUserIdAndStatus(Long userId, Subscription.SubscriptionStatus status);
+    // Nothing enforces one ACTIVE subscription per user at the DB level, so a second
+    // ACTIVE row (e.g. a renewal race) used to blow up a plain Optional-returning
+    // derived query with IncorrectResultSizeDataAccessException — a permanent 500 for
+    // that user. Take the longest-running one instead of assuming uniqueness.
 
-    Optional<Subscription> findByUserIdAndStatusAndPlanTypeIn(
+    Optional<Subscription> findTopByUserIdAndStatusOrderByEndDateDesc(
+        Long userId, Subscription.SubscriptionStatus status);
+
+    Optional<Subscription> findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
         Long userId,
         Subscription.SubscriptionStatus status,
         List<Subscription.PlanType> planTypes

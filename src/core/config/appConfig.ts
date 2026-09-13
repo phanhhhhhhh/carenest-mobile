@@ -13,12 +13,4 @@ export const AppConfig = {
     if (envUrl && envUrl.length > 0) return envUrl;
     return defaultBaseUrl();
   },
-
-  /** Cloudinary unsigned upload — only wired for the custom medication reminder voice. */
-  get cloudinary(): { cloudName: string; uploadPreset: string } | null {
-    const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-    if (!cloudName || !uploadPreset) return null;
-    return { cloudName, uploadPreset };
-  },
 } as const;

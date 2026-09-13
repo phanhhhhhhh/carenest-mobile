@@ -57,6 +57,20 @@ public class Subscription {
     @Column(updatable = false)
     private Instant createdAt;
 
+    /**
+     * Optimistic lock (V48). Manual VietQR reconciliation (confirm/reject) is a
+     * check-then-act sequence on this row with no pessimistic lock; without a
+     * version column, two concurrent requests for the same txnRef (two operators,
+     * or a retried double-submit) can both pass their check and the later commit
+     * silently overwrites the earlier one (lost update — e.g. a just-activated
+     * subscription silently flipped back to CANCELLED). With @Version, the loser
+     * gets an ObjectOptimisticLockingFailureException (mapped to 409) instead of
+     * silent corruption.
+     */
+    @Version
+    @Builder.Default
+    private Long version = 0L;
+
     public enum PlanType {
         FREE, PREMIUM_MONTHLY, PREMIUM_YEARLY, PRO_MONTHLY, PRO_YEARLY
     }

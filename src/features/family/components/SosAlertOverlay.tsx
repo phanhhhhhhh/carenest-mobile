@@ -86,17 +86,22 @@ export default function SosAlertOverlay() {
   const handleCallEmergencyServices = async () => {
     if (!alert) return;
     setCalling(true);
+    // Dialling comes first and is never gated on the audit log: a backend
+    // outage during a real emergency must not turn this tap into a no-op.
+    try {
+      await Linking.openURL('tel:115');
+    } catch (e) {
+      console.warn('[SosAlertOverlay.handleCallEmergencyServices] dial', e);
+    }
     try {
       await logEmergencyCall(alert.elderlyId, alert.id);
       setAlert((prev) =>
         prev ? { ...prev, emergencyCallLoggedAt: new Date().toISOString() } : null,
       );
-      await Linking.openURL('tel:115');
     } catch (e) {
-      console.warn('[SosAlertOverlay.handleCallEmergencyServices]', e);
-    } finally {
-      setCalling(false);
+      console.warn('[SosAlertOverlay.handleCallEmergencyServices] log', e);
     }
+    setCalling(false);
   };
 
   if (!alert) return null;
