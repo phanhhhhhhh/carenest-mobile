@@ -29,11 +29,13 @@ import { ElderlyCard } from './familyDashboard/ElderlyCard';
 import { TodayMedsCard } from './familyDashboard/TodayMedsCard';
 import { DashboardCameraCard } from './familyDashboard/DashboardCameraCard';
 import { TodayCheckinCard } from './familyDashboard/TodayCheckinCard';
+import { FamilyDigestCard } from './familyDashboard/FamilyDigestCard';
 import { FeedRow } from './familyFeed/FeedRow';
 import { useCheckInStore, selectTodayCheckIn } from '../../elderly/store/checkinStore';
 import { useFeedStore, selectFeed } from '../store/feedStore';
 import { useAvailabilityStore, selectAvailability } from '../store/availabilityStore';
 import { useBroadcastStore, selectActiveBroadcast } from '../store/broadcastStore';
+import { useFamilyDigestStore } from '../store/familyDigestStore';
 import { AvailabilityChip } from './familyDashboard/AvailabilityChip';
 import { BroadcastBanner } from './familyDashboard/BroadcastBanner';
 import { AppointmentPreviewCard } from './familyDashboard/widgets';
@@ -71,6 +73,9 @@ export default function FamilyDashboardScreen() {
   const acknowledgeBroadcast = useBroadcastStore((s) => s.acknowledge);
   const acknowledgingBroadcastId = useBroadcastStore((s) => s.acknowledgingId);
 
+  const latestDigest = useFamilyDigestStore((s) => s.latest);
+  const loadDigest = useFamilyDigestStore((s) => s.loadLatest);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const currentElderlyObj =
@@ -92,6 +97,7 @@ export default function FamilyDashboardScreen() {
     loadDashboard(controller.signal);
     loadNotifications(controller.signal);
     loadAvailability(controller.signal);
+    loadDigest(controller.signal);
     return () => controller.abort();
   });
 
@@ -117,6 +123,7 @@ export default function FamilyDashboardScreen() {
         loadFeed(elderlyId),
         loadBroadcasts(elderlyId),
         loadAvailability(),
+        loadDigest(),
       ]);
     }
     setRefreshing(false);
@@ -292,6 +299,17 @@ export default function FamilyDashboardScreen() {
           <>
             <View style={{ height: 16 }} />
             <TodayCheckinCard checkIn={todayCheckIn} />
+          </>
+        )}
+
+        {/* AI Family Digest Card (UC A6) */}
+        {elderlyId && (
+          <>
+            <View style={{ height: 16 }} />
+            <FamilyDigestCard
+              digest={latestDigest}
+              onPress={() => navigation.navigate('FamilyDigest')}
+            />
           </>
         )}
 

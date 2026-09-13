@@ -29,6 +29,7 @@ public class ImouApiService {
     private final Clock clock;
     private final Supplier<UUID> uuidSupplier;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ImouApiService(
         ObjectMapper objectMapper,
         ImouProperties properties,
