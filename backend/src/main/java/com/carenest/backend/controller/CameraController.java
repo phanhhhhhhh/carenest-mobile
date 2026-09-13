@@ -156,8 +156,13 @@ public class CameraController {
         return ResponseEntity.ok(cameraService.controlPtz(deviceId, direction));
     }
 
+    /**
+     * Privacy Mode is the elderly person's own control over being watched, so a
+     * linked family member must not be able to switch it off for them — ELDERLY
+     * role required on top of the camera-access check.
+     */
     @PostMapping("/cameras/{deviceId}/privacy")
-    @PreAuthorize("@authz.canAccessCamera(authentication.principal, #deviceId)")
+    @PreAuthorize("hasRole('ELDERLY') and @authz.canAccessCamera(authentication.principal, #deviceId)")
     public ResponseEntity<Map<String, Object>> togglePrivacy(
             @PathVariable Long deviceId,
             @RequestBody Map<String, Object> body) {
