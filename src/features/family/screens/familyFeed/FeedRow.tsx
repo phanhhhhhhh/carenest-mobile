@@ -5,10 +5,15 @@ import { Colors } from '../../../../core/theme/colors';
 import type { FeedItem, FeedItemType } from '../../../../shared/types';
 import { formatRelative } from '../familyDashboard/utils';
 
-const TYPE_META: Record<FeedItemType, { icon: keyof typeof Ionicons.glyphMap; color: string }> = {
+export const TYPE_META: Record<
+  FeedItemType,
+  { icon: keyof typeof Ionicons.glyphMap; color: string }
+> = {
   CHECK_IN: { icon: 'happy-outline', color: Colors.primary },
   MEDICATION_LOG: { icon: 'medkit-outline', color: Colors.success },
   EMERGENCY: { icon: 'alert-circle-outline', color: Colors.error },
+  VISIT: { icon: 'people-outline', color: Colors.primaryDark },
+  CAMERA: { icon: 'camera-outline', color: Colors.info },
 };
 
 export function FeedRow({

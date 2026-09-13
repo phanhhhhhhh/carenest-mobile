@@ -115,7 +115,7 @@ export interface FamilyBroadcast {
 }
 
 /** Family Care Feed (UC A2). */
-export type FeedItemType = 'CHECK_IN' | 'MEDICATION_LOG' | 'EMERGENCY';
+export type FeedItemType = 'CHECK_IN' | 'MEDICATION_LOG' | 'EMERGENCY' | 'VISIT' | 'CAMERA';
 
 export interface FeedItem {
   /** Composite id "TYPE:ref" — stable per source row. */
