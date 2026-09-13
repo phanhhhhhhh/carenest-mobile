@@ -1,9 +1,7 @@
 package com.carenest.backend.service;
 
-import com.carenest.backend.dto.visit.ConfirmVisitRequest;
 import com.carenest.backend.dto.visit.VisitSettingsRequest;
 import com.carenest.backend.dto.visit.VisitStreakResponse;
-import com.carenest.backend.entity.FamilyVisit;
 import com.carenest.backend.entity.FamilyVisitSettings;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
@@ -17,10 +15,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,25 +44,24 @@ class VisitStreakServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private FcmService fcmService;
     @Mock private NotificationService notificationService;
+    @Spy private VisitStreakCalculator streakCalculator = new VisitStreakCalculator();
 
     @InjectMocks private VisitStreakService service;
 
     private User elderly;
-    private User member;
     private FamilyVisitSettings settings;
 
     @BeforeEach
     void setUp() {
         elderly = User.builder().id(1L).name("Bà Sáu").role(UserRole.ELDERLY).build();
-        member = User.builder().id(2L).name("Anh Tư").role(UserRole.FAMILY).build();
         settings = FamilyVisitSettings.builder().elderly(elderly).cycleType(VisitCycleType.WEEKLY).build();
 
         lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(elderly));
-        lenient().when(userRepository.findById(2L)).thenReturn(Optional.of(member));
         lenient().when(settingsRepository.findByElderlyId(1L)).thenReturn(Optional.of(settings));
         lenient().when(settingsRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        lenient().when(visitRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        lenient().when(visitRepository.findByElderlyIdOrderByVisitedAtDesc(1L)).thenReturn(List.of());
+        lenient().when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of());
+        lenient().when(visitRepository.findRecentByElderlyId(eq(1L), any(Pageable.class)))
+            .thenReturn(List.of());
         lenient().when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(any(), any())).thenReturn(List.of());
     }
 
@@ -109,46 +111,67 @@ class VisitStreakServiceTest {
     }
 
     @Test
-    void firstVisitStartsStreakAtOne() {
-        VisitStreakResponse r = service.confirmVisit(1L, 2L,
-            ConfirmVisitRequest.builder().visitedAt(ict(LocalDate.of(2026, 9, 2))).build());
-        assertEquals(1, r.getCurrentStreak());
+    void weeklyToMonthlyRecomputesCurrentAndLongest() {
+        settings.setCurrentStreak(9);
+        settings.setLongestStreak(9);
+        YearMonth currentMonth = YearMonth.now(VisitStreakCalculator.ICT);
+        when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of(
+            ict(currentMonth.minusMonths(1).atDay(1)),
+            ict(currentMonth.atDay(1))));
+
+        VisitStreakResponse response = service.updateSettings(1L,
+            VisitSettingsRequest.builder().cycleType(VisitCycleType.MONTHLY).build());
+
+        assertEquals(2, response.getCurrentStreak());
+        assertEquals(2, response.getLongestStreak());
     }
 
     @Test
-    void visitInConsecutiveWeekIncrementsStreak() {
-        settings.setCurrentStreak(3);
-        settings.setLastVisitAt(ict(LocalDate.of(2026, 9, 1)));  // Tue of ISO week 36
-        service.confirmVisit(1L, 2L,
-            ConfirmVisitRequest.builder().visitedAt(ict(LocalDate.of(2026, 9, 8))).build()); // week 37
-        assertEquals(4, settings.getCurrentStreak());
+    void monthlyToWeeklyRecomputesCurrentAndLongest() {
+        settings.setCycleType(VisitCycleType.MONTHLY);
+        settings.setCurrentStreak(9);
+        settings.setLongestStreak(9);
+        LocalDate currentWeek = VisitStreakCalculator.cycleStart(
+            LocalDate.now(VisitStreakCalculator.ICT), VisitCycleType.WEEKLY);
+        when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of(
+            ict(currentWeek.minusWeeks(1)),
+            ict(currentWeek)));
+
+        VisitStreakResponse response = service.updateSettings(1L,
+            VisitSettingsRequest.builder().cycleType(VisitCycleType.WEEKLY).build());
+
+        assertEquals(2, response.getCurrentStreak());
+        assertEquals(2, response.getLongestStreak());
     }
 
     @Test
-    void secondVisitSameWeekDoesNotDoubleCount() {
-        settings.setCurrentStreak(2);
-        settings.setLastVisitAt(ict(LocalDate.of(2026, 9, 8)));   // Mon week 37
-        service.confirmVisit(1L, 2L,
-            ConfirmVisitRequest.builder().visitedAt(ict(LocalDate.of(2026, 9, 10))).build()); // Wed week 37
+    void readingStreakRepairsStaleStoredCounters() {
+        settings.setCurrentStreak(99);
+        settings.setLongestStreak(99);
+        settings.setLastVisitAt(ict(LocalDate.of(2020, 1, 1)));
+        LocalDate currentWeek = VisitStreakCalculator.cycleStart(
+            LocalDate.now(VisitStreakCalculator.ICT), VisitCycleType.WEEKLY);
+        OffsetDateTime latest = ict(currentWeek);
+        when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of(
+            ict(currentWeek.minusWeeks(1)), latest));
+
+        VisitStreakResponse response = service.getStreak(1L);
+
+        assertEquals(2, response.getCurrentStreak());
+        assertEquals(2, response.getLongestStreak());
+        assertEquals(latest.toInstant(), response.getLastVisitAt().toInstant());
         assertEquals(2, settings.getCurrentStreak());
+        verify(settingsRepository).save(settings);
     }
 
     @Test
-    void visitAfterAGapResetsStreakToOne() {
-        settings.setCurrentStreak(5);
-        settings.setLastVisitAt(ict(LocalDate.of(2026, 8, 10))); // ~4 weeks earlier
-        service.confirmVisit(1L, 2L,
-            ConfirmVisitRequest.builder().visitedAt(ict(LocalDate.of(2026, 9, 8))).build());
-        assertEquals(1, settings.getCurrentStreak());
-    }
+    void usesTimestampProjectionAndLimitsRecentHistoryAtQueryLevel() {
+        service.getStreak(1L);
 
-    @Test
-    void longestStreakIsRemembered() {
-        settings.setCurrentStreak(3);
-        settings.setLongestStreak(3);
-        settings.setLastVisitAt(ict(LocalDate.of(2026, 9, 1)));
-        service.confirmVisit(1L, 2L,
-            ConfirmVisitRequest.builder().visitedAt(ict(LocalDate.of(2026, 9, 8))).build());
-        assertEquals(4, settings.getLongestStreak());
+        verify(visitRepository).findVisitTimestampsByElderlyId(1L);
+        org.mockito.ArgumentCaptor<Pageable> captor =
+            org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(visitRepository).findRecentByElderlyId(eq(1L), captor.capture());
+        assertEquals(20, captor.getValue().getPageSize());
     }
 }
