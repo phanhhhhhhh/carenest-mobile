@@ -55,13 +55,22 @@ public class RateLimitService {
         if (state == null)
             return;
 
-        if (state.lockedUntil() != null && state.lockedUntil().isAfter(Instant.now())) {
+        if (state.lockedUntil() == null)
+            return;
+
+        if (state.lockedUntil().isAfter(Instant.now())) {
             long remainingSeconds = state.lockedUntil().getEpochSecond() - Instant.now().getEpochSecond();
             throw new RateLimitExceededException(
                     "Account temporarily locked due to too many failed attempts. Try again in "
                             + remainingSeconds + " seconds.",
                     remainingSeconds);
         }
+
+        // The lockout window has expired. Drop the stale failure count, otherwise the
+        // very next failed attempt still sits at MAX_FAILED_ATTEMPTS and re-locks the
+        // account — letting anyone who knows the phone/email keep a victim locked out
+        // indefinitely with one bad login per window.
+        failedLogins.remove(userId, state);
     }
 
     
