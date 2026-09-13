@@ -59,6 +59,9 @@ public class VisitStreakScheduler {
         List<FamilyVisitSettings> all = settingsRepository.findAll();
 
         for (FamilyVisitSettings s : all) {
+            if (!s.isEnabled()) {
+                continue;
+            }
             try {
                 breakStaleStreak(s, today);
                 warnCycleEndingUnvisited(s, today);
@@ -118,10 +121,10 @@ public class VisitStreakScheduler {
     }
 
     private void remindBirthday(FamilyVisitSettings s, LocalDate today) {
-        if (s.getElderlyBirthday() == null) {
+        if (s.getElderly().getDob() == null) {
             return;
         }
-        long days = daysUntilAnnual(MonthDay.from(s.getElderlyBirthday()), today);
+        long days = daysUntilAnnual(MonthDay.from(s.getElderly().getDob()), today);
         if (days >= 1 && days <= 7) {
             notifyFamily(s, "Sắp đến sinh nhật " + s.getElderly().getName(),
                 "Còn " + days + " ngày nữa là sinh nhật " + s.getElderly().getName()

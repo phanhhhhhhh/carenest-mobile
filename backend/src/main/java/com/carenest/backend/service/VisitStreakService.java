@@ -64,8 +64,8 @@ public class VisitStreakService {
         if (request.getCycleType() != null) {
             settings.setCycleType(request.getCycleType());
         }
-        if (request.getElderlyBirthday() != null) {
-            settings.setElderlyBirthday(request.getElderlyBirthday());
+        if (request.getEnabled() != null) {
+            settings.setEnabled(request.getEnabled());
         }
         settingsRepository.save(settings);
         return toResponse(settings, visitRepository.findByElderlyIdOrderByVisitedAtDesc(elderlyId));
@@ -204,11 +204,12 @@ public class VisitStreakService {
         return VisitStreakResponse.builder()
             .elderlyId(s.getElderly().getId())
             .elderlyName(s.getElderly().getName())
+            .enabled(s.isEnabled())
             .cycleType(s.getCycleType())
             .currentStreak(s.getCurrentStreak())
             .longestStreak(s.getLongestStreak())
             .lastVisitAt(s.getLastVisitAt())
-            .elderlyBirthday(s.getElderlyBirthday())
+            .elderlyBirthday(s.getElderly().getDob())
             .cycleEndsAt(cycleEndsAt)
             .streakAtRisk(atRisk)
             .visitedThisCycle(visitedThisCycle)

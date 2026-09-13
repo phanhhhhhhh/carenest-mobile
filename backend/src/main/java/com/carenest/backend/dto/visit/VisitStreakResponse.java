@@ -15,6 +15,7 @@ public class VisitStreakResponse {
 
     private Long elderlyId;
     private String elderlyName;
+    private boolean enabled;
     private VisitCycleType cycleType;
     private int currentStreak;
     private int longestStreak;

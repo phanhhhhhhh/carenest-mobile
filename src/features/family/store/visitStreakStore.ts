@@ -4,6 +4,11 @@ import { getErrorMessage, isCancelled } from '../../../core/api/errors';
 
 export type VisitCycleType = 'WEEKLY' | 'MONTHLY';
 
+export interface VisitSettingsPatch {
+  cycleType?: VisitCycleType;
+  enabled?: boolean;
+}
+
 export interface VisitEntry {
   id: number;
   memberId: number;
@@ -15,6 +20,7 @@ export interface VisitEntry {
 export interface VisitStreak {
   elderlyId: number;
   elderlyName: string;
+  enabled: boolean;
   cycleType: VisitCycleType;
   currentStreak: number;
   longestStreak: number;
@@ -26,11 +32,12 @@ export interface VisitStreak {
   recentVisits: VisitEntry[];
 }
 
-function parseStreak(j: Record<string, unknown>): VisitStreak {
+export function parseStreak(j: Record<string, unknown>): VisitStreak {
   const visits = Array.isArray(j.recentVisits) ? (j.recentVisits as Record<string, unknown>[]) : [];
   return {
     elderlyId: Number(j.elderlyId) || 0,
     elderlyName: String(j.elderlyName ?? ''),
+    enabled: Boolean(j.enabled),
     cycleType: (j.cycleType === 'MONTHLY' ? 'MONTHLY' : 'WEEKLY') as VisitCycleType,
     currentStreak: Number(j.currentStreak) || 0,
     longestStreak: Number(j.longestStreak) || 0,
@@ -57,10 +64,7 @@ interface VisitStreakState {
 
   load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
   confirmVisit: (elderlyId: string, note?: string) => Promise<boolean>;
-  updateSettings: (
-    elderlyId: string,
-    patch: { cycleType?: VisitCycleType; elderlyBirthday?: string },
-  ) => Promise<boolean>;
+  updateSettings: (elderlyId: string, patch: VisitSettingsPatch) => Promise<boolean>;
 }
 
 export const useVisitStreakStore = create<VisitStreakState>((set) => ({

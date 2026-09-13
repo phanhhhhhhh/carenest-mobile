@@ -1,6 +1,7 @@
 package com.carenest.backend.service;
 
 import com.carenest.backend.dto.visit.ConfirmVisitRequest;
+import com.carenest.backend.dto.visit.VisitSettingsRequest;
 import com.carenest.backend.dto.visit.VisitStreakResponse;
 import com.carenest.backend.entity.FamilyVisit;
 import com.carenest.backend.entity.FamilyVisitSettings;
@@ -25,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -62,6 +65,47 @@ class VisitStreakServiceTest {
 
     private static OffsetDateTime ict(LocalDate d) {
         return d.atTime(10, 0).atOffset(ZoneOffset.ofHours(7));
+    }
+
+    @Test
+    void newlyCreatedSettingsAreDisabled() {
+        when(settingsRepository.findByElderlyId(1L)).thenReturn(Optional.empty());
+
+        VisitStreakResponse response = service.getStreak(1L);
+
+        assertFalse(response.isEnabled());
+    }
+
+    @Test
+    void updateSettingsCanEnableAndDisableFeature() {
+        VisitStreakResponse enabledResponse = service.updateSettings(1L,
+            VisitSettingsRequest.builder().enabled(true).build());
+        assertTrue(enabledResponse.isEnabled());
+
+        VisitStreakResponse disabledResponse = service.updateSettings(1L,
+            VisitSettingsRequest.builder().enabled(false).build());
+        assertFalse(disabledResponse.isEnabled());
+    }
+
+    @Test
+    void updateSettingsPreservesEnabledWhenOmitted() {
+        settings.setEnabled(true);
+
+        VisitStreakResponse response = service.updateSettings(1L,
+            VisitSettingsRequest.builder().cycleType(VisitCycleType.MONTHLY).build());
+
+        assertTrue(response.isEnabled());
+        assertEquals(VisitCycleType.MONTHLY, response.getCycleType());
+    }
+
+    @Test
+    void responseUsesUserDateOfBirth() {
+        LocalDate birthday = LocalDate.of(1948, 4, 12);
+        elderly.setDob(birthday);
+
+        VisitStreakResponse response = service.getStreak(1L);
+
+        assertEquals(birthday, response.getElderlyBirthday());
     }
 
     @Test
