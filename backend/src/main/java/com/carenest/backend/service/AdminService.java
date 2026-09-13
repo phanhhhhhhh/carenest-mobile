@@ -130,7 +130,7 @@ public class AdminService {
             .orElse(null);
 
         AdminSubscriptionResponse activeSub = subscriptionRepository
-            .findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
+            .findTopByUserIdAndStatusOrderByEndDateDesc(userId, Subscription.SubscriptionStatus.ACTIVE)
             .map(AdminSubscriptionResponse::from)
             .orElse(null);
 

@@ -92,7 +92,7 @@ class SubscriptionServiceTest {
 
     @Test
     void freePlan_limitsElderlyToOne() {
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             eq(100L), eq(Subscription.SubscriptionStatus.ACTIVE), any()
         )).thenReturn(Optional.empty());
 
@@ -104,7 +104,7 @@ class SubscriptionServiceTest {
     @Test
     void premiumPlan_limitsElderlyToFour() {
         Subscription premiumSub = createActiveSub(familyUser, Subscription.PlanType.PREMIUM_MONTHLY);
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             eq(100L), eq(Subscription.SubscriptionStatus.ACTIVE), any()
         )).thenReturn(Optional.of(premiumSub));
 
@@ -115,7 +115,7 @@ class SubscriptionServiceTest {
 
     @Test
     void canAddElderly_freePlanRejectsSecondElderly() {
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             eq(100L), eq(Subscription.SubscriptionStatus.ACTIVE), any()
         )).thenReturn(Optional.empty());
 
@@ -129,7 +129,7 @@ class SubscriptionServiceTest {
     @Test
     void canAddElderly_premiumPlanAllowsUpToFourElderly() {
         Subscription premiumSub = createActiveSub(familyUser, Subscription.PlanType.PREMIUM_MONTHLY);
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             eq(100L), eq(Subscription.SubscriptionStatus.ACTIVE), any()
         )).thenReturn(Optional.of(premiumSub));
 
@@ -142,7 +142,7 @@ class SubscriptionServiceTest {
 
     @Test
     void canAddFamilyMember_freePlanRejectsSecondFamilyMember() {
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             eq(101L), eq(Subscription.SubscriptionStatus.ACTIVE), any()
         )).thenReturn(Optional.empty());
 
@@ -160,7 +160,7 @@ class SubscriptionServiceTest {
     @Test
     void canAddFamilyMember_premiumPlanAllowsUpToSixFamilyMembers() {
         Subscription premiumSub = createActiveSub(familyUser, Subscription.PlanType.PREMIUM_MONTHLY);
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             eq(100L), eq(Subscription.SubscriptionStatus.ACTIVE), any()
         )).thenReturn(Optional.of(premiumSub));
 
@@ -238,7 +238,7 @@ class SubscriptionServiceTest {
             .startDate(Instant.now().minusSeconds(3600))
             .endDate(endDate)
             .build();
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             7L,
             Subscription.SubscriptionStatus.ACTIVE,
             List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)))
@@ -246,7 +246,7 @@ class SubscriptionServiceTest {
     }
 
     private void stubEmpty() {
-        when(subscriptionRepository.findByUserIdAndStatusAndPlanTypeIn(
+        when(subscriptionRepository.findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
             7L,
             Subscription.SubscriptionStatus.ACTIVE,
             List.of(Subscription.PlanType.PREMIUM_MONTHLY, Subscription.PlanType.PREMIUM_YEARLY)))
