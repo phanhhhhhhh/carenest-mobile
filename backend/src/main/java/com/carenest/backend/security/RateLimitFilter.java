@@ -38,6 +38,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if (path.endsWith("/api/chat/message")) {
             endpoint = "chat-message";
             limit = CHAT_MESSAGE_LIMIT_PER_MINUTE;
+        } else if (path.contains("/api/users/by-phone/")) {
+            // Existence probe — cheap to script, so cap it like the auth endpoints
+            // to stop phone-number walking. Path carries the number, hence contains().
+            endpoint = "user-by-phone";
         }
 
         if (endpoint != null) {
