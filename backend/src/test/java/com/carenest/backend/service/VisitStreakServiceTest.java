@@ -1,7 +1,9 @@
 package com.carenest.backend.service;
 
+import com.carenest.backend.dto.visit.ConfirmVisitRequest;
 import com.carenest.backend.dto.visit.VisitSettingsRequest;
 import com.carenest.backend.dto.visit.VisitStreakResponse;
+import com.carenest.backend.entity.FamilyVisit;
 import com.carenest.backend.entity.FamilyVisitSettings;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
@@ -13,30 +15,37 @@ import com.carenest.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class VisitStreakServiceTest {
+
+    private static final Instant NOW = Instant.parse("2026-09-13T17:30:00Z");
 
     @Mock private FamilyVisitRepository visitRepository;
     @Mock private FamilyVisitSettingsRepository settingsRepository;
@@ -44,22 +53,43 @@ class VisitStreakServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private FcmService fcmService;
     @Mock private NotificationService notificationService;
-    @Spy private VisitStreakCalculator streakCalculator = new VisitStreakCalculator();
-
-    @InjectMocks private VisitStreakService service;
+    private VisitStreakService service;
 
     private User elderly;
+    private User member;
     private FamilyVisitSettings settings;
+    private List<OffsetDateTime> visitTimestamps;
+    private Clock clock;
 
     @BeforeEach
     void setUp() {
         elderly = User.builder().id(1L).name("Bà Sáu").role(UserRole.ELDERLY).build();
+        member = User.builder().id(2L).name("Anh Tư").role(UserRole.FAMILY).build();
         settings = FamilyVisitSettings.builder().elderly(elderly).cycleType(VisitCycleType.WEEKLY).build();
+        visitTimestamps = new ArrayList<>();
+        clock = Clock.fixed(NOW, VisitStreakCalculator.ICT);
+        service = new VisitStreakService(
+            visitRepository,
+            settingsRepository,
+            familyLinkRepository,
+            userRepository,
+            fcmService,
+            notificationService,
+            new VisitStreakCalculator(),
+            clock);
 
-        lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(elderly));
+        lenient().when(userRepository.findByIdForVisitUpdate(1L)).thenReturn(Optional.of(elderly));
+        lenient().when(userRepository.findById(2L)).thenReturn(Optional.of(member));
         lenient().when(settingsRepository.findByElderlyId(1L)).thenReturn(Optional.of(settings));
         lenient().when(settingsRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        lenient().when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of());
+        lenient().when(visitRepository.save(any(FamilyVisit.class))).thenAnswer(invocation -> {
+            FamilyVisit visit = invocation.getArgument(0);
+            visit.setId(100L + visitTimestamps.size());
+            visitTimestamps.add(visit.getVisitedAt());
+            return visit;
+        });
+        lenient().when(visitRepository.findVisitTimestampsByElderlyId(1L))
+            .thenAnswer(i -> List.copyOf(visitTimestamps));
         lenient().when(visitRepository.findRecentByElderlyId(eq(1L), any(Pageable.class)))
             .thenReturn(List.of());
         lenient().when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(any(), any())).thenReturn(List.of());
@@ -114,7 +144,7 @@ class VisitStreakServiceTest {
     void weeklyToMonthlyRecomputesCurrentAndLongest() {
         settings.setCurrentStreak(9);
         settings.setLongestStreak(9);
-        YearMonth currentMonth = YearMonth.now(VisitStreakCalculator.ICT);
+        YearMonth currentMonth = YearMonth.now(clock);
         when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of(
             ict(currentMonth.minusMonths(1).atDay(1)),
             ict(currentMonth.atDay(1))));
@@ -132,10 +162,10 @@ class VisitStreakServiceTest {
         settings.setCurrentStreak(9);
         settings.setLongestStreak(9);
         LocalDate currentWeek = VisitStreakCalculator.cycleStart(
-            LocalDate.now(VisitStreakCalculator.ICT), VisitCycleType.WEEKLY);
+            LocalDate.now(clock), VisitCycleType.WEEKLY);
         when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of(
             ict(currentWeek.minusWeeks(1)),
-            ict(currentWeek)));
+            OffsetDateTime.ofInstant(NOW.minusSeconds(10 * 60), VisitStreakCalculator.ICT)));
 
         VisitStreakResponse response = service.updateSettings(1L,
             VisitSettingsRequest.builder().cycleType(VisitCycleType.WEEKLY).build());
@@ -150,8 +180,9 @@ class VisitStreakServiceTest {
         settings.setLongestStreak(99);
         settings.setLastVisitAt(ict(LocalDate.of(2020, 1, 1)));
         LocalDate currentWeek = VisitStreakCalculator.cycleStart(
-            LocalDate.now(VisitStreakCalculator.ICT), VisitCycleType.WEEKLY);
-        OffsetDateTime latest = ict(currentWeek);
+            LocalDate.now(clock), VisitCycleType.WEEKLY);
+        OffsetDateTime latest = OffsetDateTime.ofInstant(
+            NOW.minusSeconds(10 * 60), VisitStreakCalculator.ICT);
         when(visitRepository.findVisitTimestampsByElderlyId(1L)).thenReturn(List.of(
             ict(currentWeek.minusWeeks(1)), latest));
 
@@ -173,5 +204,117 @@ class VisitStreakServiceTest {
             org.mockito.ArgumentCaptor.forClass(Pageable.class);
         verify(visitRepository).findRecentByElderlyId(eq(1L), captor.capture());
         assertEquals(20, captor.getValue().getPageSize());
+    }
+
+    @Test
+    void firstVisitProducesCurrentAndLongestOne() {
+        VisitStreakResponse response = service.confirmVisit(1L, 2L, null);
+
+        assertEquals(1, response.getCurrentStreak());
+        assertEquals(1, response.getLongestStreak());
+    }
+
+    @Test
+    void backdatedVisitRepairsHistoricalGap() {
+        visitTimestamps.addAll(List.of(
+            ict(LocalDate.of(2026, 9, 1)),
+            OffsetDateTime.ofInstant(NOW.minusSeconds(20 * 60), VisitStreakCalculator.ICT)));
+
+        VisitStreakResponse response = service.confirmVisit(1L, 2L,
+            ConfirmVisitRequest.builder().visitedAt(ict(LocalDate.of(2026, 9, 7))).build());
+
+        assertEquals(3, response.getCurrentStreak());
+        assertEquals(3, response.getLongestStreak());
+    }
+
+    @Test
+    void backdatedVisitDoesNotReplaceNewerLastVisit() {
+        OffsetDateTime newest = OffsetDateTime.ofInstant(
+            NOW.minusSeconds(10 * 60), VisitStreakCalculator.ICT);
+        visitTimestamps.add(newest);
+
+        VisitStreakResponse response = service.confirmVisit(1L, 2L,
+            ConfirmVisitRequest.builder().visitedAt(ict(LocalDate.of(2026, 9, 10))).build());
+
+        assertEquals(newest.toInstant(), response.getLastVisitAt().toInstant());
+    }
+
+    @Test
+    void omittedVisitedAtUsesInjectedClock() {
+        service.confirmVisit(1L, 2L, ConfirmVisitRequest.builder().build());
+
+        org.mockito.ArgumentCaptor<FamilyVisit> captor =
+            org.mockito.ArgumentCaptor.forClass(FamilyVisit.class);
+        verify(visitRepository).save(captor.capture());
+        assertEquals(NOW, captor.getValue().getVisitedAt().toInstant());
+    }
+
+    @Test
+    void futureInstantIsRejected() {
+        ConfirmVisitRequest request = ConfirmVisitRequest.builder()
+            .visitedAt(OffsetDateTime.ofInstant(NOW.plusSeconds(1), ZoneOffset.UTC))
+            .build();
+
+        assertThrows(IllegalArgumentException.class,
+            () -> service.confirmVisit(1L, 2L, request));
+        verify(visitRepository, never()).save(any(FamilyVisit.class));
+    }
+
+    @Test
+    void eightIctCalendarDaysAgoIsRejected() {
+        ConfirmVisitRequest request = ConfirmVisitRequest.builder()
+            .visitedAt(ict(LocalDate.now(clock).minusDays(8)))
+            .build();
+
+        assertThrows(IllegalArgumentException.class,
+            () -> service.confirmVisit(1L, 2L, request));
+    }
+
+    @Test
+    void exactlySevenIctCalendarDaysAgoIsAccepted() {
+        OffsetDateTime sevenDaysAgo = ict(LocalDate.now(clock).minusDays(7));
+
+        service.confirmVisit(1L, 2L,
+            ConfirmVisitRequest.builder().visitedAt(sevenDaysAgo).build());
+
+        verify(visitRepository).save(any(FamilyVisit.class));
+    }
+
+    @Test
+    void validationUsesIctDateNearMidnight() {
+        OffsetDateTime lateOnEightDaysAgo = LocalDate.now(clock).minusDays(8)
+            .atTime(23, 59)
+            .atZone(VisitStreakCalculator.ICT)
+            .toOffsetDateTime();
+
+        assertThrows(IllegalArgumentException.class, () -> service.confirmVisit(1L, 2L,
+            ConfirmVisitRequest.builder().visitedAt(lateOnEightDaysAgo).build()));
+    }
+
+    @Test
+    void settingsUpdateLocksElderlyBeforeSettingsLookup() {
+        service.updateSettings(1L, VisitSettingsRequest.builder().enabled(true).build());
+
+        InOrder order = inOrder(userRepository, settingsRepository);
+        order.verify(userRepository).findByIdForVisitUpdate(1L);
+        order.verify(settingsRepository).findByElderlyId(1L);
+    }
+
+    @Test
+    void readingStreakLocksElderlyBeforeLazySettingsLookup() {
+        service.getStreak(1L);
+
+        InOrder order = inOrder(userRepository, settingsRepository);
+        order.verify(userRepository).findByIdForVisitUpdate(1L);
+        order.verify(settingsRepository).findByElderlyId(1L);
+    }
+
+    @Test
+    void confirmationLocksElderlyBeforeSettingsLookup() {
+        service.confirmVisit(1L, 2L, null);
+
+        InOrder order = inOrder(userRepository, settingsRepository);
+        order.verify(userRepository).findByIdForVisitUpdate(1L);
+        order.verify(settingsRepository).findByElderlyId(1L);
     }
 }
