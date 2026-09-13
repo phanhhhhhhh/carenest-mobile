@@ -1,4 +1,4 @@
-import { AppConfig } from '../../../core/config/appConfig';
+import api from '../../../core/api/client';
 
 /**
  * `auto` lets Cloudinary classify the asset; audio is stored under the `video`
@@ -11,28 +11,49 @@ export function buildCloudinaryUploadUrl(cloudName: string): string {
 
 export class CloudinaryNotConfiguredError extends Error {
   constructor() {
-    super('Cloudinary chưa được cấu hình (EXPO_PUBLIC_CLOUDINARY_*).');
+    super('Máy chủ chưa cấu hình tải giọng nhắc lên Cloudinary.');
     this.name = 'CloudinaryNotConfiguredError';
   }
 }
 
-/** True when both the cloud name and an unsigned preset are present. */
-export function isCloudinaryConfigured(): boolean {
-  return AppConfig.cloudinary !== null;
+/** Signed-upload credentials minted per request by the backend. */
+interface VoiceUploadSignature {
+  signature: string;
+  timestamp: number | string;
+  folder: string;
+  apiKey: string;
+  cloudName: string;
+}
+
+async function fetchUploadSignature(elderlyId: string): Promise<VoiceUploadSignature> {
+  // The endpoint binds `elderlyId` to a Long; send it as a number when it is
+  // one so the request doesn't lean on Jackson's string coercion.
+  const numericId = Number(elderlyId);
+  const resp = await api.post('/medications/voice-upload-signature', {
+    elderlyId: Number.isFinite(numericId) ? numericId : elderlyId,
+  });
+  const data = (resp.data ?? {}) as Partial<VoiceUploadSignature>;
+  if (!data.signature || !data.apiKey || !data.cloudName || data.timestamp == null) {
+    throw new CloudinaryNotConfiguredError();
+  }
+  return data as VoiceUploadSignature;
 }
 
 /**
- * Uploads a recorded clip to Cloudinary via an unsigned preset and returns its
- * `secure_url`. Throws `CloudinaryNotConfiguredError` when env vars are missing
- * so callers can hide the feature rather than surfacing a network error.
+ * Uploads a recorded clip to Cloudinary and returns its `secure_url`.
+ *
+ * The upload is signed: the backend mints a short-lived signature for the
+ * caller/elderly pair, so no Cloudinary credential (which an unsigned preset
+ * effectively is) ships inside the app bundle. Throws
+ * `CloudinaryNotConfiguredError` when the server has no Cloudinary set up, so
+ * callers can surface that rather than a raw Cloudinary error.
  */
 export async function uploadVoiceClip(
   uri: string,
   mimeType: string,
-  folder = 'carenest/medication-voice',
+  elderlyId: string,
 ): Promise<string> {
-  const config = AppConfig.cloudinary;
-  if (!config) throw new CloudinaryNotConfiguredError();
+  const signed = await fetchUploadSignature(elderlyId);
 
   const ext = mimeType.split('/').pop() || 'm4a';
   const form = new FormData();
@@ -41,10 +62,14 @@ export async function uploadVoiceClip(
     name: `reminder-voice.${ext}`,
     type: mimeType,
   } as unknown as Blob);
-  form.append('upload_preset', config.uploadPreset);
-  form.append('folder', folder);
+  // Signed uploads and unsigned presets are mutually exclusive modes — sending
+  // `upload_preset` here would make Cloudinary ignore the signature.
+  form.append('api_key', signed.apiKey);
+  form.append('timestamp', String(signed.timestamp));
+  form.append('signature', signed.signature);
+  if (signed.folder) form.append('folder', signed.folder);
 
-  const resp = await fetch(buildCloudinaryUploadUrl(config.cloudName), {
+  const resp = await fetch(buildCloudinaryUploadUrl(signed.cloudName), {
     method: 'POST',
     body: form,
   });
