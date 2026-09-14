@@ -7,6 +7,10 @@ import { navigateToTab, navigationRef } from '../navigation/navigationRef';
 import { useAuthStore } from '../../features/auth/store/authStore';
 import { extractVoiceUrl } from '../../features/medication/services/notificationVoiceData';
 import { playReminderVoice } from '../../features/medication/services/reminderVoicePlayer';
+import {
+  getVisitNotificationDestination,
+  isVisitNotificationType,
+} from '../navigation/visitNotificationRoute';
 
 const CHANNEL_ID = 'carenest_default';
 
@@ -117,11 +121,21 @@ export function flushPendingDeepLink(): void {
   navigateFromPayload(payload);
 }
 
-function navigateFromPayload(data: Record<string, unknown>): void {
+export function navigateFromPayload(data: Record<string, unknown>): void {
   const type = typeof data?.type === 'string' ? data.type : null;
+  const visitDestination = getVisitNotificationDestination(data);
+
+  // A recognized Visit subtype with an invalid elderly ID must not be queued or
+  // fall through to another feature.
+  if (isVisitNotificationType(type) && !visitDestination) return;
 
   if (!navigationRef.isReady() || !useAuthStore.getState().isAuthenticated) {
     pendingPayload = data;
+    return;
+  }
+
+  if (visitDestination) {
+    navigationRef.navigate(visitDestination.name, visitDestination.params);
     return;
   }
 
