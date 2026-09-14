@@ -13,6 +13,7 @@ import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.entity.VisitCycleType;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.exception.PossibleDuplicateVisitException;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.FamilyVisitRepository;
 import com.carenest.backend.repository.FamilyVisitSettingsRepository;
@@ -93,6 +94,18 @@ public class VisitStreakService {
             ? request.getVisitedAt()
             : OffsetDateTime.ofInstant(currentInstant, VisitStreakCalculator.ICT);
         validateVisitedAt(visitedAt, currentInstant);
+
+        LocalDate visitDate = visitedAt.atZoneSameInstant(VisitStreakCalculator.ICT).toLocalDate();
+        OffsetDateTime dayStart = visitDate.atStartOfDay(VisitStreakCalculator.ICT).toOffsetDateTime();
+        OffsetDateTime nextDayStart = visitDate.plusDays(1)
+            .atStartOfDay(VisitStreakCalculator.ICT)
+            .toOffsetDateTime();
+        boolean confirmSeparateVisit = request != null && request.isConfirmSeparateVisit();
+        if (!confirmSeparateVisit && visitRepository
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                elderlyId, memberId, dayStart, nextDayStart)) {
+            throw new PossibleDuplicateVisitException();
+        }
 
         FamilyVisit visit = visitRepository.save(FamilyVisit.builder()
             .elderly(elderly)

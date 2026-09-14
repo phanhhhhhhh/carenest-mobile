@@ -5,9 +5,13 @@ import com.carenest.backend.dto.visit.VisitSettingsRequest;
 import com.carenest.backend.dto.visit.VisitStreakResponse;
 import com.carenest.backend.entity.FamilyVisit;
 import com.carenest.backend.entity.FamilyVisitSettings;
+import com.carenest.backend.entity.FamilyLink;
+import com.carenest.backend.entity.FamilyLinkStatus;
+import com.carenest.backend.entity.NotificationType;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.entity.VisitCycleType;
+import com.carenest.backend.exception.PossibleDuplicateVisitException;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.FamilyVisitRepository;
 import com.carenest.backend.repository.FamilyVisitSettingsRepository;
@@ -35,11 +39,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,6 +89,10 @@ class VisitStreakServiceTest {
         lenient().when(userRepository.findById(2L)).thenReturn(Optional.of(member));
         lenient().when(settingsRepository.findByElderlyId(1L)).thenReturn(Optional.of(settings));
         lenient().when(settingsRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        lenient().when(visitRepository
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                any(), any(), any(), any()))
+            .thenReturn(false);
         lenient().when(visitRepository.save(any(FamilyVisit.class))).thenAnswer(invocation -> {
             FamilyVisit visit = invocation.getArgument(0);
             visit.setId(100L + visitTimestamps.size());
@@ -250,6 +261,87 @@ class VisitStreakServiceTest {
     }
 
     @Test
+    void sameElderlyMemberAndIctDateIsPossibleDuplicate() {
+        OffsetDateTime requested = OffsetDateTime.parse("2026-09-13T16:00:00Z");
+        when(visitRepository
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                1L,
+                2L,
+                OffsetDateTime.parse("2026-09-13T00:00:00+07:00"),
+                OffsetDateTime.parse("2026-09-14T00:00:00+07:00")))
+            .thenReturn(true);
+
+        assertThrows(PossibleDuplicateVisitException.class, () -> service.confirmVisit(
+            1L, 2L, ConfirmVisitRequest.builder().visitedAt(requested).build()));
+
+        verify(visitRepository, never()).save(any(FamilyVisit.class));
+        verify(visitRepository, never()).findVisitTimestampsByElderlyId(any());
+        verifyNoInteractions(fcmService, notificationService);
+    }
+
+    @Test
+    void secondIdenticalConfirmationObservesFirstAndIsRejected() {
+        when(visitRepository
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                any(), any(), any(), any()))
+            .thenReturn(false, true);
+
+        service.confirmVisit(1L, 2L, ConfirmVisitRequest.builder().build());
+        assertThrows(PossibleDuplicateVisitException.class,
+            () -> service.confirmVisit(1L, 2L, ConfirmVisitRequest.builder().build()));
+
+        verify(visitRepository).save(any(FamilyVisit.class));
+    }
+
+    @Test
+    void separateVisitOverrideBypassesDuplicateQueryAndKeepsOneCycleStep() {
+        visitTimestamps.add(OffsetDateTime.parse("2026-09-13T01:00:00Z"));
+
+        VisitStreakResponse response = service.confirmVisit(1L, 2L,
+            ConfirmVisitRequest.builder()
+                .visitedAt(OffsetDateTime.parse("2026-09-13T08:00:00Z"))
+                .confirmSeparateVisit(true)
+                .build());
+
+        assertEquals(1, response.getCurrentStreak());
+        verify(visitRepository, never())
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                any(), any(), any(), any());
+        verify(visitRepository).save(any(FamilyVisit.class));
+    }
+
+    @Test
+    void successfulOverrideSendsOneNormalFamilyUpdate() {
+        User otherMember = User.builder().id(3L).name("Chi Ba").role(UserRole.FAMILY).build();
+        when(familyLinkRepository.findAllFamilyByElderlyIdAndStatus(
+            1L, FamilyLinkStatus.ACTIVE))
+            .thenReturn(List.of(FamilyLink.builder().elderly(elderly).family(otherMember).build()));
+
+        service.confirmVisit(1L, 2L, ConfirmVisitRequest.builder()
+            .confirmSeparateVisit(true)
+            .build());
+
+        verify(fcmService).sendToUsers(eq(List.of(3L)), anyString(), anyString(), anyMap());
+        verify(notificationService).createForUsers(
+            eq(List.of(3L)), eq(NotificationType.FAMILY_UPDATE), anyString(), anyString(), anyMap());
+    }
+
+    @Test
+    void duplicateCheckUsesMemberIdentity() {
+        User otherMember = User.builder().id(3L).name("Chi Ba").role(UserRole.FAMILY).build();
+        when(userRepository.findById(3L)).thenReturn(Optional.of(otherMember));
+
+        service.confirmVisit(1L, 3L, ConfirmVisitRequest.builder()
+            .visitedAt(OffsetDateTime.parse("2026-09-13T08:00:00Z"))
+            .build());
+
+        verify(visitRepository)
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                eq(1L), eq(3L), any(), any());
+        verify(visitRepository).save(any(FamilyVisit.class));
+    }
+
+    @Test
     void futureInstantIsRejected() {
         ConfirmVisitRequest request = ConfirmVisitRequest.builder()
             .visitedAt(OffsetDateTime.ofInstant(NOW.plusSeconds(1), ZoneOffset.UTC))
@@ -258,6 +350,9 @@ class VisitStreakServiceTest {
         assertThrows(IllegalArgumentException.class,
             () -> service.confirmVisit(1L, 2L, request));
         verify(visitRepository, never()).save(any(FamilyVisit.class));
+        verify(visitRepository, never())
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                any(), any(), any(), any());
     }
 
     @Test
@@ -268,6 +363,9 @@ class VisitStreakServiceTest {
 
         assertThrows(IllegalArgumentException.class,
             () -> service.confirmVisit(1L, 2L, request));
+        verify(visitRepository, never())
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                any(), any(), any(), any());
     }
 
     @Test
@@ -316,5 +414,16 @@ class VisitStreakServiceTest {
         InOrder order = inOrder(userRepository, settingsRepository);
         order.verify(userRepository).findByIdForVisitUpdate(1L);
         order.verify(settingsRepository).findByElderlyId(1L);
+    }
+
+    @Test
+    void confirmationChecksDuplicateOnlyAfterTakingElderlyLock() {
+        service.confirmVisit(1L, 2L, null);
+
+        InOrder order = inOrder(userRepository, visitRepository);
+        order.verify(userRepository).findByIdForVisitUpdate(1L);
+        order.verify(visitRepository)
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                eq(1L), eq(2L), any(), any());
     }
 }

@@ -21,4 +21,7 @@ public class ConfirmVisitRequest {
 
     /** Optional back-dated visit time; defaults to now when omitted. */
     private OffsetDateTime visitedAt;
+
+    /** Explicitly confirms that a same-member, same-day Visit is separate. */
+    private boolean confirmSeparateVisit;
 }

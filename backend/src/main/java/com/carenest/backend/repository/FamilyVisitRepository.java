@@ -13,6 +13,13 @@ import java.util.List;
 @Repository
 public interface FamilyVisitRepository extends JpaRepository<FamilyVisit, Long> {
 
+    boolean existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+        Long elderlyId,
+        Long memberId,
+        OffsetDateTime startInclusive,
+        OffsetDateTime endExclusive
+    );
+
     /**
      * Complete lightweight history for Java-side ICT cycle reduction. Keeping
      * date bucketing out of SQL avoids PostgreSQL-specific date_trunc behavior
