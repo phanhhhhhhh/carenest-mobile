@@ -67,6 +67,27 @@ describe('load', () => {
     await useFeedStore.getState().load('1');
     expect(useFeedStore.getState().error).toMatch(/down/);
   });
+
+  it('keeps VISIT entries visible after a refresh', async () => {
+    mockApi.get.mockResolvedValue({
+      data: [
+        apiRow({
+          id: 'VISIT:12',
+          type: 'VISIT',
+          itemRef: 12,
+          title: 'Lan đã về thăm',
+        }),
+      ],
+    });
+
+    await useFeedStore.getState().load('1');
+
+    expect(selectFeed(useFeedStore.getState(), '1')[0]).toMatchObject({
+      id: 'VISIT:12',
+      type: 'VISIT',
+      title: 'Lan đã về thăm',
+    });
+  });
 });
 
 describe('toggleReaction', () => {

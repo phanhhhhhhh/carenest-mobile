@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
-
 @Getter
 @Setter
 @Builder
@@ -18,5 +16,5 @@ public class VisitSettingsRequest {
 
     private VisitCycleType cycleType;
 
-    private LocalDate elderlyBirthday;
+    private Boolean enabled;
 }

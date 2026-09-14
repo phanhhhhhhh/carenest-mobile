@@ -112,7 +112,7 @@ export type CheckInParsed = z.infer<typeof CheckInSchema>;
 
 export const FeedItemSchema = z.object({
   id: z.coerce.string(),
-  type: z.enum(['CHECK_IN', 'MEDICATION_LOG', 'EMERGENCY']),
+  type: z.enum(['CHECK_IN', 'MEDICATION_LOG', 'EMERGENCY', 'VISIT', 'CAMERA']),
   itemRef: z.coerce.number(),
   occurredAt: z.string(),
   title: z.string(),

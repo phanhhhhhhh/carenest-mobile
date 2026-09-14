@@ -2,6 +2,7 @@ import {
   UserSchema,
   MedicationSchema,
   AppointmentSchema,
+  FeedItemSchema,
   safeParseOne,
   safeParseList,
 } from './index';
@@ -29,6 +30,27 @@ describe('MedicationSchema', () => {
     expect(parsed.id).toBe('12');
     expect(parsed.schedule).toBeUndefined();
   });
+});
+
+describe('FeedItemSchema', () => {
+  it.each(['CHECK_IN', 'MEDICATION_LOG', 'EMERGENCY', 'VISIT', 'CAMERA'] as const)(
+    'accepts the backend %s feed item type',
+    (type) => {
+      const parsed = FeedItemSchema.parse({
+        id: `${type}:1`,
+        type,
+        itemRef: 1,
+        occurredAt: '2026-09-13T10:00:00Z',
+        title: 'Feed item',
+        subtitle: 'Details',
+        handled: false,
+        reactionCount: 0,
+        reactedByMe: false,
+      });
+
+      expect(parsed.type).toBe(type);
+    },
+  );
 });
 
 describe('safeParseOne', () => {

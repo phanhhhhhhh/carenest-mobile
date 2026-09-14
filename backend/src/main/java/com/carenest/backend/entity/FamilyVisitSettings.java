@@ -62,8 +62,18 @@ public class FamilyVisitSettings {
     @Column(name = "last_visit_at")
     private OffsetDateTime lastVisitAt;
 
-    @Column(name = "elderly_birthday")
-    private LocalDate elderlyBirthday;
+    @Column(name = "enabled", nullable = false)
+    @Builder.Default
+    private boolean enabled = false;
+
+    @Column(name = "last_cycle_reminder_start")
+    private LocalDate lastCycleReminderStart;
+
+    @Column(name = "last_birthday_reminder_year")
+    private Integer lastBirthdayReminderYear;
+
+    @Column(name = "last_tet_reminder_date")
+    private LocalDate lastTetReminderDate;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

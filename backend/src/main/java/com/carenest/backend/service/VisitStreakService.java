@@ -13,21 +13,24 @@ import com.carenest.backend.entity.User;
 import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.entity.VisitCycleType;
 import com.carenest.backend.exception.NotFoundException;
+import com.carenest.backend.exception.PossibleDuplicateVisitException;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.FamilyVisitRepository;
 import com.carenest.backend.repository.FamilyVisitSettingsRepository;
 import com.carenest.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -42,7 +45,6 @@ import java.util.stream.Collectors;
 @Transactional
 public class VisitStreakService {
 
-    static final ZoneId ICT = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final int RECENT_VISIT_LIMIT = 20;
 
     private final FamilyVisitRepository visitRepository;
@@ -51,39 +53,59 @@ public class VisitStreakService {
     private final UserRepository userRepository;
     private final FcmService fcmService;
     private final NotificationService notificationService;
+    private final VisitStreakCalculator streakCalculator;
+    private final Clock clock;
 
     @Transactional
     public VisitStreakResponse getStreak(Long elderlyId) {
-        FamilyVisitSettings settings = loadOrCreateSettings(elderlyId);
-        return toResponse(settings, visitRepository.findByElderlyIdOrderByVisitedAtDesc(elderlyId));
+        User elderly = lockElderly(elderlyId);
+        FamilyVisitSettings settings = loadOrCreateSettings(elderly);
+        VisitStreakCalculator.Result result = recalculate(settings, clock.instant(), false);
+        return toResponse(settings, recentVisits(elderlyId), result);
     }
 
     @Transactional
     public VisitStreakResponse updateSettings(Long elderlyId, VisitSettingsRequest request) {
-        FamilyVisitSettings settings = loadOrCreateSettings(elderlyId);
-        if (request.getCycleType() != null) {
+        User elderly = lockElderly(elderlyId);
+        FamilyVisitSettings settings = loadOrCreateSettings(elderly);
+        boolean settingsChanged = false;
+        if (request.getCycleType() != null && request.getCycleType() != settings.getCycleType()) {
             settings.setCycleType(request.getCycleType());
+            settingsChanged = true;
         }
-        if (request.getElderlyBirthday() != null) {
-            settings.setElderlyBirthday(request.getElderlyBirthday());
+        if (request.getEnabled() != null && request.getEnabled() != settings.isEnabled()) {
+            settings.setEnabled(request.getEnabled());
+            settingsChanged = true;
         }
-        settingsRepository.save(settings);
-        return toResponse(settings, visitRepository.findByElderlyIdOrderByVisitedAtDesc(elderlyId));
+        VisitStreakCalculator.Result result = recalculate(settings, clock.instant(), settingsChanged);
+        return toResponse(settings, recentVisits(elderlyId), result);
     }
 
     /** A family member taps "Xác nhận đã về thăm". */
     @Transactional
     public VisitStreakResponse confirmVisit(Long elderlyId, Long memberId, ConfirmVisitRequest request) {
-        User elderly = userRepository.findById(elderlyId)
-            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + elderlyId));
-        if (elderly.getRole() != UserRole.ELDERLY) {
-            throw new IllegalArgumentException("elderlyId must be a user with ELDERLY role");
-        }
+        User elderly = lockElderly(elderlyId);
+        FamilyVisitSettings settings = loadOrCreateSettings(elderly);
         User member = userRepository.findById(memberId)
             .orElseThrow(() -> new NotFoundException("User (family) not found: " + memberId));
 
+        Instant currentInstant = clock.instant();
         OffsetDateTime visitedAt = request != null && request.getVisitedAt() != null
-            ? request.getVisitedAt() : OffsetDateTime.now();
+            ? request.getVisitedAt()
+            : OffsetDateTime.ofInstant(currentInstant, VisitStreakCalculator.ICT);
+        validateVisitedAt(visitedAt, currentInstant);
+
+        LocalDate visitDate = visitedAt.atZoneSameInstant(VisitStreakCalculator.ICT).toLocalDate();
+        OffsetDateTime dayStart = visitDate.atStartOfDay(VisitStreakCalculator.ICT).toOffsetDateTime();
+        OffsetDateTime nextDayStart = visitDate.plusDays(1)
+            .atStartOfDay(VisitStreakCalculator.ICT)
+            .toOffsetDateTime();
+        boolean confirmSeparateVisit = request != null && request.isConfirmSeparateVisit();
+        if (!confirmSeparateVisit && visitRepository
+            .existsByElderlyIdAndMemberIdAndVisitedAtGreaterThanEqualAndVisitedAtLessThan(
+                elderlyId, memberId, dayStart, nextDayStart)) {
+            throw new PossibleDuplicateVisitException();
+        }
 
         FamilyVisit visit = visitRepository.save(FamilyVisit.builder()
             .elderly(elderly)
@@ -92,66 +114,89 @@ public class VisitStreakService {
             .note(request != null ? request.getNote() : null)
             .build());
 
-        FamilyVisitSettings settings = loadOrCreateSettings(elderlyId);
-        applyVisitToStreak(settings, visitedAt);
-        settingsRepository.save(settings);
+        VisitStreakCalculator.Result result = recalculate(settings, currentInstant, false);
 
         notifyFamilyOfVisit(elderly, member, settings);
 
         log.info("Visit confirmed: elderlyId={} memberId={} visitId={} streak={}",
             elderlyId, memberId, visit.getId(), settings.getCurrentStreak());
 
-        return toResponse(settings, visitRepository.findByElderlyIdOrderByVisitedAtDesc(elderlyId));
+        return toResponse(settings, recentVisits(elderlyId), result);
     }
 
     // --- streak maths ----------------------------------------------------------
 
-    private void applyVisitToStreak(FamilyVisitSettings settings, OffsetDateTime visitedAt) {
-        LocalDate visitDate = visitedAt.atZoneSameInstant(ICT).toLocalDate();
-        LocalDate curCycle = cycleStart(visitDate, settings.getCycleType());
-
-        if (settings.getLastVisitAt() == null || settings.getCurrentStreak() == 0) {
-            settings.setCurrentStreak(1);
-        } else {
-            LocalDate lastCycle = cycleStart(
-                settings.getLastVisitAt().atZoneSameInstant(ICT).toLocalDate(), settings.getCycleType());
-            if (lastCycle.isEqual(curCycle)) {
-                // already counted this cycle — no change
-            } else if (lastCycle.isEqual(previousCycleStart(curCycle, settings.getCycleType()))) {
-                settings.setCurrentStreak(settings.getCurrentStreak() + 1);
-            } else {
-                settings.setCurrentStreak(1); // a full cycle was missed
-            }
-        }
-
-        if (settings.getLastVisitAt() == null || visitedAt.isAfter(settings.getLastVisitAt())) {
-            settings.setLastVisitAt(visitedAt);
-        }
-        settings.setLongestStreak(Math.max(settings.getLongestStreak(), settings.getCurrentStreak()));
-    }
-
     public static LocalDate cycleStart(LocalDate date, VisitCycleType type) {
-        return type == VisitCycleType.MONTHLY
-            ? date.withDayOfMonth(1)
-            : date.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        return VisitStreakCalculator.cycleStart(date, type);
     }
 
     public static LocalDate previousCycleStart(LocalDate cycleStart, VisitCycleType type) {
-        return type == VisitCycleType.MONTHLY ? cycleStart.minusMonths(1) : cycleStart.minusWeeks(1);
+        return VisitStreakCalculator.previousCycleStart(cycleStart, type);
     }
 
     public static LocalDate nextCycleStart(LocalDate cycleStart, VisitCycleType type) {
-        return type == VisitCycleType.MONTHLY ? cycleStart.plusMonths(1) : cycleStart.plusWeeks(1);
+        return VisitStreakCalculator.nextCycleStart(cycleStart, type);
     }
 
     // --- helpers -------------------------------------------------------------
 
-    FamilyVisitSettings loadOrCreateSettings(Long elderlyId) {
-        return settingsRepository.findByElderlyId(elderlyId).orElseGet(() -> {
-            User elderly = userRepository.findById(elderlyId)
-                .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + elderlyId));
-            return settingsRepository.save(FamilyVisitSettings.builder().elderly(elderly).build());
-        });
+    private User lockElderly(Long elderlyId) {
+        User elderly = userRepository.findByIdForVisitUpdate(elderlyId)
+            .orElseThrow(() -> new NotFoundException("User (elderly) not found: " + elderlyId));
+        if (elderly.getRole() != UserRole.ELDERLY) {
+            throw new IllegalArgumentException("elderlyId must be a user with ELDERLY role");
+        }
+        return elderly;
+    }
+
+    FamilyVisitSettings loadOrCreateSettings(User elderly) {
+        return settingsRepository.findByElderlyId(elderly.getId()).orElseGet(() ->
+            settingsRepository.save(FamilyVisitSettings.builder().elderly(elderly).build()));
+    }
+
+    private void validateVisitedAt(OffsetDateTime visitedAt, Instant currentInstant) {
+        if (visitedAt.toInstant().isAfter(currentInstant)) {
+            throw new IllegalArgumentException("visitedAt must not be in the future");
+        }
+        LocalDate today = currentInstant.atZone(VisitStreakCalculator.ICT).toLocalDate();
+        LocalDate visitDate = visitedAt.atZoneSameInstant(VisitStreakCalculator.ICT).toLocalDate();
+        if (visitDate.isBefore(today.minusDays(7))) {
+            throw new IllegalArgumentException("visitedAt must be within the last 7 calendar days");
+        }
+    }
+
+    private VisitStreakCalculator.Result recalculate(
+        FamilyVisitSettings settings,
+        Instant currentInstant,
+        boolean settingsChanged
+    ) {
+        VisitStreakCalculator.Result result = streakCalculator.calculate(
+            visitRepository.findVisitTimestampsByElderlyId(settings.getElderly().getId()),
+            settings.getCycleType(),
+            currentInstant);
+        boolean changed = settingsChanged
+            || settings.getCurrentStreak() != result.currentStreak()
+            || settings.getLongestStreak() != result.longestStreak()
+            || !sameInstant(settings.getLastVisitAt(), result.lastVisitAt());
+        if (changed) {
+            settings.setCurrentStreak(result.currentStreak());
+            settings.setLongestStreak(result.longestStreak());
+            settings.setLastVisitAt(result.lastVisitAt());
+            settingsRepository.save(settings);
+        }
+        return result;
+    }
+
+    private static boolean sameInstant(OffsetDateTime left, OffsetDateTime right) {
+        if (left == null || right == null) {
+            return Objects.equals(left, right);
+        }
+        return left.toInstant().equals(right.toInstant());
+    }
+
+    private List<FamilyVisit> recentVisits(Long elderlyId) {
+        return visitRepository.findRecentByElderlyId(
+            elderlyId, PageRequest.of(0, RECENT_VISIT_LIMIT));
     }
 
     private void notifyFamilyOfVisit(User elderly, User visitor, FamilyVisitSettings settings) {
@@ -176,22 +221,12 @@ public class VisitStreakService {
             Map.of("type", "VISIT_CONFIRMED", "elderlyId", elderly.getId()));
     }
 
-    private VisitStreakResponse toResponse(FamilyVisitSettings s, List<FamilyVisit> visits) {
-        LocalDate today = LocalDate.now(ICT);
-        LocalDate curCycleStart = cycleStart(today, s.getCycleType());
-        LocalDate nextCycleStart = nextCycleStart(curCycleStart, s.getCycleType());
-        OffsetDateTime cycleEndsAt = nextCycleStart.atStartOfDay(ICT).toOffsetDateTime();
-
-        boolean visitedThisCycle = s.getLastVisitAt() != null
-            && !cycleStart(s.getLastVisitAt().atZoneSameInstant(ICT).toLocalDate(), s.getCycleType())
-                .isBefore(curCycleStart);
-
-        long daysLeft = java.time.temporal.ChronoUnit.DAYS.between(today, nextCycleStart);
-        boolean atRisk = !visitedThisCycle && s.getCurrentStreak() > 0
-            && daysLeft <= (s.getCycleType() == VisitCycleType.WEEKLY ? 2 : 4);
-
+    private VisitStreakResponse toResponse(
+        FamilyVisitSettings s,
+        List<FamilyVisit> visits,
+        VisitStreakCalculator.Result result
+    ) {
         List<VisitEntryResponse> recent = visits.stream()
-            .limit(RECENT_VISIT_LIMIT)
             .map(v -> VisitEntryResponse.builder()
                 .id(v.getId())
                 .memberId(v.getMember().getId())
@@ -204,14 +239,15 @@ public class VisitStreakService {
         return VisitStreakResponse.builder()
             .elderlyId(s.getElderly().getId())
             .elderlyName(s.getElderly().getName())
+            .enabled(s.isEnabled())
             .cycleType(s.getCycleType())
-            .currentStreak(s.getCurrentStreak())
-            .longestStreak(s.getLongestStreak())
-            .lastVisitAt(s.getLastVisitAt())
-            .elderlyBirthday(s.getElderlyBirthday())
-            .cycleEndsAt(cycleEndsAt)
-            .streakAtRisk(atRisk)
-            .visitedThisCycle(visitedThisCycle)
+            .currentStreak(result.currentStreak())
+            .longestStreak(result.longestStreak())
+            .lastVisitAt(result.lastVisitAt())
+            .elderlyBirthday(s.getElderly().getDob())
+            .cycleEndsAt(result.cycleEndsAt())
+            .streakAtRisk(result.streakAtRisk())
+            .visitedThisCycle(result.visitedThisCycle())
             .recentVisits(recent)
             .build();
     }

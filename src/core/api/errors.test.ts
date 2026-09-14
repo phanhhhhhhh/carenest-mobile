@@ -1,5 +1,6 @@
 import {
   getStatus,
+  getErrorCode,
   getErrorMessage,
   extractError,
   getResponseData,
@@ -16,6 +17,19 @@ describe('getStatus', () => {
     expect(getStatus(new Error('boom'))).toBeUndefined();
     expect(getStatus(null)).toBeUndefined();
     expect(getStatus('string error')).toBeUndefined();
+  });
+});
+
+describe('getErrorCode', () => {
+  it('reads a machine-readable code from the response body', () => {
+    expect(getErrorCode({ response: { data: { code: 'POSSIBLE_DUPLICATE_VISIT' } } })).toBe(
+      'POSSIBLE_DUPLICATE_VISIT',
+    );
+  });
+
+  it('ignores absent and non-string codes', () => {
+    expect(getErrorCode({ response: { data: { code: 409 } } })).toBeUndefined();
+    expect(getErrorCode(new Error('boom'))).toBeUndefined();
   });
 });
 
