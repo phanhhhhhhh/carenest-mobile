@@ -17,7 +17,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
 import { normalizeElderlyId } from '../../../core/navigation/elderlyId';
 import { Colors } from '../../../core/theme/colors';
-import { showSuccessToast } from '../../../shared/components/toastStore';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { useFeedStore } from '../store/feedStore';
 import {
@@ -29,6 +28,7 @@ import {
 import { submitVisitWithDuplicateConfirmation } from './familyVisitStreak/confirmationFlow';
 import { buildVisitSetupPatch } from './familyVisitStreak/setup';
 import { createVisitDateOptions, formatVisitDate } from './familyVisitStreak/visitDates';
+import { completeVisitConfirmation } from './familyVisitStreak/visitSuccess';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FamilyVisitStreak'>;
 type VisitRoute = RouteProp<RootStackParamList, 'FamilyVisitStreak'>;
@@ -308,10 +308,14 @@ export default function FamilyVisitStreakScreen() {
       confirmVisit,
       confirmationAlert: Alert,
       onSuccess: () => {
-        setNote('');
-        setSelectedDaysAgo(0);
-        showSuccessToast('Đã ghi nhận lượt về thăm.');
-        void loadFeed(elderlyId);
+        void completeVisitConfirmation({
+          elderlyId,
+          loadFeed,
+          resetInput: () => {
+            setNote('');
+            setSelectedDaysAgo(0);
+          },
+        });
       },
     });
   };
