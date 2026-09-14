@@ -26,21 +26,24 @@ public class NotificationPreferences {
     
     @JsonIgnore
     public boolean isInQuietHours() {
+        return isInQuietHours(LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+    }
+
+    @JsonIgnore
+    public boolean isInQuietHours(LocalTime now) {
         if (quietHoursStart == null || quietHoursEnd == null) {
             return false;
         }
         try {
-            // Quiet hours are the user's local (Vietnam) time — never the server
-            // zone, which is UTC on most deployments.
-            LocalTime now = LocalTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
             LocalTime start = LocalTime.parse(quietHoursStart);
             LocalTime end = LocalTime.parse(quietHoursEnd);
 
             if (start.isBefore(end)) {
                 return !now.isBefore(start) && now.isBefore(end);
-            } else {
+            } else if (start.isAfter(end)) {
                 return !now.isBefore(start) || now.isBefore(end);
             }
+            return false;
         } catch (Exception e) {
             return false;
         }

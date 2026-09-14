@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,7 @@ public class VisitReminderDeliveryService {
     private final FamilyLinkRepository familyLinkRepository;
     private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock visitClock;
 
     public boolean createDurableReminder(
         Long elderlyId,
@@ -31,6 +35,8 @@ public class VisitReminderDeliveryService {
         Map<Long, User> recipients = new LinkedHashMap<>();
         familyLinkRepository.findAllFamilyByElderlyIdAndStatus(elderlyId, FamilyLinkStatus.ACTIVE)
             .forEach(link -> recipients.putIfAbsent(link.getFamily().getId(), link.getFamily()));
+        recipients.values().removeIf(user -> user.getNotificationPreferences() != null
+            && !user.getNotificationPreferences().isFamilyUpdate());
         if (recipients.isEmpty()) {
             return false;
         }
@@ -39,21 +45,30 @@ public class VisitReminderDeliveryService {
             "type", subtype.name(),
             "elderlyId", elderlyId
         );
-        recipients.values().forEach(user -> notificationRepository.save(Notification.builder()
-            .user(user)
-            .type(NotificationType.FAMILY_UPDATE)
-            .title(title)
-            .body(body)
-            .data(durableData)
-            .build()));
+        LocalTime now = LocalTime.now(visitClock.withZone(VisitStreakCalculator.ICT));
+        List<Long> pushRecipientIds = new ArrayList<>();
+        recipients.values().forEach(user -> {
+            notificationRepository.save(Notification.builder()
+                .user(user)
+                .type(NotificationType.FAMILY_UPDATE)
+                .title(title)
+                .body(body)
+                .data(durableData)
+                .build());
+            if (user.getNotificationPreferences() == null
+                || !user.getNotificationPreferences().isInQuietHours(now)) {
+                pushRecipientIds.add(user.getId());
+            }
+        });
 
-        List<Long> recipientIds = List.copyOf(recipients.keySet());
-        eventPublisher.publishEvent(new VisitReminderPushEvent(
-            recipientIds,
-            title,
-            body,
-            Map.of("type", subtype.name(), "elderlyId", elderlyId.toString())
-        ));
+        if (!pushRecipientIds.isEmpty()) {
+            eventPublisher.publishEvent(new VisitReminderPushEvent(
+                pushRecipientIds,
+                title,
+                body,
+                Map.of("type", subtype.name(), "elderlyId", elderlyId.toString())
+            ));
+        }
         return true;
     }
 }

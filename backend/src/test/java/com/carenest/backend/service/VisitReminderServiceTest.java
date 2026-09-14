@@ -148,6 +148,19 @@ class VisitReminderServiceTest {
     }
 
     @Test
+    void nextBirthdayYearMaySendAgain() {
+        elderly.setDob(LocalDate.of(1950, 9, 17));
+        setting.setLastBirthdayReminderYear(2026);
+        when(deliveryService.createDurableReminder(
+            eq(11L), anyString(), anyString(), eq(VisitReminderSubtype.VISIT_BIRTHDAY_REMINDER)))
+            .thenReturn(true);
+
+        serviceAt("2027-09-12T01:30:00Z").processSetting(7L, null);
+
+        assertEquals(2027, setting.getLastBirthdayReminderYear());
+    }
+
+    @Test
     void february29UsesMarchFirstInNonLeapYear() {
         elderly.setDob(LocalDate.of(1952, 2, 29));
         when(deliveryService.createDurableReminder(
