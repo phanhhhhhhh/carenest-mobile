@@ -4,15 +4,11 @@ import com.carenest.backend.dto.googlefit.GoogleFitStatusResponse;
 import com.carenest.backend.entity.User;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.UserRepository;
-import com.carenest.backend.security.AuthorizationService;
 import com.carenest.backend.service.GoogleFitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -26,7 +22,6 @@ public class GoogleFitController {
 
     private final GoogleFitService googleFitService;
     private final UserRepository userRepository;
-    private final AuthorizationService authorizationService;
 
     
     @GetMapping("/connect/{userId}")
@@ -51,40 +46,26 @@ public class GoogleFitController {
         @RequestParam("code") String code,
         @RequestParam("state") String state
     ) {
-        Long userId;
+        // Google's redirect carries no Bearer token, so this endpoint is unauthenticated
+        // (permitAll in SecurityConfig). Authorization instead comes from `state`: an opaque,
+        // single-use, short-lived nonce that GoogleFitService only minted after the original
+        // caller already passed isOwnerOrLinkedFamily on /connect/{userId} — it resolves and
+        // consumes the nonce itself, so the target userId is never taken from client input here.
         try {
-            String userIdStr = state.split(":")[0];
-            userId = Long.valueOf(userIdStr);
-        } catch (Exception e) {
-            log.warn("Invalid state parameter in Google Fit callback: {}", state);
-            return ResponseEntity.badRequest().body(Map.of(
-                "status", "ERROR",
-                "message", "Invalid state parameter"
-            ));
-        }
-
-        // The OAuth "state" only carries the userId the flow was started for — it is never
-        // itself validated against the authenticated caller. Without this check, any logged-in
-        // user could swap userId in state and bind their own Google consent to a victim's account.
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long principalId = (authentication != null && authentication.getPrincipal() instanceof Long)
-            ? (Long) authentication.getPrincipal()
-            : null;
-        if (!authorizationService.isOwnerOrLinkedFamily(principalId, userId)) {
-            log.warn("Google Fit callback rejected: principal={} is not owner/linked family of userId={}",
-                principalId, userId);
-            throw new AccessDeniedException("Not authorized to connect Google Fit for this user");
-        }
-
-        try {
-            googleFitService.handleOAuthCallback(code, userId);
-            log.info("Google Fit OAuth callback successful for userId={}", userId);
+            googleFitService.handleOAuthCallback(code, state);
+            log.info("Google Fit OAuth callback succeeded for state={}", state);
             return ResponseEntity.ok(Map.of(
                 "status", "SUCCESS",
                 "message", "Google Fit connected successfully"
             ));
+        } catch (com.carenest.backend.exception.UnauthorizedException e) {
+            log.warn("Google Fit callback rejected: {}", e.getMessage());
+            return ResponseEntity.status(401).body(Map.of(
+                "status", "ERROR",
+                "message", e.getMessage()
+            ));
         } catch (Exception e) {
-            log.error("Google Fit OAuth callback failed for userId={}: {}", userId, e.getMessage());
+            log.error("Google Fit OAuth callback failed: {}", e.getMessage());
             return ResponseEntity.status(500).body(Map.of(
                 "status", "ERROR",
                 "message", "Failed to connect Google Fit: " + e.getMessage()

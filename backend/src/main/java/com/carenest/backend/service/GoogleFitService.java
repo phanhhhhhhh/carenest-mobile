@@ -43,6 +43,18 @@ public class GoogleFitService {
     private static final String GOOGLE_FIT_API = "https://www.googleapis.com/fitness/v1/users/me";
     private static final String GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
+    /**
+     * The OAuth "state" is an opaque, single-use, short-lived nonce — the only thing that
+     * authorizes {@link #handleOAuthCallback}, since Google's redirect carries no Bearer
+     * token. It is minted here (only reachable after the caller already passed
+     * {@code isOwnerOrLinkedFamily} on {@code /connect/{userId}}) and resolved+consumed on
+     * the way back, instead of trusting a userId the client could put in the URL itself.
+     */
+    private record PendingAuth(Long userId, Instant expiresAt) {}
+    private final java.util.concurrent.ConcurrentHashMap<String, PendingAuth> pendingAuth =
+        new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long STATE_TTL_SECONDS = 600;
+
     public GoogleFitService(ObjectMapper objectMapper,
                             UserRepository userRepository,
                             HealthMetricService healthMetricService,
@@ -88,7 +100,8 @@ public class GoogleFitService {
         if (!isConfigured()) {
             throw new IllegalStateException("Google Fit is not configured");
         }
-        String state = userId + ":" + UUID.randomUUID();
+        String state = UUID.randomUUID().toString();
+        pendingAuth.put(state, new PendingAuth(userId, Instant.now().plusSeconds(STATE_TTL_SECONDS)));
         return "https://accounts.google.com/o/oauth2/v2/auth"
             + "?client_id=" + clientId
             + "&redirect_uri=" + redirectUri
@@ -104,8 +117,23 @@ public class GoogleFitService {
     }
 
     
+    /** Resolves and consumes the state nonce minted by {@link #getAuthorizationUrl}. */
+    private Long resolvePendingAuth(String state) {
+        PendingAuth pending = pendingAuth.remove(state);
+        if (pending == null) {
+            throw new com.carenest.backend.exception.UnauthorizedException(
+                "Invalid or already-used Google Fit authorization state");
+        }
+        if (pending.expiresAt().isBefore(Instant.now())) {
+            throw new com.carenest.backend.exception.UnauthorizedException(
+                "Google Fit authorization state expired — please try connecting again");
+        }
+        return pending.userId();
+    }
+
     @Transactional
-    public void handleOAuthCallback(String code, Long userId) {
+    public void handleOAuthCallback(String code, String state) {
+        Long userId = resolvePendingAuth(state);
         try {
             User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));

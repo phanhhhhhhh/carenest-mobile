@@ -52,7 +52,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> {
                 auth.requestMatchers(
                         "/api/auth/**",
-                        "/actuator/health"
+                        "/actuator/health",
+                        // Google's OAuth redirect lands here with no Bearer token — it can
+                        // never carry one. Authorization comes from the opaque, single-use,
+                        // short-lived state nonce that GoogleFitService issues and verifies
+                        // itself, not from Spring Security's authentication.
+                        "/api/google-fit/callback"
                     ).permitAll();
                 if (isDevProfile) {
                     auth.requestMatchers(
