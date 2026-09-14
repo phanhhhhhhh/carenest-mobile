@@ -36,8 +36,8 @@ export async function submitVisitWithDuplicateConfirmation({
 
   let overrideSubmitting = false;
   confirmationAlert.alert(
-    'Bạn đã xác nhận hôm nay',
-    'Bạn đã ghi nhận một lượt về thăm trong ngày này. Đây có phải là một lượt thăm khác không?',
+    'Bạn đã xác nhận trong ngày này',
+    'Bạn đã ghi nhận một lượt về thăm trong ngày đã chọn. Đây có phải là một lượt thăm khác không?',
     [
       { text: 'Không', style: 'cancel' },
       {

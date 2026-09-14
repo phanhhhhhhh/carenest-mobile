@@ -15,7 +15,7 @@ describe('submitVisitWithDuplicateConfirmation', () => {
     });
 
     expect(alert).toHaveBeenCalledWith(
-      'Bạn đã xác nhận hôm nay',
+      'Bạn đã xác nhận trong ngày này',
       expect.any(String),
       expect.any(Array),
     );

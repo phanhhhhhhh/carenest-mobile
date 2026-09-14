@@ -153,4 +153,118 @@ describe('confirmVisit', () => {
     expect(result).toEqual({ status: 'error', message: 'Không xác nhận được: Offline' });
     expect(useVisitStreakStore.getState().submittingByElderly['1']).toBe(false);
   });
+
+  it('blocks repeated confirmation requests while one is active', async () => {
+    let resolvePost: ((value: { data: typeof streakResponse }) => void) | undefined;
+    (api.post as jest.Mock).mockReturnValue(
+      new Promise<{ data: typeof streakResponse }>((resolve) => {
+        resolvePost = resolve;
+      }),
+    );
+
+    const first = useVisitStreakStore.getState().confirmVisit('1');
+    const second = await useVisitStreakStore.getState().confirmVisit('1');
+
+    expect(second.status).toBe('error');
+    expect(api.post).toHaveBeenCalledTimes(1);
+    resolvePost?.({ data: streakResponse });
+    await first;
+  });
+});
+
+describe('updateSettings', () => {
+  it.each(['WEEKLY', 'MONTHLY'] as const)(
+    'enables reminders with the explicit %s cadence in one PATCH',
+    async (cycleType) => {
+      (api.patch as jest.Mock).mockResolvedValue({
+        data: { ...streakResponse, enabled: true, cycleType },
+      });
+
+      const success = await useVisitStreakStore
+        .getState()
+        .updateSettings('1', { enabled: true, cycleType });
+
+      expect(success).toBe(true);
+      expect(api.patch).toHaveBeenCalledWith('/elderly/1/visit-streak/settings', {
+        enabled: true,
+        cycleType,
+      });
+      expect(useVisitStreakStore.getState().byElderly['1'].cycleType).toBe(cycleType);
+    },
+  );
+
+  it('sends only cycleType and replaces calculations with the backend response', async () => {
+    useVisitStreakStore.setState({
+      byElderly: { '1': parseStreak({ ...streakResponse, currentStreak: 2 }) },
+    });
+    (api.patch as jest.Mock).mockResolvedValue({
+      data: { ...streakResponse, cycleType: 'MONTHLY', currentStreak: 7, longestStreak: 9 },
+    });
+
+    await useVisitStreakStore.getState().updateSettings('1', { cycleType: 'MONTHLY' });
+
+    expect(api.patch).toHaveBeenCalledWith('/elderly/1/visit-streak/settings', {
+      cycleType: 'MONTHLY',
+    });
+    expect(useVisitStreakStore.getState().byElderly['1']).toMatchObject({
+      cycleType: 'MONTHLY',
+      currentStreak: 7,
+      longestStreak: 9,
+    });
+  });
+
+  it('disables reminders while preserving history returned by the backend', async () => {
+    const recentVisits = [
+      {
+        id: 9,
+        memberId: 3,
+        memberName: 'Lan',
+        visitedAt: '2026-09-10T10:00:00+07:00',
+      },
+    ];
+    (api.patch as jest.Mock).mockResolvedValue({
+      data: { ...streakResponse, enabled: false, recentVisits },
+    });
+
+    await useVisitStreakStore.getState().updateSettings('1', { enabled: false });
+
+    expect(api.patch).toHaveBeenCalledWith('/elderly/1/visit-streak/settings', {
+      enabled: false,
+    });
+    expect(useVisitStreakStore.getState().byElderly['1']).toMatchObject({
+      enabled: false,
+      recentVisits,
+    });
+  });
+
+  it('keeps the prior visual state when an update fails', async () => {
+    const previous = parseStreak({ ...streakResponse, cycleType: 'WEEKLY' });
+    useVisitStreakStore.setState({ byElderly: { '1': previous } });
+    (api.patch as jest.Mock).mockRejectedValue(new Error('Offline'));
+
+    const success = await useVisitStreakStore
+      .getState()
+      .updateSettings('1', { cycleType: 'MONTHLY' });
+
+    expect(success).toBe(false);
+    expect(useVisitStreakStore.getState().byElderly['1']).toEqual(previous);
+    expect(useVisitStreakStore.getState().errorsByElderly['1']).toMatch(/Offline/);
+  });
+
+  it('blocks repeated settings requests while one is active', async () => {
+    let resolvePatch: ((value: { data: typeof streakResponse }) => void) | undefined;
+    (api.patch as jest.Mock).mockReturnValue(
+      new Promise<{ data: typeof streakResponse }>((resolve) => {
+        resolvePatch = resolve;
+      }),
+    );
+
+    const first = useVisitStreakStore.getState().updateSettings('1', { enabled: false });
+    const second = await useVisitStreakStore.getState().updateSettings('1', { enabled: false });
+
+    expect(second).toBe(false);
+    expect(api.patch).toHaveBeenCalledTimes(1);
+    resolvePatch?.({ data: streakResponse });
+    await first;
+  });
 });
