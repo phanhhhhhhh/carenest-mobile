@@ -16,6 +16,8 @@ import { Colors } from '../../../core/theme/colors';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useVisitStreakStore } from '../store/visitStreakStore';
 import { useMountEffect } from '../../../shared/hooks/useMountEffect';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
+import { submitVisitWithDuplicateConfirmation } from './familyVisitStreak/confirmationFlow';
 
 function formatDate(iso?: string): string {
   if (!iso) return '—';
@@ -54,8 +56,13 @@ export default function FamilyVisitStreakScreen() {
 
   const handleConfirm = async () => {
     if (!elderlyId) return;
-    const ok = await confirmVisit(elderlyId, note.trim() || undefined);
-    if (ok) setNote('');
+    await submitVisitWithDuplicateConfirmation({
+      elderlyId,
+      input: { note: note.trim() || undefined },
+      confirmVisit,
+      confirmationAlert: Alert,
+      onSuccess: () => setNote(''),
+    });
   };
 
   const handleRefresh = async () => {

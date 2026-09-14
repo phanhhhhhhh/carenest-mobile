@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
-import { getErrorMessage, isCancelled } from '../../../core/api/errors';
+import { getErrorCode, getErrorMessage, getStatus, isCancelled } from '../../../core/api/errors';
 
 export type VisitCycleType = 'WEEKLY' | 'MONTHLY';
 
@@ -8,6 +8,15 @@ export interface VisitSettingsPatch {
   cycleType?: VisitCycleType;
   enabled?: boolean;
 }
+
+export interface ConfirmVisitInput {
+  note?: string;
+  visitedAt?: string;
+  confirmSeparateVisit?: boolean;
+}
+
+export type ConfirmVisitResult =
+  { status: 'success' } | { status: 'possible_duplicate' } | { status: 'error'; message: string };
 
 export interface VisitEntry {
   id: number;
@@ -63,11 +72,14 @@ interface VisitStreakState {
   error: string | null;
 
   load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
-  confirmVisit: (elderlyId: string, note?: string) => Promise<boolean>;
+  confirmVisit: (
+    elderlyId: string,
+    input?: ConfirmVisitInput | string,
+  ) => Promise<ConfirmVisitResult>;
   updateSettings: (elderlyId: string, patch: VisitSettingsPatch) => Promise<boolean>;
 }
 
-export const useVisitStreakStore = create<VisitStreakState>((set) => ({
+export const useVisitStreakStore = create<VisitStreakState>((set, get) => ({
   byElderly: {},
   isLoading: false,
   isSubmitting: false,
@@ -85,16 +97,26 @@ export const useVisitStreakStore = create<VisitStreakState>((set) => ({
     }
   },
 
-  confirmVisit: async (elderlyId, note) => {
+  confirmVisit: async (elderlyId, input) => {
+    if (get().isSubmitting) {
+      return { status: 'error', message: 'Yêu cầu đang được xử lý.' };
+    }
     set({ isSubmitting: true, error: null });
+    const payload: ConfirmVisitInput = typeof input === 'string' ? { note: input } : (input ?? {});
     try {
-      const resp = await api.post(`/elderly/${elderlyId}/visits`, note ? { note } : {});
+      const resp = await api.post(`/elderly/${elderlyId}/visits`, payload);
       const streak = parseStreak(resp.data as Record<string, unknown>);
-      set((s) => ({ isSubmitting: false, byElderly: { ...s.byElderly, [elderlyId]: streak } }));
-      return true;
+      set((s) => ({ byElderly: { ...s.byElderly, [elderlyId]: streak } }));
+      return { status: 'success' };
     } catch (e) {
-      set({ isSubmitting: false, error: `Không xác nhận được: ${getErrorMessage(e)}` });
-      return false;
+      if (getStatus(e) === 409 && getErrorCode(e) === 'POSSIBLE_DUPLICATE_VISIT') {
+        return { status: 'possible_duplicate' };
+      }
+      const message = `Không xác nhận được: ${getErrorMessage(e)}`;
+      set({ error: message });
+      return { status: 'error', message };
+    } finally {
+      set({ isSubmitting: false });
     }
   },
 

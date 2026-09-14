@@ -5,6 +5,15 @@ export function getStatus(e: unknown): number | undefined {
   return undefined;
 }
 
+export function getErrorCode(e: unknown): string | undefined {
+  const data = getResponseData(e);
+  if (data && typeof data === 'object' && 'code' in data) {
+    const code = (data as { code?: unknown }).code;
+    return typeof code === 'string' ? code : undefined;
+  }
+  return undefined;
+}
+
 export function getErrorMessage(e: unknown): string {
   if (!e) return 'unknown error';
   if (typeof e === 'string') return e;
