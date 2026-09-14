@@ -61,7 +61,7 @@ public class EmergencyEventController {
     }
 
     @PostMapping("/emergency-events/{id}/call-emergency")
-    @PreAuthorize("@authz.canAccessEmergencyEvent(authentication.principal, #id)")
+    @PreAuthorize("hasRole('FAMILY') and @authz.canAccessEmergencyEvent(authentication.principal, #id)")
     public ResponseEntity<EmergencyEventResponse> logEmergencyCall(
         @PathVariable Long id,
         @AuthenticationPrincipal Long familyUserId
@@ -96,13 +96,13 @@ public class EmergencyEventController {
         return ResponseEntity.ok(emergencyEventService.getById(id));
     }
 
-    @PatchMapping("/users/{userId}/emergency-events/read-all")
-    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #userId)")
+    @PatchMapping("/elderly/{elderlyId}/emergency-events/read-all")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
     public ResponseEntity<Map<String, Object>> readAll(
-        @PathVariable Long userId,
+        @PathVariable Long elderlyId,
         @AuthenticationPrincipal Long principalId
     ) {
-        int count = emergencyEventService.acknowledgeAllForUser(userId, principalId);
+        int count = emergencyEventService.acknowledgeAllForUser(elderlyId, principalId);
         return ResponseEntity.ok(Map.of(
             "message", "All emergency alerts marked as read",
             "acknowledgedCount", count

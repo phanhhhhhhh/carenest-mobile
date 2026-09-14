@@ -33,7 +33,7 @@ interface EmergencyEventState {
   logEmergencyCall: (elderlyId: string, eventId: string) => Promise<boolean>;
   getActiveEvent: (elderlyId: string) => Promise<EmergencyEvent | null>;
   acknowledge: (elderlyId: string, eventId: string) => Promise<boolean>;
-  markAllRead: (elderlyId: string, userId: string) => Promise<boolean>;
+  markAllRead: (elderlyId: string) => Promise<boolean>;
   refresh: (elderlyId: string) => void;
   activeCount: () => number;
 }
@@ -138,9 +138,9 @@ export const useEmergencyEventStore = create<EmergencyEventState>((set, get) => 
     }
   },
 
-  markAllRead: async (elderlyId, userId) => {
+  markAllRead: async (elderlyId) => {
     try {
-      await api.patch(`/users/${userId}/emergency-events/read-all`);
+      await api.patch(`/elderly/${elderlyId}/emergency-events/read-all`);
       await get().load(elderlyId);
       return true;
     } catch (e) {

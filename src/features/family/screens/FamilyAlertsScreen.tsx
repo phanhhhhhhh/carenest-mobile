@@ -14,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../core/theme/colors';
-import { useAuthStore } from '../../auth/store/authStore';
 import { useFamilyDashboardStore } from '../store/familyStore';
 import { useEmergencyEventStore } from '../store/emergencyEventStore';
 import { AlertsHeader } from './familyAlerts/AlertsHeader';
@@ -23,7 +22,6 @@ import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 
 export default function FamilyAlertsScreen() {
   const navigation = useNavigation();
-  const user = useAuthStore((s) => s.user);
 
   const dashboardData = useFamilyDashboardStore((s) => s.data);
   const loadDashboard = useFamilyDashboardStore((s) => s.load);
@@ -57,9 +55,9 @@ export default function FamilyAlertsScreen() {
   const activeCount = events.filter((e) => e.status === 'ACTIVE').length;
 
   const handleMarkAllRead = async () => {
-    if (!elderlyId || !user?.id) return;
+    if (!elderlyId) return;
     setMarkingRead(true);
-    await markAllRead(elderlyId, String(user.id));
+    await markAllRead(elderlyId);
     setMarkingRead(false);
   };
 
