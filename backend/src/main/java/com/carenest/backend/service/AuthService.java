@@ -122,20 +122,17 @@ public class AuthService {
             throw new IllegalArgumentException("Password is required for phone login");
         }
 
+        // Every failure branch below throws this same generic message — distinguishing
+        // "no such account" from "wrong password" from "not verified" would let a caller
+        // enumerate which phone numbers are registered.
         User user = userRepository.findByPhoneAndDeletedAtIsNull(request.getPhone().trim())
             .orElseThrow(() -> new UnauthorizedException("Invalid phone or password"));
 
         rateLimitService.checkLockout(user.getId());
 
-        if (user.getPasswordHash() == null) {
+        if (user.getPasswordHash() == null || !user.isEmailVerified()) {
             rateLimitService.recordFailedAttempt(user.getId());
-            throw new UnauthorizedException(
-                "No password set for this account. Use forgot-password to set a password, or login with Firebase OTP.");
-        }
-
-        if (!user.isEmailVerified()) {
-            throw new UnauthorizedException(
-                "Account not verified. Please verify your account via OTP before logging in.");
+            throw new UnauthorizedException("Invalid phone or password");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
@@ -204,19 +201,17 @@ public class AuthService {
 
     @Transactional
     public void resendVerificationEmail(String email) {
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email.toLowerCase().trim())
-            .orElseThrow(() -> new NotFoundException("No account found with email: " + email));
-
-        if (user.isEmailVerified()) {
-            throw new ConflictException("Email is already verified. Please log in.");
-        }
-
-        String newToken = generateSecureToken();
-        user.setEmailVerificationToken(newToken);
-        user.setEmailVerificationExpiry(OffsetDateTime.now().plusHours(24));
-        userRepository.save(user);
-
-        emailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
+        // Silently no-op for an unknown or already-verified email — mirrors
+        // forgotPassword's generic response so the caller can't enumerate accounts.
+        userRepository.findByEmailAndDeletedAtIsNull(email.toLowerCase().trim())
+            .filter(user -> !user.isEmailVerified())
+            .ifPresent(user -> {
+                String newToken = generateSecureToken();
+                user.setEmailVerificationToken(newToken);
+                user.setEmailVerificationExpiry(OffsetDateTime.now().plusHours(24));
+                userRepository.save(user);
+                emailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
+            });
     }
 
 

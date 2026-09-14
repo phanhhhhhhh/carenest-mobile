@@ -54,6 +54,16 @@ public class OtpService {
         }
     }
 
+    /**
+     * verifyOtp is called with a caller-controlled target before any user lookup, so
+     * every distinct string permanently adds an entry to these maps unless swept.
+     */
+    public void evictStaleEntries() {
+        Instant cutoff = Instant.now().minus(WINDOW_MINUTES, ChronoUnit.MINUTES);
+        sendWindows.entrySet().removeIf(e -> e.getValue().windowStart().isBefore(cutoff));
+        verifyWindows.entrySet().removeIf(e -> e.getValue().windowStart().isBefore(cutoff));
+    }
+
 
     public String generateAndPersist(String target) {
         String normalizedTarget = normalizeTarget(target);

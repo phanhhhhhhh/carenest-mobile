@@ -59,6 +59,17 @@ public class VoiceController {
         }
 
         try {
+            // Check the free quota BEFORE spending a paid Gemini transcription call —
+            // sendMessage() below checks again, but by then the transcription is already paid for.
+            chatService.assertFreeQuotaAvailable(userId);
+        } catch (com.carenest.backend.exception.PaymentRequiredException e) {
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(Map.of(
+                "error", "Free daily limit reached",
+                "message", e.getMessage()
+            ));
+        }
+
+        try {
             String mimeType = audio.getContentType();
             if (mimeType == null || mimeType.isBlank()) {
                 mimeType = "audio/webm";

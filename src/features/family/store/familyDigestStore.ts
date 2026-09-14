@@ -28,7 +28,7 @@ interface FamilyDigestState {
   isGenerating: boolean;
   error: string | null;
 
-  loadLatest: (signal?: AbortSignal) => Promise<void>;
+  loadLatest: (elderlyId: string | null, signal?: AbortSignal) => Promise<void>;
   generateNow: (elderlyId: string) => Promise<boolean>;
 }
 
@@ -38,10 +38,14 @@ export const useFamilyDigestStore = create<FamilyDigestState>((set, get) => ({
   isGenerating: false,
   error: null,
 
-  loadLatest: async (signal) => {
+  loadLatest: async (elderlyId, signal) => {
+    if (!elderlyId) {
+      set({ isLoading: false, latest: null });
+      return;
+    }
     set({ isLoading: true, error: null });
     try {
-      const resp = await api.get('/family/digest/latest', { signal });
+      const resp = await api.get(`/elderly/${elderlyId}/digest/latest`, { signal });
       if (resp.status === 204 || !resp.data) {
         set({ isLoading: false, latest: null });
         return;
@@ -61,7 +65,7 @@ export const useFamilyDigestStore = create<FamilyDigestState>((set, get) => ({
     set({ isGenerating: true, error: null });
     try {
       await api.post(`/elderly/${elderlyId}/digest/generate`);
-      await get().loadLatest();
+      await get().loadLatest(elderlyId);
       set({ isGenerating: false });
       return true;
     } catch (e) {

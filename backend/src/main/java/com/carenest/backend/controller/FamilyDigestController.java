@@ -26,11 +26,14 @@ public class FamilyDigestController {
 
     private final FamilyDigestService familyDigestService;
 
-    /** The most recent daily digest addressed to the calling family member. */
-    @GetMapping("/family/digest/latest")
-    @PreAuthorize("hasRole('FAMILY')")
-    public ResponseEntity<DailyDigestResponse> latest(@AuthenticationPrincipal Long familyUserId) {
-        Notification n = familyDigestService.getLatestForUser(familyUserId);
+    /** The most recent daily digest for this elderly, addressed to the calling family member. */
+    @GetMapping("/elderly/{elderlyId}/digest/latest")
+    @PreAuthorize("@authz.isOwnerOrLinkedFamily(authentication.principal, #elderlyId)")
+    public ResponseEntity<DailyDigestResponse> latest(
+        @AuthenticationPrincipal Long familyUserId,
+        @PathVariable Long elderlyId
+    ) {
+        Notification n = familyDigestService.getLatestForUser(familyUserId, elderlyId);
         if (n == null) {
             return ResponseEntity.noContent().build();
         }

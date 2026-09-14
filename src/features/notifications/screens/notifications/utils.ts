@@ -2,15 +2,27 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../../../core/navigation/AppNavigator';
 import { Colors } from '../../../../core/theme/colors';
+import {
+  getVisitNotificationDestination,
+  isVisitNotificationType,
+} from '../../../../core/navigation/visitNotificationRoute';
 
 export type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /** Where tapping a notification of this type should land, per the current user's role. */
 export function routeForNotification(
   type: string,
+  data: Record<string, unknown> | null | undefined,
   role: string | undefined,
   navigation: Nav,
 ): void {
+  const visitDestination = getVisitNotificationDestination(data);
+  if (visitDestination) {
+    navigation.navigate(visitDestination.name, visitDestination.params);
+    return;
+  }
+  if (isVisitNotificationType(data?.type)) return;
+
   const isFamily = role === 'FAMILY';
   switch (type) {
     case 'EMERGENCY':

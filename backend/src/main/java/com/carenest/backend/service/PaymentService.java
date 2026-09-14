@@ -236,16 +236,50 @@ public class PaymentService {
         String message = params.getOrDefault("message", "");
 
         if ("0".equals(resultCode)) {
-            activateSubscription(orderId, "MOMO");
+            Subscription sub = subscriptionRepository.findByTransactionId(orderId).orElse(null);
+            if (sub == null) {
+                log.warn("MoMo return: no subscription for orderId={}", orderId);
+                return Map.of("status", "ERROR", "message", "Unknown transaction");
+            }
+
+            // MoMo reports the amount as a plain VND integer (no x100 scaling like VNPay).
+            // A signed callback still has to match what we asked the user to pay.
+            BigDecimal paidAmount = parseMomoAmount(params.get("amount"));
+            if (paidAmount == null || sub.getAmount() == null
+                    || paidAmount.compareTo(sub.getAmount()) != 0) {
+                log.warn("MoMo return: amount mismatch orderId={} expected={} actual={}",
+                        orderId, sub.getAmount(), paidAmount);
+                return Map.of("status", "ERROR", "message", "Payment amount mismatch");
+            }
+
+            Map<String, String> activation = activateSubscription(orderId, "MOMO");
+            if (!"ACTIVATED".equals(activation.get("status"))) {
+                return activation;
+            }
             log.info("MoMo payment success: orderId={}", orderId);
             return Map.of("status", "SUCCESS", "message", "Payment successful — Subscription activated!");
         } else {
             log.info("MoMo payment failed: orderId={} resultCode={} message={}", orderId, resultCode, message);
             subscriptionRepository.findByTransactionId(orderId).ifPresent(sub -> {
-                sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
-                subscriptionRepository.save(sub);
+                // A replayed or late failure callback must not cancel a subscription that
+                // has since been activated — mirrors the same guard on the VNPay path.
+                if (sub.getStatus() == Subscription.SubscriptionStatus.PENDING) {
+                    sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                    subscriptionRepository.save(sub);
+                }
             });
             return Map.of("status", "FAILED", "message", message.isBlank() ? "Payment failed" : message);
+        }
+    }
+
+    /** MoMo sends the amount as a plain VND integer. Returns null when unparseable. */
+    private BigDecimal parseMomoAmount(String rawAmount) {
+        if (rawAmount == null || rawAmount.isBlank())
+            return null;
+        try {
+            return new BigDecimal(rawAmount.trim()).setScale(2, RoundingMode.HALF_UP);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

@@ -29,15 +29,22 @@ import { ElderlyCard } from './familyDashboard/ElderlyCard';
 import { TodayMedsCard } from './familyDashboard/TodayMedsCard';
 import { DashboardCameraCard } from './familyDashboard/DashboardCameraCard';
 import { TodayCheckinCard } from './familyDashboard/TodayCheckinCard';
+import { FamilyDigestCard } from './familyDashboard/FamilyDigestCard';
 import { FeedRow } from './familyFeed/FeedRow';
 import { useCheckInStore, selectTodayCheckIn } from '../../elderly/store/checkinStore';
 import { useFeedStore, selectFeed } from '../store/feedStore';
 import { useAvailabilityStore, selectAvailability } from '../store/availabilityStore';
 import { useBroadcastStore, selectActiveBroadcast } from '../store/broadcastStore';
+import { useFamilyDigestStore } from '../store/familyDigestStore';
 import { AvailabilityChip } from './familyDashboard/AvailabilityChip';
 import { BroadcastBanner } from './familyDashboard/BroadcastBanner';
 import { AppointmentPreviewCard } from './familyDashboard/widgets';
 import { useMountEffect } from '../../../shared/hooks/useMountEffect';
+import { Alert } from '../../../shared/utils/crossPlatformAlert';
+import { useVisitStreakStore } from '../store/visitStreakStore';
+import { VisitStreakCard } from './familyDashboard/VisitStreakCard';
+import { completeVisitConfirmation } from './familyVisitStreak/visitSuccess';
+import { confirmVisitNow } from './familyDashboard/confirmVisitNow';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -71,6 +78,11 @@ export default function FamilyDashboardScreen() {
   const acknowledgeBroadcast = useBroadcastStore((s) => s.acknowledge);
   const acknowledgingBroadcastId = useBroadcastStore((s) => s.acknowledgingId);
 
+  const loadVisit = useVisitStreakStore((s) => s.load);
+  const confirmVisit = useVisitStreakStore((s) => s.confirmVisit);
+  const latestDigest = useFamilyDigestStore((s) => s.latest);
+  const loadDigest = useFamilyDigestStore((s) => s.loadLatest);
+
   const [refreshing, setRefreshing] = useState(false);
 
   const currentElderlyObj =
@@ -86,6 +98,13 @@ export default function FamilyDashboardScreen() {
   const feedLoading = useFeedStore((s) => s.loading);
   const myAvailability = useAvailabilityStore((s) => selectAvailability(s, elderlyId));
   const activeBroadcast = useBroadcastStore((s) => selectActiveBroadcast(s, elderlyId));
+  const visitStreak = useVisitStreakStore((s) => (elderlyId ? s.byElderly[elderlyId] : undefined));
+  const visitSubmitting = useVisitStreakStore((s) =>
+    elderlyId ? Boolean(s.submittingByElderly[elderlyId]) : false,
+  );
+  const visitError = useVisitStreakStore((s) =>
+    elderlyId ? (s.errorsByElderly[elderlyId] ?? null) : null,
+  );
 
   useMountEffect(() => {
     const controller = new AbortController();
@@ -103,8 +122,19 @@ export default function FamilyDashboardScreen() {
     loadTodayCheckIn(elderlyId, controller.signal);
     loadFeed(elderlyId, controller.signal);
     loadBroadcasts(elderlyId, controller.signal);
+    loadDigest(elderlyId, controller.signal);
+    loadVisit(elderlyId, controller.signal);
     return () => controller.abort();
-  }, [elderlyId, loadMeds, loadCameras, loadTodayCheckIn, loadFeed, loadBroadcasts]);
+  }, [
+    elderlyId,
+    loadMeds,
+    loadCameras,
+    loadTodayCheckIn,
+    loadFeed,
+    loadBroadcasts,
+    loadDigest,
+    loadVisit,
+  ]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -116,7 +146,9 @@ export default function FamilyDashboardScreen() {
         loadTodayCheckIn(elderlyId),
         loadFeed(elderlyId),
         loadBroadcasts(elderlyId),
+        loadVisit(elderlyId),
         loadAvailability(),
+        loadDigest(elderlyId),
       ]);
     }
     setRefreshing(false);
@@ -157,6 +189,21 @@ export default function FamilyDashboardScreen() {
 
   const openCamera = () => elderlyId && navigation.navigate('CameraScreen', { elderlyId });
   const openHealth = () => navigation.navigate('FamilyHealth');
+  const openVisit = () => {
+    if (elderlyId) navigation.navigate('FamilyVisitStreak', { elderlyId });
+  };
+
+  const handleConfirmVisitNow = async () => {
+    if (!elderlyId || visitSubmitting) return;
+    await confirmVisitNow({
+      elderlyId,
+      confirmVisit,
+      confirmationAlert: Alert,
+      onSuccess: () => {
+        void completeVisitConfirmation({ elderlyId, loadFeed });
+      },
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -292,6 +339,28 @@ export default function FamilyDashboardScreen() {
           <>
             <View style={{ height: 16 }} />
             <TodayCheckinCard checkIn={todayCheckIn} />
+            <View style={{ height: 16 }} />
+            <VisitStreakCard
+              elderlyName={elderlyName}
+              streak={visitStreak}
+              submitting={visitSubmitting}
+              error={visitError}
+              onSetup={openVisit}
+              onDetails={openVisit}
+              onQuickConfirm={handleConfirmVisitNow}
+              onRetry={() => loadVisit(elderlyId)}
+            />
+          </>
+        )}
+
+        {/* AI Family Digest Card (UC A6) */}
+        {elderlyId && (
+          <>
+            <View style={{ height: 16 }} />
+            <FamilyDigestCard
+              digest={latestDigest}
+              onPress={() => navigation.navigate('FamilyDigest')}
+            />
           </>
         )}
 

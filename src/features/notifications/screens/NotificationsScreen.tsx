@@ -87,7 +87,7 @@ export default function NotificationsScreen() {
       handleFamilyLinkRequest(notification);
       return;
     }
-    routeForNotification(notification.type, role, navigation);
+    routeForNotification(notification.type, notification.data, role, navigation);
   };
 
   const handleMarkAllRead = async () => {

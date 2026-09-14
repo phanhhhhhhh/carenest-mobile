@@ -39,6 +39,19 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(PossibleDuplicateVisitException.class)
+    public ResponseEntity<Map<String, Object>> handlePossibleDuplicateVisit(
+        PossibleDuplicateVisitException ex
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+            "status", HttpStatus.CONFLICT.value(),
+            "code", PossibleDuplicateVisitException.CODE,
+            "message", ex.getMessage(),
+            "error", ex.getMessage(),
+            "timestamp", OffsetDateTime.now().toString()
+        ));
+    }
+
     @ExceptionHandler(CameraLinkException.class)
     public ResponseEntity<Map<String, Object>> handleCameraLink(CameraLinkException ex) {
         Map<String, Object> body = new HashMap<>(ex.getDetails());

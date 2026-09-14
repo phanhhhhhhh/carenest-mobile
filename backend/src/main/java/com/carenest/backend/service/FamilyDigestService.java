@@ -153,12 +153,19 @@ public class FamilyDigestService {
         return new GeneratedDigest(text, quietDay, aiGenerated);
     }
 
+    /**
+     * The digest is a family-wide notification, not elderly-scoped by itself — a family
+     * linked to several elderly gets one row per elderly per day. Filter by elderlyId so
+     * the caller (viewing one elderly's dashboard) never gets a different elderly's digest
+     * back under the wrong name.
+     */
     @Transactional(readOnly = true)
-    public Notification getLatestForUser(Long familyUserId) {
+    public Notification getLatestForUser(Long familyUserId, Long elderlyId) {
         return notificationRepository
             .findByUserIdOrderByCreatedAtDesc(familyUserId, PageRequest.of(0, 30))
             .stream()
             .filter(n -> n.getData() != null && DIGEST_TYPE.equals(n.getData().get("type")))
+            .filter(n -> elderlyId.toString().equals(n.getData().get("elderlyId")))
             .findFirst()
             .orElse(null);
     }

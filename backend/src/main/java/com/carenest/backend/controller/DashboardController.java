@@ -18,7 +18,7 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/dashboard/family/{familyId}")
-    @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN') and (#familyId == authentication.principal or hasRole('ADMIN'))")
+    @PreAuthorize("hasRole('FAMILY') and #familyId == authentication.principal")
     public ResponseEntity<FamilyDashboardResponse> getFamilyDashboard(
         @PathVariable Long familyId
     ) {
