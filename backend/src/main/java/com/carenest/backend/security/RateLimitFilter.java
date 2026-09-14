@@ -22,6 +22,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final RateLimitService rateLimitService;
 
     private static final int CHAT_MESSAGE_LIMIT_PER_MINUTE = 20;
+    private static final int CHAT_VOICE_LIMIT_PER_MINUTE = 5;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -41,6 +42,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } else if (path.endsWith("/api/chat/message")) {
             endpoint = "chat-message";
             limit = CHAT_MESSAGE_LIMIT_PER_MINUTE;
+        } else if (path.endsWith("/api/chat/voice")) {
+            // Each request triggers a paid Gemini speech-to-text call (and a second
+            // Gemini call for the chat reply) — cap it well below the text-chat limit.
+            endpoint = "chat-voice";
+            limit = CHAT_VOICE_LIMIT_PER_MINUTE;
         } else if (path.contains("/api/users/by-phone/")) {
             // Existence probe — cheap to script, so cap it like the auth endpoints
             // to stop phone-number walking. Path carries the number, hence contains().
