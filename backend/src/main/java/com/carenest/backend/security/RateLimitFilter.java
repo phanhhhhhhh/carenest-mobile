@@ -33,7 +33,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Integer limit = null;
 
         if (path.endsWith("/auth/login") || path.endsWith("/auth/forgot-password")
-                || path.endsWith("/auth/send-otp") || path.endsWith("/auth/verify-otp")) {
+                || path.endsWith("/auth/send-otp") || path.endsWith("/auth/verify-otp")
+                || path.endsWith("/auth/register") || path.endsWith("/auth/resend-verification")
+                || path.endsWith("/auth/reset-password") || path.endsWith("/auth/refresh")
+                || path.endsWith("/auth/verify-pin")) {
             endpoint = path.substring(path.lastIndexOf('/') + 1);
         } else if (path.endsWith("/api/chat/message")) {
             endpoint = "chat-message";
