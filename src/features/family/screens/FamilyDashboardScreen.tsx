@@ -97,7 +97,6 @@ export default function FamilyDashboardScreen() {
     loadDashboard(controller.signal);
     loadNotifications(controller.signal);
     loadAvailability(controller.signal);
-    loadDigest(controller.signal);
     return () => controller.abort();
   });
 
@@ -109,8 +108,9 @@ export default function FamilyDashboardScreen() {
     loadTodayCheckIn(elderlyId, controller.signal);
     loadFeed(elderlyId, controller.signal);
     loadBroadcasts(elderlyId, controller.signal);
+    loadDigest(elderlyId, controller.signal);
     return () => controller.abort();
-  }, [elderlyId, loadMeds, loadCameras, loadTodayCheckIn, loadFeed, loadBroadcasts]);
+  }, [elderlyId, loadMeds, loadCameras, loadTodayCheckIn, loadFeed, loadBroadcasts, loadDigest]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -123,7 +123,7 @@ export default function FamilyDashboardScreen() {
         loadFeed(elderlyId),
         loadBroadcasts(elderlyId),
         loadAvailability(),
-        loadDigest(),
+        loadDigest(elderlyId),
       ]);
     }
     setRefreshing(false);

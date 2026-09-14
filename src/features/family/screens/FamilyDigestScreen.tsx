@@ -43,16 +43,15 @@ export default function FamilyDigestScreen() {
 
   useMountEffect(() => {
     loadDashboard();
-    loadLatest();
   });
 
   useEffect(() => {
-    loadLatest();
-  }, [loadLatest]);
+    loadLatest(elderlyId);
+  }, [elderlyId, loadLatest]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadLatest();
+    await loadLatest(elderlyId);
     setRefreshing(false);
   };
 
@@ -144,7 +143,7 @@ export default function FamilyDigestScreen() {
             <View style={styles.letterFooter}>
               <Text style={styles.footerNote}>
                 {latest.createdAt
-                  ? `Biên soạn tự động • ${new Date(latest.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                  ? `Biên soạn tự động ${latest.date ? new Date(latest.date).toLocaleDateString('vi-VN') : ''} lúc ${new Date(latest.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
                   : 'Biên soạn tự động bởi AI CareNest'}
               </Text>
             </View>
@@ -152,10 +151,10 @@ export default function FamilyDigestScreen() {
         ) : (
           <View style={styles.emptyCard}>
             <Ionicons name="moon-outline" size={44} color="#94A3B8" />
-            <Text style={styles.emptyTitle}>Chưa có bản tin nào hôm nay</Text>
+            <Text style={styles.emptyTitle}>Chưa có bản tin nào</Text>
             <Text style={styles.emptyDesc}>
-              Bản tin gia đình sẽ được hệ thống tự động tổng hợp và gửi đến tất cả người thân vào lúc
-              20:00 tối mỗi ngày.
+              Bản tin gia đình sẽ được hệ thống tự động tổng hợp và gửi đến tất cả người thân vào
+              lúc 20:00 tối mỗi ngày.
             </Text>
           </View>
         )}
