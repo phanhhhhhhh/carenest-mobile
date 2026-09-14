@@ -67,9 +67,9 @@ export function parseStreak(j: Record<string, unknown>): VisitStreak {
 
 interface VisitStreakState {
   byElderly: Record<string, VisitStreak>;
-  isLoading: boolean;
-  isSubmitting: boolean;
-  error: string | null;
+  loadingByElderly: Record<string, boolean>;
+  submittingByElderly: Record<string, boolean>;
+  errorsByElderly: Record<string, string | null>;
 
   load: (elderlyId: string, signal?: AbortSignal) => Promise<void>;
   confirmVisit: (
@@ -79,29 +79,55 @@ interface VisitStreakState {
   updateSettings: (elderlyId: string, patch: VisitSettingsPatch) => Promise<boolean>;
 }
 
+const loadTokens = new Map<string, symbol>();
+
 export const useVisitStreakStore = create<VisitStreakState>((set, get) => ({
   byElderly: {},
-  isLoading: false,
-  isSubmitting: false,
-  error: null,
+  loadingByElderly: {},
+  submittingByElderly: {},
+  errorsByElderly: {},
 
   load: async (elderlyId, signal) => {
-    set({ isLoading: true, error: null });
+    const token = Symbol(elderlyId);
+    loadTokens.set(elderlyId, token);
+    set((s) => ({
+      loadingByElderly: { ...s.loadingByElderly, [elderlyId]: true },
+      errorsByElderly: { ...s.errorsByElderly, [elderlyId]: null },
+    }));
     try {
       const resp = await api.get(`/elderly/${elderlyId}/visit-streak`, { signal });
+      if (loadTokens.get(elderlyId) !== token) return;
       const streak = parseStreak(resp.data as Record<string, unknown>);
-      set((s) => ({ isLoading: false, byElderly: { ...s.byElderly, [elderlyId]: streak } }));
+      set((s) => ({
+        loadingByElderly: { ...s.loadingByElderly, [elderlyId]: false },
+        byElderly: { ...s.byElderly, [elderlyId]: streak },
+      }));
     } catch (e) {
-      if (isCancelled(e)) return;
-      set({ isLoading: false, error: `Không tải được chuỗi về thăm: ${getErrorMessage(e)}` });
+      if (loadTokens.get(elderlyId) !== token) return;
+      if (isCancelled(e)) {
+        set((s) => ({
+          loadingByElderly: { ...s.loadingByElderly, [elderlyId]: false },
+        }));
+        return;
+      }
+      set((s) => ({
+        loadingByElderly: { ...s.loadingByElderly, [elderlyId]: false },
+        errorsByElderly: {
+          ...s.errorsByElderly,
+          [elderlyId]: `Không tải được nhịp về thăm: ${getErrorMessage(e)}`,
+        },
+      }));
     }
   },
 
   confirmVisit: async (elderlyId, input) => {
-    if (get().isSubmitting) {
+    if (get().submittingByElderly[elderlyId]) {
       return { status: 'error', message: 'Yêu cầu đang được xử lý.' };
     }
-    set({ isSubmitting: true, error: null });
+    set((s) => ({
+      submittingByElderly: { ...s.submittingByElderly, [elderlyId]: true },
+      errorsByElderly: { ...s.errorsByElderly, [elderlyId]: null },
+    }));
     const payload: ConfirmVisitInput = typeof input === 'string' ? { note: input } : (input ?? {});
     try {
       const resp = await api.post(`/elderly/${elderlyId}/visits`, payload);
@@ -113,22 +139,37 @@ export const useVisitStreakStore = create<VisitStreakState>((set, get) => ({
         return { status: 'possible_duplicate' };
       }
       const message = `Không xác nhận được: ${getErrorMessage(e)}`;
-      set({ error: message });
+      set((s) => ({ errorsByElderly: { ...s.errorsByElderly, [elderlyId]: message } }));
       return { status: 'error', message };
     } finally {
-      set({ isSubmitting: false });
+      set((s) => ({
+        submittingByElderly: { ...s.submittingByElderly, [elderlyId]: false },
+      }));
     }
   },
 
   updateSettings: async (elderlyId, patch) => {
-    set({ isSubmitting: true, error: null });
+    if (get().submittingByElderly[elderlyId]) return false;
+    set((s) => ({
+      submittingByElderly: { ...s.submittingByElderly, [elderlyId]: true },
+      errorsByElderly: { ...s.errorsByElderly, [elderlyId]: null },
+    }));
     try {
       const resp = await api.patch(`/elderly/${elderlyId}/visit-streak/settings`, patch);
       const streak = parseStreak(resp.data as Record<string, unknown>);
-      set((s) => ({ isSubmitting: false, byElderly: { ...s.byElderly, [elderlyId]: streak } }));
+      set((s) => ({
+        submittingByElderly: { ...s.submittingByElderly, [elderlyId]: false },
+        byElderly: { ...s.byElderly, [elderlyId]: streak },
+      }));
       return true;
     } catch (e) {
-      set({ isSubmitting: false, error: `Không lưu được cài đặt: ${getErrorMessage(e)}` });
+      set((s) => ({
+        submittingByElderly: { ...s.submittingByElderly, [elderlyId]: false },
+        errorsByElderly: {
+          ...s.errorsByElderly,
+          [elderlyId]: `Không lưu được cài đặt: ${getErrorMessage(e)}`,
+        },
+      }));
       return false;
     }
   },

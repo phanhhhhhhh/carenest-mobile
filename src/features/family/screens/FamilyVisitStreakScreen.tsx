@@ -11,13 +11,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors } from '../../../core/theme/colors';
-import { useFamilyDashboardStore } from '../store/familyStore';
+import type { RootStackParamList } from '../../../core/navigation/AppNavigator';
+import { normalizeElderlyId } from '../../../core/navigation/elderlyId';
 import { useVisitStreakStore } from '../store/visitStreakStore';
-import { useMountEffect } from '../../../shared/hooks/useMountEffect';
 import { Alert } from '../../../shared/utils/crossPlatformAlert';
 import { submitVisitWithDuplicateConfirmation } from './familyVisitStreak/confirmationFlow';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'FamilyVisitStreak'>;
+type VisitRoute = RouteProp<RootStackParamList, 'FamilyVisitStreak'>;
 
 function formatDate(iso?: string): string {
   if (!iso) return '—';
@@ -26,32 +30,37 @@ function formatDate(iso?: string): string {
 }
 
 export default function FamilyVisitStreakScreen() {
-  const navigation = useNavigation();
-  const dashboardData = useFamilyDashboardStore((s) => s.data);
-  const loadDashboard = useFamilyDashboardStore((s) => s.load);
-
-  const elderlyId =
-    dashboardData && dashboardData.linkedElderly.length > 0
-      ? (dashboardData.linkedElderly[dashboardData.selectedIndex]?.elderlyId ?? null)
-      : null;
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<VisitRoute>();
+  const elderlyId = normalizeElderlyId(route.params?.elderlyId);
 
   const streak = useVisitStreakStore((s) => (elderlyId ? s.byElderly[elderlyId] : undefined));
-  const isLoading = useVisitStreakStore((s) => s.isLoading);
-  const isSubmitting = useVisitStreakStore((s) => s.isSubmitting);
-  const error = useVisitStreakStore((s) => s.error);
+  const isLoading = useVisitStreakStore((s) =>
+    elderlyId ? Boolean(s.loadingByElderly[elderlyId]) : false,
+  );
+  const isSubmitting = useVisitStreakStore((s) =>
+    elderlyId ? Boolean(s.submittingByElderly[elderlyId]) : false,
+  );
+  const error = useVisitStreakStore((s) =>
+    elderlyId ? (s.errorsByElderly[elderlyId] ?? null) : null,
+  );
   const load = useVisitStreakStore((s) => s.load);
   const confirmVisit = useVisitStreakStore((s) => s.confirmVisit);
   const updateSettings = useVisitStreakStore((s) => s.updateSettings);
 
-  const [note, setNote] = useState('');
+  const [notesByElderly, setNotesByElderly] = useState<Record<string, string>>({});
   const [refreshing, setRefreshing] = useState(false);
-
-  useMountEffect(() => {
-    loadDashboard();
-  });
+  const note = elderlyId ? (notesByElderly[elderlyId] ?? '') : '';
+  const setNote = (value: string) => {
+    if (!elderlyId) return;
+    setNotesByElderly((current) => ({ ...current, [elderlyId]: value }));
+  };
 
   useEffect(() => {
-    if (elderlyId) load(elderlyId);
+    if (!elderlyId) return;
+    const controller = new AbortController();
+    load(elderlyId, controller.signal);
+    return () => controller.abort();
   }, [elderlyId, load]);
 
   const handleConfirm = async () => {
@@ -77,14 +86,33 @@ export default function FamilyVisitStreakScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Quay lại"
+        >
           <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Nhắc Về Thăm Nhà</Text>
         <View style={{ width: 32 }} />
       </View>
 
-      {isLoading && !streak ? (
+      {!elderlyId ? (
+        <View style={styles.center}>
+          <Ionicons name="alert-circle-outline" size={42} color={Colors.textSecondary} />
+          <Text style={styles.invalidTitle}>Không thể mở Nhịp về thăm</Text>
+          <Text style={styles.invalidText}>Hồ sơ người cao tuổi không hợp lệ.</Text>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backAction}
+            accessibilityRole="button"
+            accessibilityLabel="Quay lại"
+          >
+            <Text style={styles.backActionText}>Quay lại</Text>
+          </TouchableOpacity>
+        </View>
+      ) : isLoading && !streak ? (
         <View style={styles.center}>
           <ActivityIndicator color={Colors.primary} size="large" />
         </View>
@@ -196,6 +224,23 @@ export default function FamilyVisitStreakScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  invalidTitle: {
+    marginTop: 12,
+    color: Colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  invalidText: { marginTop: 6, color: Colors.textSecondary, fontSize: 14 },
+  backAction: {
+    minHeight: 44,
+    marginTop: 18,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backActionText: { color: Colors.surface, fontSize: 14, fontWeight: '700' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

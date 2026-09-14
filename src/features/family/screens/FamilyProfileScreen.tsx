@@ -245,7 +245,15 @@ export default function FamilyProfileScreen() {
           onEditProfile={() =>
             Alert.alert('Sắp ra mắt', 'Tính năng chỉnh sửa hồ sơ đang được phát triển.')
           }
-          onVisitStreak={() => navigation.navigate('FamilyVisitStreak')}
+          onVisitStreak={() => {
+            if (!selectedElderly?.elderlyId) {
+              Alert.alert('', 'Vui lòng chọn người cao tuổi trước.');
+              return;
+            }
+            navigation.navigate('FamilyVisitStreak', {
+              elderlyId: String(selectedElderly.elderlyId),
+            });
+          }}
           onDigest={() => navigation.navigate('FamilyDigest')}
           onNotificationSettings={() => navigation.navigate('NotificationSettings')}
           onUpgradePremium={() => navigation.navigate('PremiumPlans')}

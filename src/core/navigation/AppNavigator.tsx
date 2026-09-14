@@ -89,7 +89,7 @@ export type RootStackParamList = {
   PremiumPlans: undefined;
   ElderlyQRInvite: undefined;
   FamilyScanQR: undefined;
-  FamilyVisitStreak: undefined;
+  FamilyVisitStreak: { elderlyId: string };
   FamilyDigest: undefined;
   ElderlyCameraConsent: undefined;
   PrivacyPolicy: undefined;
