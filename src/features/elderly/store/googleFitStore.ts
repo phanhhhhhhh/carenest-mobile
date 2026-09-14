@@ -123,6 +123,12 @@ function createGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
   }));
 }
 
+/** Drops every per-elderly store so a new session starts from a clean slate. */
+export function resetGoogleFitStores(): void {
+  stores.forEach((hook) => hook.setState(hook.getInitialState(), true));
+  stores.clear();
+}
+
 export function useGoogleFitStore(elderlyId: string): GoogleFitStoreHook {
   let hook = stores.get(elderlyId);
   if (!hook) {

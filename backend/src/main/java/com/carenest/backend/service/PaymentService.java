@@ -14,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -120,7 +122,9 @@ public class PaymentService {
         verifyParams.remove("vnp_SecureHashType");
 
         String computedHash = hmacSHA512(vnpayHashSecret, buildVnpayQueryString(verifyParams));
-        boolean valid = computedHash.equals(vnpSecureHash);
+        boolean valid = vnpSecureHash != null && MessageDigest.isEqual(
+                computedHash.getBytes(StandardCharsets.UTF_8),
+                vnpSecureHash.getBytes(StandardCharsets.UTF_8));
 
         if (!valid) {
             log.warn("VNPay return: invalid signature for txnRef={}", params.get("vnp_TxnRef"));
@@ -132,14 +136,39 @@ public class PaymentService {
         String txnStatus = params.get("vnp_TransactionStatus");
 
         if ("00".equals(responseCode) && "00".equals(txnStatus)) {
-            activateSubscription(txnRef, "VNPAY");
+            Subscription sub = subscriptionRepository.findByTransactionId(txnRef).orElse(null);
+            if (sub == null) {
+                log.warn("VNPay return: no subscription for txnRef={}", txnRef);
+                return Map.of("status", "ERROR", "message", "Unknown transaction");
+            }
+
+            // VNPay reports the amount in the smallest unit (VND x100). A signed
+            // callback still has to match what we asked the user to pay, otherwise a
+            // 1,000 VND transfer could unlock a 490,000 VND plan.
+            BigDecimal paidAmount = parseVnpayAmount(params.get("vnp_Amount"));
+            if (paidAmount == null || sub.getAmount() == null
+                    || paidAmount.compareTo(sub.getAmount()) != 0) {
+                log.warn("VNPay return: amount mismatch txnRef={} expected={} actual={}",
+                        txnRef, sub.getAmount(), paidAmount);
+                return Map.of("status", "ERROR", "message", "Payment amount mismatch");
+            }
+
+            Map<String, String> activation = activateSubscription(txnRef, "VNPAY");
+            if (!"ACTIVATED".equals(activation.get("status"))) {
+                return activation;
+            }
             log.info("VNPay payment success: txnRef={}", txnRef);
             return Map.of("status", "SUCCESS", "message", "Payment successful — Subscription activated!");
         } else {
             log.info("VNPay payment failed/cancelled: txnRef={} code={}", txnRef, responseCode);
             subscriptionRepository.findByTransactionId(txnRef).ifPresent(sub -> {
-                sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
-                subscriptionRepository.save(sub);
+                // A replayed or late failure callback must not cancel a subscription that
+                // has since been activated (e.g. by a legitimate success callback) — mirrors
+                // the PENDING guard on the success branch's activateSubscription.
+                if (sub.getStatus() == Subscription.SubscriptionStatus.PENDING) {
+                    sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                    subscriptionRepository.save(sub);
+                }
             });
             return Map.of("status", "FAILED", "message", "Payment failed or cancelled");
         }
@@ -207,16 +236,50 @@ public class PaymentService {
         String message = params.getOrDefault("message", "");
 
         if ("0".equals(resultCode)) {
-            activateSubscription(orderId, "MOMO");
+            Subscription sub = subscriptionRepository.findByTransactionId(orderId).orElse(null);
+            if (sub == null) {
+                log.warn("MoMo return: no subscription for orderId={}", orderId);
+                return Map.of("status", "ERROR", "message", "Unknown transaction");
+            }
+
+            // MoMo reports the amount as a plain VND integer (no x100 scaling like VNPay).
+            // A signed callback still has to match what we asked the user to pay.
+            BigDecimal paidAmount = parseMomoAmount(params.get("amount"));
+            if (paidAmount == null || sub.getAmount() == null
+                    || paidAmount.compareTo(sub.getAmount()) != 0) {
+                log.warn("MoMo return: amount mismatch orderId={} expected={} actual={}",
+                        orderId, sub.getAmount(), paidAmount);
+                return Map.of("status", "ERROR", "message", "Payment amount mismatch");
+            }
+
+            Map<String, String> activation = activateSubscription(orderId, "MOMO");
+            if (!"ACTIVATED".equals(activation.get("status"))) {
+                return activation;
+            }
             log.info("MoMo payment success: orderId={}", orderId);
             return Map.of("status", "SUCCESS", "message", "Payment successful — Subscription activated!");
         } else {
             log.info("MoMo payment failed: orderId={} resultCode={} message={}", orderId, resultCode, message);
             subscriptionRepository.findByTransactionId(orderId).ifPresent(sub -> {
-                sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
-                subscriptionRepository.save(sub);
+                // A replayed or late failure callback must not cancel a subscription that
+                // has since been activated — mirrors the same guard on the VNPay path.
+                if (sub.getStatus() == Subscription.SubscriptionStatus.PENDING) {
+                    sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
+                    subscriptionRepository.save(sub);
+                }
             });
             return Map.of("status", "FAILED", "message", message.isBlank() ? "Payment failed" : message);
+        }
+    }
+
+    /** MoMo sends the amount as a plain VND integer. Returns null when unparseable. */
+    private BigDecimal parseMomoAmount(String rawAmount) {
+        if (rawAmount == null || rawAmount.isBlank())
+            return null;
+        try {
+            return new BigDecimal(rawAmount.trim()).setScale(2, RoundingMode.HALF_UP);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
@@ -321,6 +384,12 @@ public class PaymentService {
                     if (sub.getStatus() == Subscription.SubscriptionStatus.ACTIVE) {
                         return Map.of("status", "ALREADY_ACTIVE", "message", "Subscription is already active");
                     }
+                    // Mirror the reject guard: anything already moved out of PENDING
+                    // (notably an admin-rejected/CANCELLED transfer) must not be
+                    // resurrectable into a live subscription.
+                    if (sub.getStatus() != Subscription.SubscriptionStatus.PENDING) {
+                        return Map.of("status", "NOT_PENDING", "message", "Payment is not awaiting review");
+                    }
                     activateSubscription(txnRef,
                             sub.getPaymentProvider() != null ? sub.getPaymentProvider() : "VIETQR");
                     log.info("Manual payment reconciled and activated: txnRef={}", txnRef);
@@ -353,8 +422,9 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public Map<String, Object> getSubscriptionStatus(Long userId) {
         boolean isPremium = subscriptionService.isPremium(userId);
-        Optional<Subscription> activeSub = subscriptionRepository.findByUserIdAndStatus(
-                userId, Subscription.SubscriptionStatus.ACTIVE);
+        Optional<Subscription> activeSub = subscriptionRepository
+                .findTopByUserIdAndStatusOrderByEndDateDesc(
+                        userId, Subscription.SubscriptionStatus.ACTIVE);
 
         boolean isPro = false;
 
@@ -368,7 +438,8 @@ public class PaymentService {
 
     @Transactional
     public void cancelSubscription(Long userId) {
-        subscriptionRepository.findByUserIdAndStatus(userId, Subscription.SubscriptionStatus.ACTIVE)
+        subscriptionRepository
+                .findTopByUserIdAndStatusOrderByEndDateDesc(userId, Subscription.SubscriptionStatus.ACTIVE)
                 .ifPresent(sub -> {
                     sub.setStatus(Subscription.SubscriptionStatus.CANCELLED);
                     sub.setCancelledAt(Instant.now());
@@ -378,15 +449,31 @@ public class PaymentService {
     }
 
 
-    private void activateSubscription(String txnRef, String provider) {
-        subscriptionRepository.findByTransactionId(txnRef).ifPresent(sub -> {
-            sub.setStatus(Subscription.SubscriptionStatus.ACTIVE);
-            sub.setPaymentProvider(provider);
-            boolean isYearly = sub.getPlanType() == Subscription.PlanType.PREMIUM_YEARLY;
-            int months = isYearly ? 12 : 1;
-            sub.setEndDate(Instant.now().plus(30L * months, ChronoUnit.DAYS));
-            subscriptionRepository.save(sub);
-        });
+    /**
+     * Idempotent activation. The gateways call back more than once for the same
+     * transaction (return URL + IPN, plus retries), and this used to set ACTIVE and
+     * push endDate out another period on every one of them — free subscription
+     * extension for anyone who replayed the callback. Only a PENDING row activates.
+     */
+    private Map<String, String> activateSubscription(String txnRef, String provider) {
+        Subscription sub = subscriptionRepository.findByTransactionId(txnRef).orElse(null);
+        if (sub == null) {
+            log.warn("Activation for unknown transaction: txnRef={}", txnRef);
+            return Map.of("status", "NOT_FOUND", "message", "No payment with that reference");
+        }
+        if (sub.getStatus() != Subscription.SubscriptionStatus.PENDING) {
+            log.info("Activation ignored, not awaiting payment: txnRef={} status={}",
+                    txnRef, sub.getStatus());
+            return Map.of("status", "IGNORED", "message", "Not awaiting payment");
+        }
+
+        sub.setStatus(Subscription.SubscriptionStatus.ACTIVE);
+        sub.setPaymentProvider(provider);
+        boolean isYearly = sub.getPlanType() == Subscription.PlanType.PREMIUM_YEARLY;
+        int months = isYearly ? 12 : 1;
+        sub.setEndDate(Instant.now().plus(30L * months, ChronoUnit.DAYS));
+        subscriptionRepository.save(sub);
+        return Map.of("status", "ACTIVATED", "message", "Subscription activated");
     }
 
     private String buildVnpayUrl(String txnRef, BigDecimal amount, String clientIp) {
@@ -418,14 +505,38 @@ public class PaymentService {
         return vnpayPayUrl + "?" + queryString + "&vnp_SecureHash=" + hash;
     }
 
+    /**
+     * VNPay's canonical form: keys sorted, every value URL-encoded, joined with '&'.
+     * Both the outbound redirect URL and inbound callback verification go through
+     * here, so the two sides can never drift apart — they did before (outbound sorted
+     * via TreeMap but unencoded, inbound a raw HashMap iteration), which made every
+     * real callback fail signature verification.
+     */
     private String buildVnpayQueryString(Map<String, String> params) {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
+        for (Map.Entry<String, String> entry : new TreeMap<>(params).entrySet()) {
+            String value = entry.getValue();
+            if (value == null)
+                continue;
             if (sb.length() > 0)
                 sb.append("&");
-            sb.append(entry.getKey()).append("=").append(entry.getValue());
+            sb.append(entry.getKey())
+              .append("=")
+              .append(java.net.URLEncoder.encode(value, StandardCharsets.UTF_8));
         }
         return sb.toString();
+    }
+
+    /** VNPay sends the amount multiplied by 100. Returns null when unparseable. */
+    private BigDecimal parseVnpayAmount(String rawAmount) {
+        if (rawAmount == null || rawAmount.isBlank())
+            return null;
+        try {
+            return new BigDecimal(rawAmount.trim())
+                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private String generateTxnRef(Long userId) {

@@ -57,7 +57,7 @@ public class SubscriptionService {
         if (userId == null) return false;
 
         boolean direct = subscriptionRepository
-            .findByUserIdAndStatusAndPlanTypeIn(
+            .findTopByUserIdAndStatusAndPlanTypeInOrderByEndDateDesc(
                 userId, Subscription.SubscriptionStatus.ACTIVE, PREMIUM_PLANS)
             .map(Subscription::isPremium)
             .orElse(false);

@@ -21,10 +21,11 @@ interface ReminderVoiceRecorder {
 
 /**
  * Records a family member's custom medication-reminder voice (UC B2) and uploads
- * it to Cloudinary. The caller stores the returned URL as `medication.voiceUrl`;
+ * it to Cloudinary under a backend-issued signature for `elderlyId`. The caller
+ * stores the returned URL as `medication.voiceUrl`;
  * the backend only plays it at reminder time when a linked member has Family Plus.
  */
-export function useReminderVoiceRecorder(): ReminderVoiceRecorder {
+export function useReminderVoiceRecorder(elderlyId: string): ReminderVoiceRecorder {
   const recorder = useVoiceClipRecorder(MAX_REMINDER_MS);
   const [status, setStatus] = useState<ReminderVoiceStatus>('idle');
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -44,14 +45,14 @@ export function useReminderVoiceRecorder(): ReminderVoiceRecorder {
         setUploadError('Không ghi được âm thanh. Vui lòng thử lại.');
         return null;
       }
-      return await uploadVoiceClip(clip.uri, clip.mimeType);
+      return await uploadVoiceClip(clip.uri, clip.mimeType, elderlyId);
     } catch (e) {
       setUploadError(`Tải giọng nhắc lên thất bại: ${getErrorMessage(e)}`);
       return null;
     } finally {
       setStatus('idle');
     }
-  }, [recorder]);
+  }, [recorder, elderlyId]);
 
   const cancel = useCallback(async () => {
     await recorder.cancel();

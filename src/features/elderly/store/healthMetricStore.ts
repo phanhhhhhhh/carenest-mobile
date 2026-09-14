@@ -103,6 +103,12 @@ function createHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
   }));
 }
 
+/** Drops every per-elderly store so a new session starts from a clean slate. */
+export function resetHealthMetricStores(): void {
+  stores.forEach((hook) => hook.setState(hook.getInitialState(), true));
+  stores.clear();
+}
+
 export function useHealthMetricStore(elderlyId: string): HealthMetricStoreHook {
   let hook = stores.get(elderlyId);
   if (!hook) {

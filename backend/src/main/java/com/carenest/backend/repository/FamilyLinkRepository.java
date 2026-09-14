@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +34,9 @@ public interface FamilyLinkRepository extends JpaRepository<FamilyLink, Long> {
     Optional<FamilyLink> findByIdAndDeletedAtIsNull(Long id);
 
     long countByStatusAndDeletedAtIsNull(FamilyLinkStatus status);
+
+    /** Anti-spam counter for UC E4: link requests this family account opened recently. */
+    long countByFamilyIdAndCreatedAtAfter(Long familyId, OffsetDateTime since);
 
     @Query("SELECT fl FROM FamilyLink fl LEFT JOIN FETCH fl.elderly LEFT JOIN FETCH fl.family "
         + "WHERE fl.deletedAt IS NULL AND (:status IS NULL OR fl.status = :status) "

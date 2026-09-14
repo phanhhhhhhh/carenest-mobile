@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import api from '../../../core/api/client';
 import * as storage from '../../../core/storage/secureStorage';
 import { onSessionExpired } from '../../../core/auth/sessionEvents';
+import { resetAllStores } from '../../../core/auth/resetAllStores';
 import { jwtSecondsRemaining } from '../../../core/auth/jwt';
 import {
   getStatus,
@@ -320,6 +321,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     await storage.clearAll();
     set({ isAuthenticated: false, user: null, error: null });
+    resetAllStores();
   },
 
   clearError: () => set({ error: null }),
@@ -327,4 +329,5 @@ export const useAuthStore = create<AuthState>((set) => ({
 
 onSessionExpired(() => {
   useAuthStore.setState({ isAuthenticated: false, user: null, error: null });
+  resetAllStores();
 });

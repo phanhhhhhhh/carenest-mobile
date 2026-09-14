@@ -4,8 +4,6 @@ import com.carenest.backend.dto.user.FcmTokenRequest;
 import com.carenest.backend.dto.user.NotificationPreferencesRequest;
 import com.carenest.backend.dto.user.NotificationPreferencesResponse;
 import com.carenest.backend.entity.NotificationPreferences;
-import com.carenest.backend.entity.User;
-import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.repository.UserRepository;
 import com.carenest.backend.service.UserService;
 import jakarta.validation.Valid;
@@ -30,16 +28,17 @@ public class UserController {
     private final UserRepository userRepository;
 
 
+    /**
+     * Existence probe only. Returning the id/name/role here let any authenticated
+     * account enumerate every user by walking phone numbers, so the response now
+     * reveals nothing beyond whether an active account uses that number.
+     * Soft-deleted users report as non-existent. Rate limited in RateLimitFilter.
+     */
     @GetMapping("/users/by-phone/{phone}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> findByPhone(@PathVariable String phone) {
-        User user = userRepository.findByPhoneAndDeletedAtIsNull(phone)
-            .orElseThrow(() -> new NotFoundException("User not found with phone: " + phone));
-        return ResponseEntity.ok(Map.of(
-            "id", user.getId(),
-            "name", user.getName(),
-            "role", user.getRole().name()
-        ));
+        boolean exists = userRepository.existsByPhoneAndDeletedAtIsNull(phone);
+        return ResponseEntity.ok(Map.of("exists", exists));
     }
 
 

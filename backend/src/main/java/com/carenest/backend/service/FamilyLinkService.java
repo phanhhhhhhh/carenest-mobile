@@ -12,6 +12,7 @@ import com.carenest.backend.entity.UserRole;
 import com.carenest.backend.exception.ConflictException;
 import com.carenest.backend.exception.NotFoundException;
 import com.carenest.backend.exception.PaymentRequiredException;
+import com.carenest.backend.exception.RateLimitExceededException;
 import com.carenest.backend.repository.ElderlyProfileRepository;
 import com.carenest.backend.repository.FamilyLinkRepository;
 import com.carenest.backend.repository.NotificationRepository;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,7 +39,25 @@ public class FamilyLinkService {
     private final ElderlyProfileRepository elderlyProfileRepository;
     private final SubscriptionService subscriptionService;
 
+    /**
+     * A self-registered FAMILY account can aim a link request at any elderly id,
+     * and the request carries their self-chosen display name into a notification
+     * the elderly user sees — a social-engineering vector. Cap how many any one
+     * family account can open per day so it cannot be sprayed at many targets.
+     */
+    private static final int MAX_LINK_REQUESTS_PER_DAY = 5;
+    private static final long LINK_REQUEST_WINDOW_SECONDS = 24 * 60 * 60;
+
     public FamilyLinkResponse create(FamilyLinkRequest request) {
+        long recentRequests = familyLinkRepository.countByFamilyIdAndCreatedAtAfter(
+            request.getFamilyId(),
+            OffsetDateTime.now().minusSeconds(LINK_REQUEST_WINDOW_SECONDS));
+        if (recentRequests >= MAX_LINK_REQUESTS_PER_DAY) {
+            throw new RateLimitExceededException(
+                "Bạn đã gửi quá nhiều yêu cầu kết nối trong 24 giờ qua. Vui lòng thử lại sau.",
+                LINK_REQUEST_WINDOW_SECONDS);
+        }
+
         if (!subscriptionService.canAddElderly(request.getFamilyId())) {
             int current = subscriptionService.getActiveElderlyCount(request.getFamilyId());
             int max = subscriptionService.getMaxElderlyProfiles(request.getFamilyId());

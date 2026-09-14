@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import api from '../../../core/api/client';
-import { getUserId } from '../../../core/storage/secureStorage';
 import { getStatus, getErrorMessage, asListOfMaps } from '../../../core/api/errors';
 
 export interface DataPoint {
@@ -136,8 +135,7 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
 
       const adherence: MedicationAdherenceData[] = [];
       try {
-        const userId = await getUserId();
-        const medResp = await api.get(`/users/${userId}/medications`);
+        const medResp = await api.get(`/users/${elderlyId}/medications`);
         const meds = asListOfMaps(medResp.data);
         for (const med of meds) {
           const medId = med.id != null ? String(med.id) : null;
@@ -162,8 +160,7 @@ export const useHealthReportStore = create<HealthReportState>((set) => ({
 
       let totalAppointments = 0;
       try {
-        const userId = await getUserId();
-        const apptResp = await api.get(`/users/${userId}/appointments`);
+        const apptResp = await api.get(`/users/${elderlyId}/appointments`);
         totalAppointments = asListOfMaps(apptResp.data).length;
       } catch {}
 

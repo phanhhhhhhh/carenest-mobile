@@ -33,11 +33,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Integer limit = null;
 
         if (path.endsWith("/auth/login") || path.endsWith("/auth/forgot-password")
-                || path.endsWith("/auth/send-otp") || path.endsWith("/auth/verify-otp")) {
+                || path.endsWith("/auth/send-otp") || path.endsWith("/auth/verify-otp")
+                || path.endsWith("/auth/register") || path.endsWith("/auth/resend-verification")
+                || path.endsWith("/auth/reset-password") || path.endsWith("/auth/refresh")
+                || path.endsWith("/auth/verify-pin")) {
             endpoint = path.substring(path.lastIndexOf('/') + 1);
         } else if (path.endsWith("/api/chat/message")) {
             endpoint = "chat-message";
             limit = CHAT_MESSAGE_LIMIT_PER_MINUTE;
+        } else if (path.contains("/api/users/by-phone/")) {
+            // Existence probe — cheap to script, so cap it like the auth endpoints
+            // to stop phone-number walking. Path carries the number, hence contains().
+            endpoint = "user-by-phone";
         }
 
         if (endpoint != null) {

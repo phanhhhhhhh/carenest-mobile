@@ -331,8 +331,9 @@ Full API docs: `http://localhost:8082/swagger-ui.html` (when backend is running)
 | Variable | Default | Required |
 |----------|---------|----------|
 | `DATABASE_URL` | `jdbc:postgresql://localhost:5433/carenest` | For custom DB |
-| `JWT_SECRET` | (dev default) | **Yes for production** |
+| `JWT_SECRET` | (none) | **Yes — every profile, incl. `dev`.** Must be 32+ chars; the app refuses to start without it |
 | `GEMINI_API_KEY` | (empty) | For AI features |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | (empty) | For medication voice-clip uploads — backend signs them so the secret is never bundled into the app; leaving these empty just disables that one feature |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | (empty) | For email verification |
 | `FIREBASE_CREDENTIALS_PATH` | (empty) | For FCM push |
 | `GOOGLE_FIT_CLIENT_ID` / `GOOGLE_FIT_CLIENT_SECRET` | (empty) | For Google Fit |

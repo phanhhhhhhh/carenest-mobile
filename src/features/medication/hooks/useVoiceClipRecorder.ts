@@ -81,7 +81,11 @@ export function useVoiceClipRecorder(maxDurationMs = 60_000): VoiceClipRecorder 
 
   const cancel = useCallback(async () => {
     try {
-      if (recorderState.isRecording) await recorder.stop();
+      // `recorder.isRecording` (native, synchronous) — not `recorderState.isRecording`,
+      // which is polled and can still read stale/false for a moment right after
+      // start(), letting a cancel-right-after-start skip stop() and leave the
+      // native recorder running in the background.
+      if (recorder.isRecording) await recorder.stop();
     } catch {
       // best effort — nothing to keep anyway
     } finally {
@@ -89,7 +93,7 @@ export function useVoiceClipRecorder(maxDurationMs = 60_000): VoiceClipRecorder 
       setError(null);
       await teardownAudioMode();
     }
-  }, [recorder, recorderState.isRecording, teardownAudioMode]);
+  }, [recorder, teardownAudioMode]);
 
   const clearError = useCallback(() => setError(null), []);
 

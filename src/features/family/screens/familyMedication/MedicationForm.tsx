@@ -20,7 +20,6 @@ import {
   draftToMedicationPrefill,
   voiceReviewHint,
 } from '../../../medication/services/medicationVoiceDraft';
-import { isCloudinaryConfigured } from '../../../medication/services/cloudinaryUpload';
 import { PlayVoiceReminderButton } from '../../../medication/components/PlayVoiceReminderButton';
 import { usePaymentStore } from '../../store/paymentStore';
 import { DAY_LABELS, HISTORY_DAY_LABELS, TimeValue, pad2 } from './constants';
@@ -67,13 +66,15 @@ export function MedicationForm({ editing, currentElderlyId, currentElderlyName, 
 
   // Custom reminder voice (UC B2) — recorded by family, hosted on Cloudinary,
   // stored as `medication.voiceUrl`. Backend only plays it on Family Plus.
-  const reminderVoice = useReminderVoiceRecorder();
+  const reminderVoice = useReminderVoiceRecorder(currentElderlyId ?? '');
   const [voiceUrl, setVoiceUrl] = useState<string | undefined>(editing?.voiceUrl ?? undefined);
   const originalVoiceUrl = editing?.voiceUrl ?? undefined;
   const subscription = usePaymentStore((s) => s.subscription);
   const loadSubscription = usePaymentStore((s) => s.load);
   const isPremium = subscription?.isPremium ?? false;
-  const showReminderVoice = isCloudinaryConfigured();
+  // The upload signature is minted per elderly, so there's nothing to record
+  // against until an elderly is selected.
+  const showReminderVoice = currentElderlyId != null;
 
   useEffect(() => {
     if (showReminderVoice && !subscription) loadSubscription();

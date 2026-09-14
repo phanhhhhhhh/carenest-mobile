@@ -45,7 +45,7 @@ public class FamilyLinkController {
     }
 
     @GetMapping("/family/{familyId}/elderly")
-    @PreAuthorize("hasAnyRole('FAMILY', 'ADMIN') and (#familyId == authentication.principal or hasRole('ADMIN'))")
+    @PreAuthorize("hasRole('FAMILY') and #familyId == authentication.principal")
     public ResponseEntity<List<FamilyElderlyResponse>> getElderlyByFamilyId(
         @PathVariable Long familyId
     ) {
