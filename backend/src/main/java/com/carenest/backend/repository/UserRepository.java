@@ -33,6 +33,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Page<User> findByRoleAndDeletedAtIsNull(UserRole role, Pageable pageable);
 
+    java.util.List<User> findByRoleAndDeletedAtIsNull(UserRole role);
+
     // --- Admin console ---
 
     long countByDeletedAtIsNull();

@@ -180,6 +180,10 @@ export function navigateFromPayload(data: Record<string, unknown>): void {
       // ElderlyChat is a root-stack screen, not an ElderlyShell tab.
       navigationRef.navigate('ElderlyChat');
       break;
+    case 'CHECK_IN_REMINDER':
+    case 'FEED_REACTION':
+      navigateToTab('ElderlyShell', 'ElderlyHome');
+      break;
     default:
       break;
   }

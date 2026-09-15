@@ -3,6 +3,8 @@
 **/.claude/
 .omc/
 **/.omc/
+.agents/
+**/.agents/
 backend/.mcp.json
 
 # Environment & secrets — NEVER commit these

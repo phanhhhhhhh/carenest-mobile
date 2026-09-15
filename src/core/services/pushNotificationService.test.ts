@@ -75,4 +75,12 @@ describe('existing push navigation', () => {
     expect(mockNavigate).toHaveBeenCalledWith('FamilyHealth');
     expect(mockNavigate).toHaveBeenCalledWith('ElderlyChat');
   });
+
+  it.each(['CHECK_IN_REMINDER', 'FEED_REACTION'])(
+    'routes %s to ElderlyShell ElderlyHome tab',
+    (type) => {
+      navigateFromPayload({ type });
+      expect(mockNavigateToTab).toHaveBeenCalledWith('ElderlyShell', 'ElderlyHome');
+    },
+  );
 });
